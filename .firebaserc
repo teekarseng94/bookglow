@@ -1,0 +1,18 @@
+{
+  "projects": {
+    "default": "razak-residence-2026"
+  },
+  "targets": {
+    "razak-residence-2026": {
+      "hosting": {
+        "booking-site": [
+          "zenspabookingsystem"
+        ],
+        "dashboard-site": [
+          "razak-residence-2026"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

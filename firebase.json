@@ -1,0 +1,43 @@
+{
+  "functions": {
+    "source": "zenspa backend/functions",
+    "codebase": "default",
+    "ignore": ["node_modules", ".git", "firebase-debug.log", "firebase-debug.*.log", "*.local"],
+    "predeploy": []
+  },
+  "hosting": [
+    {
+      "target": "booking-site",
+      "public": "zenspa dashboard/dist",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "rewrites": [
+        { "source": "**", "destination": "/index.html" }
+      ]
+    },
+    {
+      "target": "dashboard-site",
+      "public": "dist-dashboard",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "rewrites": [
+        { "source": "**", "destination": "/index.html" }
+      ],
+      "headers": [
+        {
+          "source": "**/*.@(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)",
+          "headers": [
+            { "key": "Cache-Control", "value": "max-age=31536000" }
+          ]
+        }
+      ]
+    }
+  ],
+  "firestore": {
+    "database": "(default)",
+    "location": "asia-southeast1",
+    "rules": "zenspa backend/firestore.rules",
+    "indexes": "zenspa backend/firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "zenspa backend/storage.rules"
+  }
+}

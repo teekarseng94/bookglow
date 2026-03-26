@@ -1,0 +1,145 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: user is signed in
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Role is stored in users/{uid}; default to 'cashier' if missing
+    function getUserRole() {
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return userDoc.data.get('role', 'cashier');
+    }
+
+    function isAdmin() {
+      let role = getUserRole();
+      return isAuthenticated() && (role == 'admin' || role == 'Admin' || role == 'ADMIN');
+    }
+
+    // User's outletId from users/{uid} (used for outlet-scoped access)
+    function getUserOutletId() {
+      let userDoc = get(/databases/$(database)/documents/users/$(request.auth.uid));
+      return userDoc.data.get('outletId', '');
+    }
+
+    // Cashiers: allow POS (create SALE + Commission expense). Accept 'cashier', 'Cashier', 'staff' (legacy).
+    function isCashier() {
+      let role = getUserRole();
+      return isAuthenticated() && (role == 'cashier' || role == 'Cashier' || role == 'staff');
+    }
+
+    // Users: each user can read/write their own document (needed for profile; role is set by admin)
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Outlets: public read (for booking page), admins write
+    match /outlets/{outletID} {
+      allow read: if true; // Public booking page needs to read outlet data
+      allow write: if isAdmin();
+    }
+
+    // Staff: public read (for booking page team list), authenticated write
+    match /staff/{staffId} {
+      allow read: if true; // Public booking page needs to read staff/team
+      allow create: if isAuthenticated() && request.resource.data.outletID != null;
+      allow update, delete: if isAuthenticated();
+    }
+
+    // Clients: admins and cashiers read; only admins can delete members (per-outlet)
+    match /clients/{clientId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.outletID != null;
+      // Updates allowed for authenticated users (admin or cashier), with simple validation on outstanding field
+      allow update: if isAuthenticated()
+        && (!('outstanding' in request.resource.data) || request.resource.data.outstanding is number);
+      // Deleting a member is restricted to admins, and only within their own outlet
+      allow delete: if isAdmin()
+        && getUserOutletId() == resource.data.outletID;
+      // Transaction log for loyalty points (idempotency by saleId)
+      match /points_credits/{creditId} {
+        allow read, write: if isAuthenticated();
+      }
+      // Point transactions history (Topup/Redeem logs)
+      match /pointTransactions/{transactionId} {
+        allow read, write: if isAuthenticated();
+      }
+      // Credit wallet history (Top Up / Deduct Credit logs)
+      match /credit_history/{entryId} {
+        allow read, write: if isAuthenticated();
+      }
+      // Outstanding balance transaction log (Add / Minus)
+      match /outstandingTransactions/{transactionId} {
+        allow read, create: if isAuthenticated();
+      }
+    }
+
+    // Appointments: admins full; cashiers read + create (e.g. on-duty from POS)
+    match /appointments/{appointmentId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.outletID != null;
+      allow update, delete: if isAuthenticated();
+    }
+
+    // Transactions: admin and cashier full access (POS, Sales Report — create sale, commission, void, delete)
+    match /transactions/{transactionId} {
+      allow read, create, update, delete: if isAuthenticated();
+    }
+
+    // Services: public read (for booking page), authenticated write
+    match /services/{serviceId} {
+      allow read: if true; // Public booking page needs to read services
+      allow create: if isAuthenticated() && request.resource.data.outletID != null;
+      allow update, delete: if isAuthenticated();
+    }
+
+    // Products: admin and cashier full access (Menu, POS)
+    match /products/{productId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.outletID != null;
+      allow update, delete: if isAuthenticated();
+    }
+
+    // Packages: admin and cashier full access (Menu, POS)
+    match /packages/{packageId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.outletID != null;
+      allow update, delete: if isAuthenticated();
+    }
+
+    // Rewards: admin and cashier full access (Member, POS)
+    match /rewards/{rewardId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.resource.data.outletID != null;
+      allow update, delete: if isAuthenticated();
+    }
+
+    // Dashboard stats: admins full; cashiers read (and write if you aggregate from client)
+    match /dashboard_stats/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // App settings: admin only; cashiers blocked
+    match /app_settings/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // API Integration (chatbot): one doc per outlet — apiIntegrations/{outletId}
+    // Allow if user is admin OR if user's outletId matches (so admin/cashier can manage their outlet's key)
+    match /apiIntegrations/{outletId} {
+      allow read, write: if isAuthenticated() && (isAdmin() || getUserOutletId() == outletId);
+    }
+
+    // Report / monthly summary data: admin only (cashiers cannot read or write)
+    match /reports/{reportId} {
+      allow read, write: if isAdmin();
+    }
+    match /monthly_summary/{docId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

@@ -1,0 +1,12 @@
+[
+  {
+    "origin": [
+      "https://razak-residence-2026.web.app",
+      "http://localhost:5173",
+      "http://127.0.0.1:5173"
+    ],
+    "method": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    "responseHeader": ["Content-Type", "Content-Length", "Content-Disposition", "Authorization"],
+    "maxAgeSeconds": 3600
+  }
+]

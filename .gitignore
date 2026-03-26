@@ -1,0 +1,113 @@
+# =============================================================================
+# ZenSpa monorepo — Node.js / React / Vite / Firebase
+# Keeps repos small and avoids committing secrets or generated artifacts.
+# =============================================================================
+
+# --- Dependencies (always huge) ---
+node_modules/
+**/node_modules/
+
+# --- Environment & secrets ---
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.p12
+*.pfx
+.secret*
+credentials.json
+serviceAccount*.json
+*-firebase-adminsdk-*.json
+
+# --- Build outputs ---
+dist/
+dist-*/
+build/
+out/
+.output/
+.vercel/
+.netlify/
+*.local
+
+# Root + app-specific (your deploy script uses these)
+dist-dashboard/
+zenspa dashboard/dist/
+zenspa backend/dist/
+zenspa Frontend/dist/
+
+# Vite / bundler caches
+.vite/
+**/.vite/
+.turbo/
+.parcel-cache/
+.cache/
+.svelte-kit/
+
+# --- TypeScript / tooling ---
+*.tsbuildinfo
+.eslintcache
+.prettiercache
+stylelintcache
+
+# --- Testing & coverage ---
+coverage/
+.nyc_output/
+*.lcov
+junit.xml
+
+# --- Firebase ---
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+firestore-debug.log
+ui-debug.log
+*-debug.log
+.functions_tmp/
+
+# Embedded/irrelevant sub-repo (avoid committing large nested git history)
+zenspa backend/Spa-system-2026/
+
+# --- Logs ---
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# --- Secrets / credentials docs (never commit) ---
+Chatbot API.txt
+**/*CREDENTIALS*.txt
+**/*CREDENTIALS*.md
+**/*API*.txt
+
+# --- OS ---
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# --- IDE / editors (optional; uncomment if you prefer not to commit these) ---
+.idea/
+*.swp
+*.swo
+*~
+
+# --- Misc ---
+*.orig
+*.tmp
+*.temp
+.temp/
+tmp/
+temp/
+
+# Large local assets / dumps (add patterns if you store them in-repo by mistake)
+*.zip
+*.tar
+*.tar.gz
+*.sqlite
+*.db

@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f8fafc;
+  margin: 0;
+  padding: 0;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Landing page gradient */
+.landing-gradient-bg {
+  background: radial-gradient(circle at top right, #f8fafc 0%, #ffffff 100%);
+}
+
+/* Receipt: hidden on screen, visible only when printing (80mm thermal) */
+.receipt-container {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  width: 80mm;
+}
+
+.receipt-container .receipt-header h1 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.receipt-container .receipt-payment-row {
+  margin: 6px 0 0 0;
+  font-size: 12px;
+}
+
+/* Styling for the printable receipt */
+@media print {
+  /* Hide everything on the dashboard/UI */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Only show the receipt container */
+  #printable-receipt,
+  #printable-receipt * {
+    visibility: visible;
+  }
+
+  #printable-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm; /* Standard receipt width */
+    padding: 10px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    line-height: 1.2;
+    color: #000;
+  }
+
+  .receipt-header {
+    text-align: center;
+    margin-bottom: 10px;
+    border-bottom: 1px dashed #000;
+    padding-bottom: 5px;
+  }
+
+  .receipt-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 2px 0;
+  }
+
+  .receipt-footer {
+    text-align: center;
+    margin-top: 15px;
+    border-top: 1px dashed #000;
+    padding-top: 10px;
+  }
+}

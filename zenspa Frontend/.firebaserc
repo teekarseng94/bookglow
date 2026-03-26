@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "zenspabookingsystem"
+  },
+  "targets": {
+    "zenspabookingsystem": {
+      "hosting": {
+        "booking-site": [
+          "zenspabookingsystem"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

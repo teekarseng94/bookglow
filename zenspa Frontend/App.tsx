@@ -11,6 +11,7 @@ const Navbar: React.FC<{
   onNavigate: (view: ViewType) => void, 
   currentView: ViewType 
 }> = ({ onNavigate, currentView }) => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const handleScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
     if (href === '#pricing') {
@@ -53,7 +54,7 @@ const Navbar: React.FC<{
           <button onClick={() => onNavigate('landing')} className="hover:opacity-80 transition-opacity">
             <Logo />
           </button>
-          <div className="hidden lg:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-8">
             {NAV_ITEMS.map((item) => (
               <a 
                 key={item.label} 
@@ -70,8 +71,14 @@ const Navbar: React.FC<{
             ))}
           </div>
         </div>
-        <div className="flex items-center gap-4 lg:gap-8">
-          <a href="tel:+60169929123" className="hidden sm:block text-slate-700 font-medium text-sm">+60 169929123</a>
+        {/* Desktop actions */}
+        <div className="hidden md:flex items-center gap-8">
+          <a
+            href="tel:+60169929123"
+            className="text-slate-700 font-medium text-sm hover:opacity-80 transition-opacity"
+          >
+            +60 169929123
+          </a>
           <a
             href="https://razak-residence-2026.web.app/#/dashboard"
             target="_blank"
@@ -80,9 +87,83 @@ const Navbar: React.FC<{
           >
             Login
           </a>
-          <a href="/signup" className="inline-block"><Button size="sm" className="rounded-md">Start FREE</Button></a>
+          <a href="/signup" className="inline-block">
+            <Button size="sm" className="rounded-md">
+              Start FREE
+            </Button>
+          </a>
         </div>
+
+        {/* Mobile hamburger */}
+        <button
+          type="button"
+          aria-label="Open menu"
+          aria-expanded={mobileMenuOpen}
+          onClick={() => setMobileMenuOpen(true)}
+          className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg hover:bg-slate-50 text-slate-700 border border-slate-100"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
       </div>
+
+      {/* Mobile slide-out menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-[60]">
+          <div
+            className="absolute inset-0 bg-slate-900/40"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <div className="absolute right-0 top-0 h-full w-80 bg-white border-l border-slate-100 shadow-xl p-6 flex flex-col">
+            <div className="flex items-center justify-between mb-6">
+              <Logo />
+              <button
+                type="button"
+                aria-label="Close menu"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-10 h-10 rounded-lg hover:bg-slate-50 border border-slate-100 text-slate-700 flex items-center justify-center"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              {NAV_ITEMS.map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  onClick={(e) => {
+                    handleScroll(e, item.href);
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`text-slate-700 font-medium transition-colors hover:text-slate-900`}
+                >
+                  {item.label}
+                </a>
+              ))}
+            </div>
+
+            <div className="mt-auto pt-8 flex flex-col gap-3">
+              <a
+                href="https://razak-residence-2026.web.app/#/dashboard"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-center px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 text-slate-800 font-medium hover:bg-slate-100 transition-colors"
+              >
+                Login
+              </a>
+              <a href="/signup" className="text-center">
+                <Button size="lg" className="w-full rounded-md">
+                  Start FREE
+                </Button>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 };
@@ -414,23 +495,26 @@ const Hero: React.FC = () => {
   };
 
   return (
-    <section id="learn" className="pt-32 pb-20 overflow-hidden scroll-mt-20">
+    <section id="learn" className="pt-32 pb-20 overflow-x-hidden scroll-mt-20">
       <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
         <div className="max-w-2xl">
-          <h1 className="text-6xl md:text-7xl font-bold tracking-tight mb-8 leading-[1.1] text-slate-900">
+          <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-6xl xl:text-7xl font-bold tracking-tight mb-8 leading-[1.08] text-slate-900 text-balance">
             Book your <br /> appointment
           </h1>
           <p className="text-xl text-slate-500 mb-12 leading-relaxed max-w-lg">
             Organize your business with 24/7 automated online booking, reminders, payments, and more.
           </p>
           
-          <form onSubmit={handleSignUp} className="flex flex-col gap-4 p-2 bg-white rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-slate-100 mb-8 max-w-md">
+          <form
+            onSubmit={handleSignUp}
+            className="mx-auto w-full max-w-md flex flex-col gap-4 px-4 py-6 bg-white rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-slate-100 mb-8"
+          >
             <input 
               type="email" 
               placeholder="Your email" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 px-4 py-3 outline-none text-slate-700 bg-transparent placeholder:text-slate-300 rounded-lg focus:ring-2 focus:ring-green-100 transition-all border border-slate-100"
+              className="w-full px-4 py-3 outline-none text-slate-700 bg-transparent placeholder:text-slate-300 rounded-lg focus:ring-2 focus:ring-green-100 transition-all border border-slate-100"
               required
             />
             <input 
@@ -438,12 +522,12 @@ const Hero: React.FC = () => {
               placeholder="Password (min 6 characters)" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="flex-1 px-4 py-3 outline-none text-slate-700 bg-transparent placeholder:text-slate-300 rounded-lg focus:ring-2 focus:ring-green-100 transition-all border border-slate-100"
+              className="w-full px-4 py-3 outline-none text-slate-700 bg-transparent placeholder:text-slate-300 rounded-lg focus:ring-2 focus:ring-green-100 transition-all border border-slate-100"
               minLength={6}
               required
             />
             {error && <p className="text-sm text-red-600">{error}</p>}
-            <Button type="submit" size="lg" className="whitespace-nowrap" disabled={loading}>
+            <Button type="submit" size="lg" className="w-full whitespace-nowrap" disabled={loading}>
               {loading ? 'Creating account…' : 'Start FREE'}
             </Button>
           </form>

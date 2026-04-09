@@ -8,7 +8,7 @@
   "hosting": [
     {
       "target": "booking-site",
-      "public": "zenspa dashboard/dist",
+      "public": "dist-booking",
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
       "rewrites": [
         { "source": "**", "destination": "/index.html" }

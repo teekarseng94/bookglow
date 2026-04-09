@@ -4,7 +4,8 @@ cd /d "%~dp0"
 
 echo === 1. CLEANING PREVIOUS BUILDS ===
 if exist "dist-dashboard" rmdir /s /q "dist-dashboard"
-if exist "zenspa dashboard\dist" rmdir /s /q "zenspa dashboard\dist"
+if exist "dist-booking" rmdir /s /q "dist-booking"
+if exist "zenspa Frontend\dist" rmdir /s /q "zenspa Frontend\dist"
 
 echo === 2. BUILDING BACKEND (DASHBOARD) ===
 cd "zenspa backend"
@@ -12,8 +13,9 @@ call npm run build -- --outDir ../dist-dashboard
 if errorlevel 1 goto :error
 
 echo === 3. BUILDING FRONTEND (BOOKING) ===
-cd "..\zenspa dashboard"
-call npm run build
+cd ..
+cd "zenspa Frontend"
+call npm run build -- --outDir ../dist-booking
 if errorlevel 1 goto :error
 
 cd ..

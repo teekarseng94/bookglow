@@ -983,7 +983,7 @@ exports.getPublicOutletData = functions
  */
 exports.createPublicBooking = functions
   .region("asia-southeast1")
-  .https.onCall(async (data) => {
+  .https.onCall(async (data, context) => {
     const {
       outletId,
       serviceId,
@@ -1006,6 +1006,7 @@ exports.createPublicBooking = functions
     const trimmedDate = String(date).trim();
     const trimmedTime = String(time).trim();
     const trimmedStaffId = staffId ? String(staffId).trim() : null;
+    const authUid = context?.auth?.uid || null;
 
     try {
       const outletRef = db.collection("outlets").doc(outletId);
@@ -1125,6 +1126,60 @@ exports.createPublicBooking = functions
         clientId = clientRef.id;
       }
 
+      // Customer identity is now stored in customers/{customerId}.
+      // If authenticated on booking site, use auth uid as document id.
+      // Otherwise, de-duplicate by outlet + phone for guest bookings.
+      let customerId = authUid;
+      if (customerId) {
+        const customerRef = db.collection("customers").doc(customerId);
+        await customerRef.set(
+          {
+            uid: customerId,
+            outletID: outletId,
+            name: trimmedName,
+            phone: trimmedPhone,
+            email: trimmedEmail,
+            clientId,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
+      } else {
+        const customersQuery = await db
+          .collection("customers")
+          .where("outletID", "==", outletId)
+          .where("phone", "==", trimmedPhone)
+          .limit(1)
+          .get();
+
+        if (!customersQuery.empty) {
+          customerId = customersQuery.docs[0].id;
+          await db.collection("customers").doc(customerId).set(
+            {
+              name: trimmedName,
+              email: trimmedEmail,
+              clientId,
+              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            },
+            { merge: true }
+          );
+        } else {
+          const customerRef = await db.collection("customers").add({
+            outletID: outletId,
+            name: trimmedName,
+            phone: trimmedPhone,
+            email: trimmedEmail,
+            clientId,
+            bookingHistoryRefs: [],
+            source: "public-booking",
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+          customerId = customerRef.id;
+        }
+      }
+
       const timeParts = trimmedTime.split(":");
       const hour = parseInt(timeParts[0], 10) || 0;
       const min = parseInt(timeParts[1], 10) || 0;
@@ -1140,6 +1195,7 @@ exports.createPublicBooking = functions
       const appointmentRef = await db.collection("appointments").add({
         outletID: outletId,
         clientId,
+        customerId,
         staffId: finalStaffId,
         serviceId,
         date: trimmedDate,
@@ -1147,6 +1203,16 @@ exports.createPublicBooking = functions
         endTime,
         status: "scheduled",
       });
+
+      await db.collection("customers").doc(customerId).set(
+        {
+          bookingHistoryRefs: admin.firestore.FieldValue.arrayUnion(appointmentRef.id),
+          lastAppointmentId: appointmentRef.id,
+          lastBookedAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
       
       console.log(`[createPublicBooking] ✓ Appointment created: ${appointmentRef.id} with staffId: ${finalStaffId} (${finalStaffName})`);
       return { success: true, appointmentId: appointmentRef.id };

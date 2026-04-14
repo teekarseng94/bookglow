@@ -1,15 +1,15 @@
 {
   "projects": {
-    "default": "razak-residence-2026"
+    "default": "bookglow-83fb3"
   },
   "targets": {
-    "razak-residence-2026": {
+    "bookglow-83fb3": {
       "hosting": {
         "booking-site": [
-          "zenspabookingsystem"
+          "bookglow-83fb3"
         ],
         "dashboard-site": [
-          "razak-residence-2026"
+          "bookglow-83fb3-dashboard"
         ]
       }
     }

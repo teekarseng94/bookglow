@@ -7,10 +7,10 @@ import { useUserContext } from '../contexts/UserContext';
 import { outletService, apiIntegrationService } from '../services/firestoreService';
 import { generateApiKey, sha256Hex } from '../utils/apiKeyHash';
 
-const BOOKING_BASE_URL = 'https://zenspabookingsystem.web.app/book';
+const BOOKING_BASE_URL = 'https://bookglow-83fb3.web.app/book';
 // Cloud Function endpoint used by MyChatBot to verify API key for this outlet
 const CHATBOT_WEBHOOK_URL =
-  'https://asia-southeast1-razak-residence-2026.cloudfunctions.net/chatbotWebhook';
+  'https://asia-southeast1-bookglow-83fb3.cloudfunctions.net/chatbotWebhook';
 
 const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
 

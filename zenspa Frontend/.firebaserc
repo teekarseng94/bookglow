@@ -1,12 +1,12 @@
 {
   "projects": {
-    "default": "zenspabookingsystem"
+    "default": "bookglow-83fb3"
   },
   "targets": {
-    "zenspabookingsystem": {
+    "bookglow-83fb3": {
       "hosting": {
         "booking-site": [
-          "zenspabookingsystem"
+          "bookglow-83fb3"
         ]
       }
     }

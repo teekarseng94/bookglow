@@ -23,13 +23,13 @@ import { Outlet, Staff, Client, Appointment, Transaction, Service, Product, Pack
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDZlhfduAlMPY3UpeCyyjWEWtv84uesB3A",
-  authDomain: "razak-residence-2026.firebaseapp.com",
-  projectId: "razak-residence-2026",
-  storageBucket: "razak-residence-2026.firebasestorage.app",
-  messagingSenderId: "665831615654",
-  appId: "1:665831615654:web:34f9f1042f1a5e4da85867",
-  measurementId: "G-HKYYY0TB8Y"
+  apiKey: "AIzaSyDZ2mARLr07WyhCcKGljEZZi7S6nvBdpbQ",
+  authDomain: "bookglow-83fb3.firebaseapp.com",
+  projectId: "bookglow-83fb3",
+  storageBucket: "bookglow-83fb3.firebasestorage.app",
+  messagingSenderId: "27124152215",
+  appId: "1:27124152215:web:669828b79c302697c136d2",
+  measurementId: "G-R25VJZ4TSE"
 };
 
 // Initialize Firebase

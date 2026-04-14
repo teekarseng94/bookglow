@@ -10,14 +10,19 @@ import {
   AuthError,
   UserCredential,
 } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { adminAuth, auth, customerDb, db } from "./firebase";
 
-export const DASHBOARD_URL = "https://razak-residence-2026.web.app/#/dashboard";
+export const DASHBOARD_URL = "/login";
 
 export interface SignUpCredentials {
   email: string;
   password: string;
+}
+
+interface CustomerProfileInput {
+  uid: string;
+  email: string;
 }
 
 /**
@@ -125,10 +130,9 @@ export async function registerForBooking(
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
   const { uid } = userCredential.user;
 
-  await setDoc(doc(customerDb, "users", uid), {
+  await upsertCustomerProfile({
     uid,
     email: userCredential.user.email || email,
-    role: "client",
   });
 
   window.location.href = redirectUrl;
@@ -137,10 +141,9 @@ export async function registerForBooking(
 export async function registerWithGoogleForBooking(redirectUrl: string): Promise<void> {
   const provider = new GoogleAuthProvider();
   const userCredential: UserCredential = await signInWithPopup(auth, provider);
-  await setDoc(doc(customerDb, "users", userCredential.user.uid), {
+  await upsertCustomerProfile({
     uid: userCredential.user.uid,
     email: userCredential.user.email ?? "",
-    role: "client",
   });
   window.location.href = redirectUrl;
 }
@@ -148,10 +151,24 @@ export async function registerWithGoogleForBooking(redirectUrl: string): Promise
 export async function registerWithFacebookForBooking(redirectUrl: string): Promise<void> {
   const provider = new FacebookAuthProvider();
   const userCredential: UserCredential = await signInWithPopup(auth, provider);
-  await setDoc(doc(customerDb, "users", userCredential.user.uid), {
+  await upsertCustomerProfile({
     uid: userCredential.user.uid,
     email: userCredential.user.email ?? "",
-    role: "client",
   });
   window.location.href = redirectUrl;
+}
+
+async function upsertCustomerProfile(input: CustomerProfileInput): Promise<void> {
+  await setDoc(
+    doc(customerDb, "customers", input.uid),
+    {
+      uid: input.uid,
+      email: input.email,
+      role: "customer",
+      bookingHistoryRefs: [],
+      updatedAt: serverTimestamp(),
+      createdAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
 }

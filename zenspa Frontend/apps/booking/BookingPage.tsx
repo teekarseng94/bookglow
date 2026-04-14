@@ -5,7 +5,7 @@
  */
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { collection, doc, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import { collection, doc, getDoc, onSnapshot, orderBy, query, where } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { db, auth } from "../../services/firebase";
 import {
@@ -225,8 +225,15 @@ export function BookingPage() {
 
   // Watch Firebase Auth state so we can show the signed-in email in the header
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUserEmail(user?.email ?? null);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        setCurrentUserEmail(null);
+        return;
+      }
+
+      // Booking-site auth should map to customers/{uid}; staff-only users live in users/{uid}.
+      const customerSnap = await getDoc(doc(db, "customers", user.uid));
+      setCurrentUserEmail(customerSnap.exists() ? user.email ?? null : null);
     });
     return unsubscribe;
   }, []);

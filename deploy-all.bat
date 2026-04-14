@@ -21,8 +21,8 @@ if errorlevel 1 goto :error
 cd ..
 
 echo === 4. APPLYING TARGETS ===
-call firebase target:apply hosting booking-site zenspabookingsystem
-call firebase target:apply hosting dashboard-site razak-residence-2026
+call firebase target:apply hosting booking-site bookglow-83fb3
+call firebase target:apply hosting dashboard-site bookglow-83fb3-dashboard
 
 echo === 5. DEPLOYING TO FIREBASE ===
 call firebase deploy --only hosting

@@ -1,11 +1,27 @@
 rules_version = '2';
 
+// Unified rules for project: zenspabookingsystem
+// - Customer booking site: public reads where noted; writes for bookings go through
+//   Cloud Functions (Admin SDK), not client rules.
+// - Merchant / POS / admin (same data model as razak-residence-2026): role + outlet
+//   checks via users/{uid}.
+// If you had extra match blocks only on zenspabookingsystem in the Console, add them
+// in the EXTENSION section at the bottom (Firestore ORs overlapping allows).
+// Deploy: firebase deploy --only firestore:rules --project zenspabookingsystem
+
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // --- Shared helpers (customer + merchant) ---
 
     // Helper: user is signed in
     function isAuthenticated() {
       return request.auth != null;
+    }
+
+    // Staff/merchant users are defined only in users/{uid}.
+    function isStaffUser() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
     // Role is stored in users/{uid}; default to 'cashier' if missing
@@ -31,9 +47,21 @@ service cloud.firestore {
       return isAuthenticated() && (role == 'cashier' || role == 'Cashier' || role == 'staff');
     }
 
-    // Users: each user can read/write their own document (needed for profile; role is set by admin)
+    // --- Customer booking (public reads; no direct public writes on sensitive paths) ---
+
+    // Staff users collection (merchant/admin accounts only).
     match /users/{userId} {
-      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow create, update: if isAuthenticated() && request.auth.uid == userId;
+      allow delete: if isAdmin();
+    }
+
+    // Customer profiles for booking-site users.
+    // Customers can only read/write their own document.
+    match /customers/{customerId} {
+      allow read, create, update, delete: if isAuthenticated() && request.auth.uid == customerId;
+      // Staff/admin can read customer profiles for operational workflows.
+      allow read: if isStaffUser();
     }
 
     // Outlets: public read (for booking page), admins write
@@ -79,9 +107,12 @@ service cloud.firestore {
 
     // Appointments: admins full; cashiers read + create (e.g. on-duty from POS)
     match /appointments/{appointmentId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.outletID != null;
-      allow update, delete: if isAuthenticated();
+      // Staff users can fully manage appointments.
+      allow read, create, update, delete: if isStaffUser();
+      // Customers can only read their own appointments.
+      allow read: if isAuthenticated()
+        && resource.data.customerId != null
+        && resource.data.customerId == request.auth.uid;
     }
 
     // Transactions: admin and cashier full access (POS, Sales Report — create sale, commission, void, delete)
@@ -95,6 +126,8 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.resource.data.outletID != null;
       allow update, delete: if isAuthenticated();
     }
+
+    // --- Merchant / dashboard / POS (razak-residence-2026 model) ---
 
     // Products: admin and cashier full access (Menu, POS)
     match /products/{productId} {
@@ -141,5 +174,10 @@ service cloud.firestore {
     match /monthly_summary/{docId} {
       allow read, write: if isAdmin();
     }
+
+    // --- EXTENSION: zenspabookingsystem-only paths (optional) ---
+    // Copy any `match /collection/...` blocks from the old zenspabookingsystem rules
+    // in Firebase Console that are NOT already covered above, and paste them here.
+    // Overlapping paths: access is allowed if any matching allow evaluates to true.
   }
 }

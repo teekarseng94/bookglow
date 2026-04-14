@@ -80,7 +80,7 @@ const Navbar: React.FC<{
             +60 169929123
           </a>
           <a
-            href="https://razak-residence-2026.web.app/#/dashboard"
+            href="/login"
             target="_blank"
             rel="noopener noreferrer"
             className="font-medium text-sm text-slate-700 hover:text-slate-900 transition-colors"
@@ -148,7 +148,7 @@ const Navbar: React.FC<{
 
             <div className="mt-auto pt-8 flex flex-col gap-3">
               <a
-                href="https://razak-residence-2026.web.app/#/dashboard"
+                href="/login"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-center px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 text-slate-800 font-medium hover:bg-slate-100 transition-colors"

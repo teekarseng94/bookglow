@@ -184,6 +184,16 @@ export interface OutletSettings {
   reminderEnabled: boolean;
   reminderTiming: number; // hours before
   reminderChannel: 'Email' | 'SMS' | 'Both';
+  /** Receipt header title shown on print receipt (e.g. "Tax Invoice"). */
+  receiptHeaderTitle?: string;
+  /** Company name shown on receipt header. */
+  receiptCompanyName?: string;
+  /** Company phone shown on receipt. */
+  receiptPhone?: string;
+  /** Company address shown on receipt. */
+  receiptAddress?: string;
+  /** Footer note shown at bottom of receipt. */
+  receiptFooterNote?: string;
   /** Optional: commission rates per staff role, configured from Staff page. */
   roleCommissions?: RoleCommission[];
 }

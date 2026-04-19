@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Service, Product, Package, Client, Transaction, TransactionType, CartItem, Staff, RoleCommission, Appointment } from '../types';
+import { Service, Product, Package, Client, Transaction, TransactionType, CartItem, Staff, RoleCommission, Appointment, OutletSettings } from '../types';
 import { Icons } from '../constants';
 import ReceiptTemplate from '../components/ReceiptTemplate';
 
@@ -23,6 +23,7 @@ interface POSProps {
   activeAppointmentForSale?: Appointment | null;
   onClearActiveAppointment?: () => void;
   paymentMethods: string[];
+  outletSettings: OutletSettings;
 }
 
 const POS: React.FC<POSProps> = ({ 
@@ -35,7 +36,8 @@ const POS: React.FC<POSProps> = ({
   onCompleteSale,
   activeAppointmentForSale,
   onClearActiveAppointment,
-  paymentMethods
+  paymentMethods,
+  outletSettings
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -474,7 +476,15 @@ const POS: React.FC<POSProps> = ({
         total: isVoucherSale ? 0 : total,
         date: saleDate.toISOString(),
         customerName,
-        paymentMethod: isVoucherSale ? 'Voucher' : paymentLabel
+        paymentMethod: isVoucherSale ? 'Voucher' : paymentLabel,
+        receiptSettings: {
+          shopName: outletSettings.shopName,
+          receiptHeaderTitle: outletSettings.receiptHeaderTitle,
+          receiptCompanyName: outletSettings.receiptCompanyName,
+          receiptPhone: outletSettings.receiptPhone,
+          receiptAddress: outletSettings.receiptAddress,
+          receiptFooterNote: outletSettings.receiptFooterNote,
+        }
       });
       setSaleComplete(true);
       setCart([]);

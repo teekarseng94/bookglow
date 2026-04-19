@@ -202,6 +202,16 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
     }
   };
 
+  const handleReceiptLayoutChange = (
+    key: 'receiptHeaderTitle' | 'receiptCompanyName' | 'receiptPhone' | 'receiptAddress' | 'receiptFooterNote',
+    value: string
+  ) => {
+    onUpdateSettings({
+      ...settings,
+      [key]: value
+    });
+  };
+
   const permissionList = [
     { id: 'delete-transaction', label: 'Delete/Edit Transactions', description: 'Prevent accidental or unauthorized removal of sales logs.' },
     { id: 'edit-service', label: 'Modify Service Catalog', description: 'Restricts adding, editing, or deleting spa treatments.' },
@@ -725,6 +735,115 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
             </form>
           </div>
         </div>
+      </div>
+
+      {/* Receipt Layout Configuration */}
+      <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="p-3 bg-emerald-50 rounded-xl text-emerald-600">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-slate-800">Receipt Layout</h3>
+            <p className="text-xs text-slate-400 font-medium">Customize receipt company information per outlet. Changes apply to POS printed receipts.</p>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[680px] border border-slate-200 rounded-xl overflow-hidden">
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 w-1/3">Receipt Field</th>
+                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500">Display Value</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              <tr>
+                <td className="px-4 py-3 text-sm font-semibold text-slate-700">Header Title</td>
+                <td className="px-4 py-3">
+                  <input
+                    type="text"
+                    value={settings.receiptHeaderTitle || 'Tax Invoice'}
+                    onChange={(e) => handleReceiptLayoutChange('receiptHeaderTitle', e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                    placeholder="Tax Invoice"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 text-sm font-semibold text-slate-700">Company Name</td>
+                <td className="px-4 py-3">
+                  <input
+                    type="text"
+                    value={settings.receiptCompanyName || settings.shopName || ''}
+                    onChange={(e) => handleReceiptLayoutChange('receiptCompanyName', e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                    placeholder="ZenFlow Spa"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 text-sm font-semibold text-slate-700">Company Phone</td>
+                <td className="px-4 py-3">
+                  <input
+                    type="text"
+                    value={settings.receiptPhone || ''}
+                    onChange={(e) => handleReceiptLayoutChange('receiptPhone', e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                    placeholder="+60 12-345 6789"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 text-sm font-semibold text-slate-700">Company Address</td>
+                <td className="px-4 py-3">
+                  <input
+                    type="text"
+                    value={settings.receiptAddress || ''}
+                    onChange={(e) => handleReceiptLayoutChange('receiptAddress', e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                    placeholder="Outlet address for receipt"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td className="px-4 py-3 text-sm font-semibold text-slate-700">Footer Note</td>
+                <td className="px-4 py-3">
+                  <input
+                    type="text"
+                    value={settings.receiptFooterNote || 'Thank you for your visit!'}
+                    onChange={(e) => handleReceiptLayoutChange('receiptFooterNote', e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                    placeholder="Thank you for your visit!"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">Live Receipt Preview</p>
+          <div className="mx-auto w-full max-w-[340px] bg-white border border-slate-300 rounded-lg p-4 font-mono text-[11px] text-slate-700 space-y-1">
+            <div className="text-center border-b border-dashed border-slate-300 pb-2 mb-2">
+              <p className="font-bold text-sm">{settings.receiptCompanyName || settings.shopName || 'ZenFlow Spa'}</p>
+              <p>{settings.receiptHeaderTitle || 'Tax Invoice'}</p>
+              {(settings.receiptPhone || '').trim() && <p>Phone: {settings.receiptPhone}</p>}
+              {(settings.receiptAddress || '').trim() && <p>{settings.receiptAddress}</p>}
+              <p>{new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</p>
+              <p>Customer: Jane Doe</p>
+            </div>
+            <div className="flex justify-between"><span>Swedish Massage</span><span>1 x RM 80.00</span></div>
+            <div className="flex justify-between"><span>Aroma Oil</span><span>1 x RM 20.00</span></div>
+            <div className="border-t border-dashed border-slate-300 pt-1 mt-1 flex justify-between font-bold text-slate-900">
+              <span>Total</span><span>RM 100.00</span>
+            </div>
+            <p className="pt-1">Payment: Cash</p>
+            <div className="text-center border-t border-dashed border-slate-300 pt-2 mt-2">
+              <p>{settings.receiptFooterNote || 'Thank you for your visit!'}</p>
+            </div>
+          </div>
+        </div>
+        <p className="text-[10px] text-slate-400 mt-3">Receipt layout values are stored in outlet settings and used by POS when user clicks Print Receipt.</p>
       </div>
       {showApiModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50">

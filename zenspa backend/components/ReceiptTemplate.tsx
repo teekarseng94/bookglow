@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { CartItem } from '../types';
+import { CartItem, OutletSettings } from '../types';
 
 export interface ReceiptTemplateData {
   items: CartItem[];
@@ -12,6 +12,10 @@ export interface ReceiptTemplateData {
   date: string;
   customerName: string;
   paymentMethod: string;
+  receiptSettings?: Pick<
+    OutletSettings,
+    'receiptHeaderTitle' | 'receiptCompanyName' | 'receiptPhone' | 'receiptAddress' | 'receiptFooterNote' | 'shopName'
+  >;
 }
 
 interface ReceiptTemplateProps {
@@ -19,8 +23,13 @@ interface ReceiptTemplateProps {
 }
 
 const ReceiptTemplate: React.FC<ReceiptTemplateProps> = ({ data }) => {
-  const { items, total, date, customerName, paymentMethod } = data;
+  const { items, total, date, customerName, paymentMethod, receiptSettings } = data;
   const dateFormatted = new Date(date).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+  const companyName = receiptSettings?.receiptCompanyName?.trim() || receiptSettings?.shopName || 'ZenFlow Spa';
+  const headerTitle = receiptSettings?.receiptHeaderTitle?.trim() || 'Tax Invoice';
+  const phone = receiptSettings?.receiptPhone?.trim();
+  const address = receiptSettings?.receiptAddress?.trim();
+  const footerNote = receiptSettings?.receiptFooterNote?.trim() || 'Thank you for your visit!';
 
   const redeemedPointsTotal = items.reduce((sum, item) => {
     if (!item.redeemedWithPoints || !item.redeemPoints) return sum;
@@ -30,7 +39,10 @@ const ReceiptTemplate: React.FC<ReceiptTemplateProps> = ({ data }) => {
   return (
     <div id="printable-receipt" className="receipt-container" aria-hidden="true">
       <div className="receipt-header">
-        <h1>ZenFlow Spa</h1>
+        <h1>{companyName}</h1>
+        <p>{headerTitle}</p>
+        {phone && <p>Phone: {phone}</p>}
+        {address && <p>{address}</p>}
         <p>{dateFormatted}</p>
         <p>Customer: {customerName}</p>
       </div>
@@ -43,13 +55,13 @@ const ReceiptTemplate: React.FC<ReceiptTemplateProps> = ({ data }) => {
             )}
           </span>
           <span>
-            {item.quantity} x ${item.price.toFixed(2)}
+            {item.quantity} x RM {item.price.toFixed(2)}
           </span>
         </div>
       ))}
       <div className="receipt-row receipt-row-total">
         <span>Total</span>
-        <span>${total.toFixed(2)}</span>
+        <span>RM {total.toFixed(2)}</span>
       </div>
       {redeemedPointsTotal > 0 && (
         <div className="receipt-row">
@@ -59,7 +71,7 @@ const ReceiptTemplate: React.FC<ReceiptTemplateProps> = ({ data }) => {
       )}
       <p className="receipt-payment-row">Payment: {paymentMethod}</p>
       <div className="receipt-footer">
-        <p>Thank you for your visit!</p>
+        <p>{footerNote}</p>
       </div>
     </div>
   );

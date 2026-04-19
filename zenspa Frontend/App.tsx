@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Logo, NAV_ITEMS, PRIMARY_GREEN } from './constants';
 import { Button } from './components/Button';
 import { FloatingScreens } from './components/FloatingScreens';
-import { AIOptimizer } from './components/AIOptimizer';
 import { register, getAuthErrorMessage } from './services/authService';
 
 type ViewType = 'landing' | 'pricing' | 'integrations';
@@ -678,8 +677,6 @@ const App: React.FC = () => {
              <img src="https://upload.wikimedia.org/wikipedia/commons/0/01/LinkedIn_Logo.svg" className="h-8" alt="LinkedIn" />
              <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" className="h-6" alt="Amazon" />
           </div>
-
-          <AIOptimizer />
 
           <section id="features" className="py-24 max-w-7xl mx-auto px-6 scroll-mt-20">
              <div className="grid md:grid-cols-3 gap-12">

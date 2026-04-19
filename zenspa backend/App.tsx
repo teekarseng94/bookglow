@@ -268,7 +268,12 @@ const DEFAULT_OUTLET_SETTINGS: OutletSettings = {
   paymentMethods: ['Cash', 'Credit Card', 'E-wallet', 'Other'],
   reminderEnabled: true,
   reminderTiming: 24,
-  reminderChannel: 'Both'
+  reminderChannel: 'Both',
+  receiptHeaderTitle: 'Tax Invoice',
+  receiptCompanyName: 'ZenFlow Spa',
+  receiptPhone: '',
+  receiptAddress: '',
+  receiptFooterNote: 'Thank you for your visit!'
 };
 
 const AppContent: React.FC<AppContentProps> = ({
@@ -659,7 +664,7 @@ const AppContent: React.FC<AppContentProps> = ({
       case 'dashboard':
         return <Dashboard transactions={transactions} clients={clients} appointments={appointments} services={services} outletSettings={outletSettings} outletID={currentOutletID} onMarkReminderSent={handleMarkReminderSent} />;
       case 'pos':
-        return <POS services={services} products={products} packages={packages} clients={clients} staff={staff} roleCommissions={roleCommissions} onCompleteSale={handleAddTransactionWithLogic} activeAppointmentForSale={activeAppointmentForSale} onClearActiveAppointment={() => setActiveAppointmentForSale(null)} paymentMethods={outletSettings.paymentMethods} />;
+        return <POS services={services} products={products} packages={packages} clients={clients} staff={staff} roleCommissions={roleCommissions} onCompleteSale={handleAddTransactionWithLogic} activeAppointmentForSale={activeAppointmentForSale} onClearActiveAppointment={() => setActiveAppointmentForSale(null)} paymentMethods={outletSettings.paymentMethods} outletSettings={outletSettings} />;
       case 'member':
         return <CRM clients={clients} onAddClient={handleAddClient} onUpdateClient={handleUpdateClient} transactions={transactions} onUpdatePoints={handleUpdateClientPoints} onAddTransaction={handleAddTransactionWithLogic} services={services} rewards={rewards} onUpdateRewards={handleUpdateRewards} isExportLocked={isFeatureLocked('export-crm')} />;
       case 'staff':

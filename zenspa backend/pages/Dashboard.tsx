@@ -284,6 +284,10 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="space-y-8 animate-fadeIn">
+      <div className="lg:hidden -mt-1 mb-2">
+        <h1 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-slate-900">Dashboard</h1>
+        <p className="mt-1 text-sm text-slate-600">Performance and activity at a glance.</p>
+      </div>
       {/* 1. Top metric boxes */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
@@ -317,13 +321,13 @@ const Dashboard: React.FC<DashboardProps> = ({
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-blue-600" />
-                  <span className="text-[10px] font-bold uppercase text-slate-500">This Week</span>
+                  <span className="text-app-label font-semibold uppercase text-slate-500">This Week</span>
                 </div>
                 <span className="text-xl font-bold text-blue-600">
                   {dashboardData.totalSalesThisWeek.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </span>
               </div>
-              <h3 className="text-lg font-semibold text-slate-800 mb-4">Total Sales</h3>
+              <h3 className="text-xl font-bold tracking-tight text-slate-900 mb-4">Total Sales</h3>
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={dashboardData.chartData} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
@@ -360,7 +364,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
             {/* Category Summary */}
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-              <h3 className="text-sm font-semibold text-slate-800 mb-4">Category Summary</h3>
+              <h3 className="text-base font-semibold text-slate-900 mb-4">Category Summary</h3>
               <div className="space-y-3">
                 {dashboardData.categorySummary.map((cat) => {
                   const Icon = cat.icon;
@@ -385,7 +389,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
           {/* Top Selling table */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-800 mb-4">Top Selling</h3>
+            <h3 className="text-xl font-bold tracking-tight text-slate-900 mb-4">Top Selling</h3>
             <div className="flex gap-1 p-1 bg-slate-100 rounded-xl mb-4">
               {(['service', 'product', 'package', 'discount'] as const).map((tab) => (
                 <button
@@ -450,7 +454,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           {/* Quick Calendar */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2 text-slate-800">
+              <h3 className="text-xl font-bold tracking-tight flex items-center gap-2 text-slate-900">
                 <Calendar className="w-5 h-5 text-blue-600" />
                 Quick Calendar
               </h3>
@@ -528,7 +532,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           {/* Visitor list */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-slate-800">Visitor</h3>
+              <h3 className="text-xl font-bold tracking-tight text-slate-900">Visitor</h3>
               <span className="text-sm font-bold text-blue-600">{dashboardData.visitorTotalCount}</span>
             </div>
             <div className="space-y-2">
@@ -559,7 +563,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
           {/* Payment breakdown */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-800 mb-4">Payment</h3>
+            <h3 className="text-xl font-bold tracking-tight text-slate-900 mb-4">Payment</h3>
             <div className="space-y-2">
               {dashboardData.paymentBreakdown.map((p) => (
                 <div
@@ -630,8 +634,8 @@ const StatCard = ({
   color: string;
 }) => (
   <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-2">{title}</p>
-    <p className={`text-2xl font-bold ${color}`}>{value}</p>
+    <p className="text-app-label font-semibold uppercase text-slate-500 tracking-wider mb-2">{title}</p>
+    <p className={`text-app-section font-bold ${color}`}>{value}</p>
   </div>
 );
 

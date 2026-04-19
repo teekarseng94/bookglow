@@ -248,6 +248,11 @@ export interface Outlet {
   settings?: OutletSettings;
   /** Service/menu categories (e.g. Massage, Facial). Persisted per outlet. */
   serviceCategories?: string[];
+  /**
+   * Public booking URL segment under /book/:slug (e.g. baliWellness).
+   * The Firestore document id (outletID) stays the canonical tenant key.
+   */
+  bookingSlug?: string;
 }
 
 /** Point transaction log entry (subcollection: clients/{id}/pointTransactions) */

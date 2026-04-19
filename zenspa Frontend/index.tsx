@@ -41,9 +41,9 @@ root.render(
   <React.StrictMode>
     <BrowserRouter>
       <Routes>
-        {/* Public booking portal — no auth; must be before * so /book/:outletId matches */}
-        <Route path="/book/:outletId/auth" element={<BookingAuth />} />
-        <Route path="/book/:outletId" element={<BookingPage />} />
+        {/* Public booking portal — no auth; :bookingPath is outlet id or outlets.bookingSlug */}
+        <Route path="/book/:bookingPath/auth" element={<BookingAuth />} />
+        <Route path="/book/:bookingPath" element={<BookingPage />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<MerchantRedirect />} />
         <Route path="/loginbackend" element={<Navigate to="/login" replace />} />

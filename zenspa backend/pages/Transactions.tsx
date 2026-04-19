@@ -119,6 +119,10 @@ const Transactions: React.FC<TransactionsProps> = ({
 
   return (
     <div className="space-y-6">
+      <div className="lg:hidden -mt-1">
+        <h1 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-slate-900">Sales History</h1>
+        <p className="mt-1 text-sm text-slate-600">Review, edit, or filter past transactions.</p>
+      </div>
       <div className="bg-teal-50 border border-teal-100 rounded-xl p-4 flex items-center gap-3">
         <div className="bg-teal-600 text-white p-2 rounded-lg">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>

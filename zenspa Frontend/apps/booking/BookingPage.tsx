@@ -1,13 +1,15 @@
 /**
- * Public Booking Portal: /book/:outletId
+ * Public Booking Portal: /book/:bookingPath
+ * bookingPath is either the Firestore outlet id (e.g. outlet_001) or outlets.bookingSlug (e.g. baliWellness).
  * Two-column layout: left = Services, Team, Good to know, Reviews, Address + map; right = sticky sidebar with name, Book, Open/Closed, hours, address.
- * Real-time Firestore listener for outlets/{outletId} to sync addressDisplay, phoneNumber, businessHours.
+ * Real-time Firestore listener for outlets/{resolvedOutletId} to sync addressDisplay, phoneNumber, businessHours.
  */
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { collection, doc, getDoc, onSnapshot, orderBy, query, where } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
-import { db, auth } from "../../services/firebase";
+import { db, auth, FRONTEND_CUSTOMER_COLLECTION } from "../../services/firebase";
+import { resolveOutletIdFromBookingPath } from "../../services/bookingPathResolve";
 import {
   getPublicOutletData,
   createPublicBooking,
@@ -136,9 +138,12 @@ function getOpenClosedStatus(businessHours?: Record<string, { open: string; clos
 }
 
 export function BookingPage() {
-  const { outletId: outletIdParam } = useParams<{ outletId: string }>();
+  const { bookingPath } = useParams<{ bookingPath: string }>();
   const navigate = useNavigate();
-  const outletId = outletIdParam ?? "";
+  const pathSegment = (bookingPath ?? "").trim();
+  const [resolvedOutletId, setResolvedOutletId] = useState<string | null>(null);
+  const [pathResolveDone, setPathResolveDone] = useState(false);
+  const outletId = resolvedOutletId ?? "";
   const [outlet, setOutlet] = useState<PublicOutlet | null>(null);
   const [services, setServices] = useState<PublicService[]>([]);
   const [team, setTeam] = useState<PublicTeamMember[]>([]);
@@ -165,6 +170,52 @@ export function BookingPage() {
   const [shareLoading, setShareLoading] = useState(false);
   const [shareToast, setShareToast] = useState<string | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+
+  // Map /book/:segment → real outlet document id (legacy id or bookingSlug)
+  useEffect(() => {
+    if (!pathSegment) {
+      setResolvedOutletId(null);
+      setPathResolveDone(true);
+      setError("Missing outlet");
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setPathResolveDone(false);
+    setResolvedOutletId(null);
+    setError(null);
+    setLoading(true);
+
+    resolveOutletIdFromBookingPath(pathSegment)
+      .then((id) => {
+        if (cancelled) return;
+        setResolvedOutletId(id);
+        setPathResolveDone(true);
+        if (!id) {
+          setError("Shop not found");
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setResolvedOutletId(null);
+        setPathResolveDone(true);
+        setError("Could not load this shop.");
+        setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathSegment]);
+
+  // Replace legacy /book/outlet_xxx with /book/:bookingSlug when a slug is configured
+  useEffect(() => {
+    if (!pathResolveDone || !resolvedOutletId || !outlet?.bookingSlug) return;
+    if (pathSegment === resolvedOutletId && pathSegment !== outlet.bookingSlug) {
+      navigate(`/book/${outlet.bookingSlug}${window.location.search}`, { replace: true });
+    }
+  }, [pathResolveDone, resolvedOutletId, pathSegment, outlet?.bookingSlug, navigate, outlet]);
 
   const openClosed = useMemo(() => getOpenClosedStatus(outlet?.businessHours), [outlet?.businessHours]);
 
@@ -231,9 +282,14 @@ export function BookingPage() {
         return;
       }
 
-      // Booking-site auth should map to customers/{uid}; staff-only users live in users/{uid}.
-      const customerSnap = await getDoc(doc(db, "customers", user.uid));
-      setCurrentUserEmail(customerSnap.exists() ? user.email ?? null : null);
+      // Booking-site profiles live in frontend_customer/{uid}; staff accounts only have users/{uid}.
+      const primary = await getDoc(doc(db, FRONTEND_CUSTOMER_COLLECTION, user.uid));
+      if (primary.exists()) {
+        setCurrentUserEmail(user.email ?? null);
+        return;
+      }
+      const legacy = await getDoc(doc(db, "customers", user.uid));
+      setCurrentUserEmail(legacy.exists() ? user.email ?? null : null);
     });
     return unsubscribe;
   }, []);
@@ -366,21 +422,19 @@ export function BookingPage() {
   // Real-time listener: PRIMARY source for outlet data (addressDisplay, businessHours, etc.)
   // This listener runs immediately on mount and keeps data in sync with Firestore
   useEffect(() => {
-    if (!outletId) {
-      setError("Missing outlet");
-      setLoading(false);
+    if (!pathResolveDone || !resolvedOutletId) {
       return;
     }
 
     let hasReceivedData = false;
-    const outletRef = doc(db, "outlets", outletId);
+    const outletRef = doc(db, "outlets", resolvedOutletId);
     const unsubscribe = onSnapshot(
       outletRef,
       (snapshot) => {
         if (!snapshot.exists()) {
           // Fallback to Cloud Function if document doesn't exist or listener fails
           if (!hasReceivedData) {
-            getPublicOutletData(outletId)
+            getPublicOutletData(resolvedOutletId)
               .then(({ outlet: o }) => {
                 if (o) {
                   setOutlet(o);
@@ -416,6 +470,10 @@ export function BookingPage() {
           serviceCategories: Array.isArray(data.serviceCategories)
             ? data.serviceCategories
             : [],
+          bookingSlug:
+            typeof data.bookingSlug === "string" && data.bookingSlug.trim() !== ""
+              ? data.bookingSlug.trim()
+              : undefined,
         });
         setLoading(false);
         setError(null);
@@ -424,7 +482,7 @@ export function BookingPage() {
         console.error("Firestore listener error for outlet:", err);
         // Fallback to Cloud Function if listener fails (e.g., permission denied)
         if (!hasReceivedData) {
-          getPublicOutletData(outletId)
+          getPublicOutletData(resolvedOutletId)
             .then(({ outlet: o }) => {
               if (o) {
                 setOutlet(o);
@@ -444,7 +502,7 @@ export function BookingPage() {
     );
 
     return () => unsubscribe();
-  }, [outletId]);
+  }, [pathResolveDone, resolvedOutletId]);
 
   // Real-time listener: services for this outlet (keeps booking list in sync with backend Services)
   useEffect(() => {
@@ -648,7 +706,7 @@ export function BookingPage() {
     setStep("datetime");
   };
 
-  if (loading) {
+  if (!pathResolveDone || loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
@@ -741,7 +799,7 @@ export function BookingPage() {
             <button
               type="button"
               onClick={() =>
-                navigate(`/book/${outletIdParam ?? outlet?.outletId ?? ""}/auth?loginSource=homepage`)
+                navigate(`/book/${outlet?.bookingSlug ?? outletId}/auth?loginSource=homepage`)
               }
               className="relative p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-900 transition-colors group"
               aria-label="Login"

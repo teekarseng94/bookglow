@@ -455,7 +455,7 @@ function MonthlySummaryCard({ data, monthLabel }: { data: MonthlySummaryData; mo
         {/* Collection */}
         <div>
           <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Collection</p>
-          <p className="text-2xl font-black text-slate-800 mb-3">{formatMoney(data.collectionTotal)}</p>
+          <p className="text-app-section font-bold text-slate-900 mb-3">{formatMoney(data.collectionTotal)}</p>
           <ul className="space-y-2">
             {data.collection.map((row) => (
               <li key={row.name} className="flex items-center justify-between text-sm">
@@ -472,7 +472,7 @@ function MonthlySummaryCard({ data, monthLabel }: { data: MonthlySummaryData; mo
         {/* Sales */}
         <div>
           <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Sales</p>
-          <p className="text-2xl font-black text-slate-800 mb-3">{formatMoney(data.salesTotal)}</p>
+          <p className="text-app-section font-bold text-slate-900 mb-3">{formatMoney(data.salesTotal)}</p>
           <ul className="space-y-2">
             <li className="flex items-center justify-between text-sm">
               <span className="flex items-center gap-2 text-slate-600"><ReportIcons.Customer /> Customer</span>
@@ -763,7 +763,7 @@ const ReportPage: React.FC<ReportPageProps> = ({ transactions, outletID, staff }
           <button type="button" className="p-2 rounded-lg hover:bg-slate-100 text-slate-600" aria-label="Back">
             <ReportIcons.Close />
           </button>
-          <h1 className="text-lg font-bold text-slate-800">Monthly Summary</h1>
+          <h1 className="text-app-section font-bold text-slate-900">Monthly Summary</h1>
           <div className="w-9" />
         </div>
 

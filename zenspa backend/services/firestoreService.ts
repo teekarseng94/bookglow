@@ -1050,6 +1050,17 @@ export const outletService = {
     return { outletID: outletDoc.id, ...outletDoc.data() } as Outlet;
   },
 
+  /** Find outlet by public booking slug (outlets.bookingSlug). */
+  getByBookingSlug: async (slug: string): Promise<Outlet | null> => {
+    const s = (slug || '').trim();
+    if (!s) return null;
+    const q = query(collection(db, 'outlets'), where('bookingSlug', '==', s), limit(1));
+    const snap = await getDocs(q);
+    if (snap.empty) return null;
+    const d = snap.docs[0];
+    return { outletID: d.id, ...d.data() } as Outlet;
+  },
+
   // Get all outlets
   getAll: async (): Promise<Outlet[]> => {
     const snapshot = await getDocs(collection(db, 'outlets'));

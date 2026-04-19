@@ -29,7 +29,7 @@ const Finance: React.FC<FinanceProps> = ({
         <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mb-6 shadow-xl shadow-rose-100">
           <Icons.Lock />
         </div>
-        <h2 className="text-2xl font-black text-slate-800 mb-2">Access Restricted</h2>
+        <h2 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-slate-900 mb-2">Access Restricted</h2>
         <p className="text-slate-400 max-w-sm">Viewing financial reports and recording expenses requires an administrator permission level.</p>
         <div className="mt-8 p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3 text-left">
            <div className="text-teal-600 shrink-0"><Icons.Settings /></div>
@@ -115,8 +115,8 @@ const Finance: React.FC<FinanceProps> = ({
     <div className="space-y-6 animate-fadeIn">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800 leading-tight">Financial Records</h2>
-          <p className="text-slate-500 text-sm font-medium">Track your daily income and expenditures</p>
+          <h2 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-slate-900 leading-tight">Financial Records</h2>
+          <p className="text-sm font-normal text-slate-600">Track your daily income and expenditures</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <button 
@@ -138,7 +138,7 @@ const Finance: React.FC<FinanceProps> = ({
         {/* Analytics Section */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm h-80">
-            <h3 className="text-sm font-black uppercase text-slate-400 tracking-widest mb-6 flex items-center gap-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-6 flex items-center gap-2">
               <Icons.Finance /> Cashflow Overview
             </h3>
             <ResponsiveContainer width="100%" height="80%">
@@ -159,7 +159,7 @@ const Finance: React.FC<FinanceProps> = ({
 
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-slate-100">
-               <h3 className="text-sm font-black uppercase text-slate-400 tracking-widest">Expense Ledger</h3>
+               <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Expense Ledger</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
@@ -209,7 +209,7 @@ const Finance: React.FC<FinanceProps> = ({
         {/* Categories Sidebar */}
         <div className="space-y-6">
            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-              <h3 className="text-sm font-black uppercase text-slate-400 tracking-widest mb-4">Summary by Category</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-4">Summary by Category</h3>
               <div className="space-y-4">
                  {expenseCategories.map(cat => {
                    const catTotal = expenseHistory.filter(e => e.category === cat).reduce((s, e) => s + e.amount, 0);

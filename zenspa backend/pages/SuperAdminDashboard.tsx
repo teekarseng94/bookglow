@@ -4,7 +4,7 @@ const SuperAdminDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-white">Global Dashboard</h2>
+        <h2 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-white">Global Dashboard</h2>
         <p className="text-sm text-slate-400 mt-1">
           High-level overview across all subscribed outlets.
         </p>

@@ -743,8 +743,8 @@ const Services: React.FC<ServicesProps> = ({
     <div className="space-y-6 animate-fadeIn">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800 leading-tight">Catalog Management</h2>
-          <p className="text-slate-500 text-sm font-medium">Manage treatments, retail inventory, and bundled packages.</p>
+          <h2 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-slate-900 leading-tight">Catalog Management</h2>
+          <p className="text-sm font-normal text-slate-600">Manage treatments, retail inventory, and bundled packages.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex p-1 bg-slate-100 rounded-xl mr-2">
@@ -1027,7 +1027,7 @@ const Services: React.FC<ServicesProps> = ({
                 ? 'border-slate-100 bg-white'
                 : `text-white ${formData.type === 'service' ? 'bg-teal-600' : formData.type === 'product' ? 'bg-amber-600' : 'bg-indigo-600'} border-slate-100`
             }`}>
-              <h3 className={`text-lg font-bold ${formData.type === 'package' ? 'text-slate-800' : ''}`}>
+              <h3 className="text-app-section font-bold text-slate-900">
                 {editingItem ? 'Edit' : 'Add New'} {formData.type === 'service' ? 'Service' : formData.type === 'product' ? 'Product' : 'Package'}
               </h3>
               <button
@@ -1473,7 +1473,7 @@ const Services: React.FC<ServicesProps> = ({
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[55] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-md max-h-[85vh] shadow-2xl flex flex-col overflow-hidden border border-slate-200">
             <div className="p-5 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
-              <h3 className="text-lg font-bold text-slate-800">Services</h3>
+              <h3 className="text-app-section font-bold text-slate-900">Services</h3>
               <button
                 type="button"
                 onClick={() => setShowServiceSelectorModal(false)}
@@ -1542,7 +1542,7 @@ const Services: React.FC<ServicesProps> = ({
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[55] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl animate-scaleIn overflow-hidden max-h-[90vh] flex flex-col">
             <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-white shrink-0">
-              <h3 className="text-lg font-bold text-slate-800">Select Image</h3>
+              <h3 className="text-app-section font-bold text-slate-900">Select Image</h3>
               <button type="button" onClick={() => setShowIconPickerModal(false)} className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors" aria-label="Close">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
@@ -1624,7 +1624,7 @@ const Services: React.FC<ServicesProps> = ({
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl animate-scaleIn overflow-hidden flex flex-col max-h-[85vh]">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-800 text-white flex-shrink-0">
-              <h3 className="text-lg font-bold">Rearrange Categories</h3>
+              <h3 className="text-app-section font-bold text-slate-900">Rearrange Categories</h3>
               <button type="button" onClick={() => setShowRearrangeCategoriesModal(false)} className="p-2 rounded-lg hover:bg-slate-700" aria-label="Close">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
@@ -1658,7 +1658,7 @@ const Services: React.FC<ServicesProps> = ({
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl animate-scaleIn overflow-hidden">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-800 text-white">
-              <h3 className="text-lg font-bold">Manage Categories</h3>
+              <h3 className="text-app-section font-bold text-slate-900">Manage Categories</h3>
               <button onClick={() => setShowCategoryModal(false)}><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
             </div>
             <div className="p-6 space-y-6">

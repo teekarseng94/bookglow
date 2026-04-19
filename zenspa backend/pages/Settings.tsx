@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
+import { doc, updateDoc, deleteField, serverTimestamp } from 'firebase/firestore';
 import { OutletSettings, Outlet, ApiIntegration } from '../types';
 import { Icons } from '../constants';
 import { useUserContext } from '../contexts/UserContext';
 import { outletService, apiIntegrationService } from '../services/firestoreService';
 import { generateApiKey, sha256Hex } from '../utils/apiKeyHash';
+import { shopNameToBookingSlug, isValidBookingSlug } from '../utils/bookingSlug';
+import { db } from '../firebase';
 
 const BOOKING_BASE_URL = 'https://bookglow-83fb3.web.app/book';
 // Cloud Function endpoint used by MyChatBot to verify API key for this outlet
@@ -51,6 +54,8 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
   const [newMethodName, setNewMethodName] = useState('');
   const [editingMethod, setEditingMethod] = useState<{ index: number; name: string } | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
+  const [bookingSlug, setBookingSlug] = useState('');
+  const [bookingSlugError, setBookingSlugError] = useState<string | null>(null);
   const [bookingInfoStatus, setBookingInfoStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [showApiModal, setShowApiModal] = useState(false);
   const [apiIntegration, setApiIntegration] = useState<ApiIntegration | null>(null);
@@ -71,6 +76,10 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       setAddressDisplay(propOutlet.addressDisplay || '');
       setPhoneNumber(propOutlet.phoneNumber || '');
       setBusinessHours(propOutlet.businessHours || {});
+      setBookingSlug(
+        (propOutlet.bookingSlug && propOutlet.bookingSlug.trim()) ||
+          shopNameToBookingSlug(propOutlet.name || '')
+      );
       setOutletLoading(false);
       return;
     }
@@ -88,11 +97,16 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           setAddressDisplay(outletData.addressDisplay || '');
           setPhoneNumber(outletData.phoneNumber || '');
           setBusinessHours(outletData.businessHours || {});
+          setBookingSlug(
+            (outletData.bookingSlug && outletData.bookingSlug.trim()) ||
+              shopNameToBookingSlug(outletData.name || '')
+          );
         } else {
           // Outlet doesn't exist yet - initialize with empty values
           setAddressDisplay('');
           setPhoneNumber('');
           setBusinessHours({});
+          setBookingSlug(shopNameToBookingSlug(settings.shopName || ''));
         }
       })
       .catch((err) => {
@@ -121,8 +135,26 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
     }
 
     setBookingInfoStatus('saving');
+    setBookingSlugError(null);
 
     try {
+      const slugRaw = bookingSlug.trim();
+      if (slugRaw && !isValidBookingSlug(slugRaw)) {
+        setBookingSlugError('Use a letter first, then letters, numbers, hyphens, or underscores only.');
+        setBookingInfoStatus('error');
+        setTimeout(() => setBookingInfoStatus('idle'), 3000);
+        return;
+      }
+      if (slugRaw) {
+        const taken = await outletService.getByBookingSlug(slugRaw);
+        if (taken && taken.outletID !== effectiveOutletId) {
+          setBookingSlugError('This booking path is already used by another outlet.');
+          setBookingInfoStatus('error');
+          setTimeout(() => setBookingInfoStatus('idle'), 3000);
+          return;
+        }
+      }
+
       // Build payload: always send full businessHours object so all 7 days persist
       const payload = {
         addressDisplay: addressDisplay.trim() || '',
@@ -130,10 +162,18 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         businessHours: { ...businessHours },
       };
 
-      await outletService.update(effectiveOutletId, payload);
+      if (slugRaw) {
+        await outletService.update(effectiveOutletId, { ...payload, bookingSlug: slugRaw });
+      } else {
+        await outletService.update(effectiveOutletId, payload);
+        await updateDoc(doc(db, 'outlets', effectiveOutletId), {
+          bookingSlug: deleteField(),
+          updatedAt: serverTimestamp(),
+        });
+      }
 
       if (onUpdateOutlet) {
-        await Promise.resolve(onUpdateOutlet(payload));
+        await Promise.resolve(onUpdateOutlet(slugRaw ? { ...payload, bookingSlug: slugRaw } : payload));
       }
 
       setBookingInfoStatus('success');
@@ -144,7 +184,8 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
     }
   };
 
-  const bookingUrl = effectiveOutletId ? `${BOOKING_BASE_URL}/${effectiveOutletId}` : '';
+  const bookingPathSegment = (bookingSlug || '').trim() || effectiveOutletId;
+  const bookingUrl = effectiveOutletId ? `${BOOKING_BASE_URL}/${bookingPathSegment}` : '';
 
   const handleCopyLink = async () => {
     if (!bookingUrl) return;
@@ -277,8 +318,8 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
     <div className="max-w-4xl mx-auto space-y-8 animate-fadeIn pb-20">
       <div className="flex flex-wrap justify-between items-end gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">System Settings</h2>
-          <p className="text-slate-500 text-sm">Configure your outlet's environment and staff access control.</p>
+          <h2 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-slate-900">System Settings</h2>
+          <p className="text-sm font-normal text-slate-600">Configure your outlet&apos;s environment and staff access control.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
@@ -306,13 +347,32 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
           </div>
           <div>
-            <h3 className="text-lg font-bold text-slate-800">Share Booking Link</h3>
+            <h3 className="text-app-section font-bold text-slate-900">Share Booking Link</h3>
             <p className="text-xs text-slate-400 font-medium">Your unique public booking URL. Share it or print the QR code for your spa counter.</p>
           </div>
         </div>
         {bookingUrl ? (
           <div className="flex flex-col md:flex-row gap-6 items-start">
             <div className="flex-1 min-w-0 space-y-4">
+              <div>
+                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Booking page path</label>
+                <input
+                  type="text"
+                  value={bookingSlug}
+                  onChange={(e) => {
+                    setBookingSlug(e.target.value);
+                    setBookingSlugError(null);
+                  }}
+                  placeholder={shopNameToBookingSlug(settings.shopName || '') || 'baliWellness'}
+                  className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 outline-none focus:ring-2 focus:ring-teal-500"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Last segment of your public link (e.g. baliWellness). Leave empty to use your outlet id. Save with &quot;Booking Page Info&quot; below.
+                </p>
+                {bookingSlugError && (
+                  <p className="text-xs text-red-600 mt-1">{bookingSlugError}</p>
+                )}
+              </div>
               <div>
                 <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Booking URL</label>
                 <div className="flex gap-2">
@@ -359,7 +419,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-800">Booking Page Info</h3>
+              <h3 className="text-app-section font-bold text-slate-900">Booking Page Info</h3>
               <p className="text-xs text-slate-400 font-medium">Address, phone and hours shown on your public booking page.</p>
             </div>
           </div>
@@ -504,7 +564,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
           </div>
           <div>
-            <h3 className="text-lg font-bold text-slate-800">Business Profile</h3>
+            <h3 className="text-app-section font-bold text-slate-900">Business Profile</h3>
             <p className="text-xs text-slate-400 font-medium">Customize your brand and outlet details.</p>
           </div>
         </div>
@@ -530,7 +590,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
               <Icons.Dashboard />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-800">Outlet Environment</h3>
+              <h3 className="text-app-section font-bold text-slate-900">Outlet Environment</h3>
               <p className="text-xs text-slate-400 font-medium">Toggle "restricted mode" for shared terminals.</p>
             </div>
           </div>
@@ -582,7 +642,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
               <Icons.Lock />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-800">Feature Permissions</h3>
+              <h3 className="text-app-section font-bold text-slate-900">Feature Permissions</h3>
               <p className="text-xs text-slate-400 font-medium">Control which features require admin elevation.</p>
             </div>
           </div>
@@ -623,7 +683,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
           </div>
           <div>
-            <h3 className="text-lg font-bold text-slate-800">Communication & Reminders</h3>
+            <h3 className="text-app-section font-bold text-slate-900">Communication & Reminders</h3>
             <p className="text-xs text-slate-400 font-medium">Configure automated client notifications for upcoming bookings.</p>
           </div>
         </div>
@@ -696,7 +756,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         <div className="flex items-center gap-4 mb-6">
           <div className="p-3 bg-teal-50 rounded-xl text-teal-600"><Icons.POS /></div>
           <div>
-            <h3 className="text-lg font-bold text-slate-800">Payment Methods</h3>
+            <h3 className="text-app-section font-bold text-slate-900">Payment Methods</h3>
             <p className="text-xs text-slate-400 font-medium">Add or remove accepted payment options for POS checkout.</p>
           </div>
         </div>
@@ -744,7 +804,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
           </div>
           <div>
-            <h3 className="text-lg font-bold text-slate-800">Receipt Layout</h3>
+            <h3 className="text-app-section font-bold text-slate-900">Receipt Layout</h3>
             <p className="text-xs text-slate-400 font-medium">Customize receipt company information per outlet. Changes apply to POS printed receipts.</p>
           </div>
         </div>
@@ -850,7 +910,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-4 border-b border-slate-100">
               <div>
-                <h3 className="text-lg font-bold text-slate-800">Chatbot API Integration</h3>
+                <h3 className="text-app-section font-bold text-slate-900">Chatbot API Integration</h3>
                 <p className="text-xs text-slate-500 mt-1">
                   Use these details to connect MyChatBot (or other bots) to this outlet.
                 </p>

@@ -929,6 +929,10 @@ exports.getPublicOutletData = functions
         throw new functions.https.HttpsError("not-found", "Outlet not found.");
       }
       const outletData = outletSnap.data();
+      const slug =
+        outletData.bookingSlug && String(outletData.bookingSlug).trim()
+          ? String(outletData.bookingSlug).trim()
+          : null;
       const outlet = {
         id: outletSnap.id,
         name: outletData.name || "Spa",
@@ -937,6 +941,7 @@ exports.getPublicOutletData = functions
         businessHours: outletData.businessHours || {},
         timezone: outletData.timezone || "Asia/Kuala_Lumpur",
         reviews: outletData.reviews || [],
+        ...(slug ? { bookingSlug: slug } : {}),
       };
 
       const [servicesSnap, staffSnap] = await Promise.all([
@@ -1126,12 +1131,13 @@ exports.createPublicBooking = functions
         clientId = clientRef.id;
       }
 
-      // Customer identity is now stored in customers/{customerId}.
+      // Booking customer identity: frontend_customer/{customerId} (not staff users/{uid}).
       // If authenticated on booking site, use auth uid as document id.
       // Otherwise, de-duplicate by outlet + phone for guest bookings.
+      const FRONTEND_CUSTOMER = "frontend_customer";
       let customerId = authUid;
       if (customerId) {
-        const customerRef = db.collection("customers").doc(customerId);
+        const customerRef = db.collection(FRONTEND_CUSTOMER).doc(customerId);
         await customerRef.set(
           {
             uid: customerId,
@@ -1147,7 +1153,7 @@ exports.createPublicBooking = functions
         );
       } else {
         const customersQuery = await db
-          .collection("customers")
+          .collection(FRONTEND_CUSTOMER)
           .where("outletID", "==", outletId)
           .where("phone", "==", trimmedPhone)
           .limit(1)
@@ -1155,7 +1161,7 @@ exports.createPublicBooking = functions
 
         if (!customersQuery.empty) {
           customerId = customersQuery.docs[0].id;
-          await db.collection("customers").doc(customerId).set(
+          await db.collection(FRONTEND_CUSTOMER).doc(customerId).set(
             {
               name: trimmedName,
               email: trimmedEmail,
@@ -1165,7 +1171,7 @@ exports.createPublicBooking = functions
             { merge: true }
           );
         } else {
-          const customerRef = await db.collection("customers").add({
+          const customerRef = await db.collection(FRONTEND_CUSTOMER).add({
             outletID: outletId,
             name: trimmedName,
             phone: trimmedPhone,
@@ -1204,7 +1210,7 @@ exports.createPublicBooking = functions
         status: "scheduled",
       });
 
-      await db.collection("customers").doc(customerId).set(
+      await db.collection(FRONTEND_CUSTOMER).doc(customerId).set(
         {
           bookingHistoryRefs: admin.firestore.FieldValue.arrayUnion(appointmentRef.id),
           lastAppointmentId: appointmentRef.id,

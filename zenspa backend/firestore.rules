@@ -56,11 +56,15 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Customer profiles for booking-site users.
-    // Customers can only read/write their own document.
+    // Booking-portal customer profiles (register via public booking site). Not staff `users`.
+    match /frontend_customer/{customerId} {
+      allow read, create, update, delete: if isAuthenticated() && request.auth.uid == customerId;
+      allow read: if isStaffUser();
+    }
+
+    // Legacy booking customer docs (pre–frontend_customer). Same rules; migrate to frontend_customer when possible.
     match /customers/{customerId} {
       allow read, create, update, delete: if isAuthenticated() && request.auth.uid == customerId;
-      // Staff/admin can read customer profiles for operational workflows.
       allow read: if isStaffUser();
     }
 

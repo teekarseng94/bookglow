@@ -153,7 +153,7 @@ const ApiIntegrationManagement: React.FC = () => {
     <div className="max-w-4xl mx-auto space-y-8 animate-fadeIn pb-20">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">API Integration Management</h1>
+          <h1 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-slate-900">API Integration Management</h1>
           <p className="text-slate-500 text-sm mt-1">Connect your chatbot (mychatbot.website) to this POS. Manage API key and webhook.</p>
         </div>
         <Link
@@ -173,7 +173,7 @@ const ApiIntegrationManagement: React.FC = () => {
 
       {/* API Key */}
       <section className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm">
-        <h2 className="text-lg font-bold text-slate-800 mb-1">API Key</h2>
+        <h2 className="text-app-section font-bold text-slate-900 mb-1">API Key</h2>
         <p className="text-slate-500 text-sm mb-4">Use this key in the <code className="bg-slate-100 px-1 rounded">X-API-Key</code> header. Send <code className="bg-slate-100 px-1 rounded">X-Outlet-Id</code> with your outlet ID for requests.</p>
         <div className="flex flex-wrap items-center gap-3">
           {displayKey ? (
@@ -247,7 +247,7 @@ const ApiIntegrationManagement: React.FC = () => {
 
       {/* Webhook */}
       <section className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm">
-        <h2 className="text-lg font-bold text-slate-800 mb-1">Webhook URL</h2>
+        <h2 className="text-app-section font-bold text-slate-900 mb-1">Webhook URL</h2>
         <p className="text-slate-500 text-sm mb-4">The POS can send events (e.g. new booking, status change) to this URL.</p>
         <div className="flex flex-wrap items-center gap-3">
           <input
@@ -270,7 +270,7 @@ const ApiIntegrationManagement: React.FC = () => {
 
       {/* API Documentation Preview */}
       <section className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm">
-        <h2 className="text-lg font-bold text-slate-800 mb-1">API Endpoints (Preview)</h2>
+        <h2 className="text-app-section font-bold text-slate-900 mb-1">API Endpoints (Preview)</h2>
         <p className="text-slate-500 text-sm mb-4">Endpoints your chatbot can call. Include <code className="bg-slate-100 px-1 rounded">X-API-Key</code> and <code className="bg-slate-100 px-1 rounded">X-Outlet-Id</code> in headers.</p>
         <div className="overflow-x-auto rounded-xl border border-slate-200">
           <table className="w-full text-sm">

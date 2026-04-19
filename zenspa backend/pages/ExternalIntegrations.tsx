@@ -93,7 +93,7 @@ const ExternalIntegrations: React.FC<ExternalIntegrationsProps> = ({
           </svg>
         </Link>
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">External Integrations</h2>
+          <h2 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-slate-900">External Integrations</h2>
           <p className="text-slate-500 text-sm">Sync appointments from Setmore (ICS/iCal feed).</p>
         </div>
       </div>
@@ -104,7 +104,7 @@ const ExternalIntegrations: React.FC<ExternalIntegrationsProps> = ({
             <Icons.Calendar />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-slate-800">Setmore Feed URL</h3>
+            <h3 className="text-app-section font-bold text-slate-900">Setmore Feed URL</h3>
             <p className="text-xs text-slate-400 font-medium">Paste your Setmore ICS feed URL to import appointments.</p>
           </div>
         </div>

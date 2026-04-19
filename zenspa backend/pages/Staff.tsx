@@ -294,7 +294,7 @@ const StaffPage: React.FC<StaffProps> = ({
     <div className="space-y-6 animate-fadeIn">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800 leading-tight">Staff & Commissions</h2>
+          <h2 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-slate-900 leading-tight">Staff & Commissions</h2>
           <p className="text-slate-500 text-sm font-medium">Review metrics and manage your wellness team</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">

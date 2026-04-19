@@ -515,7 +515,11 @@ const POS: React.FC<POSProps> = ({
   };
 
   return (
-    <div className="flex flex-col md:grid md:grid-cols-[65%_35%] gap-6 lg:gap-8 h-full pb-24 md:pb-0">
+    <div className="flex flex-col md:grid md:grid-cols-[65%_35%] gap-6 lg:gap-8 h-full pb-28 md:pb-0">
+      <div className="lg:hidden -mt-1">
+        <h1 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-slate-900">Point of Sale</h1>
+        <p className="mt-1 text-sm text-slate-600">Add items and complete checkout below.</p>
+      </div>
       {isVoucherRedemptionMode && (
         <div className="lg:col-span-3 rounded-xl bg-sky-100 border border-sky-300 px-4 py-3 flex items-center gap-2 text-sky-800 text-sm font-medium">
           <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
@@ -554,7 +558,7 @@ const POS: React.FC<POSProps> = ({
         <div className="space-y-8">
           {(activeCatalog === 'all' || activeCatalog === 'services') && filteredServices.length > 0 && (
             <section className="animate-fadeIn">
-              <h3 className="text-sm font-black uppercase text-teal-600 mb-4 flex items-center gap-2"><Icons.Services /> Treatments</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-teal-700 mb-4 flex items-center gap-2"><Icons.Services /> Treatments</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {filteredServices.map(service => (
                   <button key={service.id} onClick={() => addToCart(service, 'service')} className="bg-white p-4 rounded-xl border border-slate-200 hover:border-teal-500 hover:shadow-md transition-all text-left">
@@ -574,7 +578,7 @@ const POS: React.FC<POSProps> = ({
 
           {(activeCatalog === 'all' || activeCatalog === 'products') && filteredProducts.length > 0 && (
             <section className="animate-fadeIn">
-              <h3 className="text-sm font-black uppercase text-amber-600 mb-4 flex items-center gap-2"><Icons.POS /> Retail Products</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-amber-700 mb-4 flex items-center gap-2"><Icons.POS /> Retail Products</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {filteredProducts.map(product => (
                   <button key={product.id} onClick={() => addToCart(product, 'product')} className="bg-white p-4 rounded-xl border border-slate-200 hover:border-amber-500 hover:shadow-md transition-all text-left">
@@ -591,7 +595,7 @@ const POS: React.FC<POSProps> = ({
 
           {(activeCatalog === 'all' || activeCatalog === 'packages') && filteredPackages.length > 0 && (
             <section className="animate-fadeIn">
-              <h3 className="text-sm font-black uppercase text-indigo-600 mb-4 flex items-center gap-2"><Icons.Package /> Bundled Packages</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-indigo-700 mb-4 flex items-center gap-2"><Icons.Package /> Bundled Packages</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {filteredPackages.map(pkg => (
                   <button key={pkg.id} onClick={() => addToCart(pkg, 'package')} className="bg-white p-4 rounded-xl border border-slate-200 hover:border-indigo-500 hover:shadow-md transition-all text-left group">
@@ -616,7 +620,7 @@ const POS: React.FC<POSProps> = ({
 
           {(activeCatalog === 'all' || activeCatalog === 'services') && filteredServices.length === 0 && (
             <section className="animate-fadeIn">
-              <h3 className="text-sm font-black uppercase text-teal-600 mb-4 flex items-center gap-2"><Icons.Services /> Treatments</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-teal-700 mb-4 flex items-center gap-2"><Icons.Services /> Treatments</h3>
               <div className="py-12 text-center text-slate-500 text-sm">No services found. Try a different category or search.</div>
             </section>
           )}
@@ -632,11 +636,12 @@ const POS: React.FC<POSProps> = ({
         </div>
       </div>
 
-      {/* Mobile Cart Bottom Bar (phones only) */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-slate-200 shadow-[0_-4px_12px_rgba(15,23,42,0.12)]">
+      {/* Mobile Cart Bottom Bar — fixed above app bottom nav (Layout z-40), not underneath it */}
+      <div className="md:hidden fixed bottom-[calc(72px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-[45] min-h-[64px] max-h-[80px] border-t border-slate-200 bg-white shadow-[0_-4px_12px_rgba(15,23,42,0.12)]">
         <button
+          type="button"
           onClick={() => setIsCartOpen(true)}
-          className="w-full flex items-center justify-between px-4 py-3"
+          className="w-full flex min-h-[64px] items-center justify-between px-4 py-2.5"
         >
           <div className="flex flex-col items-start">
             <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
@@ -673,7 +678,7 @@ const POS: React.FC<POSProps> = ({
           order-3 md:order-2
           md:sticky md:top-20 md:h-[calc(100vh-8rem)]
           md:flex md:flex-col
-          ${isCartOpen ? 'fixed inset-0 z-40 flex items-end md:static md:z-auto' : 'hidden md:flex'}
+          ${isCartOpen ? 'fixed inset-0 z-[50] flex items-end md:static md:z-auto' : 'hidden md:flex'}
         `}
       >
         {/* Mobile overlay background */}
@@ -692,6 +697,7 @@ const POS: React.FC<POSProps> = ({
             max-h-[90vh] md:h-full
             md:h-[calc(100vh-8rem)]
             md:static md:shadow-md
+            mb-[calc(72px+env(safe-area-inset-bottom,0px))] md:mb-0
           `}
         >
           {/* Real-time Clock and Date Display */}
@@ -708,7 +714,7 @@ const POS: React.FC<POSProps> = ({
 
         <div className="p-6 border-b border-slate-100 bg-slate-50/60">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-slate-800">Checkout Cart</h3>
+            <h3 className="text-app-section font-bold text-slate-900">Checkout Cart</h3>
             <button
               onClick={() => setIsCartOpen(false)}
               className="md:hidden p-2 rounded-lg hover:bg-slate-200 transition-colors"

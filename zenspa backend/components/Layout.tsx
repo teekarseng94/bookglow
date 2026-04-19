@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate, NavLink } from 'react-router-dom';
+import { useNavigate, NavLink, useLocation } from 'react-router-dom';
 import { Icons } from '../constants';
 import { User } from 'firebase/auth';
 import type { UserRole } from '../contexts/UserContext';
@@ -21,16 +21,25 @@ interface LayoutProps {
   role?: UserRole | null;
 }
 
+const MoreHorizontalIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <circle cx="5" cy="12" r="1.75" />
+    <circle cx="12" cy="12" r="1.75" />
+    <circle cx="19" cy="12" r="1.75" />
+  </svg>
+);
+
 const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, isAdmin, shopName, user, onLogout, outletId, outletName, role }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMobileProfileMenu, setShowMobileProfileMenu] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const mobileProfileMenuRef = useRef<HTMLDivElement>(null);
-  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const moreMenuRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside (desktop)
+  // Close dropdown when clicking outside (desktop + mobile more popover)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
@@ -39,35 +48,32 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, isAd
       if (mobileProfileMenuRef.current && !mobileProfileMenuRef.current.contains(event.target as Node)) {
         setShowMobileProfileMenu(false);
       }
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
-        // Check if click is on overlay (backdrop)
-        const target = event.target as HTMLElement;
-        if (target.classList.contains('mobile-menu-overlay')) {
-          setIsMobileMenuOpen(false);
-        }
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
+        if ((event.target as HTMLElement).closest('[data-more-menu-trigger]')) return;
+        setIsMoreMenuOpen(false);
       }
     };
 
-    if (showProfileMenu || showMobileProfileMenu || isMobileMenuOpen) {
+    if (showProfileMenu || showMobileProfileMenu || isMoreMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showProfileMenu, showMobileProfileMenu, isMobileMenuOpen]);
+  }, [showProfileMenu, showMobileProfileMenu, isMoreMenuOpen]);
 
-  // Prevent body scroll when mobile menu is open
   useEffect(() => {
-    if (isMobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsMoreMenuOpen(false);
     };
-  }, [isMobileMenuOpen]);
+    if (isMoreMenuOpen) window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isMoreMenuOpen]);
+
+  useEffect(() => {
+    setIsMoreMenuOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = () => {
     setShowProfileMenu(false);
@@ -101,7 +107,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, isAd
   const allNavItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <Icons.Dashboard /> },
     { id: 'pos', label: 'Point of Sale', icon: <Icons.POS /> },
-    { id: 'appointments', label: 'Appointment', icon: <Icons.Calendar /> },
+    { id: 'schedule', label: 'Schedule', icon: <Icons.Calendar /> },
     { id: 'member', label: 'Member', icon: <Icons.Clients /> },
     { id: 'menu', label: 'Menu', icon: <Icons.Services /> },
     { id: 'sales-reports', label: 'Sales Reports', icon: <Icons.Reports /> },
@@ -118,63 +124,36 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, isAd
     ? allNavItems
     : allNavItems.filter((item) => cashierTabIds.includes(item.id));
 
+  const mobileBottomNavItems =
+    role === 'admin'
+      ? [
+          { id: 'dashboard', label: 'Dashboard', icon: <Icons.Dashboard /> },
+          { id: 'schedule', label: 'Schedule', icon: <Icons.Calendar /> },
+          { id: 'pos', label: 'POS', icon: <Icons.POS /> },
+          { id: 'member', label: 'Member', icon: <Icons.Clients /> },
+        ]
+      : [
+          { id: 'pos', label: 'POS', icon: <Icons.POS /> },
+          { id: 'member', label: 'Member', icon: <Icons.Clients /> },
+          { id: 'menu', label: 'Menu', icon: <Icons.Services /> },
+          { id: 'sales-reports', label: 'Reports', icon: <Icons.Reports /> },
+        ];
+
+  const mobilePrimaryIds = new Set(mobileBottomNavItems.map((item) => item.id));
+  const tabForBottomNav = location.pathname.startsWith('/member-details/')
+    ? 'member'
+    : activeTab;
+  const moreTabActive = !mobilePrimaryIds.has(tabForBottomNav);
+
+  const moreNavItems = navItems.filter((item) => !mobilePrimaryIds.has(item.id));
+
+  const mobileBottomNavItemClass = (isActive: boolean) =>
+    `flex flex-1 flex-col items-center justify-center gap-0.5 min-w-0 px-1 py-1 rounded-lg transition-colors ${
+      isActive ? 'text-slate-900 font-semibold' : 'text-slate-400 font-medium'
+    }`;
+
   return (
     <div className="flex h-screen bg-slate-50 text-slate-900 overflow-hidden">
-      {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
-        <div 
-          className="mobile-menu-overlay fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 lg:hidden"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
-
-      {/* Mobile Slide-out Menu */}
-      <aside
-        ref={mobileMenuRef}
-        className={`fixed top-0 left-0 h-full w-64 bg-white border-r border-slate-200 flex flex-col z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${
-          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-teal-600 flex items-center gap-2 overflow-hidden">
-            <span className="w-8 h-8 bg-teal-600 rounded-lg flex-shrink-0 flex items-center justify-center text-white text-lg">
-              {shopName.charAt(0)}
-            </span>
-            <span className="truncate">{shopName}</span>
-          </h1>
-          <button
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
-            aria-label="Close menu"
-          >
-            <svg className="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.id}
-              to={`/${item.id}`}
-              onClick={() => setIsMobileMenuOpen(false)}
-              className={({ isActive }) =>
-                `w-full flex items-center gap-3 px-4 py-4 rounded-xl transition-all min-h-[48px] ${
-                  isActive ? 'bg-teal-50 text-teal-700 font-semibold shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
-                }`
-              }
-            >
-              {item.icon}
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-        
-        <div className="p-4 border-t border-slate-100 text-[10px] text-slate-400">
-          © 2024 {shopName} v1.7 • {role === 'admin' ? 'Admin View' : 'Cashier View'}
-        </div>
-      </aside>
-
       {/* Desktop Sidebar */}
       <aside className="w-64 bg-white border-r border-slate-200 flex flex-col hidden lg:flex">
         <div className="p-6 border-b border-slate-100">
@@ -209,16 +188,23 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, isAd
 
       {/* Mobile Top Nav */}
       <div className="lg:hidden fixed top-0 w-full bg-white border-b border-slate-200 z-50 flex items-center justify-between px-4 py-3 h-16">
-         {/* Hamburger Menu Button */}
-         <button
-           onClick={() => setIsMobileMenuOpen(true)}
-           className="p-3 rounded-lg hover:bg-slate-100 active:bg-slate-200 transition-colors min-w-[48px] min-h-[48px] flex items-center justify-center"
-           aria-label="Open menu"
-         >
-           <svg className="w-6 h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-           </svg>
-         </button>
+         {/* Opens same overflow menu as bottom “More” (no left drawer on mobile) */}
+         {moreNavItems.length > 0 ? (
+           <button
+             type="button"
+             data-more-menu-trigger
+             onClick={() => setIsMoreMenuOpen((open) => !open)}
+             className="flex min-h-[48px] min-w-[48px] items-center justify-center rounded-lg p-3 hover:bg-slate-100 active:bg-slate-200 transition-colors"
+             aria-label="More pages"
+             aria-expanded={isMoreMenuOpen}
+           >
+             <svg className="w-6 h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+             </svg>
+           </button>
+         ) : (
+           <div className="min-h-[48px] min-w-[48px]" aria-hidden />
+         )}
 
          {/* Logo - Centered */}
          <div className="flex-1 flex items-center justify-center px-4">
@@ -286,12 +272,101 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, isAd
          </div>
       </div>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-y-auto pt-16 lg:pt-0">
-        <header className="bg-white border-b border-slate-200 px-8 py-4 sticky top-0 z-10 hidden lg:block">
+      {/* Mobile bottom navigation — primary destinations + More (overflow → popover, not drawer) */}
+      <nav
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-4px_12px_-2px_rgba(15,23,42,0.06)]"
+        aria-label="Primary"
+      >
+        <div className="flex h-[72px] min-h-[64px] max-h-[80px] items-stretch">
+          {mobileBottomNavItems.map((item) => (
+            <NavLink
+              key={item.id}
+              to={`/${item.id}`}
+              onClick={() => setIsMoreMenuOpen(false)}
+              className={({ isActive }) =>
+                mobileBottomNavItemClass(
+                  isActive || (item.id === 'member' && location.pathname.startsWith('/member-details/'))
+                )
+              }
+            >
+              <span className="[&_svg]:stroke-[2.25] flex h-6 w-6 shrink-0 items-center justify-center">
+                {item.icon}
+              </span>
+              <span className="max-w-full truncate text-center text-[10px] leading-tight tracking-tight">
+                {item.label}
+              </span>
+            </NavLink>
+          ))}
+          {moreNavItems.length > 0 && (
+            <button
+              type="button"
+              data-more-menu-trigger
+              onClick={() => setIsMoreMenuOpen((open) => !open)}
+              className={mobileBottomNavItemClass(moreTabActive)}
+              aria-label="More navigation"
+              aria-expanded={isMoreMenuOpen}
+              aria-current={moreTabActive ? 'page' : undefined}
+            >
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center">
+                <MoreHorizontalIcon />
+              </span>
+              <span className="max-w-full truncate text-center text-[10px] leading-tight tracking-tight">More</span>
+            </button>
+          )}
+        </div>
+      </nav>
+
+      {/* Mobile “More” — floating card above bottom nav (overflow routes only) */}
+      {isMoreMenuOpen && moreNavItems.length > 0 && (
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-[55] cursor-default bg-slate-900/30 lg:hidden"
+            aria-label="Close menu"
+            onClick={() => setIsMoreMenuOpen(false)}
+          />
+          <div
+            ref={moreMenuRef}
+            className="fixed bottom-[calc(72px+env(safe-area-inset-bottom,0px)+10px)] right-3 left-auto z-[60] w-[min(100vw-1.5rem,18rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white py-2 shadow-xl lg:hidden"
+            role="dialog"
+            aria-label="More destinations"
+          >
+            <div className="max-h-[min(70vh,28rem)] overflow-y-auto py-1">
+              {moreNavItems.map((item, idx) => {
+                const showDividerBefore = item.id === 'settings' && idx > 0;
+                return (
+                  <React.Fragment key={item.id}>
+                    {showDividerBefore && <div className="mx-2 my-1 border-t border-slate-100" role="separator" />}
+                    <NavLink
+                      to={`/${item.id}`}
+                      onClick={() => setIsMoreMenuOpen(false)}
+                      className={({ isActive }) =>
+                        `flex min-h-[48px] items-center gap-3 px-4 py-3 text-base font-normal transition-colors ${
+                          isActive
+                            ? 'bg-slate-50 font-semibold text-slate-900'
+                            : 'text-slate-900 hover:bg-slate-50'
+                        }`
+                      }
+                    >
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center text-slate-500 [&_svg]:h-5 [&_svg]:w-5">
+                        {item.icon}
+                      </span>
+                      <span className="truncate">{item.label}</span>
+                    </NavLink>
+                  </React.Fragment>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Main Content — bottom padding on small screens so content clears the fixed bottom nav + safe area */}
+      <main className="flex-1 flex flex-col overflow-y-auto pt-16 pb-[calc(72px+env(safe-area-inset-bottom,0px))] lg:pb-0 lg:pt-0">
+        <header className="bg-white border-b border-slate-200 px-6 py-4 lg:px-8 sticky top-0 z-10 hidden lg:block">
           <div className="flex justify-between items-center flex-wrap gap-2">
             <div className="flex items-center gap-3">
-              <h2 className="text-xl font-semibold capitalize">
+              <h2 className="text-app-section font-bold capitalize tracking-tight text-slate-900">
                 {activeTab === 'member' ? 'Member' : activeTab === 'appointments' ? 'Appointment' : activeTab.replace('-', ' ')}
               </h2>
               {outletId && (
@@ -422,7 +497,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, isAd
             </div>
           </div>
         </header>
-        <div className="p-4 lg:p-8">
+        <div className="px-5 py-4 sm:px-5 lg:px-8 lg:py-8">
           {children}
         </div>
       </main>

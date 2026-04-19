@@ -1,6 +1,8 @@
 /**
- * Registration and auth for Booking site.
- * On signup: create Firebase user, create Firestore users/{uid} doc with role 'client', redirect to Dashboard.
+ * Registration and auth for Booking site vs dashboard.
+ * - Booking (/book/...): Firestore `frontend_customer/{uid}` (see registerForBooking / upsertCustomerProfile).
+ * - Legacy marketing signup (register → /login): still writes `users/{uid}` for that flow only.
+ * - Dashboard staff: `users/{uid}` (admin/cashier) — managed in the backend app only.
  */
 import {
   createUserWithEmailAndPassword,
@@ -11,7 +13,7 @@ import {
   UserCredential,
 } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { adminAuth, auth, customerDb, db } from "./firebase";
+import { adminAuth, auth, customerDb, db, FRONTEND_CUSTOMER_COLLECTION } from "./firebase";
 
 export const DASHBOARD_URL = "/login";
 
@@ -160,7 +162,7 @@ export async function registerWithFacebookForBooking(redirectUrl: string): Promi
 
 async function upsertCustomerProfile(input: CustomerProfileInput): Promise<void> {
   await setDoc(
-    doc(customerDb, "customers", input.uid),
+    doc(customerDb, FRONTEND_CUSTOMER_COLLECTION, input.uid),
     {
       uid: input.uid,
       email: input.email,

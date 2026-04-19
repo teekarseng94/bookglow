@@ -25,7 +25,7 @@ const AppBootstrap: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
           <div className="inline-block w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-slate-600">Initializing...</p>
+          <p className="text-sm text-slate-600">Initializing...</p>
         </div>
       </div>
     );

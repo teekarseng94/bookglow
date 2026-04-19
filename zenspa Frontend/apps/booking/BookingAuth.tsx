@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { Logo } from "../../constants";
 import {
   registerWithGoogleForBooking,
@@ -9,7 +9,6 @@ import {
 } from "../../services/authService";
 
 export default function BookingAuth() {
-  const { outletId } = useParams<{ outletId: string }>();
   const [searchParams] = useSearchParams();
   const [showEmail, setShowEmail] = useState(false);
   const [email, setEmail] = useState("");
@@ -19,9 +18,10 @@ export default function BookingAuth() {
   const [error, setError] = useState<string | null>(null);
 
   const loginSource = searchParams.get("loginSource") || "homepage";
+  /** Same path the user used (slug or legacy id); strip trailing /auth for OAuth redirect. */
   const bookingUrl =
-    typeof window !== "undefined" && outletId
-      ? `${window.location.origin}/book/${outletId}`
+    typeof window !== "undefined"
+      ? `${window.location.origin}${window.location.pathname.replace(/\/auth\/?$/, "")}`
       : "/"; 
 
   const handleGoogle = async () => {

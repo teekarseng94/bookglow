@@ -234,9 +234,14 @@ const SalesReports: React.FC<SalesReportsProps> = ({
           .no-print { display: none !important; }
         }
       `}</style>
-      <div className="flex gap-6 animate-fadeIn sales-report-print-area">
+      <div className="space-y-4 sales-report-print-area">
+      <div className="lg:hidden -mt-1">
+        <h1 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-slate-900">Sales Reports</h1>
+        <p className="mt-1 text-sm text-slate-600">Collection totals and daily breakdown.</p>
+      </div>
+      <div className="flex flex-col lg:flex-row gap-6 animate-fadeIn">
       {/* Collection Summary Sidebar - included in print */}
-      <div className="w-80 flex-shrink-0 space-y-4 print:block">
+      <div className="w-full lg:w-80 flex-shrink-0 space-y-4 print:block">
         {/* Collection Card */}
         <div className="bg-gradient-to-br from-blue-50 to-teal-50 rounded-2xl border border-blue-200 shadow-sm p-6">
           <h3 className="text-sm font-black uppercase tracking-widest text-slate-700 mb-4">Collection</h3>
@@ -371,7 +376,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
               </svg>
             </button>
           </div>
-          <h2 className="text-xl font-bold text-slate-800">Collection</h2>
+          <h2 className="text-app-section font-bold text-slate-900">Collection</h2>
         </div>
 
         {/* Filter Bar */}
@@ -490,6 +495,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
             ) : null}
           </div>
         </div>
+      </div>
       </div>
 
       {/* Transaction Detail Modal - use latest from dailySales so payment method edit reflects immediately */}

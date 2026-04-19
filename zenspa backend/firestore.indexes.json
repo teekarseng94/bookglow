@@ -119,6 +119,14 @@
         { "fieldPath": "type", "order": "ASCENDING" },
         { "fieldPath": "date", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "frontend_customer",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "outletID", "order": "ASCENDING" },
+        { "fieldPath": "phone", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

@@ -1,6 +1,6 @@
 /**
  * Public booking API (no auth). Calls Cloud Functions for outlet data and creating bookings.
- * Used by the Booking Portal at /book/:outletId.
+ * Used by the Booking Portal at /book/:bookingPath (outlet id or booking slug).
  * createPublicBooking sends outletId; the Cloud Function writes outletID to the appointment document for backend filtering.
  */
 import { httpsCallable } from "firebase/functions";
@@ -16,6 +16,8 @@ export interface PublicOutlet {
   reviews?: { author?: string; text?: string; rating?: number }[];
   /** Optional: menu/booking category order synced from backend Menu page */
   serviceCategories?: string[];
+  /** Pretty URL segment for /book/:slug when set (Firestore id stays on `id`). */
+  bookingSlug?: string;
 }
 
 export interface PublicService {

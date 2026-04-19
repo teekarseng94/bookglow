@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useLayoutEffect } from 'react';
 import { Appointment, Staff, Client, Service, RoleCommission, OutletSettings } from '../types';
 import { Icons } from '../constants';
 import { generateReminderMessage } from '../services/geminiService';
@@ -21,6 +21,19 @@ interface AppointmentsCalendarProps {
 }
 
 type ViewMode = 'day' | 'week' | 'month';
+
+const DAY_INITIALS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'] as const;
+
+const formatDisplayTime = (time?: string): string => {
+  if (!time) return '';
+  const [hh = '0', mm = '0'] = time.split(':');
+  const hours = Number(hh);
+  const mins = Number(mm);
+  if (!Number.isFinite(hours) || !Number.isFinite(mins)) return time;
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const h12 = hours % 12 === 0 ? 12 : hours % 12;
+  return `${h12}:${String(mins).padStart(2, '0')} ${ampm}`;
+};
 
 const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({ 
   appointments, 
@@ -46,6 +59,15 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
   const [isSendingReminder, setIsSendingReminder] = useState(false);
   const [isSyncingSetmore, setIsSyncingSetmore] = useState(false);
   const syncRunOnce = useRef(false);
+  const agendaLoadMoreRef = useRef<HTMLDivElement | null>(null);
+  const dateStripScrollRef = useRef<HTMLDivElement | null>(null);
+  const dateStripLeftRef = useRef<HTMLDivElement | null>(null);
+  const dateStripRightRef = useRef<HTMLDivElement | null>(null);
+  const dateStripPrevWidthRef = useRef(0);
+  const dateStripPrependingRef = useRef(false);
+  const [mobileAgendaWeeks, setMobileAgendaWeeks] = useState(6);
+  const [dateStripPastDays, setDateStripPastDays] = useState(30);
+  const [dateStripFutureDays, setDateStripFutureDays] = useState(30);
 
   const [bookingData, setBookingData] = useState({
     staffId: '',
@@ -173,6 +195,137 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
     });
   }, [selectedDate]);
 
+  const dateStripDates = useMemo(() => {
+    const center = new Date(selectedDate);
+    return Array.from({ length: dateStripPastDays + dateStripFutureDays + 1 }, (_, i) => {
+      const d = new Date(center);
+      d.setDate(center.getDate() - dateStripPastDays + i);
+      return d.toISOString().split('T')[0];
+    });
+  }, [selectedDate, dateStripPastDays, dateStripFutureDays]);
+
+  const mobileAgendaDates = useMemo(() => {
+    const start = new Date(selectedDate);
+    // Agenda list always starts from the selected date.
+    return Array.from({ length: mobileAgendaWeeks * 7 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      return d.toISOString().split('T')[0];
+    });
+  }, [selectedDate, mobileAgendaWeeks]);
+
+  // Reset infinite agenda window when user jumps to another selected date.
+  useEffect(() => {
+    setMobileAgendaWeeks(6);
+    setDateStripPastDays(30);
+    setDateStripFutureDays(30);
+  }, [selectedDate]);
+
+  // Keep selected date visible when user taps a date.
+  useEffect(() => {
+    const root = dateStripScrollRef.current;
+    if (!root) return;
+    const selectedNode = root.querySelector<HTMLButtonElement>(`button[data-date="${selectedDate}"]`);
+    if (!selectedNode) return;
+    selectedNode.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+  }, [selectedDate]);
+
+  // Preserve horizontal scroll position when we prepend older dates on the left.
+  useLayoutEffect(() => {
+    if (!dateStripPrependingRef.current) return;
+    const root = dateStripScrollRef.current;
+    if (!root) return;
+    const delta = root.scrollWidth - dateStripPrevWidthRef.current;
+    if (delta > 0) root.scrollLeft += delta;
+    dateStripPrependingRef.current = false;
+  }, [dateStripDates.length]);
+
+  // Infinite date strip (left): load earlier dates.
+  useEffect(() => {
+    const root = dateStripScrollRef.current;
+    const target = dateStripLeftRef.current;
+    if (!root || !target || typeof window === 'undefined') return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        dateStripPrevWidthRef.current = root.scrollWidth;
+        dateStripPrependingRef.current = true;
+        setDateStripPastDays((prev) => Math.min(prev + 7, 365));
+      },
+      { root, rootMargin: '0px 120px 0px 120px', threshold: 0 }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [dateStripDates.length]);
+
+  // Infinite date strip (right): load newer dates.
+  useEffect(() => {
+    const root = dateStripScrollRef.current;
+    const target = dateStripRightRef.current;
+    if (!root || !target || typeof window === 'undefined') return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setDateStripFutureDays((prev) => Math.min(prev + 7, 365));
+        }
+      },
+      { root, rootMargin: '0px 120px 0px 120px', threshold: 0 }
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [dateStripDates.length]);
+
+  // Infinite mobile agenda: append upcoming weeks when reaching the end sentinel.
+  useEffect(() => {
+    const node = agendaLoadMoreRef.current;
+    if (!node || typeof window === 'undefined') return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setMobileAgendaWeeks((prev) => Math.min(prev + 4, 52));
+        }
+      },
+      { root: null, rootMargin: '400px 0px', threshold: 0 }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [mobileAgendaDates.length]);
+
+  const appointmentsByDate = useMemo(() => {
+    const grouped = new Map<string, Appointment[]>();
+    mobileAgendaDates.forEach((d) => grouped.set(d, []));
+
+    activeAppointments.forEach((app) => {
+      if (!grouped.has(app.date)) return;
+      grouped.get(app.date)!.push(app);
+    });
+
+    grouped.forEach((list, date) => {
+      list.sort((a, b) => {
+        const aStart = a.time || '00:00';
+        const bStart = b.time || '00:00';
+        if (aStart === bStart) return a.id.localeCompare(b.id);
+        return aStart.localeCompare(bStart);
+      });
+      grouped.set(date, list);
+    });
+
+    return grouped;
+  }, [mobileAgendaDates, activeAppointments]);
+
+  const thisWeekIncome = useMemo(() => {
+    const weekSet = new Set(weekDates);
+    return activeAppointments.reduce((sum, app) => {
+      if (!weekSet.has(app.date)) return sum;
+      const service = services.find((s) => s.id === app.serviceId);
+      return sum + (service?.price || 0);
+    }, 0);
+  }, [weekDates, activeAppointments, services]);
+
   const monthDays = useMemo(() => {
     const date = new Date(selectedDate);
     const year = date.getFullYear();
@@ -200,6 +353,17 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
   const handleAppointmentClick = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
     setIsStatusModalOpen(true);
+  };
+
+  const handleQuickAddBooking = () => {
+    setBookingData({
+      staffId: staff[0]?.id || '',
+      time: '10:00',
+      date: selectedDate,
+      clientId: clients[0]?.id || 'guest',
+      serviceId: services[0]?.id || ''
+    });
+    setIsBookingModalOpen(true);
   };
 
   const handleBookingSubmit = (e: React.FormEvent) => {
@@ -327,7 +491,7 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
       )}
 
       {/* Calendar Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="hidden md:flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
         <div className="flex items-center gap-6">
           <div className="flex bg-slate-100 p-1 rounded-xl shadow-inner">
             {(['day', 'week', 'month'] as ViewMode[]).map(mode => (
@@ -350,9 +514,114 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden min-h-[600px] flex flex-col">
+      <div className="bg-white md:rounded-3xl md:border md:border-slate-200 md:shadow-sm overflow-hidden min-h-[600px] flex flex-col">
         {viewMode === 'day' && (
-          <div className="overflow-x-auto flex-1">
+          <>
+          <div className="md:hidden border-b border-slate-100 px-4 pt-3 pb-2.5 bg-white">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-[38px] leading-none font-medium tracking-tight text-slate-800">
+                {new Date(selectedDate).toLocaleDateString('default', { month: 'long', year: 'numeric' })}
+              </h3>
+              <div className="flex items-center gap-2">
+                <button type="button" className="w-9 h-9 rounded-full border border-slate-200 text-slate-500 flex items-center justify-center bg-white">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.963 9.963 0 012.992-4.568m3.124-1.997A9.956 9.956 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.958 9.958 0 01-4.293 5.287M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                </button>
+                <button type="button" className="w-9 h-9 rounded-full border border-slate-200 text-slate-500 flex items-center justify-center bg-white">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405M19 17V9a7 7 0 10-14 0v8m14 0H5m14 0a3 3 0 11-6 0m-8 0a3 3 0 006 0" /></svg>
+                </button>
+                <span className="w-9 h-9 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold flex items-center justify-center">All</span>
+              </div>
+            </div>
+            <div ref={dateStripScrollRef} className="flex items-center gap-2 overflow-x-auto pb-0.5">
+              <div ref={dateStripLeftRef} className="w-px h-px shrink-0" aria-hidden />
+              {dateStripDates.map((date) => {
+                const d = new Date(date);
+                const isSelected = date === selectedDate;
+                return (
+                  <button
+                    key={date}
+                    data-date={date}
+                    type="button"
+                    onClick={() => setSelectedDate(date)}
+                    className="flex flex-col items-center min-w-[42px] py-1"
+                  >
+                    <span className="text-[15px] leading-none font-medium text-slate-500 mb-1.5">
+                      {DAY_INITIALS[d.getDay()]}
+                    </span>
+                    <span
+                      className={`w-9 h-9 rounded-full flex items-center justify-center text-[20px] leading-none font-medium transition-colors ${
+                        isSelected ? 'bg-slate-900 text-white' : 'text-slate-700'
+                      }`}
+                    >
+                      {d.getDate()}
+                    </span>
+                  </button>
+                );
+              })}
+              <div ref={dateStripRightRef} className="w-px h-px shrink-0" aria-hidden />
+            </div>
+          </div>
+
+          <div className="md:hidden flex-1 bg-white px-4 pt-4 pb-36 space-y-5">
+            {mobileAgendaDates.map((date) => {
+              const dayAppointments = appointmentsByDate.get(date) || [];
+              const dayLabel = new Date(date).toLocaleDateString('default', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long'
+              });
+
+              return (
+                <section key={date} className="space-y-1.5">
+                  <h4 className="text-[14px] leading-none font-semibold tracking-wide text-slate-600">
+                    {dayLabel}
+                  </h4>
+                  {dayAppointments.length === 0 ? (
+                    <p className="text-slate-300 text-[11px] leading-none font-medium">Nothing planned</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {dayAppointments.map((app) => {
+                        const client = clients.find((c) => c.id === app.clientId);
+                        const service = services.find((s) => s.id === app.serviceId);
+                        const therapist = staff.find((s) => s.id === app.staffId);
+                        const initial = (therapist?.name || 'S').charAt(0).toUpperCase();
+
+                        return (
+                          <button
+                            key={app.id}
+                            type="button"
+                            onClick={() => handleAppointmentClick(app)}
+                            className="w-full text-left rounded-lg border-l-4 border-orange-400 bg-[#FFF3E0] px-3 py-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.08)] transition-transform active:scale-[0.99]"
+                          >
+                            <p className="text-[12px] leading-snug font-bold text-slate-900">
+                              {client?.name || 'Guest'}{' '}
+                              <span className="font-medium text-slate-500">
+                                RM{Number(service?.price || 0).toFixed(0)} {service?.name || 'Service'}
+                              </span>
+                            </p>
+                            <p className="text-[10px] font-semibold text-slate-800 mt-0.5">
+                              {formatDisplayTime(app.time)} - {formatDisplayTime(app.endTime || app.time)}
+                            </p>
+                            <div className="mt-1.5 flex items-center gap-2">
+                              <span className="w-6 h-6 rounded-full bg-slate-200 text-slate-700 text-[10px] font-semibold flex items-center justify-center">
+                                {initial}
+                              </span>
+                              <span className="text-[10px] text-slate-600 font-medium">
+                                {therapist?.name || 'Staff'}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </section>
+              );
+            })}
+            <div ref={agendaLoadMoreRef} className="h-2" aria-hidden />
+          </div>
+
+          <div className="hidden md:block overflow-x-auto flex-1">
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-100">
@@ -430,10 +699,29 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
               </tbody>
             </table>
           </div>
+          </>
         )}
 
         {/* Other view modes (week, month) would have similar updates for the reminderSent icon */}
       </div>
+
+      {/* Mobile sticky summary + quick action */}
+      {viewMode === 'day' && (
+        <>
+          <div className="md:hidden fixed left-0 right-0 bottom-16 z-40 border-t border-slate-200 bg-white px-4 py-2 flex items-center justify-between">
+            <span className="text-[14px] leading-none text-slate-700 font-medium">This week&apos;s income</span>
+            <span className="text-[14px] leading-none font-semibold text-slate-900">RM{thisWeekIncome.toFixed(0)}</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleQuickAddBooking}
+            className="md:hidden fixed bottom-[98px] right-[10px] z-50 w-14 h-14 rounded-full bg-slate-950 text-white shadow-[0_10px_24px_rgba(15,23,42,0.35)] flex items-center justify-center"
+            aria-label="Quick add booking"
+          >
+            <span className="text-[34px] leading-none">+</span>
+          </button>
+        </>
+      )}
 
       {/* Booking Modal */}
       {isBookingModalOpen && (

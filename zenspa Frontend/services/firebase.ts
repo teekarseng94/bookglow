@@ -31,6 +31,9 @@ export const adminAuth = auth;
 export const customerAuth = auth;
 export const customerDb = db;
 
+/** Booking-portal customer profiles (register via /book/.../auth). Staff accounts use `users` only. */
+export const FRONTEND_CUSTOMER_COLLECTION = "frontend_customer";
+
 export let analytics: ReturnType<typeof getAnalytics> | null = null;
 if (typeof window !== "undefined") {
   try {

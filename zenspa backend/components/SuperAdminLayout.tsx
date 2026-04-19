@@ -13,10 +13,10 @@ const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ user, onLogout, chi
       {/* Sidebar */}
       <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col">
         <div className="px-6 py-4 border-b border-slate-800">
-          <h1 className="text-lg font-black tracking-tight text-white">
+          <h1 className="text-app-section font-bold tracking-tight text-white">
             ZenFlow Admin
           </h1>
-          <p className="text-[11px] text-slate-400 mt-1">
+          <p className="text-xs text-slate-400 mt-1">
             Super Admin · {user?.email}
           </p>
         </div>
@@ -45,7 +45,7 @@ const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ user, onLogout, chi
               }`
             }
           >
-            <span className="text-xs font-semibold uppercase tracking-wide">
+            <span className="text-sm font-medium">
               Subscribers
             </span>
           </NavLink>

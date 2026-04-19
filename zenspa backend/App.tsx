@@ -207,7 +207,7 @@ const App: React.FC = () => {
 const ADMIN_ONLY_TABS = ['dashboard', 'transactions', 'finance', 'staff', 'settings'] as const;
 
 // Valid top-level path segments (sidebar links use these as absolute paths, e.g. /dashboard, /pos)
-const VALID_TAB_IDS = ['dashboard', 'pos', 'appointments', 'member', 'menu', 'sales-reports', 'transactions', 'finance', 'staff', 'settings'] as const;
+const VALID_TAB_IDS = ['dashboard', 'pos', 'schedule', 'appointments', 'member', 'menu', 'sales-reports', 'transactions', 'finance', 'staff', 'settings'] as const;
 
 // Separate component for app content to keep App.tsx clean
 interface AppContentProps {
@@ -333,7 +333,8 @@ const AppContent: React.FC<AppContentProps> = ({
     const pathname = location.pathname;
     if (pathname.startsWith('/member-details/')) return;
     const segment = pathname.replace(/^\//, '').split('/')[0] || 'dashboard';
-    const tab = VALID_TAB_IDS.includes(segment as any) ? segment : 'dashboard';
+    const normalizedSegment = segment === 'appointments' ? 'schedule' : segment;
+    const tab = VALID_TAB_IDS.includes(normalizedSegment as any) ? normalizedSegment : 'dashboard';
     setActiveTab(tab);
   }, [location.pathname]);
 
@@ -683,6 +684,7 @@ const AppContent: React.FC<AppContentProps> = ({
           onVoidTransaction={handleVoidTransaction}
           onUpdateTransaction={handleUpdateTransaction}
         />;
+      case 'schedule':
       case 'appointments':
         return <AppointmentsCalendar appointments={appointments} staff={staff} clients={clients} services={services} roleCommissions={roleCommissions} onAddAppointment={handleAddAppointment} onUpdateAppointmentStatus={handleUpdateAppointmentStatusWithPOS} onStartPOSSale={handleStartPOSSale} onMarkReminderSent={handleMarkReminderSent} outletSettings={outletSettings} onSyncSetmore={handleSyncSetmoreOnOpen} />;
       case 'finance':
@@ -724,6 +726,7 @@ const AppContent: React.FC<AppContentProps> = ({
         >
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/appointments" element={<Navigate to="/schedule" replace />} />
             <Route
               path="/member-details/:id"
               element={

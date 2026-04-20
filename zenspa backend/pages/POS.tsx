@@ -515,19 +515,19 @@ const POS: React.FC<POSProps> = ({
   };
 
   return (
-    <div className="flex flex-col md:grid md:grid-cols-[65%_35%] gap-6 lg:gap-8 h-full pb-28 md:pb-0">
-      <div className="lg:hidden -mt-1">
+    <div className="flex flex-col md:grid md:grid-cols-[2fr_1fr] md:gap-4 lg:gap-6 h-full pb-28 md:pb-0">
+      <div className="lg:hidden -mt-1 md:col-span-2">
         <h1 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-slate-900">Point of Sale</h1>
         <p className="mt-1 text-sm text-slate-600">Add items and complete checkout below.</p>
       </div>
       {isVoucherRedemptionMode && (
-        <div className="lg:col-span-3 rounded-xl bg-sky-100 border border-sky-300 px-4 py-3 flex items-center gap-2 text-sky-800 text-sm font-medium">
+        <div className="md:col-span-2 rounded-xl bg-sky-100 border border-sky-300 px-4 py-3 flex items-center gap-2 text-sky-800 text-sm font-medium">
           <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
           <span>Voucher redemption — Add a service or package, assign therapist, then complete. Payment: $0 (Voucher).</span>
         </div>
       )}
-      <div className="space-y-6 order-2 md:order-1 md:pr-2 md:overflow-y-auto md:max-h-[calc(100vh-8rem)]">
-        <div className="flex flex-col md:flex-row gap-4">
+      <div className="space-y-6 md:pr-1 md:overflow-y-auto md:max-h-[calc(100vh-8rem)] md:self-start">
+        <div className="flex flex-col md:flex-row md:flex-wrap gap-3 md:gap-2 lg:gap-4">
           <div className="relative flex-1">
             <input type="text" placeholder="Search catalog..." className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none shadow-sm" value={globalSearch} onChange={(e) => setGlobalSearch(e.target.value)} />
             <div className="absolute left-4 top-3.5 text-slate-400"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></div>
@@ -537,7 +537,7 @@ const POS: React.FC<POSProps> = ({
               <button key={cat} onClick={() => setActiveCatalog(cat)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeCatalog === cat ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-400'}`}>{cat}</button>
             ))}
           </div>
-          <select value={posSortBy} onChange={(e) => setPosSortBy(e.target.value as 'a-z' | 'z-a' | 'price-low' | 'price-high')} className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium">
+          <select value={posSortBy} onChange={(e) => setPosSortBy(e.target.value as 'a-z' | 'z-a' | 'price-low' | 'price-high')} className="md:ml-auto px-4 py-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium">
             <option value="a-z">A–Z</option>
             <option value="z-a">Z–A</option>
             <option value="price-low">Price: Low to High</option>
@@ -559,12 +559,12 @@ const POS: React.FC<POSProps> = ({
           {(activeCatalog === 'all' || activeCatalog === 'services') && filteredServices.length > 0 && (
             <section className="animate-fadeIn">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-teal-700 mb-4 flex items-center gap-2"><Icons.Services /> Treatments</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {filteredServices.map(service => (
                   <button key={service.id} onClick={() => addToCart(service, 'service')} className="bg-white p-4 rounded-xl border border-slate-200 hover:border-teal-500 hover:shadow-md transition-all text-left">
                     <div className="flex justify-between items-start mb-2">
                       <span className="font-bold text-slate-800 leading-tight">{service.name}</span>
-                      <span className="text-teal-600 font-black text-sm">${service.price}</span>
+                      <span className="text-emerald-600 font-black text-sm">${service.price}</span>
                     </div>
                     <div className="flex items-center justify-between mt-3 text-[9px] font-black text-slate-400 uppercase">
                       <span>{service.duration} mins</span>
@@ -579,12 +579,12 @@ const POS: React.FC<POSProps> = ({
           {(activeCatalog === 'all' || activeCatalog === 'products') && filteredProducts.length > 0 && (
             <section className="animate-fadeIn">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-amber-700 mb-4 flex items-center gap-2"><Icons.POS /> Retail Products</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {filteredProducts.map(product => (
                   <button key={product.id} onClick={() => addToCart(product, 'product')} className="bg-white p-4 rounded-xl border border-slate-200 hover:border-amber-500 hover:shadow-md transition-all text-left">
                     <div className="flex justify-between items-start mb-2">
                       <span className="font-bold text-slate-800">{product.name}</span>
-                      <span className="text-amber-600 font-black text-sm">${product.price}</span>
+                      <span className="text-emerald-600 font-black text-sm">${product.price}</span>
                     </div>
                     <span className="text-[10px] font-bold text-slate-400 uppercase">Stock: {product.stock}</span>
                   </button>
@@ -596,12 +596,12 @@ const POS: React.FC<POSProps> = ({
           {(activeCatalog === 'all' || activeCatalog === 'packages') && filteredPackages.length > 0 && (
             <section className="animate-fadeIn">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-indigo-700 mb-4 flex items-center gap-2"><Icons.Package /> Bundled Packages</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                 {filteredPackages.map(pkg => (
                   <button key={pkg.id} onClick={() => addToCart(pkg, 'package')} className="bg-white p-4 rounded-xl border border-slate-200 hover:border-indigo-500 hover:shadow-md transition-all text-left group">
                     <div className="flex justify-between items-start mb-2">
                       <span className="font-bold text-slate-800 leading-tight">{pkg.name}</span>
-                      <span className="text-indigo-600 font-black text-sm">${pkg.price}</span>
+                      <span className="text-emerald-600 font-black text-sm">${pkg.price}</span>
                     </div>
                     <div className="flex flex-wrap gap-1 mb-3">
                       {pkg.services.map((ps, idx) => {
@@ -672,10 +672,9 @@ const POS: React.FC<POSProps> = ({
         </button>
       </div>
 
-      {/* Checkout Cart sidebar: sticky on tablet/desktop, slide-up sheet on mobile */}
+      {/* Order Summary sidebar: sticky on tablet/desktop, slide-up sheet on mobile */}
       <div
         className={`
-          order-3 md:order-2
           md:sticky md:top-20 md:h-[calc(100vh-8rem)]
           md:flex md:flex-col
           ${isCartOpen ? 'fixed inset-0 z-[50] flex items-end md:static md:z-auto' : 'hidden md:flex'}
@@ -714,7 +713,7 @@ const POS: React.FC<POSProps> = ({
 
         <div className="p-6 border-b border-slate-100 bg-slate-50/60">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-app-section font-bold text-slate-900">Checkout Cart</h3>
+              <h3 className="text-app-section font-bold text-slate-900">Order Summary</h3>
             <button
               onClick={() => setIsCartOpen(false)}
               className="md:hidden p-2 rounded-lg hover:bg-slate-200 transition-colors"

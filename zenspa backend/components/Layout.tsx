@@ -148,7 +148,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, isAd
   const moreNavItems = navItems.filter((item) => !mobilePrimaryIds.has(item.id));
 
   const mobileBottomNavItemClass = (isActive: boolean) =>
-    `flex flex-1 flex-col items-center justify-center gap-0.5 min-w-0 px-1 py-1 rounded-lg transition-colors ${
+    `flex flex-1 flex-col items-center justify-center gap-0.5 min-w-0 px-1 md:px-2 py-1 rounded-lg transition-colors ${
       isActive ? 'text-slate-900 font-semibold' : 'text-slate-400 font-medium'
     }`;
 
@@ -292,7 +292,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, isAd
               <span className="[&_svg]:stroke-[2.25] flex h-6 w-6 shrink-0 items-center justify-center">
                 {item.icon}
               </span>
-              <span className="max-w-full truncate text-center text-[10px] leading-tight tracking-tight">
+              <span className="max-w-full truncate text-center text-[10px] leading-tight tracking-tight md:hidden">
                 {item.label}
               </span>
             </NavLink>
@@ -310,7 +310,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, isAd
               <span className="flex h-6 w-6 shrink-0 items-center justify-center">
                 <MoreHorizontalIcon />
               </span>
-              <span className="max-w-full truncate text-center text-[10px] leading-tight tracking-tight">More</span>
+              <span className="max-w-full truncate text-center text-[10px] leading-tight tracking-tight md:hidden">More</span>
             </button>
           )}
         </div>

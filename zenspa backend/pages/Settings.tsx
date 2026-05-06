@@ -676,6 +676,40 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         </div>
       </div>
 
+      {/* Voucher Redemption Security */}
+      <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="p-3 bg-rose-50 rounded-xl text-rose-600">
+            <Icons.Lock />
+          </div>
+          <div>
+            <h3 className="text-app-section font-bold text-slate-900">Voucher Redemption Security</h3>
+            <p className="text-xs text-slate-400 font-medium">Set a staff PIN required on public voucher redemption links.</p>
+          </div>
+        </div>
+
+        <div className="max-w-md space-y-2">
+          <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
+            Voucher Redemption PIN
+          </label>
+          <input
+            type="password"
+            value={settings.voucherRedemptionPin || ''}
+            onChange={(e) =>
+              onUpdateSettings({
+                ...settings,
+                voucherRedemptionPin: e.target.value,
+              })
+            }
+            placeholder="e.g. 1234"
+            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-rose-500 text-sm font-medium"
+          />
+          <p className="text-[10px] text-slate-400">
+            Leave blank to disable PIN checking and use confirmation checkbox only.
+          </p>
+        </div>
+      </div>
+
       {/* Automated Reminders Section */}
       <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
         <div className="flex items-center gap-4 mb-6">

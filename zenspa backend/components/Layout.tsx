@@ -113,6 +113,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, isAd
     { id: 'sales-reports', label: 'Sales Reports', icon: <Icons.Reports /> },
     { id: 'transactions', label: 'Sales History', icon: <Icons.Finance /> },
     { id: 'finance', label: 'Expenses', icon: <Icons.Finance /> },
+    { id: 'marketing', label: 'Marketing', icon: <Icons.Marketing /> },
     { id: 'staff', label: 'Staff & Team', icon: <Icons.Staff /> },
     { id: 'settings', label: 'Settings', icon: <Icons.Settings /> },
     { id: 'report', label: 'Report', icon: <Icons.Flag /> },

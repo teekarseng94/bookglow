@@ -154,6 +154,16 @@ service cloud.firestore {
       allow update, delete: if isAuthenticated();
     }
 
+    // Vouchers: admin can create/manage; public read for buy/redeem pages
+    match /vouchers/{voucherId} {
+      allow read: if true;
+      allow create: if isAdmin()
+        && request.resource.data.outletID != null
+        && request.resource.data.outletID == getUserOutletId();
+      allow update, delete: if isAdmin()
+        && resource.data.outletID == getUserOutletId();
+    }
+
     // Dashboard stats: admins full; cashiers read (and write if you aggregate from client)
     match /dashboard_stats/{docId} {
       allow read: if isAuthenticated();

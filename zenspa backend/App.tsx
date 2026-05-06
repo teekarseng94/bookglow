@@ -24,6 +24,7 @@ const Settings = React.lazy(() => import('./pages/Settings'));
 const ExternalIntegrations = React.lazy(() => import('./pages/ExternalIntegrations'));
 const AppointmentsCalendar = React.lazy(() => import('./pages/AppointmentsCalendar'));
 const SalesReports = React.lazy(() => import('./pages/SalesReports'));
+const Marketing = React.lazy(() => import('./pages/Marketing'));
 const SuperAdminLayout = React.lazy(() => import('./components/SuperAdminLayout'));
 const SuperAdminDashboard = React.lazy(() => import('./pages/SuperAdminDashboard'));
 const SuperAdminSubscribers = React.lazy(() => import('./pages/SuperAdminSubscribers'));
@@ -204,10 +205,10 @@ const App: React.FC = () => {
 };
 
 // Tab IDs that are admin-only; cashiers are redirected to POS if they try to access these
-const ADMIN_ONLY_TABS = ['dashboard', 'transactions', 'finance', 'staff', 'settings'] as const;
+const ADMIN_ONLY_TABS = ['dashboard', 'transactions', 'finance', 'staff', 'settings', 'marketing'] as const;
 
 // Valid top-level path segments (sidebar links use these as absolute paths, e.g. /dashboard, /pos)
-const VALID_TAB_IDS = ['dashboard', 'pos', 'schedule', 'appointments', 'member', 'menu', 'sales-reports', 'transactions', 'finance', 'staff', 'settings'] as const;
+const VALID_TAB_IDS = ['dashboard', 'pos', 'schedule', 'appointments', 'member', 'menu', 'sales-reports', 'transactions', 'finance', 'staff', 'settings', 'marketing'] as const;
 
 // Separate component for app content to keep App.tsx clean
 interface AppContentProps {
@@ -691,6 +692,8 @@ const AppContent: React.FC<AppContentProps> = ({
         return <Finance transactions={transactions} onAddTransaction={handleAddTransaction} onDeleteTransaction={handleDeleteTransaction} expenseCategories={expenseCategories} onAddCategory={handleAddExpenseCategory} onDeleteCategory={handleDeleteExpenseCategory} isLocked={isFeatureLocked('finance-view')} />;
       case 'settings':
         return <Settings settings={outletSettings} onUpdateSettings={handleUpdateOutletSettings} outletId={currentOutletID} />;
+      case 'marketing':
+        return <Marketing outletID={currentOutletID} services={services} role={role} />;
       default:
         return <Dashboard transactions={transactions} clients={clients} appointments={appointments} services={services} outletSettings={outletSettings} outletID={currentOutletID} onMarkReminderSent={handleMarkReminderSent} />;
     }

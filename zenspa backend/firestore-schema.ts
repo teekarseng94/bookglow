@@ -249,6 +249,29 @@ import {
  */
 
 /**
+ * Collection: vouchers
+ * Document ID: {voucherId} (auto-generated)
+ *
+ * Purpose:
+ * - Admin-created marketing voucher definitions, sold once and redeemed by unique link.
+ *
+ * Example Document:
+ * {
+ *   outletID: "outlet_001",
+ *   name: "Relax Package Voucher",
+ *   price: 120,
+ *   serviceIds: ["svc_1", "svc_2"], // many-to-many via array of service document IDs
+ *   expiryDate: "2026-12-31",
+ *   status: "active", // active | sold | redeemed
+ *   slug: "relax-package-voucher",
+ *   redemptionId: "rv-ab12cd34",
+ *   purchasedAt: <timestamp>,
+ *   redeemedAt: <timestamp>,
+ *   createdAt: <timestamp>
+ * }
+ */
+
+/**
  * QUERY PATTERNS FOR COMMON OPERATIONS
  */
 

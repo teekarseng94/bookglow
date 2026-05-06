@@ -8,6 +8,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import Login from './pages/Login';
 import PublicBookingPage from './pages/Book';
+import BuyVoucher from './pages/BuyVoucher';
+import RedeemVoucher from './pages/RedeemVoucher';
 
 const RouteSpinner = () => (
   <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -27,6 +29,8 @@ const RootRoutes: React.FC = () => {
     <Routes>
       {/* Public booking first — matches before *; never behind auth */}
       <Route path="/book/:id" element={<PublicBookingPage />} />
+      <Route path="/buy-voucher/:slug" element={<BuyVoucher />} />
+      <Route path="/redeem/:unique_id" element={<RedeemVoucher />} />
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} />
       <Route path="*" element={AppComponent ? <AppComponent /> : <RouteSpinner />} />

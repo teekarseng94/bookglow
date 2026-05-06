@@ -196,6 +196,8 @@ export interface OutletSettings {
   receiptFooterNote?: string;
   /** Optional: commission rates per staff role, configured from Staff page. */
   roleCommissions?: RoleCommission[];
+  /** Optional staff PIN required to confirm voucher redemption on public redeem page. */
+  voucherRedemptionPin?: string;
 }
 
 /** Daily operating hours for booking page (e.g. "8:00" - "17:00") */
@@ -311,4 +313,21 @@ export interface ApiIntegration {
   /** Webhook URL the POS sends updates to */
   webhookUrl?: string;
   updatedAt?: string;
+}
+
+export type VoucherStatus = 'active' | 'sold' | 'redeemed';
+
+export interface Voucher {
+  id: string;
+  outletID: string;
+  name: string;
+  price: number;
+  serviceIds: string[];
+  expiryDate: string;
+  status: VoucherStatus;
+  slug: string;
+  redemptionId?: string;
+  purchasedAt?: string;
+  redeemedAt?: string;
+  createdAt?: string;
 }

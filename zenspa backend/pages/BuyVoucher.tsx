@@ -11,6 +11,8 @@ const BuyVoucher: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isBuying, setIsBuying] = useState(false);
   const [redemptionLink, setRedemptionLink] = useState('');
+  const [secretCode, setSecretCode] = useState('');
+  const [copiedCode, setCopiedCode] = useState(false);
 
   const isExpired = useMemo(() => {
     if (!voucher?.expiryDate) return false;
@@ -33,6 +35,12 @@ const BuyVoucher: React.FC = () => {
     load().catch((e) => setError(e.message || 'Failed to load voucher.'));
   }, [slug]);
 
+  useEffect(() => {
+    if (!voucher) return;
+    if (voucher.secretCode) setSecretCode(voucher.secretCode);
+    if (voucher.redemptionId) setRedemptionLink(`/redeem/${voucher.redemptionId}`);
+  }, [voucher]);
+
   const includedServices = useMemo(() => {
     const map = new Map(services.map((s) => [s.id, s]));
     return voucher?.serviceIds.map((id) => map.get(id)).filter(Boolean) as Service[] | undefined;
@@ -47,8 +55,9 @@ const BuyVoucher: React.FC = () => {
     setIsBuying(true);
     setError(null);
     try {
-      const redemptionId = await voucherService.purchase(voucher.id);
+      const { redemptionId, secretCode: generatedCode } = await voucherService.purchase(voucher.id);
       setRedemptionLink(`/redeem/${redemptionId}`);
+      setSecretCode(generatedCode);
       const updated = await voucherService.getById(voucher.id);
       setVoucher(updated);
     } catch (e: any) {
@@ -56,6 +65,13 @@ const BuyVoucher: React.FC = () => {
     } finally {
       setIsBuying(false);
     }
+  };
+
+  const onCopySecretCode = async () => {
+    if (!secretCode) return;
+    await navigator.clipboard.writeText(secretCode);
+    setCopiedCode(true);
+    window.setTimeout(() => setCopiedCode(false), 1500);
   };
 
   return (
@@ -72,6 +88,11 @@ const BuyVoucher: React.FC = () => {
               <p className="text-slate-600 mt-1">Price: ${voucher.price.toFixed(2)}</p>
               <p className="text-sm text-slate-500 mt-1">Expiry: {voucher.expiryDate}</p>
               <p className="text-xs uppercase font-bold mt-2 text-slate-500">Status: {voucher.status}</p>
+              {voucher.status === 'active' && voucher.secretCode && (
+                <p className="text-xs font-semibold text-amber-700 mt-2">
+                  Code generated - pending staff confirmation in Marketing.
+                </p>
+              )}
               {isExpired && (
                 <p className="text-xs font-semibold text-rose-600 mt-2">This voucher is expired.</p>
               )}
@@ -91,21 +112,35 @@ const BuyVoucher: React.FC = () => {
 
             <button
               type="button"
-              disabled={voucher.status !== 'active' || isBuying || isExpired}
+              disabled={voucher.status !== 'active' || isBuying || isExpired || Boolean(voucher.secretCode)}
               onClick={onPurchase}
               className={`px-5 py-2.5 rounded-xl font-bold text-white ${
-                voucher.status !== 'active' || isBuying || isExpired
+                voucher.status !== 'active' || isBuying || isExpired || Boolean(voucher.secretCode)
                   ? 'bg-slate-400 cursor-not-allowed'
                   : 'bg-teal-600 hover:bg-teal-700'
               }`}
             >
-              {isBuying ? 'Redeeming...' : 'Redeem'}
+              {isBuying ? 'Generating Code...' : voucher.secretCode ? 'Code Generated' : 'Redeem'}
             </button>
 
             {redemptionLink && (
               <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
-                <p className="text-sm font-semibold text-emerald-700">Redemption link generated.</p>
+                <p className="text-sm font-semibold text-emerald-700">Secret code generated.</p>
                 <p className="text-xs font-mono text-emerald-800 mt-1">{redemptionLink}</p>
+                <p className="text-sm font-semibold text-emerald-700 mt-3">Secret Code</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="text-lg font-black tracking-widest text-emerald-900">{secretCode}</p>
+                  <button
+                    type="button"
+                    onClick={onCopySecretCode}
+                    className="px-2 py-1 text-[11px] font-bold rounded-md border border-emerald-300 text-emerald-800 hover:bg-emerald-100"
+                  >
+                    {copiedCode ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
+                <p className="text-[11px] text-emerald-800 mt-1">
+                  Show this code to staff. Voucher is considered sold only after staff confirms this code in Marketing.
+                </p>
               </div>
             )}
           </>

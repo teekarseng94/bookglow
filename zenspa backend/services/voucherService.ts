@@ -2,6 +2,7 @@ import {
   addDoc,
   collection,
   doc,
+  deleteField,
   getDoc,
   getDocs,
   limit,
@@ -26,6 +27,8 @@ const cleanSlug = (name: string) =>
     .slice(0, 40);
 
 const randomToken = (length: number) => Math.random().toString(36).slice(2, 2 + length);
+const randomDigits = (length: number) =>
+  Array.from({ length }, () => Math.floor(Math.random() * 10)).join('');
 
 const asIso = (value: unknown): string | undefined => {
   if (typeof value === 'string') return value;
@@ -45,6 +48,7 @@ const mapDocToVoucher = (id: string, data: any): Voucher => ({
   status: data.status || 'active',
   slug: data.slug,
   redemptionId: data.redemptionId,
+  secretCode: data.secretCode,
   purchasedAt: asIso(data.purchasedAt),
   redeemedAt: asIso(data.redeemedAt),
   createdAt: asIso(data.createdAt),
@@ -99,7 +103,7 @@ export const voucherService = {
     return mapDocToVoucher(d.id, d.data());
   },
 
-  async purchase(voucherId: string): Promise<string> {
+  async purchase(voucherId: string): Promise<{ redemptionId: string; secretCode: string }> {
     const voucherRef = doc(db, VOUCHERS_COLLECTION, voucherId);
     return runTransaction(db, async (tx) => {
       const snap = await tx.get(voucherRef);
@@ -112,13 +116,33 @@ export const voucherService = {
           throw new Error('Voucher has expired and can no longer be purchased.');
         }
       }
+      if (data.secretCode && data.redemptionId) {
+        return { redemptionId: data.redemptionId, secretCode: data.secretCode };
+      }
       const redemptionId = `rv-${randomToken(8)}${Date.now().toString(36).slice(-4)}`;
+      const secretCode = randomDigits(6);
+      tx.update(voucherRef, {
+        redemptionId,
+        secretCode,
+      });
+      return { redemptionId, secretCode };
+    });
+  },
+
+  async confirmSoldByCode(voucherId: string, inputCode: string): Promise<void> {
+    const voucherRef = doc(db, VOUCHERS_COLLECTION, voucherId);
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(voucherRef);
+      if (!snap.exists()) throw new Error('Voucher not found.');
+      const data = snap.data();
+      if (data.status !== 'active') throw new Error('Voucher is already sold or redeemed.');
+      const expectedCode = String(data.secretCode || '');
+      if (!expectedCode) throw new Error('No generated secret code found for this voucher.');
+      if (expectedCode !== String(inputCode || '').trim()) throw new Error('Secret code is invalid.');
       tx.update(voucherRef, {
         status: 'sold',
-        redemptionId,
         purchasedAt: serverTimestamp(),
       });
-      return redemptionId;
     });
   },
 
@@ -139,6 +163,16 @@ export const voucherService = {
 
   async updateStatus(id: string, status: Voucher['status']): Promise<void> {
     await updateDoc(doc(db, VOUCHERS_COLLECTION, id), { status });
+  },
+
+  async resetVoucher(voucherId: string): Promise<void> {
+    await updateDoc(doc(db, VOUCHERS_COLLECTION, voucherId), {
+      status: 'active',
+      redemptionId: deleteField(),
+      secretCode: deleteField(),
+      purchasedAt: deleteField(),
+      redeemedAt: deleteField(),
+    });
   },
 
   async getById(id: string): Promise<Voucher | null> {

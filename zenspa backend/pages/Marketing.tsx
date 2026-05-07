@@ -17,6 +17,10 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedVoucherId, setCopiedVoucherId] = useState<string | null>(null);
+  const [copiedSecretVoucherId, setCopiedSecretVoucherId] = useState<string | null>(null);
+  const [resettingVoucherId, setResettingVoucherId] = useState<string | null>(null);
+  const [confirmingVoucherId, setConfirmingVoucherId] = useState<string | null>(null);
+  const [saleCodeInputs, setSaleCodeInputs] = useState<Record<string, string>>({});
 
   const serviceNameMap = useMemo(() => {
     return new Map(services.map((s) => [s.id, s.name]));
@@ -42,6 +46,50 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
     window.setTimeout(() => {
       setCopiedVoucherId((current) => (current === voucher.id ? null : current));
     }, 1500);
+  };
+
+  const handleCopySecretCode = async (voucher: Voucher) => {
+    if (!voucher.secretCode) return;
+    await navigator.clipboard.writeText(voucher.secretCode);
+    setCopiedSecretVoucherId(voucher.id);
+    window.setTimeout(() => {
+      setCopiedSecretVoucherId((current) => (current === voucher.id ? null : current));
+    }, 1500);
+  };
+
+  const handleResetVoucher = async (voucher: Voucher) => {
+    if (voucher.status === 'active') return;
+    const confirmed = window.confirm(`Reset "${voucher.name}" back to active?`);
+    if (!confirmed) return;
+    try {
+      setResettingVoucherId(voucher.id);
+      setError(null);
+      await voucherService.resetVoucher(voucher.id);
+      await loadVouchers();
+    } catch (e: any) {
+      setError(e.message || 'Failed to reset voucher.');
+    } finally {
+      setResettingVoucherId(null);
+    }
+  };
+
+  const handleConfirmSold = async (voucher: Voucher) => {
+    const enteredCode = (saleCodeInputs[voucher.id] || '').trim();
+    if (!enteredCode) {
+      setError('Please enter secret code to confirm sale.');
+      return;
+    }
+    try {
+      setConfirmingVoucherId(voucher.id);
+      setError(null);
+      await voucherService.confirmSoldByCode(voucher.id, enteredCode);
+      setSaleCodeInputs((prev) => ({ ...prev, [voucher.id]: '' }));
+      await loadVouchers();
+    } catch (e: any) {
+      setError(e.message || 'Failed to confirm voucher sale.');
+    } finally {
+      setConfirmingVoucherId(null);
+    }
   };
 
   useEffect(() => {
@@ -172,15 +220,41 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
               <tr className="bg-slate-50 text-[10px] font-black uppercase text-slate-500">
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Secret Code</th>
                 <th className="px-4 py-3">Services</th>
                 <th className="px-4 py-3">Buy Link</th>
+                <th className="px-4 py-3">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {vouchers.map((voucher) => (
                 <tr key={voucher.id}>
                   <td className="px-4 py-3 text-sm font-semibold text-slate-800">{voucher.name}</td>
-                  <td className="px-4 py-3 text-xs font-bold uppercase text-slate-600">{voucher.status}</td>
+                  <td className="px-4 py-3 text-xs font-bold uppercase">
+                    {voucher.status === 'active' && voucher.secretCode ? (
+                      <span className="text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-md">
+                        Pending Staff Confirmation
+                      </span>
+                    ) : (
+                      <span className="text-slate-600">{voucher.status}</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {voucher.secretCode ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-slate-700">{voucher.secretCode}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleCopySecretCode(voucher)}
+                          className="px-2 py-1 text-[11px] font-bold rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50"
+                        >
+                          {copiedSecretVoucherId === voucher.id ? 'Copied' : 'Copy'}
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs font-mono text-slate-400">-</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-xs text-slate-600">
                     {voucher.serviceIds.map((id) => serviceNameMap.get(id) || id).join(', ')}
                   </td>
@@ -196,11 +270,53 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
                       </button>
                     </div>
                   </td>
+                  <td className="px-4 py-3">
+                    {voucher.status === 'active' && voucher.secretCode ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={saleCodeInputs[voucher.id] || ''}
+                          onChange={(e) =>
+                            setSaleCodeInputs((prev) => ({ ...prev, [voucher.id]: e.target.value }))
+                          }
+                          placeholder="Enter secret code"
+                          className="w-32 p-1.5 text-[11px] bg-white border border-slate-200 rounded-md outline-none focus:ring-2 focus:ring-teal-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleConfirmSold(voucher)}
+                          disabled={confirmingVoucherId === voucher.id}
+                          className={`px-3 py-1.5 text-[11px] font-bold rounded-md border ${
+                            confirmingVoucherId === voucher.id
+                              ? 'border-slate-200 text-slate-400 bg-slate-50 cursor-not-allowed'
+                              : 'border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100'
+                          }`}
+                        >
+                          {confirmingVoucherId === voucher.id ? 'Confirming...' : 'Confirm Sold'}
+                        </button>
+                      </div>
+                    ) : voucher.status !== 'active' ? (
+                      <button
+                        type="button"
+                        onClick={() => handleResetVoucher(voucher)}
+                        disabled={resettingVoucherId === voucher.id}
+                        className={`px-3 py-1.5 text-[11px] font-bold rounded-md border ${
+                          resettingVoucherId === voucher.id
+                            ? 'border-slate-200 text-slate-400 bg-slate-50 cursor-not-allowed'
+                            : 'border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100'
+                        }`}
+                      >
+                        {resettingVoucherId === voucher.id ? 'Resetting...' : 'Reset'}
+                      </button>
+                    ) : (
+                      <span className="text-xs text-slate-400">-</span>
+                    )}
+                  </td>
                 </tr>
               ))}
               {vouchers.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-sm text-slate-500">
+                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-500">
                     No vouchers created yet.
                   </td>
                 </tr>

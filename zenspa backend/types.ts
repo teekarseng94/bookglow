@@ -327,6 +327,7 @@ export interface Voucher {
   status: VoucherStatus;
   slug: string;
   redemptionId?: string;
+  secretCode?: string;
   purchasedAt?: string;
   redeemedAt?: string;
   createdAt?: string;

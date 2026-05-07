@@ -517,8 +517,8 @@ const POS: React.FC<POSProps> = ({
   return (
     <div className="flex flex-col md:grid md:grid-cols-[2fr_1fr] md:gap-4 lg:gap-6 h-full pb-28 md:pb-0">
       <div className="lg:hidden -mt-1 md:col-span-2">
-        <h1 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-slate-900">Point of Sale</h1>
-        <p className="mt-1 text-sm text-slate-600">Add items and complete checkout below.</p>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Point of Sale</h1>
+        <p className="mt-0.5 text-xs sm:text-sm text-slate-600">Add items and complete checkout below.</p>
       </div>
       {isVoucherRedemptionMode && (
         <div className="md:col-span-2 rounded-xl bg-sky-100 border border-sky-300 px-4 py-3 flex items-center gap-2 text-sky-800 text-sm font-medium">
@@ -527,22 +527,26 @@ const POS: React.FC<POSProps> = ({
         </div>
       )}
       <div className="space-y-6 md:pr-1 md:overflow-y-auto md:max-h-[calc(100vh-8rem)] md:self-start">
-        <div className="flex flex-col md:flex-row md:flex-wrap gap-3 md:gap-2 lg:gap-4">
+        <div className="flex flex-col md:flex-row md:flex-wrap gap-2 md:gap-2 lg:gap-4">
           <div className="relative flex-1">
-            <input type="text" placeholder="Search catalog..." className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none shadow-sm" value={globalSearch} onChange={(e) => setGlobalSearch(e.target.value)} />
-            <div className="absolute left-4 top-3.5 text-slate-400"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></div>
+            <input type="text" placeholder="Search catalog..." className="w-full pl-11 pr-4 py-2.5 md:py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none shadow-sm" value={globalSearch} onChange={(e) => setGlobalSearch(e.target.value)} />
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"><svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></div>
           </div>
-          <div className="flex bg-slate-100 p-1 rounded-xl shadow-inner">
-            {(['all', 'services', 'products', 'packages'] as const).map(cat => (
-              <button key={cat} onClick={() => setActiveCatalog(cat)} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeCatalog === cat ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-400'}`}>{cat}</button>
-            ))}
+          <div className="overflow-x-auto scrollbar-thin pb-1 md:overflow-visible md:pb-0">
+            <div className="flex items-center gap-2 min-w-max md:min-w-0 md:flex-wrap">
+              <div className="flex bg-slate-100 p-1 rounded-xl shadow-inner flex-shrink-0">
+                {(['all', 'services', 'products', 'packages'] as const).map(cat => (
+                  <button key={cat} onClick={() => setActiveCatalog(cat)} className={`px-3 py-1.5 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeCatalog === cat ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-400'}`}>{cat}</button>
+                ))}
+              </div>
+              <select value={posSortBy} onChange={(e) => setPosSortBy(e.target.value as 'a-z' | 'z-a' | 'price-low' | 'price-high')} className="flex-shrink-0 md:ml-auto px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-xs md:text-sm font-medium">
+                <option value="a-z">A–Z</option>
+                <option value="z-a">Z–A</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+              </select>
+            </div>
           </div>
-          <select value={posSortBy} onChange={(e) => setPosSortBy(e.target.value as 'a-z' | 'z-a' | 'price-low' | 'price-high')} className="md:ml-auto px-4 py-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium">
-            <option value="a-z">A–Z</option>
-            <option value="z-a">Z–A</option>
-            <option value="price-low">Price: Low to High</option>
-            <option value="price-high">Price: High to Low</option>
-          </select>
         </div>
 
         <div className="overflow-x-auto scrollbar-thin pb-2">
@@ -555,18 +559,18 @@ const POS: React.FC<POSProps> = ({
           </div>
         </div>
 
-        <div className="space-y-8">
+        <div className="space-y-8 min-h-[60vh]">
           {(activeCatalog === 'all' || activeCatalog === 'services') && filteredServices.length > 0 && (
             <section className="animate-fadeIn">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-teal-700 mb-4 flex items-center gap-2"><Icons.Services /> Treatments</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
                 {filteredServices.map(service => (
-                  <button key={service.id} onClick={() => addToCart(service, 'service')} className="bg-white p-4 rounded-xl border border-slate-200 hover:border-teal-500 hover:shadow-md transition-all text-left">
+                  <button key={service.id} onClick={() => addToCart(service, 'service')} className="bg-white p-3 md:p-4 rounded-xl border border-slate-200 hover:border-teal-500 hover:shadow-md transition-all text-left">
                     <div className="flex justify-between items-start mb-2">
                       <span className="font-bold text-slate-800 leading-tight">{service.name}</span>
                       <span className="text-emerald-600 font-black text-sm">${service.price}</span>
                     </div>
-                    <div className="flex items-center justify-between mt-3 text-[9px] font-black text-slate-400 uppercase">
+                    <div className="flex items-center justify-between mt-2 text-[8px] md:text-[9px] font-black text-slate-400 uppercase">
                       <span>{service.duration} mins</span>
                       <span className="text-amber-500">+{service.points} PTS</span>
                     </div>
@@ -711,9 +715,9 @@ const POS: React.FC<POSProps> = ({
           </div>
         </div>
 
-        <div className="p-6 border-b border-slate-100 bg-slate-50/60">
-          <div className="flex items-center justify-between mb-4">
-              <h3 className="text-app-section font-bold text-slate-900">Order Summary</h3>
+        <div className="p-4 sm:p-6 border-b border-slate-100 bg-slate-50/60">
+          <div className="flex items-center justify-between mb-3">
+              <h3 className="text-2xl font-bold text-slate-900">Order Summary</h3>
             <button
               onClick={() => setIsCartOpen(false)}
               className="md:hidden p-2 rounded-lg hover:bg-slate-200 transition-colors"
@@ -727,24 +731,24 @@ const POS: React.FC<POSProps> = ({
           <div className="space-y-3">
             {quickPOSMemberName && (
               <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-teal-50 border border-teal-200">
-                <span className="text-xs font-semibold text-teal-700">Customer: {quickPOSMemberName} selected.</span>
+                <span className="text-[11px] font-semibold text-teal-700">Customer: {quickPOSMemberName} selected.</span>
               </div>
             )}
             {selectedClientData && memberCreditBalance > 0 && (
               <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50 border border-blue-200">
-                <span className="text-xs font-semibold text-blue-700">
+                <span className="text-[11px] font-semibold text-blue-700">
                   Member credit: RM {memberCreditBalance.toFixed(2)}
                 </span>
               </div>
             )}
-             <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Customer</label>
+             <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Customer</label>
              <div className="relative" ref={customerDropdownRef}>
                <input
                  ref={customerInputRef}
                  type="text"
                  placeholder="Search by name or phone..."
                  autoComplete="off"
-                 className="w-full p-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium"
+                 className="w-full min-h-[44px] p-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-xs font-medium box-border"
                  value={selectedClientData ? selectedClientData.name : customerSearchQuery}
                  onChange={(e) => {
                    setCustomerSearchQuery(e.target.value);
@@ -802,7 +806,7 @@ const POS: React.FC<POSProps> = ({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 scrollbar-thin">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-2.5 sm:space-y-3 scrollbar-thin">
           {saleComplete ? (
             <div className="flex flex-col items-center justify-center py-6 animate-fadeIn">
               <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
@@ -827,21 +831,21 @@ const POS: React.FC<POSProps> = ({
                 const lineTotal = item.voucherRedemption ? 0 : item.price * item.quantity;
                 const showOriginalPrice = item.voucherRedemption && (item.originalPrice ?? 0) > 0;
                 return (
-                  <div key={lineId} className="bg-white p-4 rounded-xl border border-slate-200 animate-fadeIn relative group shadow-sm">
+                  <div key={lineId} className="bg-white p-3 rounded-xl border border-slate-200 animate-fadeIn relative group shadow-sm">
                     <button onClick={() => removeFromCart(lineId)} className="absolute -top-2 -right-2 w-6 h-6 bg-rose-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-10"><Icons.Trash /></button>
                     <div className="flex justify-between items-start mb-3">
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-slate-800 leading-tight">{displayName}</p>
+                      <div className="flex-1 pr-2">
+                        <p className="text-[11px] font-bold text-slate-800 leading-tight">{displayName}</p>
                         {showOriginalPrice ? (
-                          <p className="text-[10px] text-slate-400 font-bold uppercase">
+                          <p className="text-[9px] text-slate-400 font-bold uppercase">
                             <span className="line-through">{item.quantity} x ${(item.originalPrice ?? 0).toFixed(2)}</span>
                             <span className="ml-2 text-emerald-600">100% discount · $0</span>
                           </p>
                         ) : (
-                          <p className="text-[10px] text-slate-400 font-bold uppercase">{item.quantity} x ${item.price.toFixed(2)}</p>
+                          <p className="text-[9px] text-slate-400 font-bold uppercase">{item.quantity} x ${item.price.toFixed(2)}</p>
                         )}
                       </div>
-                      <span className={`font-black text-sm ${item.voucherRedemption ? 'text-emerald-600' : 'text-slate-700'}`}>${lineTotal.toFixed(2)}</span>
+                      <span className={`font-black text-[11px] ${item.voucherRedemption ? 'text-emerald-600' : 'text-slate-700'}`}>${lineTotal.toFixed(2)}</span>
                     </div>
                     {item.type === 'service' && item.redeemPointsEnabled && item.redeemPoints && (
                       <div className="mt-1 mb-1 flex items-center justify-between">
@@ -864,9 +868,12 @@ const POS: React.FC<POSProps> = ({
                       </div>
                     )}
                     {item.type === 'service' && (
-                      <div className="pt-3 border-t border-slate-100">
+                      <div className="pt-2.5 border-t border-slate-100 min-w-0">
+                        <label className="block text-[9px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
+                          Therapist
+                        </label>
                         <select
-                          className={`w-full p-2.5 text-xs rounded-lg border outline-none font-bold ${
+                          className={`w-full min-h-[44px] p-2.5 text-xs rounded-lg border outline-none font-semibold box-border ${
                             item.staffId
                               ? 'bg-slate-50 border-slate-200 text-slate-700'
                               : 'bg-rose-50 border-rose-200 text-rose-600'
@@ -897,7 +904,7 @@ const POS: React.FC<POSProps> = ({
           )}
         </div>
 
-        <div className="p-6 border-t border-slate-100 bg-slate-50/80">
+        <div className="p-4 sm:p-6 border-t border-slate-100 bg-slate-50/80 flex flex-col gap-2.5">
           {saleComplete ? (
             <div className="space-y-3 animate-fadeIn">
               <button
@@ -927,11 +934,11 @@ const POS: React.FC<POSProps> = ({
             </div>
           ) : (
             <>
-              <div className="space-y-4 mb-6">
+              <div className="space-y-3 mb-4">
                 {/* Sale date & time selection */}
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">
                       Sale Date &amp; Time
                     </label>
                     <label className="flex items-center gap-2 text-[11px] text-slate-500">
@@ -950,17 +957,17 @@ const POS: React.FC<POSProps> = ({
                         type="date"
                         value={customDate}
                         onChange={(e) => setCustomDate(e.target.value)}
-                        className="flex-1 p-2.5 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-teal-500"
+                        className="flex-1 min-h-[44px] p-2.5 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-teal-500 box-border"
                       />
                       <input
                         type="time"
                         value={customTime}
                         onChange={(e) => setCustomTime(e.target.value)}
-                        className="w-28 p-2.5 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-teal-500"
+                        className="w-28 min-h-[44px] p-2.5 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-teal-500 box-border"
                       />
                     </div>
                   ) : (
-                    <p className="text-xs text-slate-500 tabular-nums">
+                    <p className="text-[10px] text-slate-500 tabular-nums">
                       {currentTime.toLocaleString('en-GB', {
                         year: 'numeric',
                         month: '2-digit',
@@ -975,10 +982,10 @@ const POS: React.FC<POSProps> = ({
                 </div>
 
                 {/* Payment method & total */}
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Payment Method</label>
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Payment Method</label>
                   <select
-                    className="w-full p-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-bold"
+                    className="w-full min-h-[44px] p-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-xs font-bold box-border"
                     value={selectedPaymentMethod}
                     onChange={(e) => setSelectedPaymentMethod(e.target.value)}
                     disabled={isVoucherRedemptionMode}
@@ -995,7 +1002,7 @@ const POS: React.FC<POSProps> = ({
                     </p>
                   )}
                 </div>
-                <div className="flex justify-between text-2xl font-black text-slate-900">
+                <div className="flex justify-between text-lg font-black text-slate-900">
                   <span>Total</span>
                   <span>${total}</span>
                 </div>
@@ -1006,7 +1013,7 @@ const POS: React.FC<POSProps> = ({
               <button 
                 disabled={cart.length === 0 || isProcessing || (cart.some((i) => i.type === 'package') && !selectedClient)} 
                 onClick={handleCheckout} 
-                className={`w-full py-4 rounded-xl font-black shadow-lg transition-all flex items-center justify-center gap-2 min-h-[56px] ${
+                className={`w-full py-2.5 rounded-xl font-semibold shadow-sm transition-all flex items-center justify-center gap-2 min-h-[42px] text-sm ${
                   cart.length === 0 || (cart.some((i) => i.type === 'package') && !selectedClient)
                     ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
                     : isProcessing

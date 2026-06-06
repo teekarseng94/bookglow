@@ -1,0 +1,12 @@
+{
+  "name": "bookglow",
+  "private": true,
+  "devDependencies": {
+    "firebase-tools": "^13.35.0"
+  },
+  "scripts": {
+    "deploy": "deploy-all.bat",
+    "deploy:hosting": "firebase deploy --only hosting",
+    "deploy:firestore": "firebase deploy --only firestore"
+  }
+}

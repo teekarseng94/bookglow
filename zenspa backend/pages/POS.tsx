@@ -695,118 +695,121 @@ const POS: React.FC<POSProps> = ({
         <div
           className={`
             relative bg-white/95 border border-slate-200 rounded-t-2xl md:rounded-2xl shadow-md
-            flex flex-col overflow-hidden
+            flex flex-col h-full overflow-hidden
             w-full md:w-auto
-            max-h-[90vh] md:h-full
+            max-h-[90vh] md:max-h-none
             md:h-[calc(100vh-8rem)]
             md:static md:shadow-md
             mb-[calc(72px+env(safe-area-inset-bottom,0px))] md:mb-0
           `}
         >
           {/* Real-time Clock and Date Display */}
-          <div className="p-4 border-b border-slate-200 bg-gradient-to-r from-teal-50 to-slate-50">
-          <div className="flex flex-col items-center justify-center">
-            <div className="text-3xl font-black text-teal-700 tabular-nums">
-              {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
-            </div>
-            <div className="text-sm font-bold text-slate-600 mt-1">
-              {currentTime.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-            </div>
-          </div>
-        </div>
-
-        <div className="p-4 sm:p-6 border-b border-slate-100 bg-slate-50/60">
-          <div className="flex items-center justify-between mb-3">
-              <h3 className="text-2xl font-bold text-slate-900">Order Summary</h3>
-            <button
-              onClick={() => setIsCartOpen(false)}
-              className="md:hidden p-2 rounded-lg hover:bg-slate-200 transition-colors"
-              aria-label="Close cart"
-            >
-              <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <div className="space-y-3">
-            {quickPOSMemberName && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-teal-50 border border-teal-200">
-                <span className="text-[11px] font-semibold text-teal-700">Customer: {quickPOSMemberName} selected.</span>
+          <div className="py-2 px-3 border-b border-slate-200 bg-gradient-to-r from-teal-50 to-slate-50 shrink-0">
+            <div className="flex flex-col items-center justify-center">
+              <div className="text-xl font-black text-teal-700 tabular-nums leading-tight">
+                {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
               </div>
-            )}
-            {selectedClientData && memberCreditBalance > 0 && (
-              <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50 border border-blue-200">
-                <span className="text-[11px] font-semibold text-blue-700">
-                  Member credit: RM {memberCreditBalance.toFixed(2)}
-                </span>
+              <div className="text-xs font-semibold text-slate-600 mt-0.5">
+                {currentTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
               </div>
-            )}
-             <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Customer</label>
-             <div className="relative" ref={customerDropdownRef}>
-               <input
-                 ref={customerInputRef}
-                 type="text"
-                 placeholder="Search by name or phone..."
-                 autoComplete="off"
-                 className="w-full min-h-[44px] p-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-xs font-medium box-border"
-                 value={selectedClientData ? selectedClientData.name : customerSearchQuery}
-                 onChange={(e) => {
-                   setCustomerSearchQuery(e.target.value);
-                   setSelectedClient('');
-                   setQuickPOSMemberName(null);
-                   setCustomerDropdownOpen(true);
-                 }}
-                 onFocus={() => setCustomerDropdownOpen(true)}
-                 onBlur={() => setTimeout(() => setCustomerDropdownOpen(false), 180)}
-               />
-               {customerDropdownOpen && customerDropdownRect &&
-                 createPortal(
-                   <div
-                     className="max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl text-sm py-1"
-                     style={{
-                       position: 'fixed',
-                       top: customerDropdownRect.top + 4,
-                       left: customerDropdownRect.left,
-                       width: customerDropdownRect.width,
-                       zIndex: 9999,
-                     }}
-                   >
-                     <button
-                       type="button"
-                       className="w-full px-3 py-2.5 text-left hover:bg-slate-50 border-b border-slate-100 text-slate-500 font-medium"
-                       onMouseDown={(e) => { e.preventDefault(); setSelectedClient(''); setCustomerSearchQuery(''); setQuickPOSMemberName(null); setCustomerDropdownOpen(false); }}
-                     >
-                       Guest (Anonymous)
-                     </button>
-                     {customerSuggestions.length === 0 ? (
-                       <div className="px-3 py-4 text-slate-400 text-center">No matching customer</div>
-                     ) : (
-                       customerSuggestions.map((client) => (
-                         <button
-                           key={client.id}
-                           type="button"
-                           className="w-full px-3 py-2.5 text-left hover:bg-teal-50 flex justify-between items-center gap-2"
-                           onMouseDown={(e) => {
-                             e.preventDefault();
-                             setSelectedClient(client.id);
-                             setCustomerSearchQuery(client.name);
-                             setQuickPOSMemberName(null);
-                             setCustomerDropdownOpen(false);
-                           }}
-                         >
-                           <span className="font-medium text-slate-800 truncate">{client.name}</span>
-                           {client.phone && <span className="text-slate-400 text-xs shrink-0">{client.phone.slice(-4)}</span>}
-                         </button>
-                       ))
-                     )}
-                   </div>,
-                   document.body
-                 )}
-             </div>
+            </div>
           </div>
-        </div>
 
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-2.5 sm:space-y-3 scrollbar-thin">
+          <div className="px-3 py-2 sm:px-4 sm:py-2.5 border-b border-slate-100 bg-slate-50/60 shrink-0">
+            <div className="flex items-center justify-between mb-0">
+              <h3 className="text-lg font-semibold text-slate-900">Order Summary</h3>
+              <button
+                onClick={() => setIsCartOpen(false)}
+                className="md:hidden p-1.5 rounded-lg hover:bg-slate-200 transition-colors"
+                aria-label="Close cart"
+              >
+                <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+        <div className="flex-1 min-h-0 overflow-y-auto px-3 py-2 sm:p-4 space-y-2 scrollbar-thin">
+          {!saleComplete && (
+            <div className="space-y-2 pb-1">
+              {quickPOSMemberName && (
+                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-teal-50 border border-teal-200">
+                  <span className="text-[11px] font-semibold text-teal-700">Customer: {quickPOSMemberName} selected.</span>
+                </div>
+              )}
+              {selectedClientData && memberCreditBalance > 0 && (
+                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-blue-50 border border-blue-200">
+                  <span className="text-[11px] font-semibold text-blue-700">
+                    Member credit: RM {memberCreditBalance.toFixed(2)}
+                  </span>
+                </div>
+              )}
+              <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Customer</label>
+              <div className="relative" ref={customerDropdownRef}>
+                <input
+                  ref={customerInputRef}
+                  type="text"
+                  placeholder="Search by name or phone..."
+                  autoComplete="off"
+                  className="w-full min-h-[40px] py-2 px-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium box-border"
+                  value={selectedClientData ? selectedClientData.name : customerSearchQuery}
+                  onChange={(e) => {
+                    setCustomerSearchQuery(e.target.value);
+                    setSelectedClient('');
+                    setQuickPOSMemberName(null);
+                    setCustomerDropdownOpen(true);
+                  }}
+                  onFocus={() => setCustomerDropdownOpen(true)}
+                  onBlur={() => setTimeout(() => setCustomerDropdownOpen(false), 180)}
+                />
+                {customerDropdownOpen && customerDropdownRect &&
+                  createPortal(
+                    <div
+                      className="max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl text-sm py-1"
+                      style={{
+                        position: 'fixed',
+                        top: customerDropdownRect.top + 4,
+                        left: customerDropdownRect.left,
+                        width: customerDropdownRect.width,
+                        zIndex: 9999,
+                      }}
+                    >
+                      <button
+                        type="button"
+                        className="w-full px-3 py-2.5 text-left hover:bg-slate-50 border-b border-slate-100 text-slate-500 font-medium"
+                        onMouseDown={(e) => { e.preventDefault(); setSelectedClient(''); setCustomerSearchQuery(''); setQuickPOSMemberName(null); setCustomerDropdownOpen(false); }}
+                      >
+                        Guest (Anonymous)
+                      </button>
+                      {customerSuggestions.length === 0 ? (
+                        <div className="px-3 py-4 text-slate-400 text-center">No matching customer</div>
+                      ) : (
+                        customerSuggestions.map((client) => (
+                          <button
+                            key={client.id}
+                            type="button"
+                            className="w-full px-3 py-2.5 text-left hover:bg-teal-50 flex justify-between items-center gap-2"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setSelectedClient(client.id);
+                              setCustomerSearchQuery(client.name);
+                              setQuickPOSMemberName(null);
+                              setCustomerDropdownOpen(false);
+                            }}
+                          >
+                            <span className="font-medium text-slate-800 truncate">{client.name}</span>
+                            {client.phone && <span className="text-slate-400 text-xs shrink-0">{client.phone.slice(-4)}</span>}
+                          </button>
+                        ))
+                      )}
+                    </div>,
+                    document.body
+                  )}
+              </div>
+            </div>
+          )}
+          <div className="space-y-2">
           {saleComplete ? (
             <div className="flex flex-col items-center justify-center py-6 animate-fadeIn">
               <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
@@ -831,21 +834,21 @@ const POS: React.FC<POSProps> = ({
                 const lineTotal = item.voucherRedemption ? 0 : item.price * item.quantity;
                 const showOriginalPrice = item.voucherRedemption && (item.originalPrice ?? 0) > 0;
                 return (
-                  <div key={lineId} className="bg-white p-3 rounded-xl border border-slate-200 animate-fadeIn relative group shadow-sm">
+                  <div key={lineId} className="bg-white p-2.5 rounded-xl border border-slate-200 animate-fadeIn relative group shadow-sm">
                     <button onClick={() => removeFromCart(lineId)} className="absolute -top-2 -right-2 w-6 h-6 bg-rose-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-10"><Icons.Trash /></button>
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex-1 pr-2">
-                        <p className="text-[11px] font-bold text-slate-800 leading-tight">{displayName}</p>
+                    <div className="flex justify-between items-start mb-1.5">
+                      <div className="flex-1 pr-2 min-w-0">
+                        <p className="text-sm font-bold text-slate-800 leading-tight">{displayName}</p>
                         {showOriginalPrice ? (
-                          <p className="text-[9px] text-slate-400 font-bold uppercase">
+                          <p className="text-xs text-slate-400 font-bold uppercase mt-0.5">
                             <span className="line-through">{item.quantity} x ${(item.originalPrice ?? 0).toFixed(2)}</span>
                             <span className="ml-2 text-emerald-600">100% discount · $0</span>
                           </p>
                         ) : (
-                          <p className="text-[9px] text-slate-400 font-bold uppercase">{item.quantity} x ${item.price.toFixed(2)}</p>
+                          <p className="text-xs text-slate-400 font-bold uppercase mt-0.5">{item.quantity} x ${item.price.toFixed(2)}</p>
                         )}
                       </div>
-                      <span className={`font-black text-[11px] ${item.voucherRedemption ? 'text-emerald-600' : 'text-slate-700'}`}>${lineTotal.toFixed(2)}</span>
+                      <span className={`font-black text-sm shrink-0 ${item.voucherRedemption ? 'text-emerald-600' : 'text-slate-700'}`}>${lineTotal.toFixed(2)}</span>
                     </div>
                     {item.type === 'service' && item.redeemPointsEnabled && item.redeemPoints && (
                       <div className="mt-1 mb-1 flex items-center justify-between">
@@ -868,12 +871,12 @@ const POS: React.FC<POSProps> = ({
                       </div>
                     )}
                     {item.type === 'service' && (
-                      <div className="pt-2.5 border-t border-slate-100 min-w-0">
-                        <label className="block text-[9px] font-black uppercase tracking-wider text-slate-400 mb-1.5">
+                      <div className="pt-1.5 border-t border-slate-100 min-w-0">
+                        <label className="block text-[9px] font-black uppercase tracking-wider text-slate-400 mb-1">
                           Therapist
                         </label>
                         <select
-                          className={`w-full min-h-[44px] p-2.5 text-xs rounded-lg border outline-none font-semibold box-border ${
+                          className={`w-full min-h-[36px] py-1.5 px-2 text-sm rounded-lg border outline-none font-semibold box-border ${
                             item.staffId
                               ? 'bg-slate-50 border-slate-200 text-slate-700'
                               : 'bg-rose-50 border-rose-200 text-rose-600'
@@ -899,12 +902,13 @@ const POS: React.FC<POSProps> = ({
                   </div>
                 );
               })}
-              {cart.length === 0 && <div className="text-center py-20 text-slate-300 italic text-sm">Cart is empty</div>}
+              {cart.length === 0 && <div className="text-center py-12 text-slate-300 italic text-sm">Cart is empty</div>}
             </>
           )}
+          </div>
         </div>
 
-        <div className="p-4 sm:p-6 border-t border-slate-100 bg-slate-50/80 flex flex-col gap-2.5">
+        <div className="shrink-0 p-3 sm:p-4 border-t border-slate-100 bg-slate-50/80 flex flex-col gap-2">
           {saleComplete ? (
             <div className="space-y-3 animate-fadeIn">
               <button
@@ -934,14 +938,14 @@ const POS: React.FC<POSProps> = ({
             </div>
           ) : (
             <>
-              <div className="space-y-3 mb-4">
+              <div className="space-y-2 mb-2">
                 {/* Sale date & time selection */}
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <div className="flex items-center justify-between">
                     <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">
                       Sale Date &amp; Time
                     </label>
-                    <label className="flex items-center gap-2 text-[11px] text-slate-500">
+                    <label className="flex items-center gap-1.5 text-[11px] text-slate-500">
                       <input
                         type="checkbox"
                         checked={useCustomDateTime}
@@ -957,17 +961,17 @@ const POS: React.FC<POSProps> = ({
                         type="date"
                         value={customDate}
                         onChange={(e) => setCustomDate(e.target.value)}
-                        className="flex-1 min-h-[44px] p-2.5 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-teal-500 box-border"
+                        className="flex-1 min-h-[38px] py-1.5 px-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-teal-500 box-border"
                       />
                       <input
                         type="time"
                         value={customTime}
                         onChange={(e) => setCustomTime(e.target.value)}
-                        className="w-28 min-h-[44px] p-2.5 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-teal-500 box-border"
+                        className="w-24 min-h-[38px] py-1.5 px-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-teal-500 box-border"
                       />
                     </div>
                   ) : (
-                    <p className="text-[10px] text-slate-500 tabular-nums">
+                    <p className="text-[11px] text-slate-500 tabular-nums">
                       {currentTime.toLocaleString('en-GB', {
                         year: 'numeric',
                         month: '2-digit',
@@ -982,10 +986,10 @@ const POS: React.FC<POSProps> = ({
                 </div>
 
                 {/* Payment method & total */}
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Payment Method</label>
                   <select
-                    className="w-full min-h-[44px] p-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-xs font-bold box-border"
+                    className="w-full min-h-[38px] py-1.5 px-2 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-bold box-border"
                     value={selectedPaymentMethod}
                     onChange={(e) => setSelectedPaymentMethod(e.target.value)}
                     disabled={isVoucherRedemptionMode}
@@ -997,12 +1001,12 @@ const POS: React.FC<POSProps> = ({
                     ))}
                   </select>
                   {isVoucherRedemptionMode && (
-                    <p className="text-[11px] text-slate-500 mt-1">
+                    <p className="text-[11px] text-slate-500 mt-0.5">
                       Payment is fixed to <span className="font-semibold text-teal-600">Voucher (RM 0)</span> for this redemption.
                     </p>
                   )}
                 </div>
-                <div className="flex justify-between text-lg font-black text-slate-900">
+                <div className="flex justify-between text-base font-black text-slate-900 pt-1">
                   <span>Total</span>
                   <span>${total}</span>
                 </div>
@@ -1013,7 +1017,7 @@ const POS: React.FC<POSProps> = ({
               <button 
                 disabled={cart.length === 0 || isProcessing || (cart.some((i) => i.type === 'package') && !selectedClient)} 
                 onClick={handleCheckout} 
-                className={`w-full py-2.5 rounded-xl font-semibold shadow-sm transition-all flex items-center justify-center gap-2 min-h-[42px] text-sm ${
+                className={`w-full py-2 rounded-xl font-semibold shadow-sm transition-all flex items-center justify-center gap-2 min-h-[38px] text-xs ${
                   cart.length === 0 || (cart.some((i) => i.type === 'package') && !selectedClient)
                     ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
                     : isProcessing

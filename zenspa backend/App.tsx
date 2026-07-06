@@ -8,7 +8,7 @@ import { useAuth } from './hooks/useAuth';
 import { useFirestoreData } from './hooks/useFirestoreData';
 import { useUserContext } from './contexts/UserContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { outletService } from './services/firestoreService';
+import { outletService } from './services/databaseService';
 import { syncSetmoreViaCallable } from './services/setmoreSyncService';
 
 // Lazy-load pages to reduce build memory (each page becomes a separate chunk)

@@ -5,7 +5,7 @@ import { doc, updateDoc, deleteField, serverTimestamp } from 'firebase/firestore
 import { OutletSettings, Outlet, ApiIntegration } from '../types';
 import { Icons } from '../constants';
 import { useUserContext } from '../contexts/UserContext';
-import { outletService, apiIntegrationService } from '../services/firestoreService';
+import { outletService, apiIntegrationService } from '../services/databaseService';
 import { generateApiKey, sha256Hex } from '../utils/apiKeyHash';
 import { shopNameToBookingSlug, isValidBookingSlug } from '../utils/bookingSlug';
 import { db } from '../firebase';

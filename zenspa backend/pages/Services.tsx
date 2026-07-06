@@ -8,7 +8,7 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEn
 import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical } from 'lucide-react';
-import { getCurrentOutletID } from '../services/firestoreService';
+import { getCurrentOutletID } from '../services/databaseService';
 import { uploadImage, deleteImage, getServiceImagePath } from '../services/storageService';
 import { SERVICE_ICON_CATEGORIES } from '../serviceIcons';
 
@@ -291,7 +291,7 @@ const Services: React.FC<ServicesProps> = ({
     // Optimistic UI: update local array by mutating displayOrder on services
     // (the parent hook will re-fetch from Firestore after batch update)
     try {
-      const { serviceService } = await import('../services/firestoreService');
+      const { serviceService } = await import('../services/databaseService');
       await serviceService.updateDisplayOrder(updated);
     } catch (err) {
       console.error('Failed to update service display order:', err);

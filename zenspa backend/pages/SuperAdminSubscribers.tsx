@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { outletService } from '../services/firestoreService';
+import { outletService } from '../services/databaseService';
 import { Outlet } from '../types';
 
 const SuperAdminSubscribers: React.FC = () => {

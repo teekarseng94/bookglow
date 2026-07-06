@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useUserContext } from '../contexts/UserContext';
-import { apiIntegrationService } from '../services/firestoreService';
+import { apiIntegrationService } from '../services/databaseService';
 import { sha256Hex, generateApiKey } from '../utils/apiKeyHash';
 import type { ApiIntegration } from '../types';
 

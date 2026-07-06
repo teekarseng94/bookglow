@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { serviceService } from '../services/firestoreService';
+import { serviceService } from '../services/databaseService';
 import { voucherService } from '../services/voucherService';
 import { Service, Voucher } from '../types';
 

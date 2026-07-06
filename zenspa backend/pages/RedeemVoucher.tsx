@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { voucherService } from '../services/voucherService';
-import { outletService } from '../services/firestoreService';
+import { outletService } from '../services/databaseService';
 import { Voucher } from '../types';
 import { useUserContext } from '../contexts/UserContext';
 

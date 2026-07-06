@@ -19,8 +19,9 @@ import {
   rewardService,
   outletService,
   setCurrentOutletID,
-  getCurrentOutletID
-} from '../services/firestoreService';
+  getCurrentOutletID,
+  DB_PROVIDER
+} from '../services/databaseService';
 import { setCurrentOutletID as setPointTransactionOutletID } from '../services/pointTransactionService';
 import { setCurrentOutletID as setOutstandingTransactionOutletID } from '../services/outstandingTransactionService';
 import {

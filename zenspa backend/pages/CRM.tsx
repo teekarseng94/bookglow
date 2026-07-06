@@ -3,7 +3,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Client, Transaction, TransactionType, Service, Reward } from '../types';
 import { Icons, COLORS } from '../constants';
-import { getCurrentOutletID } from '../services/firestoreService';
+import { getCurrentOutletID } from '../services/databaseService';
 
 type SortFilter = 'Recent' | 'New' | 'Birthday' | 'Name';
 

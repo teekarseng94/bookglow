@@ -1,39 +1,37 @@
 /**
  * Database Service Provider Switch
  *
- * Routes all database calls to either Firestore or Supabase
- * based on VITE_DB_PROVIDER environment variable.
+ * Firestore is currently the ONLY active database provider.
  *
- * Usage: import from this file instead of firestoreService or supabaseService.
- * Set VITE_DB_PROVIDER=firestore (default) or VITE_DB_PROVIDER=supabase
+ * Supabase is intentionally NOT imported here so that the Supabase client
+ * (lib/supabase.ts) is never initialized at app startup and the app does not
+ * require VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY / VITE_DB_PROVIDER.
+ *
+ * The Supabase service layer (services/supabaseService.ts) and the prepared
+ * SQL migrations under migration/ are kept for a future Firestore→Supabase
+ * migration, but must remain unreferenced by the active app bundle.
+ *
+ * Usage: import from this file instead of firestoreService directly.
  */
 
 import * as firestoreServices from './firestoreService';
-import * as supabaseServices from './supabaseService';
 
-const provider = (import.meta.env.VITE_DB_PROVIDER || 'firestore').toLowerCase();
-const useSupabase = provider === 'supabase';
+console.log('🔵 Database provider: Firestore');
 
-if (useSupabase) {
-  console.log('🟢 Database provider: Supabase');
-} else {
-  console.log('🔵 Database provider: Firestore');
-}
+// Re-export the Firestore service layer as the active database.
+export const clientService = firestoreServices.clientService;
+export const staffService = firestoreServices.staffService;
+export const appointmentService = firestoreServices.appointmentService;
+export const transactionService = firestoreServices.transactionService;
+export const serviceService = firestoreServices.serviceService;
+export const productService = firestoreServices.productService;
+export const packageService = firestoreServices.packageService;
+export const rewardService = firestoreServices.rewardService;
+export const outletService = firestoreServices.outletService;
+export const apiIntegrationService = firestoreServices.apiIntegrationService;
 
-// Re-export services from the active provider
-export const clientService = useSupabase ? supabaseServices.clientService : firestoreServices.clientService;
-export const staffService = useSupabase ? supabaseServices.staffService : firestoreServices.staffService;
-export const appointmentService = useSupabase ? supabaseServices.appointmentService : firestoreServices.appointmentService;
-export const transactionService = useSupabase ? supabaseServices.transactionService : firestoreServices.transactionService;
-export const serviceService = useSupabase ? supabaseServices.serviceService : firestoreServices.serviceService;
-export const productService = useSupabase ? supabaseServices.productService : firestoreServices.productService;
-export const packageService = useSupabase ? supabaseServices.packageService : firestoreServices.packageService;
-export const rewardService = useSupabase ? supabaseServices.rewardService : firestoreServices.rewardService;
-export const outletService = useSupabase ? supabaseServices.outletService : firestoreServices.outletService;
-export const apiIntegrationService = useSupabase ? supabaseServices.apiIntegrationService : firestoreServices.apiIntegrationService;
-
-export const setCurrentOutletID = useSupabase ? supabaseServices.setCurrentOutletID : firestoreServices.setCurrentOutletID;
-export const getCurrentOutletID = useSupabase ? supabaseServices.getCurrentOutletID : firestoreServices.getCurrentOutletID;
+export const setCurrentOutletID = firestoreServices.setCurrentOutletID;
+export const getCurrentOutletID = firestoreServices.getCurrentOutletID;
 
 /** Which provider is active */
-export const DB_PROVIDER = useSupabase ? 'supabase' : 'firestore';
+export const DB_PROVIDER = 'firestore';

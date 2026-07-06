@@ -31,6 +31,10 @@ export default {
           from: { opacity: '0', transform: 'translateY(8px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
         },
+        scaleIn: {
+          from: { opacity: '0', transform: 'scale(0.95)' },
+          to: { opacity: '1', transform: 'scale(1)' },
+        },
         blob: {
           '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
           '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
@@ -39,6 +43,7 @@ export default {
       },
       animation: {
         fadeIn: 'fadeIn 0.4s ease-out',
+        scaleIn: 'scaleIn 0.2s ease-out',
         blob: 'blob 7s infinite',
       },
     },

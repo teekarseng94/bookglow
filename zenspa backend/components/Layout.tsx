@@ -128,14 +128,14 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, isAd
   const mobileBottomNavItems =
     role === 'admin'
       ? [
-          { id: 'dashboard', label: 'Dashboard', icon: <Icons.Dashboard /> },
+          { id: 'dashboard', label: 'Today', icon: <Icons.Dashboard /> },
           { id: 'schedule', label: 'Schedule', icon: <Icons.Calendar /> },
           { id: 'pos', label: 'POS', icon: <Icons.POS /> },
-          { id: 'member', label: 'Member', icon: <Icons.Clients /> },
+          { id: 'member', label: 'Members', icon: <Icons.Clients /> },
         ]
       : [
           { id: 'pos', label: 'POS', icon: <Icons.POS /> },
-          { id: 'member', label: 'Member', icon: <Icons.Clients /> },
+          { id: 'member', label: 'Members', icon: <Icons.Clients /> },
           { id: 'menu', label: 'Menu', icon: <Icons.Services /> },
           { id: 'sales-reports', label: 'Reports', icon: <Icons.Reports /> },
         ];
@@ -149,8 +149,8 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, isAd
   const moreNavItems = navItems.filter((item) => !mobilePrimaryIds.has(item.id));
 
   const mobileBottomNavItemClass = (isActive: boolean) =>
-    `flex flex-1 flex-col items-center justify-center gap-0.5 min-w-0 px-1 md:px-2 py-1 rounded-lg transition-colors ${
-      isActive ? 'text-slate-900 font-semibold' : 'text-slate-400 font-medium'
+    `flex flex-1 flex-col items-center justify-center gap-0.5 min-w-0 px-1 md:px-2 py-1.5 rounded-lg transition-colors ${
+      isActive ? 'text-teal-600 font-semibold' : 'text-slate-400 font-medium'
     }`;
 
   return (
@@ -187,39 +187,45 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, isAd
         </div>
       </aside>
 
-      {/* Mobile Top Nav */}
-      <div className="lg:hidden fixed top-0 w-full bg-white border-b border-slate-200 z-50 flex items-center justify-between px-3 py-2 h-14">
-         {/* Opens same overflow menu as bottom “More” (no left drawer on mobile) */}
+      {/* Mobile Top Nav — improved: shop name + contextual subtitle */}
+      <div className="lg:hidden fixed top-0 w-full bg-white border-b border-slate-200 z-50 flex items-center justify-between px-3 py-1.5 h-14">
+         {/* Hamburger — opens More menu */}
          {moreNavItems.length > 0 ? (
            <button
              type="button"
              data-more-menu-trigger
              onClick={() => setIsMoreMenuOpen((open) => !open)}
-             className="flex min-h-[48px] min-w-[48px] items-center justify-center rounded-lg p-3 hover:bg-slate-100 active:bg-slate-200 transition-colors"
+             className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg hover:bg-slate-100 active:bg-slate-200 transition-colors"
              aria-label="More pages"
              aria-expanded={isMoreMenuOpen}
            >
-             <svg className="w-6 h-6 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+             <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
              </svg>
            </button>
          ) : (
-           <div className="min-h-[48px] min-w-[48px]" aria-hidden />
+           <div className="min-h-[44px] min-w-[44px]" aria-hidden />
          )}
 
-         {/* Logo - Centered */}
-         <div className="flex-1 flex items-center justify-center px-3">
-           <h1 className="text-sm sm:text-base font-bold text-teal-600 truncate">{shopName}</h1>
+         {/* Shop name + subtitle */}
+         <div className="flex-1 flex flex-col items-center justify-center px-2 min-w-0">
+           <h1 className="text-sm font-bold text-teal-600 truncate max-w-[200px] leading-tight">{shopName}</h1>
+           <p className="text-[11px] text-slate-400 font-medium leading-tight">
+             {(() => {
+               const now = new Date();
+               return `Today, ${now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`;
+             })()}
+           </p>
          </div>
            
          {/* Mobile Profile Dropdown */}
          <div className="relative" ref={mobileProfileMenuRef}>
            <button
              onClick={() => setShowMobileProfileMenu(!showMobileProfileMenu)}
-             className="p-2 rounded-lg hover:bg-slate-100 active:bg-slate-200 transition-colors min-w-[48px] min-h-[48px] flex items-center justify-center"
+             className="rounded-lg hover:bg-slate-100 active:bg-slate-200 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
              aria-label="User menu"
            >
-             <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold text-sm ${
+             <div className={`w-9 h-9 rounded-full border-2 flex items-center justify-center font-bold text-xs ${
                isAdmin 
                  ? 'bg-teal-100 border-teal-200 text-teal-700' 
                  : 'bg-slate-100 border-slate-200 text-slate-600'

@@ -518,7 +518,7 @@ const POS: React.FC<POSProps> = ({
     <div className="flex flex-col md:grid md:grid-cols-[2fr_1fr] md:gap-4 lg:gap-6 h-full pb-28 md:pb-0">
       <div className="lg:hidden -mt-1 md:col-span-2">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Point of Sale</h1>
-        <p className="mt-0.5 text-xs sm:text-sm text-slate-600">Add items and complete checkout below.</p>
+        <p className="mt-0.5 text-xs sm:text-sm text-slate-500">Add items and complete checkout.</p>
       </div>
       {isVoucherRedemptionMode && (
         <div className="md:col-span-2 rounded-xl bg-sky-100 border border-sky-300 px-4 py-3 flex items-center gap-2 text-sky-800 text-sm font-medium">
@@ -640,39 +640,33 @@ const POS: React.FC<POSProps> = ({
         </div>
       </div>
 
-      {/* Mobile Cart Bottom Bar — fixed above app bottom nav (Layout z-40), not underneath it */}
-      <div className="md:hidden fixed bottom-[calc(72px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-[45] min-h-[64px] max-h-[80px] border-t border-slate-200 bg-white shadow-[0_-4px_12px_rgba(15,23,42,0.12)]">
+      {/* Mobile Cart Bottom Bar — sticky above bottom nav */}
+      <div className="md:hidden fixed bottom-[calc(72px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-[45] border-t border-slate-200 bg-white shadow-[0_-4px_12px_rgba(15,23,42,0.12)]">
         <button
           type="button"
           onClick={() => setIsCartOpen(true)}
-          className="w-full flex min-h-[64px] items-center justify-between px-4 py-2.5"
+          className="w-full flex items-center justify-between px-4 py-3 min-h-[60px]"
         >
-          <div className="flex flex-col items-start">
-            <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-              Checkout
+          <div className="flex items-center gap-3">
+            <span className="inline-flex items-center justify-center w-8 h-8 bg-teal-100 text-teal-700 rounded-full text-sm font-black">
+              {cart.length}
             </span>
-            <span className="text-sm font-semibold text-slate-800">
-              {cart.length} item{cart.length === 1 ? '' : 's'} · ${total.toFixed(2)}
+            <span className="text-base font-bold text-slate-800 tabular-nums">
+              ${total.toFixed(2)}
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 px-3 py-2 rounded-full bg-teal-600 text-white text-xs font-bold uppercase tracking-wide">
-              Review order
-              <svg
-                className="w-4 h-4 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 15l7-7 7 7"
-                />
+          <span className={`inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            cart.length > 0
+              ? 'bg-teal-600 text-white shadow-lg shadow-teal-200 active:scale-95'
+              : 'bg-slate-100 text-slate-400'
+          }`}>
+            {cart.length > 0 ? 'Checkout' : 'No items'}
+            {cart.length > 0 && (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
               </svg>
-            </span>
-          </div>
+            )}
+          </span>
         </button>
       </div>
 
@@ -902,7 +896,15 @@ const POS: React.FC<POSProps> = ({
                   </div>
                 );
               })}
-              {cart.length === 0 && <div className="text-center py-12 text-slate-300 italic text-sm">Cart is empty</div>}
+              {cart.length === 0 && (
+                <div className="text-center py-10">
+                  <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <svg className="w-7 h-7 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                  </div>
+                  <p className="text-sm font-semibold text-slate-400">No items selected</p>
+                  <p className="text-xs text-slate-300 mt-1">Tap a service or product to start a sale.</p>
+                </div>
+              )}
             </>
           )}
           </div>

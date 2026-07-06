@@ -5,6 +5,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import {
   BarChart3,
@@ -54,6 +55,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [topSellingTab, setTopSellingTab] = useState<TopSellingTab>('service');
+  const navigate = useNavigate();
 
   // Single dashboard data object: recalculates when transactions (or outletID) change so POS updates show instantly.
   const dashboardData = useMemo(() => {
@@ -284,19 +286,34 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="space-y-8 animate-fadeIn">
-      <div className="lg:hidden -mt-1 mb-2">
-        <h1 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-slate-900">Dashboard</h1>
-        <p className="mt-1 text-sm text-slate-600">Performance and activity at a glance.</p>
+      {/* 1. Mobile title + date */}
+      <div className="lg:hidden -mt-1 mb-1">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Today</h1>
+        <p className="mt-0.5 text-sm text-slate-500">
+          {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+        </p>
       </div>
-      {/* 1. Top metric boxes */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+      {/* 2. Top summary — revenue highlight on mobile */}
+      <div className="lg:hidden bg-gradient-to-br from-teal-600 to-teal-700 rounded-2xl p-5 text-white shadow-lg">
+        <p className="text-teal-100 text-xs font-semibold uppercase tracking-wider">This Month Revenue</p>
+        <p className="text-3xl font-black mt-1 tabular-nums">
+          ${dashboardData.stats.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+        </p>
+        <p className="text-teal-200 text-xs mt-1">
+          {dashboardData.monthSales.length} transaction{dashboardData.monthSales.length !== 1 ? 's' : ''} this month
+        </p>
+      </div>
+
+      {/* 3. Compact metric grid — 2 cols on mobile, 4 on desktop */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
         <StatCard
-          title="Total Revenue"
+          title="Revenue"
           value={`$${dashboardData.stats.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
           color="text-emerald-600"
         />
         <StatCard
-          title="Total Expenses"
+          title="Expenses"
           value={`$${dashboardData.stats.expenses.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
           color="text-rose-600"
         />
@@ -306,10 +323,86 @@ const Dashboard: React.FC<DashboardProps> = ({
           color="text-amber-600"
         />
         <StatCard
-          title="Active Clients"
+          title="Clients"
           value={dashboardData.stats.clientCount.toString()}
           color="text-slate-700"
         />
+      </div>
+
+      {/* 4. Quick Actions — mobile only */}
+      <div className="lg:hidden">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Quick Actions</h3>
+        <div className="grid grid-cols-4 gap-2">
+          {[
+            { label: 'New Sale', icon: '💳', route: '/pos' },
+            { label: 'Booking', icon: '📅', route: '/schedule' },
+            { label: 'Member', icon: '👤', route: '/member' },
+            { label: 'Expense', icon: '📊', route: '/finance' },
+          ].map((action) => (
+            <button
+              key={action.label}
+              onClick={() => navigate(action.route)}
+              className="flex flex-col items-center gap-1.5 py-3 px-2 bg-white rounded-xl border border-slate-200 hover:border-teal-300 hover:bg-teal-50 active:scale-95 transition-all min-h-[72px]"
+            >
+              <span className="text-xl">{action.icon}</span>
+              <span className="text-[10px] font-bold text-slate-600 leading-tight text-center">{action.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 5. Today's Appointments Preview — mobile only */}
+      <div className="lg:hidden">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Today's Appointments</h3>
+        {(() => {
+          const todayStr = formatLocalDate(new Date());
+          const todayApps = appointments
+            .filter((a) => a.date === todayStr && a.status !== 'cancelled' && a.status !== 'no-show' && typeof a.id === 'string' && !a.id.startsWith('app_onduty_'))
+            .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+            .slice(0, 5);
+
+          if (todayApps.length === 0) {
+            return (
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 text-center">
+                <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Calendar className="w-6 h-6 text-slate-300" />
+                </div>
+                <p className="text-sm font-semibold text-slate-400">No appointments today</p>
+                <button
+                  onClick={() => navigate('/schedule')}
+                  className="mt-3 px-4 py-2 bg-teal-600 text-white text-xs font-bold rounded-lg hover:bg-teal-700 active:scale-95 transition-all"
+                >
+                  Add Booking
+                </button>
+              </div>
+            );
+          }
+
+          return (
+            <div className="space-y-2">
+              {todayApps.map((app) => {
+                const clientName = clients.find((c) => c.id === app.clientId)?.name || 'Guest';
+                const serviceName = services.find((s) => s.id === app.serviceId)?.name || '—';
+                return (
+                  <div key={app.id} className="bg-white rounded-xl border border-slate-200 px-4 py-3 flex items-center gap-3">
+                    <div className="text-center min-w-[44px]">
+                      <p className="text-sm font-black text-teal-600 tabular-nums">{formatCompactTime(app.time)}</p>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-800 truncate">{serviceName}</p>
+                      <p className="text-xs text-slate-400 truncate">{clientName}</p>
+                    </div>
+                    <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-full ${
+                      app.status === 'completed' ? 'bg-emerald-100 text-emerald-700'
+                        : app.status === 'scheduled' ? 'bg-blue-50 text-blue-600'
+                        : 'bg-slate-100 text-slate-500'
+                    }`}>{app.status || 'pending'}</span>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -633,9 +726,9 @@ const StatCard = ({
   value: string;
   color: string;
 }) => (
-  <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-    <p className="text-app-label font-semibold uppercase text-slate-500 tracking-wider mb-2">{title}</p>
-    <p className={`text-app-section font-bold ${color}`}>{value}</p>
+  <div className="bg-white p-4 lg:p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+    <p className="text-[10px] lg:text-app-label font-semibold uppercase text-slate-500 tracking-wider mb-1 lg:mb-2">{title}</p>
+    <p className={`text-lg lg:text-app-section font-bold ${color} tabular-nums`}>{value}</p>
   </div>
 );
 

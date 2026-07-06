@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Transaction, TransactionType, Client } from '../types';
 import { Icons } from '../constants';
 
@@ -13,6 +14,24 @@ interface TransactionsProps {
 
 type SortField = 'date' | 'amount' | 'client';
 type SortOrder = 'asc' | 'desc';
+// Record-type filter. Commission is an EXPENSE linked to a sale (parentSaleId) — see types.ts.
+type FilterKey = 'ALL' | 'SALE' | 'COMMISSION' | 'EXPENSE';
+
+// A commission is an expense document tied back to a sale, or explicitly labelled as commission.
+const isCommissionTxn = (t: Transaction): boolean =>
+  t.type === TransactionType.EXPENSE &&
+  (!!t.parentSaleId || /commission/i.test(t.category || '') || /commission/i.test(t.description || ''));
+
+// Visual metadata (label, colours, sign) derived from the transaction — no schema changes.
+const getTxnMeta = (t: Transaction) => {
+  if (t.type === TransactionType.SALE) {
+    return { label: 'Sale', sign: '+', dot: 'bg-green-500', amount: 'text-green-600', badge: 'bg-green-50 text-green-700' };
+  }
+  if (isCommissionTxn(t)) {
+    return { label: 'Commission', sign: '-', dot: 'bg-amber-500', amount: 'text-amber-600', badge: 'bg-amber-50 text-amber-700' };
+  }
+  return { label: 'Expense', sign: '-', dot: 'bg-rose-500', amount: 'text-rose-600', badge: 'bg-rose-50 text-rose-700' };
+};
 
 const Transactions: React.FC<TransactionsProps> = ({ 
   transactions, 
@@ -21,13 +40,15 @@ const Transactions: React.FC<TransactionsProps> = ({
   onDeleteTransaction,
   isDeleteLocked 
 }) => {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [filterType, setFilterType] = useState<string>('ALL');
+  const [filterType, setFilterType] = useState<FilterKey>('ALL');
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [editingTxn, setEditingTxn] = useState<Transaction | null>(null);
   const [deletingTxn, setDeletingTxn] = useState<Transaction | null>(null);
   const [expandedTxn, setExpandedTxn] = useState<string | null>(null);
+  const [detailTxn, setDetailTxn] = useState<Transaction | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const sortedAndFilteredTransactions = useMemo(() => {
@@ -42,7 +63,11 @@ const Transactions: React.FC<TransactionsProps> = ({
                            t.category.toLowerCase().includes(search.toLowerCase()) ||
                            clientName.toLowerCase().includes(search.toLowerCase());
       
-      const matchesType = filterType === 'ALL' || t.type === filterType;
+      const matchesType =
+        filterType === 'ALL' ? true :
+        filterType === 'SALE' ? t.type === TransactionType.SALE :
+        filterType === 'COMMISSION' ? isCommissionTxn(t) :
+        /* EXPENSE */ t.type === TransactionType.EXPENSE && !isCommissionTxn(t);
       return matchesSearch && matchesType;
     });
 
@@ -60,6 +85,24 @@ const Transactions: React.FC<TransactionsProps> = ({
       return sortOrder === 'asc' ? comparison : -comparison;
     });
   }, [transactions, search, filterType, sortField, sortOrder, clients]);
+
+  // Summary of the currently filtered records (derived, no calculation changes).
+  const summary = useMemo(() => {
+    let totalIn = 0;
+    let totalOut = 0;
+    for (const t of sortedAndFilteredTransactions) {
+      if (t.type === TransactionType.SALE) totalIn += t.amount;
+      else totalOut += t.amount;
+    }
+    return { totalIn, totalOut, net: totalIn - totalOut };
+  }, [sortedAndFilteredTransactions]);
+
+  const filterChips: { key: FilterKey; label: string }[] = [
+    { key: 'ALL', label: 'All' },
+    { key: 'SALE', label: 'Sales' },
+    { key: 'COMMISSION', label: 'Commission' },
+    { key: 'EXPENSE', label: 'Expense' },
+  ];
 
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -123,7 +166,8 @@ const Transactions: React.FC<TransactionsProps> = ({
         <h1 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-slate-900">Sales History</h1>
         <p className="mt-1 text-sm text-slate-600">Review, edit, or filter past transactions.</p>
       </div>
-      <div className="bg-teal-50 border border-teal-100 rounded-xl p-4 flex items-center gap-3">
+      {/* Info banner — hidden on mobile to save vertical space */}
+      <div className="hidden md:flex bg-teal-50 border border-teal-100 rounded-xl p-4 items-center gap-3">
         <div className="bg-teal-600 text-white p-2 rounded-lg">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
         </div>
@@ -132,38 +176,46 @@ const Transactions: React.FC<TransactionsProps> = ({
         </p>
       </div>
 
-      <div className="flex flex-col xl:flex-row justify-between gap-4">
-        <div className="relative flex-1">
-          <input 
-            type="text" 
-            placeholder="Search description, client, or category..." 
-            className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 shadow-sm transition-all"
+      {/* Filters: full-width search, type chips, and compact sort controls */}
+      <div className="space-y-3">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search description, client, or category..."
+            className="w-full pl-11 pr-4 py-3 min-h-[48px] bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 shadow-sm text-base transition-all"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <div className="absolute left-4 top-3.5 text-slate-400">
+          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Show</span>
-            <select 
-              className="bg-white border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-teal-500 shadow-sm transition-all"
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-            >
-              <option value="ALL">All Records</option>
-              <option value={TransactionType.SALE}>Sales Only</option>
-              <option value={TransactionType.EXPENSE}>Expenses Only</option>
-            </select>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          {/* Record-type chips (horizontally scrollable on mobile) */}
+          <div className="flex gap-2 overflow-x-auto -mx-1 px-1 pb-1 sm:pb-0">
+            {filterChips.map((chip) => (
+              <button
+                key={chip.key}
+                type="button"
+                onClick={() => setFilterType(chip.key)}
+                className={`flex-shrink-0 px-4 min-h-[40px] rounded-full text-xs font-bold whitespace-nowrap border transition-all ${
+                  filterType === chip.key
+                    ? 'bg-teal-600 text-white border-teal-600 shadow-sm'
+                    : 'bg-white text-slate-500 border-slate-200 hover:border-teal-300'
+                }`}
+              >
+                {chip.label}
+              </button>
+            ))}
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sort By</span>
-            <select 
-              className="bg-white border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-teal-500 shadow-sm transition-all"
+          {/* Sort controls */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className="hidden sm:inline text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sort</span>
+            <select
+              aria-label="Sort by"
+              className="flex-1 sm:flex-none bg-white border border-slate-200 px-3 py-2.5 min-h-[44px] rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-teal-500 shadow-sm transition-all"
               value={sortField}
               onChange={(e) => setSortField(e.target.value as SortField)}
             >
@@ -171,156 +223,357 @@ const Transactions: React.FC<TransactionsProps> = ({
               <option value="amount">Amount</option>
               <option value="client">Client Name</option>
             </select>
-            <select 
-              className="bg-white border border-slate-200 px-3 py-2.5 rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-teal-500 shadow-sm transition-all"
+            <select
+              aria-label="Sort order"
+              className="flex-1 sm:flex-none bg-white border border-slate-200 px-3 py-2.5 min-h-[44px] rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-teal-500 shadow-sm transition-all"
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value as SortOrder)}
             >
-              <option value="asc">Ascending</option>
               <option value="desc">Descending</option>
+              <option value="asc">Ascending</option>
             </select>
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="text-slate-400 text-[10px] uppercase tracking-widest font-bold bg-slate-50 border-b border-slate-100">
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4">Date & Time & Description</th>
-                <th className="px-6 py-4">Client</th>
-                <th className="px-6 py-4">Category</th>
-                <th className="px-6 py-4">Method</th>
-                <th className="px-6 py-4">Amount</th>
-                <th className="px-6 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {sortedAndFilteredTransactions.map(txn => {
-                const client = clients.find(c => c.id === txn.clientId);
-                const isExpanded = expandedTxn === txn.id;
-                const txnDate = new Date(txn.date);
-                
-                return (
-                  <React.Fragment key={txn.id}>
-                    <tr 
-                      className={`hover:bg-slate-50 transition-colors cursor-pointer ${isExpanded ? 'bg-slate-50' : ''}`}
-                      onClick={() => toggleExpand(txn.id)}
-                    >
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center w-2 h-2 rounded-full ${txn.type === TransactionType.SALE ? 'bg-green-500' : 'bg-rose-500'}`}></span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col">
-                          <span className="text-xs text-slate-500 font-bold">
-                            {txnDate.toLocaleDateString()} {txnDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                          <span className="text-sm font-bold text-slate-800">{txn.description}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-600">
-                        {client ? (
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 bg-teal-50 rounded-full flex items-center justify-center text-[10px] font-bold text-teal-600">
-                              {client.name.charAt(0)}
-                            </div>
-                            {client.name}
-                          </div>
-                        ) : (txn.type === TransactionType.SALE ? <span className="text-slate-300">Guest</span> : <span className="text-slate-300">—</span>)}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="px-2 py-1 bg-slate-100 text-slate-500 text-[10px] font-bold uppercase rounded-md">{txn.category}</span>
-                      </td>
-                      <td className="px-6 py-4 text-xs font-bold text-slate-500">
-                        {txn.paymentMethod || '—'}
-                      </td>
-                      <td className={`px-6 py-4 text-sm font-bold ${
-                        txn.type === TransactionType.SALE ? 'text-green-600' : 'text-rose-600'
-                      }`}>
-                        {txn.type === TransactionType.SALE ? '+' : '-'}${txn.amount.toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-3" onClick={e => e.stopPropagation()}>
-                          <button 
-                            disabled={isDeleteLocked}
-                            onClick={() => setEditingTxn(txn)}
-                            className={`p-2 rounded-lg transition-all ${
-                              isDeleteLocked 
-                                ? 'text-slate-200 cursor-not-allowed' 
-                                : 'text-slate-400 hover:text-teal-600 hover:bg-teal-50'
-                            }`}
-                          >
-                            {isDeleteLocked ? <Icons.Lock /> : <Icons.Edit />}
-                          </button>
-                          <button 
-                            disabled={isDeleteLocked}
-                            onClick={() => setDeletingTxn(txn)}
-                            className={`p-2 rounded-lg transition-all ${
-                              isDeleteLocked 
-                                ? 'text-slate-200 cursor-not-allowed' 
-                                : 'text-slate-400 hover:text-rose-500 hover:bg-rose-50'
-                            }`}
-                          >
-                            {isDeleteLocked ? <Icons.Lock /> : <Icons.Trash />}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                    
-                    {isExpanded && txn.items && txn.items.length > 0 && (
-                      <tr className="bg-slate-50">
-                        <td colSpan={7} className="px-12 py-6 border-y border-slate-100">
-                          <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm max-w-2xl animate-fadeIn">
-                             <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Sale Breakdown</h4>
-                             <div className="space-y-3">
-                               {txn.items.map((item, idx) => (
-                                 <div key={idx} className="flex justify-between items-center text-sm border-b border-slate-50 pb-2">
-                                   <div className="flex flex-col">
-                                     <span className="font-semibold text-slate-700">{item.name}</span>
-                                     <span className="text-[10px] text-slate-400 uppercase font-bold">{item.type}</span>
-                                   </div>
-                                   <div className="text-right">
-                                     <span className="text-slate-500 font-medium">Qty: {item.quantity}</span>
-                                     <span className="ml-6 font-bold text-slate-800">${(item.price * item.quantity).toLocaleString()}</span>
-                                   </div>
-                                 </div>
-                               ))}
-                             </div>
-                             <div className="mt-4 pt-4 border-t-2 border-dashed border-slate-100">
-                               <div className="flex justify-between mb-1">
-                                 <span className="text-xs font-bold text-slate-400 uppercase">Payment Method</span>
-                                 <span className="text-sm font-black text-slate-600">{txn.paymentMethod || 'Not specified'}</span>
-                               </div>
-                               <div className="flex justify-between">
-                                 <span className="text-xs font-bold text-slate-400 uppercase">Total Transaction Amount</span>
-                                 <span className="text-lg font-black text-teal-600">${txn.amount.toLocaleString()}</span>
-                               </div>
-                             </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </React.Fragment>
-                );
-              })}
-              {sortedAndFilteredTransactions.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-slate-400 italic">
-                    No transactions found in history.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+      {/* Summary chips for the filtered records */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <div className="bg-white rounded-xl border border-slate-200 p-3 text-center shadow-sm">
+          <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Total In</p>
+          <p className="text-sm sm:text-lg font-black text-green-600 tabular-nums truncate">+${summary.totalIn.toLocaleString()}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-3 text-center shadow-sm">
+          <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Total Out</p>
+          <p className="text-sm sm:text-lg font-black text-rose-600 tabular-nums truncate">-${summary.totalOut.toLocaleString()}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-3 text-center shadow-sm">
+          <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Net</p>
+          <p className={`text-sm sm:text-lg font-black tabular-nums truncate ${summary.net >= 0 ? 'text-teal-600' : 'text-rose-600'}`}>
+            {summary.net < 0 ? '-' : ''}${Math.abs(summary.net).toLocaleString()}
+          </p>
         </div>
       </div>
+
+      {sortedAndFilteredTransactions.length === 0 ? (
+        /* Empty state */
+        <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-10 sm:p-16 flex flex-col items-center justify-center text-center">
+          <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-4">
+            <Icons.Reports />
+          </div>
+          <h3 className="text-base font-bold text-slate-500">No transactions found.</h3>
+          <p className="text-sm text-slate-400 mt-1">
+            {search || filterType !== 'ALL' ? 'Try adjusting your search or filters.' : 'Completed sales and expenses will appear here.'}
+          </p>
+          {!search && filterType === 'ALL' && (
+            <button
+              type="button"
+              onClick={() => navigate('/pos')}
+              className="mt-5 px-5 min-h-[44px] rounded-xl bg-teal-600 text-white text-sm font-bold shadow-lg shadow-teal-100 hover:bg-teal-700 active:scale-95 transition-all"
+            >
+              Go to POS
+            </button>
+          )}
+        </div>
+      ) : (
+        <>
+          {/* Mobile: transaction card list (no horizontal scroll) */}
+          <div className="md:hidden space-y-3 pb-24">
+            {sortedAndFilteredTransactions.map((txn) => {
+              const meta = getTxnMeta(txn);
+              const client = clients.find(c => c.id === txn.clientId);
+              const clientName = client?.name || (txn.type === TransactionType.SALE ? 'Guest' : '');
+              const txnDate = new Date(txn.date);
+              return (
+                <div
+                  key={txn.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setDetailTxn(txn)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDetailTxn(txn); } }}
+                  className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 cursor-pointer active:scale-[0.99] transition-transform"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${meta.dot}`} />
+                        <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${meta.badge}`}>{meta.label}</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 font-semibold mt-1.5">
+                        {txnDate.toLocaleDateString()} · {txnDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                      <p className="text-sm font-bold text-slate-800 mt-0.5 break-words line-clamp-2">{txn.description}</p>
+                      {txn.items && txn.items.length > 0 && (
+                        <p className="text-[11px] text-slate-500 mt-1 break-words">
+                          <span className="font-bold">{txn.items.length} item{txn.items.length > 1 ? 's' : ''}:</span>{' '}
+                          {txn.items.slice(0, 2).map(i => i.name).join(', ')}
+                          {txn.items.length > 2 ? ` +${txn.items.length - 2} more` : ''}
+                        </p>
+                      )}
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {clientName && (
+                          <span className="px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-md text-[10px] font-semibold text-slate-500">Client: {clientName}</span>
+                        )}
+                        {txn.paymentMethod && (
+                          <span className="px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-md text-[10px] font-semibold text-slate-500">{txn.paymentMethod}</span>
+                        )}
+                        {txn.category && (
+                          <span className="px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-md text-[10px] font-semibold text-slate-500">{txn.category}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className={`text-base font-black tabular-nums ${meta.amount}`}>{meta.sign}${txn.amount.toLocaleString()}</p>
+                    </div>
+                  </div>
+                  {/* Edit action — real <button> lives inside a div[role=button] wrapper, so no nested-button */}
+                  <div className="mt-3 flex justify-end" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      disabled={isDeleteLocked}
+                      onClick={() => setEditingTxn(txn)}
+                      className={`inline-flex items-center gap-1.5 px-4 min-h-[44px] rounded-xl text-sm font-bold transition-all ${
+                        isDeleteLocked ? 'bg-slate-50 text-slate-300 cursor-not-allowed' : 'bg-teal-50 text-teal-700 hover:bg-teal-100 active:scale-95'
+                      }`}
+                    >
+                      {isDeleteLocked ? <Icons.Lock /> : <Icons.Edit />} {isDeleteLocked ? 'Locked' : 'Edit'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* iPad / desktop: table (compact padding on iPad, roomier on desktop) */}
+          <div className="hidden md:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="text-slate-400 text-[10px] uppercase tracking-widest font-bold bg-slate-50 border-b border-slate-100">
+                    <th className="px-3 lg:px-6 py-4">Status</th>
+                    <th className="px-3 lg:px-6 py-4">Date &amp; Description</th>
+                    <th className="px-3 lg:px-6 py-4">Client</th>
+                    <th className="px-3 lg:px-6 py-4">Category</th>
+                    <th className="px-3 lg:px-6 py-4">Method</th>
+                    <th className="px-3 lg:px-6 py-4 text-right">Amount</th>
+                    <th className="px-3 lg:px-6 py-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {sortedAndFilteredTransactions.map(txn => {
+                    const client = clients.find(c => c.id === txn.clientId);
+                    const isExpanded = expandedTxn === txn.id;
+                    const txnDate = new Date(txn.date);
+                    const meta = getTxnMeta(txn);
+
+                    return (
+                      <React.Fragment key={txn.id}>
+                        <tr
+                          className={`hover:bg-slate-50 transition-colors cursor-pointer ${isExpanded ? 'bg-slate-50' : ''}`}
+                          onClick={() => toggleExpand(txn.id)}
+                        >
+                          <td className="px-3 lg:px-6 py-4">
+                            <span className={`inline-flex items-center w-2 h-2 rounded-full ${meta.dot}`}></span>
+                          </td>
+                          <td className="px-3 lg:px-6 py-4">
+                            <div className="flex flex-col">
+                              <span className="text-xs text-slate-500 font-bold">
+                                {txnDate.toLocaleDateString()} {txnDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                              <span className="text-sm font-bold text-slate-800 max-w-xs truncate">{txn.description}</span>
+                            </div>
+                          </td>
+                          <td className="px-3 lg:px-6 py-4 text-sm text-slate-600">
+                            {client ? (
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 bg-teal-50 rounded-full flex items-center justify-center text-[10px] font-bold text-teal-600 flex-shrink-0">
+                                  {client.name.charAt(0)}
+                                </div>
+                                <span className="truncate">{client.name}</span>
+                              </div>
+                            ) : (txn.type === TransactionType.SALE ? <span className="text-slate-300">Guest</span> : <span className="text-slate-300">—</span>)}
+                          </td>
+                          <td className="px-3 lg:px-6 py-4">
+                            <span className="px-2 py-1 bg-slate-100 text-slate-500 text-[10px] font-bold uppercase rounded-md">{txn.category}</span>
+                          </td>
+                          <td className="px-3 lg:px-6 py-4 text-xs font-bold text-slate-500">
+                            {txn.paymentMethod || '—'}
+                          </td>
+                          <td className={`px-3 lg:px-6 py-4 text-sm font-bold text-right tabular-nums ${meta.amount}`}>
+                            {meta.sign}${txn.amount.toLocaleString()}
+                          </td>
+                          <td className="px-3 lg:px-6 py-4 text-right">
+                            <div className="flex justify-end gap-2 lg:gap-3" onClick={e => e.stopPropagation()}>
+                              <button
+                                disabled={isDeleteLocked}
+                                onClick={() => setEditingTxn(txn)}
+                                className={`p-2 rounded-lg transition-all ${
+                                  isDeleteLocked
+                                    ? 'text-slate-200 cursor-not-allowed'
+                                    : 'text-slate-400 hover:text-teal-600 hover:bg-teal-50'
+                                }`}
+                              >
+                                {isDeleteLocked ? <Icons.Lock /> : <Icons.Edit />}
+                              </button>
+                              <button
+                                disabled={isDeleteLocked}
+                                onClick={() => setDeletingTxn(txn)}
+                                className={`p-2 rounded-lg transition-all ${
+                                  isDeleteLocked
+                                    ? 'text-slate-200 cursor-not-allowed'
+                                    : 'text-slate-400 hover:text-rose-500 hover:bg-rose-50'
+                                }`}
+                              >
+                                {isDeleteLocked ? <Icons.Lock /> : <Icons.Trash />}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+
+                        {isExpanded && txn.items && txn.items.length > 0 && (
+                          <tr className="bg-slate-50">
+                            <td colSpan={7} className="px-6 lg:px-12 py-6 border-y border-slate-100">
+                              <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm max-w-2xl animate-fadeIn">
+                                 <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Sale Breakdown</h4>
+                                 <div className="space-y-3">
+                                   {txn.items.map((item, idx) => (
+                                     <div key={idx} className="flex justify-between items-center text-sm border-b border-slate-50 pb-2">
+                                       <div className="flex flex-col">
+                                         <span className="font-semibold text-slate-700">{item.name}</span>
+                                         <span className="text-[10px] text-slate-400 uppercase font-bold">{item.type}</span>
+                                       </div>
+                                       <div className="text-right">
+                                         <span className="text-slate-500 font-medium">Qty: {item.quantity}</span>
+                                         <span className="ml-6 font-bold text-slate-800">${(item.price * item.quantity).toLocaleString()}</span>
+                                       </div>
+                                     </div>
+                                   ))}
+                                 </div>
+                                 <div className="mt-4 pt-4 border-t-2 border-dashed border-slate-100">
+                                   <div className="flex justify-between mb-1">
+                                     <span className="text-xs font-bold text-slate-400 uppercase">Payment Method</span>
+                                     <span className="text-sm font-black text-slate-600">{txn.paymentMethod || 'Not specified'}</span>
+                                   </div>
+                                   <div className="flex justify-between">
+                                     <span className="text-xs font-bold text-slate-400 uppercase">Total Transaction Amount</span>
+                                     <span className="text-lg font-black text-teal-600">${txn.amount.toLocaleString()}</span>
+                                   </div>
+                                 </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Mobile transaction detail bottom sheet */}
+      {detailTxn && (() => {
+        const meta = getTxnMeta(detailTxn);
+        const client = clients.find(c => c.id === detailTxn.clientId);
+        const clientName = client?.name || (detailTxn.type === TransactionType.SALE ? 'Guest' : '—');
+        const d = new Date(detailTxn.date);
+        return (
+          <div className="fixed inset-0 z-[70] md:hidden">
+            <div className="absolute inset-0 bg-slate-900/50" onClick={() => setDetailTxn(null)} />
+            <div className="absolute bottom-0 inset-x-0 bg-white rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col animate-fadeIn">
+              <div className="flex-shrink-0 pt-3 pb-1 flex justify-center">
+                <div className="w-10 h-1.5 rounded-full bg-slate-200" />
+              </div>
+              <div className="flex-shrink-0 px-5 py-2 flex items-center justify-between border-b border-slate-100">
+                <h3 className="text-base font-black text-slate-800">Transaction Details</h3>
+                <button
+                  type="button"
+                  onClick={() => setDetailTxn(null)}
+                  aria-label="Close"
+                  className="flex items-center justify-center min-w-[44px] min-h-[44px] -mr-2 rounded-lg text-slate-400 hover:bg-slate-100"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full ${meta.badge}`}>{meta.label}</span>
+                  <span className={`text-xl font-black tabular-nums ${meta.amount}`}>{meta.sign}${detailTxn.amount.toLocaleString()}</span>
+                </div>
+
+                <div className="space-y-2.5 pt-1">
+                  <div className="flex justify-between gap-4 text-sm">
+                    <span className="text-slate-400 font-semibold flex-shrink-0">Date &amp; Time</span>
+                    <span className="text-slate-700 font-bold text-right">{d.toLocaleDateString()} · {d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                  <div className="flex justify-between gap-4 text-sm">
+                    <span className="text-slate-400 font-semibold flex-shrink-0">Description</span>
+                    <span className="text-slate-700 font-bold text-right break-words min-w-0">{detailTxn.description}</span>
+                  </div>
+                  <div className="flex justify-between gap-4 text-sm">
+                    <span className="text-slate-400 font-semibold flex-shrink-0">Client</span>
+                    <span className="text-slate-700 font-bold text-right">{clientName}</span>
+                  </div>
+                  <div className="flex justify-between gap-4 text-sm">
+                    <span className="text-slate-400 font-semibold flex-shrink-0">Category</span>
+                    <span className="text-slate-700 font-bold text-right">{detailTxn.category || '—'}</span>
+                  </div>
+                  <div className="flex justify-between gap-4 text-sm">
+                    <span className="text-slate-400 font-semibold flex-shrink-0">Payment Method</span>
+                    <span className="text-slate-700 font-bold text-right">{detailTxn.paymentMethod || '—'}</span>
+                  </div>
+                </div>
+
+                {detailTxn.items && detailTxn.items.length > 0 && (
+                  <div className="mt-2 pt-3 border-t border-slate-100">
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Breakdown</h4>
+                    <div className="space-y-2">
+                      {detailTxn.items.map((item, idx) => (
+                        <div key={idx} className="flex justify-between items-center gap-3 text-sm">
+                          <div className="min-w-0">
+                            <p className="font-semibold text-slate-700 truncate">{item.name}</p>
+                            <p className="text-[10px] text-slate-400 uppercase font-bold">{item.type} · Qty {item.quantity}</p>
+                          </div>
+                          <span className="font-bold text-slate-800 tabular-nums flex-shrink-0">${(item.price * item.quantity).toLocaleString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex-shrink-0 border-t border-slate-100 px-5 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] flex gap-3">
+                <button
+                  type="button"
+                  disabled={isDeleteLocked}
+                  onClick={() => { setEditingTxn(detailTxn); setDetailTxn(null); }}
+                  className={`flex-1 min-h-[48px] rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${
+                    isDeleteLocked ? 'bg-slate-50 text-slate-300 cursor-not-allowed' : 'bg-teal-600 text-white shadow-lg shadow-teal-100 hover:bg-teal-700 active:scale-95'
+                  }`}
+                >
+                  {isDeleteLocked ? <Icons.Lock /> : <Icons.Edit />} Edit
+                </button>
+                {!isDeleteLocked && (
+                  <button
+                    type="button"
+                    onClick={() => { setDeletingTxn(detailTxn); setDetailTxn(null); }}
+                    className="flex-1 min-h-[48px] rounded-xl font-bold flex items-center justify-center gap-2 bg-rose-50 text-rose-600 hover:bg-rose-100 active:scale-95 transition-all"
+                  >
+                    <Icons.Trash /> Delete
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Edit Transaction Modal */}
       {editingTxn && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-md shadow-2xl animate-scaleIn overflow-hidden">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl animate-scaleIn overflow-hidden">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-teal-600 text-white">
               <h3 className="text-lg font-bold">Edit Historical Record</h3>
               <button onClick={() => setEditingTxn(null)} className="hover:rotate-90 transition-transform">

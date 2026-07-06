@@ -65,6 +65,18 @@ const StaffPage: React.FC<StaffProps> = ({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Qualified services search filter (Add/Edit modal)
+  const [serviceSearch, setServiceSearch] = useState('');
+  // Page-level success toast shown after a successful save
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Auto-dismiss the success toast
+  useEffect(() => {
+    if (!successMessage) return;
+    const timer = setTimeout(() => setSuccessMessage(null), 3000);
+    return () => clearTimeout(timer);
+  }, [successMessage]);
+
   // Smart selection: Always select the first staff if none is selected
   useEffect(() => {
     if (!selectedStaffId && staff.length > 0) {
@@ -146,13 +158,48 @@ const StaffPage: React.FC<StaffProps> = ({
     setFormData({ ...formData, qualifiedServices: next });
   };
 
-  const toggleSelectAllQualified = () => {
-    const current = formData.qualifiedServices ?? [];
-    const isAll = current.length >= allServiceIds.length && allServiceIds.length > 0;
-    setFormData({
-      ...formData,
-      qualifiedServices: isAll ? [] : [...allServiceIds],
+  const selectAllQualified = () => {
+    setFormData((prev) => ({ ...prev, qualifiedServices: [...allServiceIds] }));
+  };
+
+  const clearAllQualified = () => {
+    setFormData((prev) => ({ ...prev, qualifiedServices: [] }));
+  };
+
+  const qualifiedCount = (formData.qualifiedServices ?? []).length;
+
+  // Services grouped by category, filtered by the search box (keeps original grouping intact)
+  const filteredServicesByCategory = useMemo(() => {
+    const term = serviceSearch.trim().toLowerCase();
+    if (!term) return servicesByCategory;
+    const groups: Record<string, Service[]> = {};
+    (Object.entries(servicesByCategory) as [string, Service[]][]).forEach(([cat, list]) => {
+      const matches = list.filter(
+        (s) => (s.name || '').toLowerCase().includes(term) || cat.toLowerCase().includes(term)
+      );
+      if (matches.length) groups[cat] = matches;
     });
+    return groups;
+  }, [servicesByCategory, serviceSearch]);
+
+  // Detect unsaved edits so we can warn before discarding
+  const isFormDirty = (): boolean => {
+    if (photoFile) return true;
+    if (editingMember) {
+      const sameServices =
+        JSON.stringify([...(formData.qualifiedServices ?? [])].sort()) ===
+        JSON.stringify([...(editingMember.qualifiedServices ?? [])].sort());
+      return (
+        (formData.name ?? '') !== (editingMember.name ?? '') ||
+        (formData.role ?? '') !== (editingMember.role ?? '') ||
+        (formData.email ?? '') !== (editingMember.email ?? '') ||
+        (formData.phone ?? '') !== (editingMember.phone ?? '') ||
+        !sameServices
+      );
+    }
+    return Boolean(
+      formData.name || formData.email || formData.phone || (formData.qualifiedServices ?? []).length
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -195,6 +242,7 @@ const StaffPage: React.FC<StaffProps> = ({
 
         await onUpdateStaff(updatedMember);
         handleCloseModal();
+        setSuccessMessage('Staff profile updated.');
       } else {
         await onAddStaff({
           name: formData.name || '',
@@ -205,6 +253,7 @@ const StaffPage: React.FC<StaffProps> = ({
           qualifiedServices: formData.qualifiedServices ?? [],
         });
         handleCloseModal();
+        setSuccessMessage('Staff member added.');
       }
     } catch (err) {
       console.error('Staff Save Error:', err);
@@ -221,6 +270,7 @@ const StaffPage: React.FC<StaffProps> = ({
     setPhotoFile(null);
     setPhotoPreview(member.profilePicture || null);
     setUploadError(null);
+    setServiceSearch('');
     setShowModal(true);
   };
 
@@ -231,9 +281,17 @@ const StaffPage: React.FC<StaffProps> = ({
     setPhotoFile(null);
     setPhotoPreview(null);
     setUploadError(null);
+    setServiceSearch('');
     if (photoPreview && photoPreview.startsWith('blob:')) {
       URL.revokeObjectURL(photoPreview);
     }
+  };
+
+  // Close with a discard-confirmation when there are unsaved edits
+  const handleRequestClose = () => {
+    if (uploadLoading) return;
+    if (isFormDirty() && !window.confirm('Discard unsaved changes?')) return;
+    handleCloseModal();
   };
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -292,18 +350,28 @@ const StaffPage: React.FC<StaffProps> = ({
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-slate-900 leading-tight">Staff & Commissions</h2>
-          <p className="text-slate-500 text-sm font-medium">Review metrics and manage your wellness team</p>
+      {/* Success toast — shown after a successful save */}
+      {successMessage && (
+        <div className="fixed top-16 lg:top-6 left-1/2 -translate-x-1/2 z-[80] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-600 text-white text-sm font-bold shadow-xl animate-fadeIn">
+          <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          {successMessage}
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex p-1 bg-slate-100 rounded-xl">
+      )}
+
+      <div className="flex flex-col gap-3">
+        <div>
+          <h2 className="text-2xl sm:text-app-page-lg font-bold tracking-tight text-slate-900 leading-tight">Staff Commission</h2>
+          <p className="text-slate-500 text-sm font-medium">Review staff performance and payouts.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex p-1 bg-slate-100 rounded-xl overflow-x-auto">
             {(['month', 'year', 'all', 'custom'] as PerformancePeriod[]).map((p) => (
               <button 
                 key={p} 
                 onClick={() => setPeriod(p)} 
-                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${period === p ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                className={`px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap ${period === p ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
               >
                 {p}
               </button>
@@ -326,47 +394,103 @@ const StaffPage: React.FC<StaffProps> = ({
               />
             </div>
           )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           <button 
             disabled={isLocked}
             onClick={() => setShowCommissionModal(true)}
-            className={`px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all border shadow-sm ${isLocked ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 active:scale-95'}`}
+            className={`px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all border shadow-sm text-sm ${isLocked ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 active:scale-95'}`}
           >
             {isLocked ? <Icons.Lock /> : <Icons.Settings />} Role Rates
           </button>
           <button 
             disabled={isLocked}
-            onClick={() => { 
-              setEditingMember(null); 
-              setFormData({ name: '', role: roleCommissions[0]?.role || '', email: '', phone: '' }); 
+            onClick={() => {
+              setEditingMember(null);
+              setFormData({ name: '', role: roleCommissions[0]?.role || '', email: '', phone: '', qualifiedServices: [] });
               setPhotoFile(null);
               setPhotoPreview(null);
               setUploadError(null);
-              setShowModal(true); 
+              setServiceSearch('');
+              setShowModal(true);
             }}
-            className={`px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg ${isLocked ? 'bg-slate-50 text-slate-300 shadow-none cursor-not-allowed' : 'bg-teal-600 text-white hover:bg-teal-700 active:scale-95 shadow-teal-100'}`}
+            className={`px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg text-sm ${isLocked ? 'bg-slate-50 text-slate-300 shadow-none cursor-not-allowed' : 'bg-teal-600 text-white hover:bg-teal-700 active:scale-95 shadow-teal-100'}`}
           >
             {isLocked ? <Icons.Lock /> : <Icons.Add />} Add Staff
           </button>
         </div>
       </div>
 
-      {/* Top Performing Staff Section */}
+      {/* Summary Stats Card — mobile */}
       {topPerformingStaff.length > 0 && (
-        <div className="bg-gradient-to-br from-teal-50 to-slate-50 rounded-2xl border border-teal-200 shadow-sm p-6">
-          <div className="flex items-center justify-between mb-6">
+        <div className="lg:hidden grid grid-cols-3 gap-2">
+          <div className="bg-white rounded-xl border border-slate-200 p-3 text-center">
+            <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Commission</p>
+            <p className="text-lg font-black text-teal-600 tabular-nums">${topPerformingStaff.reduce((s, m) => s + m.totalCommission, 0).toLocaleString()}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-200 p-3 text-center">
+            <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Revenue</p>
+            <p className="text-lg font-black text-slate-800 tabular-nums">${topPerformingStaff.reduce((s, m) => s + m.totalRevenue, 0).toLocaleString()}</p>
+          </div>
+          <div className="bg-white rounded-xl border border-slate-200 p-3 text-center">
+            <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Services</p>
+            <p className="text-lg font-black text-slate-800 tabular-nums">{topPerformingStaff.reduce((s, m) => s + m.totalServices, 0)}</p>
+          </div>
+        </div>
+      )}
+
+      {topPerformingStaff.length > 0 && (
+        <div className="bg-gradient-to-br from-teal-50 to-slate-50 rounded-2xl border border-teal-200 shadow-sm p-4 lg:p-6">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+              <h3 className="text-base lg:text-lg font-black text-slate-800 flex items-center gap-2">
                 <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                 </svg>
                 Top Performing Staff
               </h3>
-              <p className="text-xs text-slate-500 font-medium mt-1">
-                Ranked by total commission earned in selected period
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Ranked by commission earned
               </p>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+
+          {/* Mobile: compact list */}
+          <div className="lg:hidden space-y-2">
+            {topPerformingStaff.map((member, index) => (
+              <div
+                key={member.id}
+                onClick={() => setSelectedStaffId(member.id)}
+                className="bg-white rounded-xl border border-slate-200 px-3 py-3 flex items-center gap-3 cursor-pointer hover:border-teal-400 active:scale-[0.99] transition-all"
+              >
+                <div className="relative flex-shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 text-white flex items-center justify-center font-black text-sm overflow-hidden">
+                    {member.profilePicture ? (
+                      <img src={member.profilePicture} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      member.name.charAt(0)
+                    )}
+                  </div>
+                  {index < 3 && (
+                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-amber-500 text-white rounded-full flex items-center justify-center text-[10px] font-black shadow">
+                      {index + 1}
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-slate-800 truncate">{member.name}</p>
+                  <p className="text-[10px] text-slate-400 font-semibold">{member.role} · {member.totalServices} services</p>
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <p className="text-sm font-black text-teal-600 tabular-nums">${member.totalCommission.toLocaleString()}</p>
+                  <p className="text-[10px] text-slate-400 tabular-nums">${member.totalRevenue.toLocaleString()}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop: original grid cards */}
+          <div className="hidden lg:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             {topPerformingStaff.map((member, index) => (
               <div
                 key={member.id}
@@ -437,16 +561,20 @@ const StaffPage: React.FC<StaffProps> = ({
                   </div>
                 </div>
                 {!isLocked && (
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleEdit(member); }} 
-                      className={`p-1.5 rounded-lg hover:bg-black/5 ${selectedStaffId === member.id ? 'text-white' : 'text-slate-400'}`}
+                  <div className="flex gap-1 opacity-100 xl:opacity-0 xl:group-hover:opacity-100 transition-opacity">
+                    <button
+                      type="button"
+                      aria-label={`Edit ${member.name}`}
+                      onClick={(e) => { e.stopPropagation(); handleEdit(member); }}
+                      className={`flex items-center justify-center min-w-[40px] min-h-[40px] rounded-lg hover:bg-black/5 ${selectedStaffId === member.id ? 'text-white' : 'text-slate-400'}`}
                     >
                       <Icons.Edit />
                     </button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleDelete(member.id); }} 
-                      className={`p-1.5 rounded-lg hover:bg-rose-50 hover:text-rose-500 ${selectedStaffId === member.id ? 'text-white' : 'text-slate-400'}`}
+                    <button
+                      type="button"
+                      aria-label={`Delete ${member.name}`}
+                      onClick={(e) => { e.stopPropagation(); handleDelete(member.id); }}
+                      className={`flex items-center justify-center min-w-[40px] min-h-[40px] rounded-lg hover:bg-rose-50 hover:text-rose-500 ${selectedStaffId === member.id ? 'text-white' : 'text-slate-400'}`}
                     >
                       <Icons.Trash />
                     </button>
@@ -476,42 +604,96 @@ const StaffPage: React.FC<StaffProps> = ({
         <div className="xl:col-span-3">
           {activeStaff ? (
             <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden min-h-[500px] flex flex-col">
-              <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                 <div className="flex items-center gap-6">
-                    <div className="w-24 h-24 bg-teal-100 text-teal-700 rounded-3xl flex items-center justify-center text-4xl font-black border-4 border-white shadow-xl">
-                      {activeStaff.name.charAt(0)}
+              <div className="p-4 sm:p-8 border-b border-slate-100 bg-slate-50/50 space-y-5">
+                 <div className="flex justify-between items-start gap-4">
+                    <div className="flex items-center gap-4 sm:gap-6 min-w-0">
+                       <div className="w-16 h-16 sm:w-24 sm:h-24 bg-teal-100 text-teal-700 rounded-2xl sm:rounded-3xl flex items-center justify-center text-2xl sm:text-4xl font-black border-4 border-white shadow-xl overflow-hidden flex-shrink-0">
+                         {activeStaff.profilePicture ? (
+                           <img src={activeStaff.profilePicture} alt="" className="w-full h-full object-cover" />
+                         ) : (
+                           activeStaff.name.charAt(0)
+                         )}
+                       </div>
+                       <div className="min-w-0">
+                         <h3 className="text-xl sm:text-2xl font-black text-slate-800 leading-tight truncate">{activeStaff.name}</h3>
+                         <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 mt-1.5">
+                           <span className="self-start px-3 py-1 bg-slate-900 text-white text-[10px] font-black uppercase rounded-full tracking-wider">{activeStaff.role}</span>
+                           {(activeStaff.email || activeStaff.phone) && (
+                             <span className="text-slate-400 text-xs font-medium truncate">
+                               {[activeStaff.email, activeStaff.phone].filter(Boolean).join(' • ')}
+                             </span>
+                           )}
+                         </div>
+                       </div>
                     </div>
-                    <div>
-                      <h3 className="text-2xl font-black text-slate-800 leading-tight">{activeStaff.name}</h3>
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="px-3 py-1 bg-slate-900 text-white text-[10px] font-black uppercase rounded-full tracking-wider">{activeStaff.role}</span>
-                        <span className="text-slate-400 text-xs font-medium">{activeStaff.email} • {activeStaff.phone}</span>
-                      </div>
-                    </div>
+                    {!isLocked && (
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(activeStaff)}
+                        className="flex-shrink-0 flex items-center gap-1.5 px-3 sm:px-4 min-h-[44px] rounded-xl bg-teal-600 text-white text-xs sm:text-sm font-bold shadow-lg shadow-teal-100 hover:bg-teal-700 active:scale-95 transition-all"
+                      >
+                        <Icons.Edit /> <span className="hidden sm:inline">Edit Staff</span><span className="sm:hidden">Edit</span>
+                      </button>
+                    )}
                  </div>
-                 <div className="grid grid-cols-2 gap-4 w-full md:w-auto">
-                    <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                       <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Total Rev.</p>
-                       <p className="text-xl font-black text-slate-800">${activeStaff.totalRevenue.toLocaleString()}</p>
+                 <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                    <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-100 shadow-sm">
+                       <p className="text-[9px] sm:text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Total Rev.</p>
+                       <p className="text-base sm:text-xl font-black text-slate-800 tabular-nums">${activeStaff.totalRevenue.toLocaleString()}</p>
                     </div>
-                    <div className="bg-teal-600 p-4 rounded-2xl shadow-lg shadow-teal-100">
-                       <p className="text-[10px] font-black uppercase text-teal-100 tracking-widest mb-1">Commission</p>
-                       <p className="text-xl font-black text-white">${activeStaff.totalCommission.toLocaleString()}</p>
+                    <div className="bg-teal-600 p-3 sm:p-4 rounded-2xl shadow-lg shadow-teal-100">
+                       <p className="text-[9px] sm:text-[10px] font-black uppercase text-teal-100 tracking-widest mb-1">Commission</p>
+                       <p className="text-base sm:text-xl font-black text-white tabular-nums">${activeStaff.totalCommission.toLocaleString()}</p>
+                    </div>
+                    <div className="bg-white p-3 sm:p-4 rounded-2xl border border-slate-100 shadow-sm">
+                       <p className="text-[9px] sm:text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Services</p>
+                       <p className="text-base sm:text-xl font-black text-slate-800 tabular-nums">{activeStaff.totalServices}</p>
                     </div>
                  </div>
               </div>
 
-              <div className="flex-1 p-8">
-                 <div className="flex items-center justify-between mb-3">
+              <div className="flex-1 p-4 sm:p-8">
+                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 mb-3">
                    <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center gap-2">
                      <span className="w-4 h-px bg-slate-200"></span> Service History Breakdown
                    </h4>
-                   <p className="text-[10px] text-slate-400">
+                   <p className="text-[10px] text-slate-400 leading-relaxed">
                      <span className="font-black uppercase tracking-widest mr-1">Fixed</span>
                      = product commission using a fixed dollar amount. Other rows use role percentage on services.
                    </p>
                  </div>
-                 <div className="overflow-x-auto">
+
+                 {/* Mobile: card list (no cramped table) */}
+                 <div className="sm:hidden space-y-2">
+                    {activeStaff.history.map((item, idx) => (
+                      <div key={idx} className="bg-white rounded-xl border border-slate-200 px-4 py-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-slate-700 leading-snug">{item.name}</p>
+                            <p className="text-[11px] text-slate-400 font-semibold mt-0.5">{new Date(item.date).toLocaleDateString()}</p>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className="text-sm font-black text-teal-600 tabular-nums">${item.commissionEarned?.toFixed(2)}</p>
+                            <p className="text-[11px] text-slate-400 font-bold tabular-nums">Price ${item.price}</p>
+                          </div>
+                        </div>
+                        {item.type === 'product' && item.commissionEarned ? (
+                          <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 mt-2 text-[9px] font-black uppercase tracking-widest text-slate-500">
+                            Fixed
+                          </span>
+                        ) : null}
+                      </div>
+                    ))}
+                    {activeStaff.history.length === 0 && (
+                      <div className="py-12 text-center">
+                        <p className="text-sm font-semibold text-slate-400">No service history yet.</p>
+                        <p className="text-xs text-slate-300 mt-1">No service activity in this period.</p>
+                      </div>
+                    )}
+                 </div>
+
+                 {/* Desktop: table */}
+                 <div className="hidden sm:block overflow-x-auto">
                     <table className="w-full text-left">
                       <thead>
                         <tr className="text-slate-400 text-[10px] font-black uppercase tracking-widest">
@@ -563,19 +745,34 @@ const StaffPage: React.FC<StaffProps> = ({
         </div>
       </div>
 
-      {/* Add/Edit Staff Modal */}
+      {/* Add/Edit Staff Modal — full-screen sheet on mobile, centered card on desktop */}
       {showModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl animate-scaleIn overflow-hidden">
-            <div className={`p-6 border-b border-slate-100 flex justify-between items-center text-white ${editingMember ? 'bg-amber-600' : 'bg-teal-600'}`}>
-              <h3 className="text-lg font-bold">{editingMember ? 'Edit Profile' : 'Add New Staff'}</h3>
-              <button type="button" onClick={handleCloseModal} className="hover:rotate-90 transition-transform">
+        <div
+          className="fixed inset-0 z-[70] bg-slate-900/50 sm:backdrop-blur-sm flex justify-center sm:items-center sm:p-4"
+          onClick={handleRequestClose}
+        >
+          <form
+            onSubmit={handleSubmit}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-md sm:rounded-2xl shadow-2xl sm:animate-scaleIn flex flex-col overflow-hidden"
+          >
+            {/* Sticky header */}
+            <div className={`flex-shrink-0 px-5 py-4 pt-[calc(1rem+env(safe-area-inset-top,0px))] sm:pt-4 flex justify-between items-center text-white ${editingMember ? 'bg-amber-600' : 'bg-teal-600'}`}>
+              <h3 className="text-lg font-bold">{editingMember ? 'Edit Staff' : 'Add New Staff'}</h3>
+              <button
+                type="button"
+                onClick={handleRequestClose}
+                aria-label="Close"
+                className="flex items-center justify-center min-w-[44px] min-h-[44px] -mr-2 rounded-lg hover:bg-white/10 transition-colors"
+              >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="p-8 space-y-5">
+
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto overscroll-contain p-5 sm:p-6 space-y-5">
               {editingMember && (
-                <div className="flex flex-col items-center gap-3 pb-2">
+                <div className="flex flex-col items-center gap-2 pb-1">
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -594,26 +791,32 @@ const StaffPage: React.FC<StaffProps> = ({
                       <Icons.Staff className="w-12 h-12 text-slate-300" />
                     )}
                   </button>
-                  <span className="text-sm font-medium text-slate-500">Change Photo</span>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-sm font-semibold text-teal-600 hover:text-teal-700"
+                  >
+                    Change Photo
+                  </button>
                 </div>
               )}
               <div>
                 <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Full Name</label>
-                <input 
+                <input
                   required
-                  type="text" 
-                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 font-medium"
-                  value={formData.name}
+                  type="text"
+                  className="w-full p-4 min-h-[48px] bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-base font-medium"
+                  value={formData.name ?? ''}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
                 />
               </div>
 
               <div>
                 <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Assigned Role</label>
-                <select 
+                <select
                   required
-                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 font-medium"
-                  value={formData.role}
+                  className="w-full p-4 min-h-[48px] bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-base font-medium"
+                  value={formData.role ?? ''}
                   onChange={e => setFormData({ ...formData, role: e.target.value })}
                 >
                   <option value="" disabled>-- Select Role --</option>
@@ -623,49 +826,72 @@ const StaffPage: React.FC<StaffProps> = ({
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              {/* Email + phone stack on mobile, side-by-side on ≥640px */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4">
                 <div>
                   <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Email</label>
-                  <input 
-                    type="email" 
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 font-medium"
-                    value={formData.email}
+                  <input
+                    type="email"
+                    className="w-full p-4 min-h-[48px] bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-base font-medium"
+                    value={formData.email ?? ''}
                     onChange={e => setFormData({ ...formData, email: e.target.value })}
                   />
                 </div>
                 <div>
                   <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Phone</label>
-                  <input 
-                    type="tel" 
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 font-medium"
-                    value={formData.phone}
+                  <input
+                    type="tel"
+                    className="w-full p-4 min-h-[48px] bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-base font-medium"
+                    value={formData.phone ?? ''}
                     onChange={e => setFormData({ ...formData, phone: e.target.value })}
                   />
                 </div>
               </div>
 
+              {/* Qualified services: count + search + select/clear all */}
               <div className="border-t border-slate-100 pt-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="min-w-0">
                     <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">
                       Qualified Services
                     </p>
                     <p className="text-[11px] text-slate-400">
-                      Select which treatments this staff member is trained to perform.
+                      {qualifiedCount} selected · trained to perform
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={toggleSelectAllQualified}
-                    className="text-[11px] font-semibold text-teal-600 hover:text-teal-700"
-                  >
-                    {(formData.qualifiedServices ?? []).length >= allServiceIds.length && allServiceIds.length > 0
-                      ? 'Clear all'
-                      : 'Select all'}
-                  </button>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={selectAllQualified}
+                      className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-teal-600 hover:bg-teal-50"
+                    >
+                      Select all
+                    </button>
+                    <button
+                      type="button"
+                      onClick={clearAllQualified}
+                      className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-400 hover:bg-slate-50"
+                    >
+                      Clear all
+                    </button>
+                  </div>
                 </div>
-                <div className="max-h-64 overflow-y-auto mt-2 space-y-3">
-                  {Object.entries(servicesByCategory).map(([cat, list]) => (
+
+                <div className="relative mb-2">
+                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
+                  </svg>
+                  <input
+                    type="text"
+                    value={serviceSearch}
+                    onChange={(e) => setServiceSearch(e.target.value)}
+                    placeholder="Search services..."
+                    className="w-full pl-9 pr-3 py-2.5 min-h-[44px] bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+                  />
+                </div>
+
+                <div className="mt-1 space-y-3 sm:max-h-64 sm:overflow-y-auto">
+                  {(Object.entries(filteredServicesByCategory) as [string, Service[]][]).map(([cat, list]) => (
                     <div key={cat}>
                       <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
                         {cat}
@@ -676,59 +902,68 @@ const StaffPage: React.FC<StaffProps> = ({
                           return (
                             <label
                               key={s.id}
-                              className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-slate-50 cursor-pointer"
+                              className={`flex items-center gap-3 px-3 min-h-[44px] rounded-lg cursor-pointer transition-colors ${assigned ? 'bg-teal-50' : 'hover:bg-slate-50'}`}
                             >
                               <input
                                 type="checkbox"
                                 checked={assigned}
                                 onChange={() => toggleQualifiedService(s.id)}
-                                className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                                className="w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
                               />
-                              <span className="text-xs text-slate-700 truncate">
-                                {s.name}
-                              </span>
+                              <span className="flex-1 text-sm text-slate-700 truncate">{s.name}</span>
+                              {typeof s.duration === 'number' && s.duration > 0 && (
+                                <span className="text-[11px] text-slate-400 font-medium flex-shrink-0">{s.duration} min</span>
+                              )}
                             </label>
                           );
                         })}
                       </div>
                     </div>
                   ))}
+                  {Object.keys(filteredServicesByCategory).length === 0 && (
+                    <p className="py-6 text-center text-sm text-slate-400">
+                      {services.length === 0 ? 'No services available yet.' : 'No services match your search.'}
+                    </p>
+                  )}
                 </div>
               </div>
 
               {uploadError && (
                 <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-2">{uploadError}</p>
               )}
-              <div className="pt-4 flex gap-4">
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  className="flex-1 py-4 bg-slate-100 text-slate-500 font-bold rounded-xl"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={uploadLoading}
-                  className={`flex-[2] py-4 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 min-h-[52px] ${editingMember ? 'bg-amber-600 shadow-amber-100' : 'bg-teal-600 shadow-teal-100'} disabled:opacity-70 disabled:cursor-not-allowed`}
-                >
-                  {uploadLoading ? (
-                    <>
-                      <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                      </svg>
-                      Updating…
-                    </>
-                  ) : editingMember ? (
-                    'Update Profile'
-                  ) : (
-                    'Register Member'
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
+            </div>
+
+            {/* Sticky footer — always visible, clears iPhone safe area */}
+            <div className="flex-shrink-0 border-t border-slate-100 bg-white px-5 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] flex gap-3">
+              <button
+                type="button"
+                onClick={handleRequestClose}
+                disabled={uploadLoading}
+                className="flex-1 min-h-[48px] py-3 bg-slate-100 text-slate-600 font-bold rounded-xl active:scale-95 transition-transform disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={uploadLoading}
+                className={`flex-[2] min-h-[48px] py-3 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-transform ${editingMember ? 'bg-amber-600 shadow-amber-100' : 'bg-teal-600 shadow-teal-100'} disabled:opacity-70 disabled:cursor-not-allowed`}
+              >
+                {uploadLoading ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Saving…
+                  </>
+                ) : editingMember ? (
+                  'Save Changes'
+                ) : (
+                  'Add Staff'
+                )}
+              </button>
+            </div>
+          </form>
         </div>
       )}
 

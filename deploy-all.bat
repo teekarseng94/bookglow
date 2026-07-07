@@ -16,20 +16,20 @@ if not exist "%FIREBASE%" (
 echo === 1. CLEANING PREVIOUS BUILDS ===
 if exist "dist-dashboard" rmdir /s /q "dist-dashboard"
 if exist "dist-booking" rmdir /s /q "dist-booking"
-if exist "zenspa Frontend\dist" rmdir /s /q "zenspa Frontend\dist"
+if exist "apps\customer-site\dist" rmdir /s /q "apps\customer-site\dist"
 
-echo === 2. BUILDING BACKEND (DASHBOARD) ===
-cd "zenspa backend"
-call npm run build -- --outDir ../dist-dashboard
+echo === 2. BUILDING MERCHANT PORTAL (DASHBOARD) ===
+cd "apps\merchant-portal"
+call npm run build -- --outDir ../../dist-dashboard
 if errorlevel 1 goto :error
 
-echo === 3. BUILDING FRONTEND (BOOKING) ===
-cd ..
-cd "zenspa Frontend"
-call npm run build -- --outDir ../dist-booking
+echo === 3. BUILDING CUSTOMER SITE (BOOKING) ===
+cd ..\..
+cd "apps\customer-site"
+call npm run build -- --outDir ../../dist-booking
 if errorlevel 1 goto :error
 
-cd ..
+cd ..\..
 
 echo === 4. APPLYING TARGETS ===
 call "%FIREBASE%" target:apply hosting booking-site bookglow-83fb3

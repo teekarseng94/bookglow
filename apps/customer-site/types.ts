@@ -17,8 +17,8 @@ export interface OptimizationResult {
 }
 
 /**
- * Appointment type — must match zenspa backend types.ts exactly
- * so backend reads data created by the booking frontend without undefined errors.
+ * Appointment type — must match apps/merchant-portal types.ts exactly
+ * so the merchant portal reads data created by the customer site without undefined errors.
  */
 export interface Appointment {
   id: string;

@@ -1,6 +1,6 @@
 {
   "functions": {
-    "source": "zenspa backend/functions",
+    "source": "apps/merchant-portal/functions",
     "codebase": "default",
     "ignore": ["node_modules", ".git", "firebase-debug.log", "firebase-debug.*.log", "*.local"],
     "predeploy": []
@@ -54,10 +54,10 @@
   "firestore": {
     "database": "(default)",
     "location": "asia-southeast1",
-    "rules": "zenspa backend/firestore.rules",
-    "indexes": "zenspa backend/firestore.indexes.json"
+    "rules": "apps/merchant-portal/firestore.rules",
+    "indexes": "apps/merchant-portal/firestore.indexes.json"
   },
   "storage": {
-    "rules": "zenspa backend/storage.rules"
+    "rules": "apps/merchant-portal/storage.rules"
   }
 }

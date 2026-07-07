@@ -112,6 +112,7 @@ const CRM: React.FC<CRMProps> = ({
   const [lastImportToast, setLastImportToast] = useState<{ sessionId: string; count: number } | null>(null);
   const [undoImportInProgress, setUndoImportInProgress] = useState(false);
   const [deleteAllInProgress, setDeleteAllInProgress] = useState(false);
+  const [showMobileActions, setShowMobileActions] = useState(false); // mobile-only secondary actions sheet
 
   // Load member form settings from localStorage on mount
   useEffect(() => {
@@ -646,10 +647,18 @@ const CRM: React.FC<CRMProps> = ({
   };
 
   return (
-    <div className="space-y-5 md:space-y-6 animate-fadeIn text-[13px] md:text-base">
-      <div className="lg:hidden -mt-1">
-        <h1 className="text-3xl sm:text-app-page font-bold tracking-tight text-slate-900">Members</h1>
-        <p className="mt-1 text-xs md:text-sm text-slate-600">Search, import, and manage your client list.</p>
+    <div className="space-y-4 sm:space-y-5 md:space-y-6 animate-fadeIn text-[13px] md:text-base pb-24 sm:pb-6">
+      {/* Compact header (<640px): title + client count on one line */}
+      <div className="sm:hidden -mt-1 flex items-baseline justify-between gap-2">
+        <h1 className="text-xl font-bold tracking-tight text-slate-900">Members</h1>
+        <span className="flex-shrink-0 text-xs font-medium text-slate-500 tabular-nums">
+          {clients.length.toLocaleString()} clients
+        </span>
+      </div>
+      {/* Tablet header (640–1023px); desktop ≥1024px uses the app shell title */}
+      <div className="hidden sm:block lg:hidden -mt-1">
+        <h1 className="text-app-page font-bold tracking-tight text-slate-900">Members</h1>
+        <p className="mt-1 text-sm text-slate-600">Search, import, and manage your client list.</p>
       </div>
       {/* Recent import toast: show last import count + Undo button */}
       {lastImportToast && (
@@ -682,11 +691,54 @@ const CRM: React.FC<CRMProps> = ({
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row justify-between gap-4">
+      {/* Hidden file input — shared by the desktop toolbar and the mobile Actions sheet */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleImportClients}
+        accept=".csv"
+        className="hidden"
+      />
+
+      {/* Mobile toolbar (<640px): search + Add on one row, then a single Actions button */}
+      <div className="sm:hidden space-y-2.5">
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 min-w-0">
+            <input
+              type="text"
+              placeholder="Search members..."
+              className="w-full pl-10 pr-3 py-2.5 text-sm bg-slate-100 border-0 rounded-xl outline-none focus:ring-2 focus:ring-teal-500/30 transition-all"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <div className="absolute left-3.5 top-3 text-slate-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowAddClientModal(true)}
+            className="flex-shrink-0 w-11 h-11 grid place-items-center bg-teal-600 hover:bg-teal-700 text-white rounded-xl shadow-sm transition-colors"
+            aria-label="Add member"
+          >
+            <Icons.Add />
+          </button>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowMobileActions(true)}
+          className="w-full h-10 flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white text-slate-600 text-sm font-semibold shadow-sm hover:bg-slate-50 transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" /></svg>
+          Actions
+        </button>
+      </div>
+
+      {/* Tablet / desktop toolbar (≥640px) — unchanged behaviour */}
+      <div className="hidden sm:flex flex-col md:flex-row justify-between gap-4">
         <div className="relative flex-1 max-w-xl">
-          <input 
-            type="text" 
-            placeholder="Search" 
+          <input
+            type="text"
+            placeholder="Search"
             className="w-full pl-10 md:pl-12 pr-3 md:pr-4 py-2.5 md:py-3 text-sm bg-slate-100 border-0 rounded-xl outline-none focus:ring-2 focus:ring-teal-500/30 transition-all"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -696,14 +748,6 @@ const CRM: React.FC<CRMProps> = ({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 md:gap-3">
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleImportClients}
-            accept=".csv"
-            className="hidden"
-          />
-          
           <div className="flex rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
             <button 
               onClick={() => isExportLocked ? alert("Action locked. Admin permission required.") : setShowExportConfirm(true)}
@@ -738,13 +782,13 @@ const CRM: React.FC<CRMProps> = ({
         </div>
       </div>
 
-      {/* Filter tabs */}
-      <div className="flex gap-1 p-1 bg-slate-100 rounded-xl w-fit">
+      {/* Filter tabs — full width on mobile, compact; horizontally scrollable if needed */}
+      <div className="flex gap-1 p-1 bg-slate-100 rounded-xl w-full sm:w-fit overflow-x-auto">
         {(['Recent', 'New', 'Birthday', 'Name'] as SortFilter[]).map((tab) => (
           <button
             key={tab}
             onClick={() => setSortFilter(tab)}
-            className={`px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors ${
+            className={`flex-1 sm:flex-none whitespace-nowrap px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors ${
               sortFilter === tab ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
             }`}
           >
@@ -753,69 +797,92 @@ const CRM: React.FC<CRMProps> = ({
         ))}
       </div>
 
-      {/* Client cards list */}
-      <div className="space-y-3 max-h-[calc(100vh-20rem)] overflow-y-auto scrollbar-thin">
+      {/* Client cards list — compact rows; whole card is a role="button" so the inner Edit button is not nested inside a <button> */}
+      <div className="space-y-2 sm:space-y-3 max-h-[calc(100vh-20rem)] overflow-y-auto scrollbar-thin">
         {sortedClients.map((client) => {
           const latest = formatLatestActivity(client.id);
           const vouchers = client.voucherCount ?? 0;
           const tier = (client.memberTier ?? '').trim();
           const hasTier = tier === 'VIP' || tier === 'VVIP' || tier === 'VVVIP';
+          const goToDetails = () => navigate('/member-details/' + client.id);
           return (
-            <button
+            <div
               key={client.id}
-              type="button"
-              onClick={() => navigate('/member-details/' + client.id)}
-              className={`w-full rounded-2xl border shadow-sm p-3 md:p-4 flex items-center gap-3 md:gap-4 text-left transition-all focus:outline-none focus:ring-2 focus:ring-teal-500/20 ${
+              role="button"
+              tabIndex={0}
+              onClick={goToDetails}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goToDetails(); }
+              }}
+              className={`w-full rounded-2xl border shadow-sm p-2.5 sm:p-4 flex items-center gap-3 md:gap-4 text-left cursor-pointer transition-all focus:outline-none focus:ring-2 focus:ring-teal-500/20 ${
                 hasTier
                   ? 'bg-amber-50/80 border-amber-300 hover:bg-amber-100/80 hover:border-amber-400'
                   : 'bg-white border-slate-200 hover:bg-slate-50 hover:border-teal-200'
               }`}
             >
-              <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-base md:text-lg border-2 border-white shadow-sm flex-shrink-0 ${
+              <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-bold text-base sm:text-lg border-2 border-white shadow-sm flex-shrink-0 ${
                 hasTier ? 'bg-amber-200 text-amber-800' : 'bg-slate-100 text-slate-600'
               }`}>
                 {client.name.charAt(0)}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-bold text-sm md:text-base text-slate-800 truncate">{client.name}</p>
-                  {hasTier && (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-amber-200 text-amber-800">
-                      {tier}
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs md:text-sm text-slate-500">{maskPhone(client.phone)}</p>
-                <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                  <span className="inline-flex items-center gap-1 text-xs md:text-sm font-semibold text-emerald-600">
-                    <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                {/* Row 1: name (+ tier) with points aligned right */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <p className="font-bold text-sm sm:text-base text-slate-800 truncate">{client.name}</p>
+                    {hasTier && (
+                      <span className="flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-200 text-amber-800">
+                        {tier}
+                      </span>
+                    )}
+                  </div>
+                  <span className="flex-shrink-0 inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-emerald-600 tabular-nums">
+                    <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
                     {client.points.toLocaleString()}
                   </span>
+                </div>
+                {/* Row 2: masked phone · latest activity, vouchers pushed right */}
+                <div className="flex items-center gap-1.5 mt-0.5 text-[11px] sm:text-xs text-slate-400 min-w-0">
+                  <span className="flex-shrink-0">{maskPhone(client.phone)}</span>
+                  {latest.date !== '—' && (
+                    <span className="truncate">· {latest.type} {latest.date}</span>
+                  )}
                   {vouchers > 0 && (
-                    <span className="inline-flex items-center gap-1 text-xs md:text-sm text-sky-600">
-                      <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
+                    <span className="flex-shrink-0 inline-flex items-center gap-0.5 text-sky-600 ml-auto">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
                       {vouchers}
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] md:text-xs text-slate-400 mt-1">{latest.type} · {latest.date}</p>
               </div>
-              <div className="flex items-center gap-1 flex-shrink-0">
+              <div className="flex items-center gap-0.5 flex-shrink-0">
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); startEditClient(client); }}
-                  className="p-2 rounded-lg text-slate-400 hover:text-teal-600 hover:bg-teal-50 transition-colors"
+                  className="w-11 h-11 sm:w-10 sm:h-10 grid place-items-center rounded-lg text-slate-400 hover:text-teal-600 hover:bg-teal-50 transition-colors"
                   title="Edit profile"
+                  aria-label={`Edit ${client.name}`}
                 >
                   <Icons.Edit />
                 </button>
-                <span className="text-teal-500" title="View member details">
+                <span className="hidden sm:inline-flex text-teal-500" title="View member details">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" /></svg>
                 </span>
               </div>
-            </button>
+            </div>
           );
         })}
+        {sortedClients.length === 0 && (
+          <div className="py-12 text-center">
+            <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-slate-100 flex items-center justify-center text-slate-300">
+              <Icons.Clients />
+            </div>
+            <p className="text-sm font-semibold text-slate-500">No members found.</p>
+            <p className="text-xs text-slate-400 mt-1">
+              {search ? 'Try another search or add a new member.' : 'Add your first member to get started.'}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Bottom bar: Total + Delete All + Add */}
@@ -853,6 +920,51 @@ const CRM: React.FC<CRMProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Mobile Actions bottom sheet (<640px) — reuses the existing import/export/loyalty handlers */}
+      {showMobileActions && (
+        <div className="sm:hidden fixed inset-0 z-[75] flex flex-col justify-end" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowMobileActions(false)} />
+          <div className="relative bg-white rounded-t-3xl shadow-2xl p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] animate-fadeIn">
+            <div className="w-10 h-1.5 bg-slate-200 rounded-full mx-auto mb-4" />
+            <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 px-1 mb-2">Member Actions</p>
+            <div className="space-y-1.5">
+              <button
+                type="button"
+                disabled={isImporting}
+                onClick={() => { setShowMobileActions(false); fileInputRef.current?.click(); }}
+                className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold text-sm transition-colors disabled:opacity-50"
+              >
+                <span className="text-teal-600"><Icons.Import /></span> Import Members
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowMobileActions(false);
+                  if (isExportLocked) { alert('Action locked. Admin permission required.'); } else { setShowExportConfirm(true); }
+                }}
+                className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold text-sm transition-colors"
+              >
+                <span className="text-teal-600">{isExportLocked ? <Icons.Lock /> : <Icons.Export />}</span> Export Members
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowMobileActions(false); setShowRewardsModal(true); }}
+                className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold text-sm transition-colors"
+              >
+                <span className="text-teal-600"><Icons.Settings /></span> Loyalty Program
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowMobileActions(false)}
+              className="w-full mt-3 py-3 rounded-2xl border border-slate-200 text-slate-500 font-semibold text-sm hover:bg-slate-50 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Edit Client Modal */}
       {showEditClientModal && activeClient && (

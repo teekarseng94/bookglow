@@ -6,7 +6,6 @@
 
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import {
   BarChart3,
   Calendar,
@@ -42,6 +41,11 @@ function formatLocalDate(d: Date): string {
 
 function formatCompactTime(hhmm: string): string {
   return hhmm.includes(':') ? hhmm.replace(':', '') : hhmm;
+}
+
+// App-wide currency is Malaysian Ringgit (RM), matching receipts / reports / POS.
+function formatRM(n: number): string {
+  return `RM ${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({
@@ -107,16 +111,31 @@ const Dashboard: React.FC<DashboardProps> = ({
     const weekMon = new Date(now);
     weekMon.setDate(now.getDate() + monOffset);
     weekMon.setHours(0, 0, 0, 0);
+    // Also accumulate this week's transaction count + top item while walking each day.
+    let weekTxnCount = 0;
+    const weekSkuMap = new Map<string, { name: string; qty: number }>();
     const chartData = DAY_LABELS.map((label, i) => {
       const d = new Date(weekMon);
       d.setDate(weekMon.getDate() + i);
       const dateStr = d.toISOString().split('T')[0];
-      const daySales = salesOnly
-        .filter((t) => (t.date || '').startsWith(dateStr) && t.category !== 'Voucher' && t.category !== 'Redemption')
-        .reduce((sum, t) => sum + t.amount, 0);
+      const dayTxns = salesOnly.filter(
+        (t) => (t.date || '').startsWith(dateStr) && t.category !== 'Voucher' && t.category !== 'Redemption'
+      );
+      const daySales = dayTxns.reduce((sum, t) => sum + t.amount, 0);
+      weekTxnCount += dayTxns.length;
+      dayTxns.forEach((t) => {
+        t.items?.forEach((item) => {
+          const key = String(item.id ?? item.name);
+          const cur = weekSkuMap.get(key) ?? { name: item.name, qty: 0 };
+          cur.qty += item.quantity || 1;
+          weekSkuMap.set(key, cur);
+        });
+      });
       return { day: label, sales: Math.round(daySales * 100) / 100 };
     });
     const totalSalesThisWeek = chartData.reduce((sum, row) => sum + row.sales, 0);
+    const weekTopItem = Array.from(weekSkuMap.values()).sort((a, b) => b.qty - a.qty)[0]?.name ?? null;
+    const weekAvgSale = weekTxnCount > 0 ? totalSalesThisWeek / weekTxnCount : 0;
 
     // 4. Category Summary: Service, Product, Package, Discount, Outstanding
     let serviceTotal = 0,
@@ -211,6 +230,9 @@ const Dashboard: React.FC<DashboardProps> = ({
       stats,
       chartData,
       totalSalesThisWeek,
+      weekTxnCount,
+      weekTopItem,
+      weekAvgSale,
       categorySummary,
       topSellingAll,
       monthSales,
@@ -298,7 +320,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       <div className="lg:hidden bg-gradient-to-br from-teal-600 to-teal-700 rounded-2xl p-5 text-white shadow-lg">
         <p className="text-teal-100 text-xs font-semibold uppercase tracking-wider">This Month Revenue</p>
         <p className="text-3xl font-black mt-1 tabular-nums">
-          ${dashboardData.stats.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+          {formatRM(dashboardData.stats.revenue)}
         </p>
         <p className="text-teal-200 text-xs mt-1">
           {dashboardData.monthSales.length} transaction{dashboardData.monthSales.length !== 1 ? 's' : ''} this month
@@ -309,17 +331,17 @@ const Dashboard: React.FC<DashboardProps> = ({
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
         <StatCard
           title="Revenue"
-          value={`$${dashboardData.stats.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+          value={formatRM(dashboardData.stats.revenue)}
           color="text-emerald-600"
         />
         <StatCard
           title="Expenses"
-          value={`$${dashboardData.stats.expenses.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+          value={formatRM(dashboardData.stats.expenses)}
           color="text-rose-600"
         />
         <StatCard
           title="Net Profit"
-          value={`$${dashboardData.stats.profit.toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+          value={formatRM(dashboardData.stats.profit)}
           color="text-amber-600"
         />
         <StatCard
@@ -410,49 +432,80 @@ const Dashboard: React.FC<DashboardProps> = ({
         <div className="lg:col-span-2 space-y-8">
           {/* Total Sales bar chart + Category Summary row */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-              <div className="flex justify-between items-center mb-4">
+            <div className="md:col-span-2 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm">
+              <div className="flex justify-between items-center mb-1">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-blue-600" />
                   <span className="text-app-label font-semibold uppercase text-slate-500">This Week</span>
                 </div>
-                <span className="text-xl font-bold text-blue-600">
-                  {dashboardData.totalSalesThisWeek.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                <span className="text-xs font-semibold text-slate-400 tabular-nums">
+                  {dashboardData.weekTxnCount} txn{dashboardData.weekTxnCount !== 1 ? 's' : ''}
                 </span>
               </div>
-              <h3 className="text-xl font-bold tracking-tight text-slate-900 mb-4">Total Sales</h3>
-              <div className="h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={dashboardData.chartData} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis
-                      dataKey="day"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: '#64748b', fontSize: 12 }}
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: '#64748b', fontSize: 12 }}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        borderRadius: 12,
-                        border: 'none',
-                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                      }}
-                      formatter={(value: number) => [value.toFixed(2), 'Sales']}
-                    />
-                    <Bar
-                      dataKey="sales"
-                      fill="#7dd3fc"
-                      radius={[4, 4, 0, 0]}
-                      name="Sales"
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              <p className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 tabular-nums">
+                {formatRM(dashboardData.totalSalesThisWeek)}
+              </p>
+              <p className="text-[10px] sm:text-app-label font-semibold uppercase tracking-wider text-slate-400 mt-0.5">
+                Total Sales
+              </p>
+
+              {(() => {
+                const maxDay = Math.max(...dashboardData.chartData.map((d) => d.sales), 0);
+                const todayIdx = (new Date().getDay() + 6) % 7; // DAY_LABELS is Mon..Sun
+                if (dashboardData.totalSalesThisWeek <= 0) {
+                  return (
+                    <div className="mt-4 h-40 flex flex-col items-center justify-center text-center border-t border-slate-100 pt-4">
+                      <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                        <BarChart3 className="w-6 h-6 text-slate-300" />
+                      </div>
+                      <p className="text-sm font-semibold text-slate-400">No sales data for this week yet.</p>
+                    </div>
+                  );
+                }
+                return (
+                  <>
+                    {/* Lightweight, dependency-free weekly bar chart (always renders) */}
+                    <div className="mt-4 flex items-end justify-between gap-1.5 sm:gap-2 h-32 sm:h-40">
+                      {dashboardData.chartData.map((d, i) => {
+                        const pct = maxDay > 0 ? (d.sales / maxDay) * 100 : 0;
+                        const barH = d.sales > 0 ? Math.max(pct, 6) : 0;
+                        const isToday = i === todayIdx;
+                        return (
+                          <div key={d.day} className="flex-1 min-w-0 h-full flex flex-col items-center gap-1.5">
+                            <div className="w-full flex-1 flex items-end">
+                              <div
+                                className={`w-full rounded-t-md transition-all ${isToday ? 'bg-teal-500' : 'bg-sky-300'}`}
+                                style={{ height: `${barH}%` }}
+                                title={`${d.day}: ${formatRM(d.sales)}`}
+                              />
+                            </div>
+                            <span className={`text-[10px] sm:text-xs ${isToday ? 'font-bold text-teal-600' : 'text-slate-400'}`}>
+                              {d.day}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* Compact stats strip */}
+                    <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-100">
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Transactions</p>
+                        <p className="text-sm font-bold text-slate-800 tabular-nums">{dashboardData.weekTxnCount}</p>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Avg sale</p>
+                        <p className="text-sm font-bold text-slate-800 tabular-nums truncate">{formatRM(dashboardData.weekAvgSale)}</p>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Top item</p>
+                        <p className="text-sm font-bold text-slate-800 truncate" title={dashboardData.weekTopItem ?? undefined}>
+                          {dashboardData.weekTopItem ?? '—'}
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
 
             {/* Category Summary */}

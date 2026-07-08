@@ -22,6 +22,9 @@ const isCommissionTxn = (t: Transaction): boolean =>
   t.type === TransactionType.EXPENSE &&
   (!!t.parentSaleId || /commission/i.test(t.category || '') || /commission/i.test(t.description || ''));
 
+// App-wide currency is Malaysian Ringgit (RM), matching receipts / reports / POS / dashboard.
+const formatRM = (n: number): string => `RM${n.toLocaleString()}`;
+
 // Visual metadata (label, colours, sign) derived from the transaction — no schema changes.
 const getTxnMeta = (t: Transaction) => {
   if (t.type === TransactionType.SALE) {
@@ -50,6 +53,7 @@ const Transactions: React.FC<TransactionsProps> = ({
   const [expandedTxn, setExpandedTxn] = useState<string | null>(null);
   const [detailTxn, setDetailTxn] = useState<Transaction | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showSortSheet, setShowSortSheet] = useState(false); // mobile sort/filter bottom sheet
 
   const sortedAndFilteredTransactions = useMemo(() => {
     const filtered = transactions.filter(t => {
@@ -161,12 +165,12 @@ const Transactions: React.FC<TransactionsProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="lg:hidden -mt-1">
-        <h1 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-slate-900">Sales History</h1>
-        <p className="mt-1 text-sm text-slate-600">Review, edit, or filter past transactions.</p>
+        <h1 className="text-xl sm:text-app-page-lg font-bold tracking-tight text-slate-900">Sales History</h1>
+        <p className="mt-0.5 text-xs text-slate-500 hidden sm:block">Review, edit, or filter past transactions.</p>
       </div>
-      {/* Info banner — hidden on mobile to save vertical space */}
+      {/* Info banner — full on desktop, slim one-line note on mobile (minimal vertical space) */}
       <div className="hidden md:flex bg-teal-50 border border-teal-100 rounded-xl p-4 items-center gap-3">
         <div className="bg-teal-600 text-white p-2 rounded-lg">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -175,31 +179,35 @@ const Transactions: React.FC<TransactionsProps> = ({
           Management Console: Review, edit, or remove historical records to maintain data accuracy.
         </p>
       </div>
+      <div className="md:hidden flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
+        <svg className="w-3.5 h-3.5 flex-shrink-0 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        <span>Management mode: review, edit, remove records</span>
+      </div>
 
       {/* Filters: full-width search, type chips, and compact sort controls */}
       <div className="space-y-3">
         <div className="relative">
           <input
             type="text"
-            placeholder="Search description, client, or category..."
-            className="w-full pl-11 pr-4 py-3 min-h-[48px] bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 shadow-sm text-base transition-all"
+            placeholder="Search transactions"
+            className="w-full pl-10 sm:pl-11 pr-4 py-2.5 sm:py-3 min-h-[42px] sm:min-h-[48px] bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 shadow-sm text-sm sm:text-base transition-all"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
           <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-2 sm:justify-between">
           {/* Record-type chips (horizontally scrollable on mobile) */}
-          <div className="flex gap-2 overflow-x-auto -mx-1 px-1 pb-1 sm:pb-0">
+          <div className="flex gap-2 overflow-x-auto flex-1 min-w-0 -mx-1 px-1 pb-1 sm:pb-0">
             {filterChips.map((chip) => (
               <button
                 key={chip.key}
                 type="button"
                 onClick={() => setFilterType(chip.key)}
-                className={`flex-shrink-0 px-4 min-h-[40px] rounded-full text-xs font-bold whitespace-nowrap border transition-all ${
+                className={`flex-shrink-0 px-3.5 sm:px-4 min-h-[38px] sm:min-h-[40px] rounded-full text-xs font-bold whitespace-nowrap border transition-all ${
                   filterType === chip.key
                     ? 'bg-teal-600 text-white border-teal-600 shadow-sm'
                     : 'bg-white text-slate-500 border-slate-200 hover:border-teal-300'
@@ -210,12 +218,22 @@ const Transactions: React.FC<TransactionsProps> = ({
             ))}
           </div>
 
-          {/* Sort controls */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="hidden sm:inline text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sort</span>
+          {/* Mobile: single Sort button that opens a bottom sheet */}
+          <button
+            type="button"
+            onClick={() => setShowSortSheet(true)}
+            className="sm:hidden flex-shrink-0 inline-flex items-center gap-1.5 px-3 min-h-[38px] rounded-full border border-slate-200 bg-white text-slate-600 text-xs font-bold shadow-sm active:scale-95 transition-all"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4h13M3 8h9M3 12h5m4 6l4 4m0 0l4-4m-4 4V10" /></svg>
+            Sort
+          </button>
+
+          {/* Tablet / desktop: inline sort selects */}
+          <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sort</span>
             <select
               aria-label="Sort by"
-              className="flex-1 sm:flex-none bg-white border border-slate-200 px-3 py-2.5 min-h-[44px] rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-teal-500 shadow-sm transition-all"
+              className="bg-white border border-slate-200 px-3 py-2.5 min-h-[44px] rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-teal-500 shadow-sm transition-all"
               value={sortField}
               onChange={(e) => setSortField(e.target.value as SortField)}
             >
@@ -225,7 +243,7 @@ const Transactions: React.FC<TransactionsProps> = ({
             </select>
             <select
               aria-label="Sort order"
-              className="flex-1 sm:flex-none bg-white border border-slate-200 px-3 py-2.5 min-h-[44px] rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-teal-500 shadow-sm transition-all"
+              className="bg-white border border-slate-200 px-3 py-2.5 min-h-[44px] rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-teal-500 shadow-sm transition-all"
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value as SortOrder)}
             >
@@ -240,16 +258,16 @@ const Transactions: React.FC<TransactionsProps> = ({
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <div className="bg-white rounded-xl border border-slate-200 p-3 text-center shadow-sm">
           <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Total In</p>
-          <p className="text-sm sm:text-lg font-black text-green-600 tabular-nums truncate">+${summary.totalIn.toLocaleString()}</p>
+          <p className="text-sm sm:text-lg font-black text-green-600 tabular-nums truncate">+RM{summary.totalIn.toLocaleString()}</p>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-3 text-center shadow-sm">
           <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Total Out</p>
-          <p className="text-sm sm:text-lg font-black text-rose-600 tabular-nums truncate">-${summary.totalOut.toLocaleString()}</p>
+          <p className="text-sm sm:text-lg font-black text-rose-600 tabular-nums truncate">-RM{summary.totalOut.toLocaleString()}</p>
         </div>
         <div className="bg-white rounded-xl border border-slate-200 p-3 text-center shadow-sm">
           <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Net</p>
           <p className={`text-sm sm:text-lg font-black tabular-nums truncate ${summary.net >= 0 ? 'text-teal-600' : 'text-rose-600'}`}>
-            {summary.net < 0 ? '-' : ''}${Math.abs(summary.net).toLocaleString()}
+            {summary.net < 0 ? '-' : ''}RM{Math.abs(summary.net).toLocaleString()}
           </p>
         </div>
       </div>
@@ -276,13 +294,14 @@ const Transactions: React.FC<TransactionsProps> = ({
         </div>
       ) : (
         <>
-          {/* Mobile: transaction card list (no horizontal scroll) */}
-          <div className="md:hidden space-y-3 pb-24">
+          {/* Mobile: compact transaction cards (tap to open full detail sheet). No horizontal scroll. */}
+          <div className="md:hidden space-y-2.5 pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
             {sortedAndFilteredTransactions.map((txn) => {
               const meta = getTxnMeta(txn);
               const client = clients.find(c => c.id === txn.clientId);
               const clientName = client?.name || (txn.type === TransactionType.SALE ? 'Guest' : '');
               const txnDate = new Date(txn.date);
+              const subline = [clientName, txn.paymentMethod].filter(Boolean).join(' · ');
               return (
                 <div
                   key={txn.id}
@@ -290,54 +309,23 @@ const Transactions: React.FC<TransactionsProps> = ({
                   tabIndex={0}
                   onClick={() => setDetailTxn(txn)}
                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDetailTxn(txn); } }}
-                  className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 cursor-pointer active:scale-[0.99] transition-transform"
+                  className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3 cursor-pointer active:scale-[0.99] transition-transform"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${meta.dot}`} />
-                        <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${meta.badge}`}>{meta.label}</span>
-                      </div>
-                      <p className="text-[11px] text-slate-400 font-semibold mt-1.5">
-                        {txnDate.toLocaleDateString()} · {txnDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                      <p className="text-sm font-bold text-slate-800 mt-0.5 break-words line-clamp-2">{txn.description}</p>
-                      {txn.items && txn.items.length > 0 && (
-                        <p className="text-[11px] text-slate-500 mt-1 break-words">
-                          <span className="font-bold">{txn.items.length} item{txn.items.length > 1 ? 's' : ''}:</span>{' '}
-                          {txn.items.slice(0, 2).map(i => i.name).join(', ')}
-                          {txn.items.length > 2 ? ` +${txn.items.length - 2} more` : ''}
-                        </p>
-                      )}
-                      <div className="flex flex-wrap gap-1.5 mt-2">
-                        {clientName && (
-                          <span className="px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-md text-[10px] font-semibold text-slate-500">Client: {clientName}</span>
-                        )}
-                        {txn.paymentMethod && (
-                          <span className="px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-md text-[10px] font-semibold text-slate-500">{txn.paymentMethod}</span>
-                        )}
-                        {txn.category && (
-                          <span className="px-2 py-0.5 bg-slate-50 border border-slate-100 rounded-md text-[10px] font-semibold text-slate-500">{txn.category}</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className={`text-base font-black tabular-nums ${meta.amount}`}>{meta.sign}${txn.amount.toLocaleString()}</p>
-                    </div>
+                  {/* Row 1: type badge + amount */}
+                  <div className="flex items-center justify-between gap-3">
+                    <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${meta.badge}`}>{meta.label}</span>
+                    <span className={`text-base font-black tabular-nums flex-shrink-0 ${meta.amount}`}>{meta.sign}{formatRM(txn.amount)}</span>
                   </div>
-                  {/* Edit action — real <button> lives inside a div[role=button] wrapper, so no nested-button */}
-                  <div className="mt-3 flex justify-end" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      type="button"
-                      disabled={isDeleteLocked}
-                      onClick={() => setEditingTxn(txn)}
-                      className={`inline-flex items-center gap-1.5 px-4 min-h-[44px] rounded-xl text-sm font-bold transition-all ${
-                        isDeleteLocked ? 'bg-slate-50 text-slate-300 cursor-not-allowed' : 'bg-teal-50 text-teal-700 hover:bg-teal-100 active:scale-95'
-                      }`}
-                    >
-                      {isDeleteLocked ? <Icons.Lock /> : <Icons.Edit />} {isDeleteLocked ? 'Locked' : 'Edit'}
-                    </button>
-                  </div>
+                  {/* Row 2: date/time */}
+                  <p className="text-[11px] text-slate-400 font-semibold mt-1.5">
+                    {txnDate.toLocaleDateString()} · {txnDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                  {/* Row 3: description */}
+                  <p className="text-sm font-bold text-slate-800 mt-0.5 break-words line-clamp-1">{txn.description}</p>
+                  {/* Row 4: client · payment method (only when present) */}
+                  {subline && (
+                    <p className="text-[11px] text-slate-500 mt-1 truncate">{subline}</p>
+                  )}
                 </div>
               );
             })}
@@ -399,7 +387,7 @@ const Transactions: React.FC<TransactionsProps> = ({
                             {txn.paymentMethod || '—'}
                           </td>
                           <td className={`px-3 lg:px-6 py-4 text-sm font-bold text-right tabular-nums ${meta.amount}`}>
-                            {meta.sign}${txn.amount.toLocaleString()}
+                            {meta.sign}{formatRM(txn.amount)}
                           </td>
                           <td className="px-3 lg:px-6 py-4 text-right">
                             <div className="flex justify-end gap-2 lg:gap-3" onClick={e => e.stopPropagation()}>
@@ -443,7 +431,7 @@ const Transactions: React.FC<TransactionsProps> = ({
                                        </div>
                                        <div className="text-right">
                                          <span className="text-slate-500 font-medium">Qty: {item.quantity}</span>
-                                         <span className="ml-6 font-bold text-slate-800">${(item.price * item.quantity).toLocaleString()}</span>
+                                         <span className="ml-6 font-bold text-slate-800">{formatRM(item.price * item.quantity)}</span>
                                        </div>
                                      </div>
                                    ))}
@@ -455,7 +443,7 @@ const Transactions: React.FC<TransactionsProps> = ({
                                    </div>
                                    <div className="flex justify-between">
                                      <span className="text-xs font-bold text-slate-400 uppercase">Total Transaction Amount</span>
-                                     <span className="text-lg font-black text-teal-600">${txn.amount.toLocaleString()}</span>
+                                     <span className="text-lg font-black text-teal-600">{formatRM(txn.amount)}</span>
                                    </div>
                                  </div>
                               </div>
@@ -500,7 +488,7 @@ const Transactions: React.FC<TransactionsProps> = ({
               <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full ${meta.badge}`}>{meta.label}</span>
-                  <span className={`text-xl font-black tabular-nums ${meta.amount}`}>{meta.sign}${detailTxn.amount.toLocaleString()}</span>
+                  <span className={`text-xl font-black tabular-nums ${meta.amount}`}>{meta.sign}{formatRM(detailTxn.amount)}</span>
                 </div>
 
                 <div className="space-y-2.5 pt-1">
@@ -536,7 +524,7 @@ const Transactions: React.FC<TransactionsProps> = ({
                             <p className="font-semibold text-slate-700 truncate">{item.name}</p>
                             <p className="text-[10px] text-slate-400 uppercase font-bold">{item.type} · Qty {item.quantity}</p>
                           </div>
-                          <span className="font-bold text-slate-800 tabular-nums flex-shrink-0">${(item.price * item.quantity).toLocaleString()}</span>
+                          <span className="font-bold text-slate-800 tabular-nums flex-shrink-0">{formatRM(item.price * item.quantity)}</span>
                         </div>
                       ))}
                     </div>
@@ -570,6 +558,92 @@ const Transactions: React.FC<TransactionsProps> = ({
         );
       })()}
 
+      {/* Mobile sort & filter bottom sheet */}
+      {showSortSheet && (
+        <div className="fixed inset-0 z-[70] sm:hidden" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-slate-900/50" onClick={() => setShowSortSheet(false)} />
+          <div className="absolute bottom-0 inset-x-0 bg-white rounded-t-3xl shadow-2xl animate-fadeIn">
+            <div className="pt-3 pb-1 flex justify-center">
+              <div className="w-10 h-1.5 rounded-full bg-slate-200" />
+            </div>
+            <div className="px-5 pt-2 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] space-y-5">
+              <h3 className="text-base font-black text-slate-800">Sort &amp; Filter</h3>
+
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2">Record Type</p>
+                <div className="flex flex-wrap gap-2">
+                  {filterChips.map((chip) => (
+                    <button
+                      key={chip.key}
+                      type="button"
+                      onClick={() => setFilterType(chip.key)}
+                      className={`px-3.5 min-h-[40px] rounded-full text-xs font-bold border transition-all ${
+                        filterType === chip.key ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-slate-500 border-slate-200'
+                      }`}
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2">Sort By</p>
+                <div className="flex flex-wrap gap-2">
+                  {([['date', 'Date'], ['amount', 'Amount'], ['client', 'Client Name']] as [SortField, string][]).map(([key, label]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setSortField(key)}
+                      className={`px-3.5 min-h-[40px] rounded-full text-xs font-bold border transition-all ${
+                        sortField === key ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-slate-500 border-slate-200'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2">Order</p>
+                <div className="flex flex-wrap gap-2">
+                  {([['desc', 'Descending'], ['asc', 'Ascending']] as [SortOrder, string][]).map(([key, label]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setSortOrder(key)}
+                      className={`px-3.5 min-h-[40px] rounded-full text-xs font-bold border transition-all ${
+                        sortOrder === key ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-slate-500 border-slate-200'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => { setFilterType('ALL'); setSortField('date'); setSortOrder('desc'); }}
+                  className="flex-1 min-h-[48px] rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-colors"
+                >
+                  Clear
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSortSheet(false)}
+                  className="flex-[2] min-h-[48px] rounded-xl bg-teal-600 text-white font-bold shadow-lg shadow-teal-100 hover:bg-teal-700 active:scale-95 transition-all"
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Edit Transaction Modal */}
       {editingTxn && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -593,7 +667,7 @@ const Transactions: React.FC<TransactionsProps> = ({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Amount ($)</label>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Amount (RM)</label>
                   <input 
                     required
                     type="number" 
@@ -674,7 +748,7 @@ const Transactions: React.FC<TransactionsProps> = ({
                 </div>
                 <h3 className="text-xl font-bold text-slate-800 mb-2">Delete Transaction?</h3>
                 <p className="text-slate-500 text-sm mb-4">
-                  Are you sure you want to delete this {deletingTxn.type.toLowerCase()} of <span className="font-bold text-slate-700">${deletingTxn.amount}</span>?
+                  Are you sure you want to delete this {deletingTxn.type.toLowerCase()} of <span className="font-bold text-slate-700">{formatRM(deletingTxn.amount)}</span>?
                 </p>
                 {pointsToDeduct > 0 && (
                   <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 text-left">

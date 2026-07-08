@@ -34,6 +34,49 @@ const LoadingSpinner = () => (
   </div>
 );
 
+/**
+ * Collapsible settings section. On mobile (<lg) it acts as a native-style
+ * accordion row (tap header to expand); on desktop (lg+) content is always
+ * shown so the existing desktop layout is preserved. Content/forms are passed
+ * as children untouched — no save logic changes.
+ */
+const SettingsSection: React.FC<{
+  icon: React.ReactNode;
+  iconWrap: string;
+  title: string;
+  description: string;
+  defaultOpen?: boolean;
+  className?: string;
+  children: React.ReactNode;
+}> = ({ icon, iconWrap, title, description, defaultOpen = false, className = '', children }) => {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className={`bg-white rounded-2xl border border-slate-200 shadow-sm ${className}`}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="w-full flex items-center gap-3 sm:gap-4 text-left p-5 sm:p-6 lg:p-8 lg:pb-0 lg:cursor-default"
+      >
+        <div className={`p-2.5 sm:p-3 rounded-xl flex-shrink-0 ${iconWrap}`}>{icon}</div>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-app-section font-bold text-slate-900">{title}</h3>
+          <p className="text-xs text-slate-400 font-medium">{description}</p>
+        </div>
+        <svg
+          className={`lg:hidden w-5 h-5 text-slate-400 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
+          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      <div className={`${open ? 'block' : 'hidden'} lg:block px-5 pb-5 sm:px-6 sm:pb-6 lg:px-8 lg:pb-8 lg:pt-6`}>
+        {children}
+      </div>
+    </div>
+  );
+};
+
 const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletId: propOutletId, outlet: propOutlet, onUpdateOutlet }) => {
   // Get outletId from context (fallback if prop is missing)
   const { outletId, outletName, userData, loading: contextLoading } = useUserContext();
@@ -315,42 +358,41 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-fadeIn pb-20">
-      <div className="flex flex-wrap justify-between items-end gap-4">
+    <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8 animate-fadeIn pb-[calc(6rem+env(safe-area-inset-bottom,0px))] sm:pb-20">
+      <div className="flex flex-wrap justify-between items-end gap-3 sm:gap-4 -mt-1 lg:mt-0">
         <div>
-          <h2 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-slate-900">System Settings</h2>
-          <p className="text-sm font-normal text-slate-600">Configure your outlet&apos;s environment and staff access control.</p>
+          <h2 className="text-xl sm:text-app-page-lg font-bold tracking-tight text-slate-900">Settings</h2>
+          <p className="text-xs sm:text-sm font-normal text-slate-500 hidden sm:block">Manage your outlet and app preferences.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
             to="/settings/integrations"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-sky-200 bg-sky-50 text-sky-700 font-bold text-sm hover:bg-sky-100 transition-colors"
+            className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl border border-sky-200 bg-sky-50 text-sky-700 font-bold text-xs sm:text-sm hover:bg-sky-100 transition-colors"
           >
             <Icons.Calendar />
-            External Integrations (Setmore)
+            <span className="hidden sm:inline">External Integrations (Setmore)</span>
+            <span className="sm:hidden">Setmore</span>
           </Link>
           <button
             type="button"
             onClick={handleOpenApiModal}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-teal-200 bg-teal-50 text-teal-700 font-bold text-sm hover:bg-teal-100 transition-colors"
+            className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl border border-teal-200 bg-teal-50 text-teal-700 font-bold text-xs sm:text-sm hover:bg-teal-100 transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-            API Integration (Chatbot)
+            <span className="hidden sm:inline">API Integration (Chatbot)</span>
+            <span className="sm:hidden">API</span>
           </button>
         </div>
       </div>
 
       {/* Share Booking Link (Owner) */}
-      <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="p-3 bg-emerald-50 rounded-xl text-emerald-600">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
-          </div>
-          <div>
-            <h3 className="text-app-section font-bold text-slate-900">Share Booking Link</h3>
-            <p className="text-xs text-slate-400 font-medium">Your unique public booking URL. Share it or print the QR code for your spa counter.</p>
-          </div>
-        </div>
+      <SettingsSection
+        defaultOpen
+        iconWrap="bg-emerald-50 text-emerald-600"
+        title="Share Booking Link"
+        description="Your unique public booking URL. Share it or print the QR code for your spa counter."
+        icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>}
+      >
         {bookingUrl ? (
           <div className="flex flex-col md:flex-row gap-6 items-start">
             <div className="flex-1 min-w-0 space-y-4">
@@ -409,20 +451,16 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         ) : (
           <p className="text-slate-500 text-sm">Loading your outlet link…</p>
         )}
-      </div>
+      </SettingsSection>
 
       {/* Booking Page Info: Address, Phone, Operating Hours */}
       {effectiveOutletId && (
-        <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="flex flex-wrap items-center gap-4 mb-6">
-            <div className="p-3 bg-sky-50 rounded-xl text-sky-600">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-            </div>
-            <div>
-              <h3 className="text-app-section font-bold text-slate-900">Booking Page Info</h3>
-              <p className="text-xs text-slate-400 font-medium">Address, phone and hours shown on your public booking page.</p>
-            </div>
-          </div>
+        <SettingsSection
+          iconWrap="bg-sky-50 text-sky-600"
+          title="Booking Page Info"
+          description="Address, phone and hours shown on your public booking page."
+          icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
+        >
           {(contextLoading || outletLoading) ? (
             <div className="flex items-center justify-center py-8">
               <div className="w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
@@ -553,22 +591,17 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
             </div>
             </>
           )}
-        </div>
+        </SettingsSection>
       )}
 
 
       {/* Business Profile Section */}
-      <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="p-3 bg-teal-50 rounded-xl text-teal-600">
-             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-          </div>
-          <div>
-            <h3 className="text-app-section font-bold text-slate-900">Business Profile</h3>
-            <p className="text-xs text-slate-400 font-medium">Customize your brand and outlet details.</p>
-          </div>
-        </div>
-
+      <SettingsSection
+        iconWrap="bg-teal-50 text-teal-600"
+        title="Business Profile"
+        description="Customize your brand and outlet details."
+        icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>}
+      >
         <div className="max-w-md">
           <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Shop Name</label>
           <input 
@@ -580,21 +613,18 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           />
           <p className="text-[10px] text-slate-400 mt-2 italic">This name will appear in the sidebar, invoices, and browser title.</p>
         </div>
-      </div>
+      </SettingsSection>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
         {/* Global Toggle */}
-        <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6 h-fit">
-          <div className="flex items-center gap-4 mb-2">
-            <div className="p-3 bg-teal-50 rounded-xl text-teal-600">
-              <Icons.Dashboard />
-            </div>
-            <div>
-              <h3 className="text-app-section font-bold text-slate-900">Outlet Environment</h3>
-              <p className="text-xs text-slate-400 font-medium">Toggle "restricted mode" for shared terminals.</p>
-            </div>
-          </div>
-
+        <SettingsSection
+          className="h-fit"
+          iconWrap="bg-teal-50 text-teal-600"
+          title="Outlet Environment"
+          description={'Toggle "restricted mode" for shared terminals.'}
+          icon={<Icons.Dashboard />}
+        >
+          <div className="space-y-6">
           <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
             <div className="flex flex-col">
               <span className="text-sm font-bold text-slate-700">Enable Outlet Mode</span>
@@ -633,20 +663,17 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
               </button>
             </div>
           </div>
-        </div>
+          </div>
+        </SettingsSection>
 
         {/* Permissions Table */}
-        <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm flex flex-col h-fit">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="p-3 bg-amber-50 rounded-xl text-amber-600">
-              <Icons.Lock />
-            </div>
-            <div>
-              <h3 className="text-app-section font-bold text-slate-900">Feature Permissions</h3>
-              <p className="text-xs text-slate-400 font-medium">Control which features require admin elevation.</p>
-            </div>
-          </div>
-
+        <SettingsSection
+          className="h-fit"
+          iconWrap="bg-amber-50 text-amber-600"
+          title="Feature Permissions"
+          description="Control which features require admin elevation."
+          icon={<Icons.Lock />}
+        >
           <div className={`space-y-4 ${!settings.isOutletModeEnabled ? 'opacity-30 pointer-events-none grayscale' : ''}`}>
             {permissionList.map(perm => (
               <div 
@@ -673,21 +700,16 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
               </div>
             ))}
           </div>
-        </div>
+        </SettingsSection>
       </div>
 
       {/* Voucher Redemption Security */}
-      <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="p-3 bg-rose-50 rounded-xl text-rose-600">
-            <Icons.Lock />
-          </div>
-          <div>
-            <h3 className="text-app-section font-bold text-slate-900">Voucher Redemption Security</h3>
-            <p className="text-xs text-slate-400 font-medium">Set a staff PIN required on public voucher redemption links.</p>
-          </div>
-        </div>
-
+      <SettingsSection
+        iconWrap="bg-rose-50 text-rose-600"
+        title="Voucher Redemption Security"
+        description="Set a staff PIN required on public voucher redemption links."
+        icon={<Icons.Lock />}
+      >
         <div className="max-w-md space-y-2">
           <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
             Voucher Redemption PIN
@@ -708,20 +730,15 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
             Leave blank to disable PIN checking and use confirmation checkbox only.
           </p>
         </div>
-      </div>
+      </SettingsSection>
 
       {/* Automated Reminders Section */}
-      <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="p-3 bg-indigo-50 rounded-xl text-indigo-600">
-             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-          </div>
-          <div>
-            <h3 className="text-app-section font-bold text-slate-900">Communication & Reminders</h3>
-            <p className="text-xs text-slate-400 font-medium">Configure automated client notifications for upcoming bookings.</p>
-          </div>
-        </div>
-
+      <SettingsSection
+        iconWrap="bg-indigo-50 text-indigo-600"
+        title="Communication & Reminders"
+        description="Configure automated client notifications for upcoming bookings."
+        icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>}
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-6">
             <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
@@ -783,18 +800,15 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
             </div>
           </div>
         </div>
-      </div>
+      </SettingsSection>
 
       {/* Payment Method Configuration */}
-      <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="p-3 bg-teal-50 rounded-xl text-teal-600"><Icons.POS /></div>
-          <div>
-            <h3 className="text-app-section font-bold text-slate-900">Payment Methods</h3>
-            <p className="text-xs text-slate-400 font-medium">Add or remove accepted payment options for POS checkout.</p>
-          </div>
-        </div>
-
+      <SettingsSection
+        iconWrap="bg-teal-50 text-teal-600"
+        title="Payment Methods"
+        description="Add or remove accepted payment options for POS checkout."
+        icon={<Icons.POS />}
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-4">
              <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest">Active Methods</label>
@@ -829,20 +843,15 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
             </form>
           </div>
         </div>
-      </div>
+      </SettingsSection>
 
       {/* Receipt Layout Configuration */}
-      <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-4 mb-6">
-          <div className="p-3 bg-emerald-50 rounded-xl text-emerald-600">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-          </div>
-          <div>
-            <h3 className="text-app-section font-bold text-slate-900">Receipt Layout</h3>
-            <p className="text-xs text-slate-400 font-medium">Customize receipt company information per outlet. Changes apply to POS printed receipts.</p>
-          </div>
-        </div>
-
+      <SettingsSection
+        iconWrap="bg-emerald-50 text-emerald-600"
+        title="Receipt Layout"
+        description="Customize receipt company information per outlet. Changes apply to POS printed receipts."
+        icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
+      >
         <div className="overflow-x-auto">
           <table className="w-full min-w-[680px] border border-slate-200 rounded-xl overflow-hidden">
             <thead className="bg-slate-50">
@@ -938,7 +947,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           </div>
         </div>
         <p className="text-[10px] text-slate-400 mt-3">Receipt layout values are stored in outlet settings and used by POS when user clicks Print Receipt.</p>
-      </div>
+      </SettingsSection>
       {showApiModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg max-h-[90vh] overflow-y-auto">

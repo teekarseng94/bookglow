@@ -56,12 +56,12 @@ const SettingsSection: React.FC<{
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="w-full flex items-center gap-3 sm:gap-4 text-left p-5 sm:p-6 lg:p-8 lg:pb-0 lg:cursor-default"
+        className="w-full flex items-center gap-3 sm:gap-4 text-left p-4 sm:p-6 lg:p-8 lg:pb-0 lg:cursor-default"
       >
-        <div className={`p-2.5 sm:p-3 rounded-xl flex-shrink-0 ${iconWrap}`}>{icon}</div>
+        <div className={`p-2 sm:p-3 rounded-xl flex-shrink-0 [&_svg]:w-[18px] [&_svg]:h-[18px] sm:[&_svg]:w-5 sm:[&_svg]:h-5 ${iconWrap}`}>{icon}</div>
         <div className="min-w-0 flex-1">
-          <h3 className="text-app-section font-bold text-slate-900">{title}</h3>
-          <p className="text-xs text-slate-400 font-medium">{description}</p>
+          <h3 className="text-base sm:text-app-section font-bold text-slate-900 leading-tight">{title}</h3>
+          <p className="text-xs text-slate-400 font-medium truncate lg:whitespace-normal lg:overflow-visible">{description}</p>
         </div>
         <svg
           className={`lg:hidden w-5 h-5 text-slate-400 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
@@ -70,12 +70,58 @@ const SettingsSection: React.FC<{
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
-      <div className={`${open ? 'block' : 'hidden'} lg:block px-5 pb-5 sm:px-6 sm:pb-6 lg:px-8 lg:pb-8 lg:pt-6`}>
+      <div className={`${open ? 'block' : 'hidden'} lg:block px-4 pb-4 sm:px-6 sm:pb-6 lg:px-8 lg:pb-8 lg:pt-6`}>
         {children}
       </div>
     </div>
   );
 };
+
+// Compact single-row operating-hours control (day · open–close · toggle). ~48px tall.
+const OperatingHourRow: React.FC<{
+  day: string;
+  openTime: string;
+  closeTime: string;
+  isOpen: boolean;
+  onChangeOpenTime: (v: string) => void;
+  onChangeCloseTime: (v: string) => void;
+  onToggleOpen: (v: boolean) => void;
+}> = ({ day, openTime, closeTime, isOpen, onChangeOpenTime, onChangeCloseTime, onToggleOpen }) => (
+  <div className="flex items-center gap-2 sm:gap-3 py-1">
+    <span className="w-[74px] sm:w-24 flex-shrink-0 text-[12.5px] sm:text-sm font-medium text-slate-700 capitalize">{day}</span>
+    {isOpen ? (
+      <div className="flex items-center gap-1.5 flex-1 min-w-0">
+        <input
+          type="time"
+          value={openTime}
+          onChange={(e) => onChangeOpenTime(e.target.value)}
+          className="flex-1 min-w-0 h-9 px-2 bg-slate-50 border border-slate-200 rounded-lg text-[12.5px] sm:text-sm outline-none focus:ring-2 focus:ring-teal-500"
+          aria-label={`${day} opening time`}
+        />
+        <span className="text-slate-400 text-xs flex-shrink-0">–</span>
+        <input
+          type="time"
+          value={closeTime}
+          onChange={(e) => onChangeCloseTime(e.target.value)}
+          className="flex-1 min-w-0 h-9 px-2 bg-slate-50 border border-slate-200 rounded-lg text-[12.5px] sm:text-sm outline-none focus:ring-2 focus:ring-teal-500"
+          aria-label={`${day} closing time`}
+        />
+      </div>
+    ) : (
+      <span className="flex-1 text-[13px] text-slate-400 italic">Closed</span>
+    )}
+    <button
+      type="button"
+      role="switch"
+      aria-checked={isOpen}
+      aria-label={`Toggle ${day} open`}
+      onClick={() => onToggleOpen(!isOpen)}
+      className={`relative flex-shrink-0 w-10 h-6 rounded-full transition-colors ${isOpen ? 'bg-teal-600' : 'bg-slate-300'}`}
+    >
+      <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${isOpen ? 'left-5' : 'left-1'}`} />
+    </button>
+  </div>
+);
 
 const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletId: propOutletId, outlet: propOutlet, onUpdateOutlet }) => {
   // Get outletId from context (fallback if prop is missing)
@@ -417,18 +463,18 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
               </div>
               <div>
                 <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Booking URL</label>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="text"
                     readOnly
                     value={bookingUrl}
-                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 truncate"
+                    className="flex-1 min-w-0 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 truncate"
                   />
-                  <div className="relative">
+                  <div className="relative w-full sm:w-auto">
                     <button
                       type="button"
                       onClick={handleCopyLink}
-                      className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-teal-600 text-white font-semibold text-sm hover:bg-teal-700 transition-colors"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-teal-600 text-white font-semibold text-sm hover:bg-teal-700 transition-colors"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                       Copy Link
@@ -468,7 +514,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
             </div>
           ) : (
             <>
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
             <div>
               <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Address (one line)</label>
               <textarea
@@ -491,54 +537,27 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
             </div>
             <div>
               <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-3">Operating Hours (for Open/Closed status)</label>
-              <div className="space-y-2">
+              <div className="divide-y divide-slate-100">
                 {DAYS.map((day) => {
                   const dayKey = day;
                   const hours = businessHours[dayKey] || { open: '09:00', close: '17:00', isOpen: true };
                   return (
-                    <div key={day} className="flex items-center gap-4 flex-wrap">
-                      <span className="w-24 text-sm font-medium text-slate-700 capitalize">{day}</span>
-                      <input
-                        type="time"
-                        className="p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
-                        value={hours.open || '09:00'}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setBusinessHours(prev => ({
-                            ...prev,
-                            [dayKey]: { ...hours, open: value }
-                          }));
-                        }}
-                      />
-                      <span className="text-slate-400">–</span>
-                      <input
-                        type="time"
-                        className="p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm"
-                        value={hours.close || '17:00'}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setBusinessHours(prev => ({
-                            ...prev,
-                            [dayKey]: { ...hours, close: value }
-                          }));
-                        }}
-                      />
-                      <label className="flex items-center gap-2 text-sm text-slate-600">
-                        <input
-                          type="checkbox"
-                          checked={hours.isOpen !== false}
-                          onChange={(e) => {
-                            const checked = e.target.checked;
-                            setBusinessHours(prev => ({
-                              ...prev,
-                              [dayKey]: { ...hours, isOpen: checked }
-                            }));
-                          }}
-                          className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
-                        />
-                        Open
-                      </label>
-                    </div>
+                    <OperatingHourRow
+                      key={day}
+                      day={day}
+                      openTime={hours.open || '09:00'}
+                      closeTime={hours.close || '17:00'}
+                      isOpen={hours.isOpen !== false}
+                      onChangeOpenTime={(value) =>
+                        setBusinessHours((prev) => ({ ...prev, [dayKey]: { ...(prev[dayKey] || hours), open: value } }))
+                      }
+                      onChangeCloseTime={(value) =>
+                        setBusinessHours((prev) => ({ ...prev, [dayKey]: { ...(prev[dayKey] || hours), close: value } }))
+                      }
+                      onToggleOpen={(checked) =>
+                        setBusinessHours((prev) => ({ ...prev, [dayKey]: { ...(prev[dayKey] || hours), isOpen: checked } }))
+                      }
+                    />
                   );
                 })}
               </div>
@@ -852,77 +871,57 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         description="Customize receipt company information per outlet. Changes apply to POS printed receipts."
         icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
       >
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[680px] border border-slate-200 rounded-xl overflow-hidden">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500 w-1/3">Receipt Field</th>
-                <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-500">Display Value</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              <tr>
-                <td className="px-4 py-3 text-sm font-semibold text-slate-700">Header Title</td>
-                <td className="px-4 py-3">
-                  <input
-                    type="text"
-                    value={settings.receiptHeaderTitle || 'Tax Invoice'}
-                    onChange={(e) => handleReceiptLayoutChange('receiptHeaderTitle', e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                    placeholder="Tax Invoice"
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 text-sm font-semibold text-slate-700">Company Name</td>
-                <td className="px-4 py-3">
-                  <input
-                    type="text"
-                    value={settings.receiptCompanyName || settings.shopName || ''}
-                    onChange={(e) => handleReceiptLayoutChange('receiptCompanyName', e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                    placeholder="ZenFlow Spa"
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 text-sm font-semibold text-slate-700">Company Phone</td>
-                <td className="px-4 py-3">
-                  <input
-                    type="text"
-                    value={settings.receiptPhone || ''}
-                    onChange={(e) => handleReceiptLayoutChange('receiptPhone', e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                    placeholder="+60 12-345 6789"
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 text-sm font-semibold text-slate-700">Company Address</td>
-                <td className="px-4 py-3">
-                  <input
-                    type="text"
-                    value={settings.receiptAddress || ''}
-                    onChange={(e) => handleReceiptLayoutChange('receiptAddress', e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                    placeholder="Outlet address for receipt"
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className="px-4 py-3 text-sm font-semibold text-slate-700">Footer Note</td>
-                <td className="px-4 py-3">
-                  <input
-                    type="text"
-                    value={settings.receiptFooterNote || 'Thank you for your visit!'}
-                    onChange={(e) => handleReceiptLayoutChange('receiptFooterNote', e.target.value)}
-                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                    placeholder="Thank you for your visit!"
-                  />
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+          <div>
+            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Header Title</label>
+            <input
+              type="text"
+              value={settings.receiptHeaderTitle || 'Tax Invoice'}
+              onChange={(e) => handleReceiptLayoutChange('receiptHeaderTitle', e.target.value)}
+              className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+              placeholder="Tax Invoice"
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Company Name</label>
+            <input
+              type="text"
+              value={settings.receiptCompanyName || settings.shopName || ''}
+              onChange={(e) => handleReceiptLayoutChange('receiptCompanyName', e.target.value)}
+              className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+              placeholder="ZenFlow Spa"
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Company Phone</label>
+            <input
+              type="text"
+              value={settings.receiptPhone || ''}
+              onChange={(e) => handleReceiptLayoutChange('receiptPhone', e.target.value)}
+              className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+              placeholder="+60 12-345 6789"
+            />
+          </div>
+          <div>
+            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Company Address</label>
+            <input
+              type="text"
+              value={settings.receiptAddress || ''}
+              onChange={(e) => handleReceiptLayoutChange('receiptAddress', e.target.value)}
+              className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+              placeholder="Outlet address for receipt"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Footer Note</label>
+            <input
+              type="text"
+              value={settings.receiptFooterNote || 'Thank you for your visit!'}
+              onChange={(e) => handleReceiptLayoutChange('receiptFooterNote', e.target.value)}
+              className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+              placeholder="Thank you for your visit!"
+            />
+          </div>
         </div>
         <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
           <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">Live Receipt Preview</p>

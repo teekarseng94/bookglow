@@ -32,6 +32,9 @@ const MoreHorizontalIcon = () => (
 const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, isAdmin, shopName, user, onLogout, outletId, outletName, role }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  // Schedule owns its own native mobile header (month + week strip), so hide the
+  // generic mobile top bar there and let the page content go full-bleed on mobile.
+  const isScheduleRoute = /^\/(schedule|appointments)(\/|$)/.test(location.pathname);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMobileProfileMenu, setShowMobileProfileMenu] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
@@ -74,6 +77,13 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, isAd
   useEffect(() => {
     setIsMoreMenuOpen(false);
   }, [location.pathname]);
+
+  // Let pages that render their own header (e.g. Schedule) open the shared "More" nav.
+  useEffect(() => {
+    const open = () => setIsMoreMenuOpen(true);
+    window.addEventListener('bookglow:open-more-menu', open);
+    return () => window.removeEventListener('bookglow:open-more-menu', open);
+  }, []);
 
   const handleLogout = () => {
     setShowProfileMenu(false);
@@ -188,7 +198,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, isAd
       </aside>
 
       {/* Mobile Top Nav — improved: shop name + contextual subtitle */}
-      <div className="lg:hidden fixed top-0 w-full bg-white border-b border-slate-200 z-50 flex items-center justify-between px-3 py-1.5 h-14">
+      <div className={`${isScheduleRoute ? 'hidden' : 'flex'} lg:hidden fixed top-0 w-full bg-white border-b border-slate-200 z-50 items-center justify-between px-3 py-1.5 h-14`}>
          {/* Hamburger — opens More menu */}
          {moreNavItems.length > 0 ? (
            <button
@@ -369,7 +379,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, isAd
       )}
 
       {/* Main Content — bottom padding on small screens so content clears the fixed bottom nav + safe area */}
-      <main className="flex-1 flex flex-col overflow-y-auto pt-14 pb-[calc(72px+env(safe-area-inset-bottom,0px))] lg:pb-0 lg:pt-0">
+      <main className={`flex-1 flex flex-col overflow-y-auto ${isScheduleRoute ? 'pt-0' : 'pt-14'} pb-[calc(72px+env(safe-area-inset-bottom,0px))] lg:pb-0 lg:pt-0`}>
         <header className="bg-white border-b border-slate-200 px-6 py-4 lg:px-8 sticky top-0 z-10 hidden lg:block">
           <div className="flex justify-between items-center flex-wrap gap-2">
             <div className="flex items-center gap-3">
@@ -504,7 +514,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, isAd
             </div>
           </div>
         </header>
-        <div className="px-5 py-4 sm:px-5 lg:px-8 lg:py-8">
+        <div className={isScheduleRoute ? 'px-0 py-0 lg:px-8 lg:py-8' : 'px-5 py-4 sm:px-5 lg:px-8 lg:py-8'}>
           {children}
         </div>
       </main>

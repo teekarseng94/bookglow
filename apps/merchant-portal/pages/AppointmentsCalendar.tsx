@@ -35,6 +35,57 @@ const formatDisplayTime = (time?: string): string => {
   return `${h12}:${String(mins).padStart(2, '0')} ${ampm}`;
 };
 
+// ---- Mobile calendar helpers (UTC-based to stay consistent with ISO `selectedDate`) ----
+const MON_INITIALS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'] as const;
+
+const toISO = (d: Date): string => d.toISOString().split('T')[0];
+const addDays = (iso: string, n: number): string => {
+  const d = new Date(iso);
+  d.setUTCDate(d.getUTCDate() + n);
+  return toISO(d);
+};
+// Monday-first week (7 ISO dates) containing `iso`.
+const weekOf = (iso: string): string[] => {
+  const d = new Date(iso);
+  const dow = (d.getUTCDay() + 6) % 7; // Mon = 0
+  const monday = addDays(iso, -dow);
+  return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+};
+// 6-row (42-cell) Monday-first month grid for the month containing `iso`.
+const monthMatrix = (iso: string): { iso: string; date: number; inMonth: boolean }[] => {
+  const d = new Date(iso);
+  const year = d.getUTCFullYear();
+  const month = d.getUTCMonth();
+  const first = new Date(Date.UTC(year, month, 1));
+  const firstDow = (first.getUTCDay() + 6) % 7;
+  const startIso = toISO(new Date(Date.UTC(year, month, 1 - firstDow)));
+  return Array.from({ length: 42 }, (_, i) => {
+    const cellIso = addDays(startIso, i);
+    const cd = new Date(cellIso);
+    return { iso: cellIso, date: cd.getUTCDate(), inMonth: cd.getUTCMonth() === month };
+  });
+};
+const monthLabel = (iso: string): string =>
+  new Date(iso).toLocaleDateString('default', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+const dayHeadingLabel = (iso: string): string =>
+  new Date(iso).toLocaleDateString('default', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' });
+
+// Stable pastel colour per booking (keyed by staff so a therapist keeps one colour).
+const CARD_PALETTE = [
+  { bg: 'bg-orange-50', border: 'border-orange-400' },
+  { bg: 'bg-emerald-50', border: 'border-emerald-400' },
+  { bg: 'bg-sky-50', border: 'border-sky-400' },
+  { bg: 'bg-rose-50', border: 'border-rose-400' },
+  { bg: 'bg-violet-50', border: 'border-violet-400' },
+  { bg: 'bg-amber-50', border: 'border-amber-400' },
+  { bg: 'bg-teal-50', border: 'border-teal-400' },
+];
+const colorFor = (key: string) => {
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+  return CARD_PALETTE[h % CARD_PALETTE.length];
+};
+
 const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({ 
   appointments, 
   staff, 
@@ -69,6 +120,16 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
   const [dateStripPastDays, setDateStripPastDays] = useState(30);
   const [dateStripFutureDays, setDateStripFutureDays] = useState(30);
 
+  // Native mobile schedule state
+  const [visibleDate, setVisibleDate] = useState<string>(selectedDate); // header/strip highlight (scroll-driven)
+  const [monthPickerOpen, setMonthPickerOpen] = useState(false);
+  const [pickerMonth, setPickerMonth] = useState<string>(selectedDate);
+  const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
+  const [detailTab, setDetailTab] = useState<'details' | 'payments' | 'history'>('details');
+  const [detailActionsOpen, setDetailActionsOpen] = useState(false);
+  const agendaContainerRef = useRef<HTMLDivElement | null>(null);
+  const todayIso = new Date().toISOString().split('T')[0];
+
   const [bookingData, setBookingData] = useState({
     staffId: '',
     time: '',
@@ -99,15 +160,17 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
   // Clear selectedAppointment if it was deleted (e.g., when sale was voided/deleted)
   // This prevents stale references and the "Appointment not found" warnings
   useEffect(() => {
-    if (selectedAppointment && isStatusModalOpen) {
+    if (selectedAppointment && (isStatusModalOpen || mobileDetailOpen)) {
       const appointmentStillExists = appointments.some(a => a.id === selectedAppointment.id);
       if (!appointmentStillExists) {
         console.log('Selected appointment was deleted, closing modal automatically.');
         setIsStatusModalOpen(false);
+        setMobileDetailOpen(false);
+        setDetailActionsOpen(false);
         setSelectedAppointment(null);
       }
     }
-  }, [appointments, selectedAppointment, isStatusModalOpen]);
+  }, [appointments, selectedAppointment, isStatusModalOpen, mobileDetailOpen]);
 
   // Socket.io real-time listener (optional - Firestore listeners already provide real-time updates)
   useEffect(() => {
@@ -295,6 +358,53 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
     return () => observer.disconnect();
   }, [mobileAgendaDates.length]);
 
+  // Sticky header/week-strip follows the day section currently below the header.
+  useEffect(() => {
+    const container = agendaContainerRef.current;
+    if (!container || typeof window === 'undefined') return;
+    const sections = Array.from(container.querySelectorAll<HTMLElement>('[data-agenda-date]'));
+    if (sections.length === 0) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const top = entries
+          .filter((e) => e.isIntersecting)
+          .map((e) => e.target as HTMLElement)
+          .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top)[0];
+        const iso = top?.getAttribute('data-agenda-date');
+        if (iso) setVisibleDate((prev) => (prev === iso ? prev : iso));
+      },
+      { root: null, rootMargin: '-116px 0px -72% 0px', threshold: 0 }
+    );
+    sections.forEach((s) => observer.observe(s));
+    return () => observer.disconnect();
+  }, [mobileAgendaDates]);
+
+  // Tap a day (week strip / month grid): re-anchor the agenda to that date and scroll to top.
+  const goToDate = (iso: string) => {
+    setSelectedDate(iso);
+    setVisibleDate(iso);
+    setMonthPickerOpen(false);
+    requestAnimationFrame(() => {
+      agendaContainerRef.current?.closest('main')?.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  };
+
+  const openMobileDetail = (app: Appointment) => {
+    setSelectedAppointment(app);
+    setDetailTab('details');
+    setDetailActionsOpen(false);
+    setMobileDetailOpen(true);
+  };
+  const closeMobileDetail = () => {
+    setMobileDetailOpen(false);
+    setDetailActionsOpen(false);
+  };
+  const handleCollectPayment = () => {
+    if (!selectedAppointment) return;
+    onStartPOSSale(selectedAppointment);
+    closeMobileDetail();
+  };
+
   const appointmentsByDate = useMemo(() => {
     const grouped = new Map<string, Appointment[]>();
     mobileAgendaDates.forEach((d) => grouped.set(d, []));
@@ -481,7 +591,7 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn pb-24">
+    <div className="animate-fadeIn md:space-y-6 md:pb-24">
       {/* Syncing with Setmore... */}
       {isSyncingSetmore && (
         <div className="flex items-center gap-3 px-4 py-2.5 bg-sky-50 border border-sky-200 rounded-xl text-sky-700 text-sm font-medium">
@@ -514,102 +624,96 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
         </div>
       </div>
 
-      <div className="bg-white md:rounded-3xl md:border md:border-slate-200 md:shadow-sm overflow-hidden min-h-[600px] flex flex-col">
+      <div className="bg-white md:rounded-3xl md:border md:border-slate-200 md:shadow-sm md:overflow-hidden md:min-h-[600px] flex flex-col">
         {viewMode === 'day' && (
           <>
-          <div className="md:hidden border-b border-slate-100 px-4 pt-3 pb-2.5 bg-white">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-[38px] leading-none font-medium tracking-tight text-slate-800">
-                {new Date(selectedDate).toLocaleDateString('default', { month: 'long', year: 'numeric' })}
-              </h3>
-              <div className="flex items-center gap-2">
-                <button type="button" className="w-9 h-9 rounded-full border border-slate-200 text-slate-500 flex items-center justify-center bg-white">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.963 9.963 0 012.992-4.568m3.124-1.997A9.956 9.956 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.958 9.958 0 01-4.293 5.287M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                </button>
-                <button type="button" className="w-9 h-9 rounded-full border border-slate-200 text-slate-500 flex items-center justify-center bg-white">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405M19 17V9a7 7 0 10-14 0v8m14 0H5m14 0a3 3 0 11-6 0m-8 0a3 3 0 006 0" /></svg>
-                </button>
-                <span className="w-9 h-9 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold flex items-center justify-center">All</span>
+          <div className="md:hidden sticky top-0 z-30 bg-white border-b border-slate-100">
+            {/* Native header: menu · Month YYYY ˅ · bell · avatar */}
+            <div className="flex items-center justify-between px-2 h-14">
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent('bookglow:open-more-menu'))}
+                className="w-11 h-11 flex items-center justify-center rounded-lg text-slate-700 active:bg-slate-100"
+                aria-label="Open menu"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setPickerMonth(visibleDate); setMonthPickerOpen(true); }}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg active:bg-slate-100 min-w-0"
+                aria-label="Open month calendar"
+              >
+                <span className="text-[26px] leading-none font-semibold tracking-tight text-slate-900 truncate">{monthLabel(visibleDate)}</span>
+                <svg className="w-5 h-5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+              </button>
+              <div className="flex items-center gap-0.5">
+                <span className="w-9 h-9 flex items-center justify-center text-slate-500" aria-hidden>
+                  <svg className="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                </span>
+                <span className="w-9 h-9 rounded-full bg-slate-100 text-slate-600 text-xs font-bold flex items-center justify-center">
+                  {(outletSettings.shopName || 'A').charAt(0).toUpperCase()}
+                </span>
               </div>
             </div>
-            <div ref={dateStripScrollRef} className="flex items-center gap-2 overflow-x-auto pb-0.5">
-              <div ref={dateStripLeftRef} className="w-px h-px shrink-0" aria-hidden />
-              {dateStripDates.map((date) => {
-                const d = new Date(date);
-                const isSelected = date === selectedDate;
+            {/* Week strip: Monday–Sunday; highlights the visible day */}
+            <div className="grid grid-cols-7 px-1.5 pb-2">
+              {weekOf(visibleDate).map((iso, i) => {
+                const isSel = iso === visibleDate;
+                const isToday = iso === todayIso;
                 return (
                   <button
-                    key={date}
-                    data-date={date}
+                    key={iso}
                     type="button"
-                    onClick={() => setSelectedDate(date)}
-                    className="flex flex-col items-center min-w-[42px] py-1"
+                    onClick={() => goToDate(iso)}
+                    className="flex flex-col items-center gap-1.5 py-1"
                   >
-                    <span className="text-[15px] leading-none font-medium text-slate-500 mb-1.5">
-                      {DAY_INITIALS[d.getDay()]}
-                    </span>
-                    <span
-                      className={`w-9 h-9 rounded-full flex items-center justify-center text-[20px] leading-none font-medium transition-colors ${
-                        isSelected ? 'bg-slate-900 text-white' : 'text-slate-700'
-                      }`}
-                    >
-                      {d.getDate()}
+                    <span className="text-[13px] font-medium text-slate-400">{MON_INITIALS[i]}</span>
+                    <span className={`w-9 h-9 rounded-xl flex items-center justify-center text-[17px] font-medium transition-colors ${
+                      isSel ? 'bg-slate-900 text-white' : isToday ? 'text-teal-600 font-bold' : 'text-slate-700'
+                    }`}>
+                      {new Date(iso).getUTCDate()}
                     </span>
                   </button>
                 );
               })}
-              <div ref={dateStripRightRef} className="w-px h-px shrink-0" aria-hidden />
             </div>
           </div>
 
-          <div className="md:hidden flex-1 bg-white px-4 pt-4 pb-36 space-y-5">
+          <div ref={agendaContainerRef} className="md:hidden bg-white px-4 pt-4 pb-[calc(8.5rem+env(safe-area-inset-bottom,0px))] space-y-5">
             {mobileAgendaDates.map((date) => {
               const dayAppointments = appointmentsByDate.get(date) || [];
-              const dayLabel = new Date(date).toLocaleDateString('default', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long'
-              });
-
               return (
-                <section key={date} className="space-y-1.5">
-                  <h4 className="text-[14px] leading-none font-semibold tracking-wide text-slate-600">
-                    {dayLabel}
+                <section key={date} data-agenda-date={date} className="space-y-2 scroll-mt-[116px]">
+                  <h4 className="text-[18px] leading-tight font-semibold text-slate-900">
+                    {dayHeadingLabel(date)}
                   </h4>
                   {dayAppointments.length === 0 ? (
-                    <p className="text-slate-300 text-[11px] leading-none font-medium">Nothing planned</p>
+                    <p className="text-slate-400 text-[15px]">Nothing planned</p>
                   ) : (
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                       {dayAppointments.map((app) => {
                         const client = clients.find((c) => c.id === app.clientId);
                         const service = services.find((s) => s.id === app.serviceId);
-                        const therapist = staff.find((s) => s.id === app.staffId);
-                        const initial = (therapist?.name || 'S').charAt(0).toUpperCase();
-
+                        const color = colorFor(app.staffId || app.id);
                         return (
                           <button
                             key={app.id}
                             type="button"
-                            onClick={() => handleAppointmentClick(app)}
-                            className="w-full text-left rounded-lg border-l-4 border-orange-400 bg-[#FFF3E0] px-3 py-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.08)] transition-transform active:scale-[0.99]"
+                            onClick={() => openMobileDetail(app)}
+                            className={`w-full text-left rounded-lg border-l-4 ${color.bg} ${color.border} px-3 py-2.5 transition-transform active:scale-[0.99]`}
                           >
-                            <p className="text-[12px] leading-snug font-bold text-slate-900">
-                              {client?.name || 'Guest'}{' '}
-                              <span className="font-medium text-slate-500">
-                                RM{Number(service?.price || 0).toFixed(0)} {service?.name || 'Service'}
+                            <div className="flex items-baseline gap-1.5 min-w-0">
+                              <span className="text-[14px] font-semibold text-slate-900 flex-shrink-0 truncate max-w-[55%]">
+                                {client?.name || 'Guest'}
                               </span>
-                            </p>
-                            <p className="text-[10px] font-semibold text-slate-800 mt-0.5">
-                              {formatDisplayTime(app.time)} - {formatDisplayTime(app.endTime || app.time)}
-                            </p>
-                            <div className="mt-1.5 flex items-center gap-2">
-                              <span className="w-6 h-6 rounded-full bg-slate-200 text-slate-700 text-[10px] font-semibold flex items-center justify-center">
-                                {initial}
-                              </span>
-                              <span className="text-[10px] text-slate-600 font-medium">
-                                {therapist?.name || 'Staff'}
+                              <span className="text-[14px] text-slate-500 truncate">
+                                {service?.name || 'Service'}
                               </span>
                             </div>
+                            <p className="text-[13px] text-slate-500 mt-0.5">
+                              {formatDisplayTime(app.time)} - {formatDisplayTime(app.endTime || app.time)}
+                            </p>
                           </button>
                         );
                       })}
@@ -705,17 +809,17 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
         {/* Other view modes (week, month) would have similar updates for the reminderSent icon */}
       </div>
 
-      {/* Mobile sticky summary + quick action */}
-      {viewMode === 'day' && (
+      {/* Mobile income bar (above bottom nav) + floating add button */}
+      {!mobileDetailOpen && (
         <>
-          <div className="md:hidden fixed left-0 right-0 bottom-16 z-40 border-t border-slate-200 bg-white px-4 py-2 flex items-center justify-between">
+          <div className="md:hidden fixed left-0 right-0 bottom-[calc(72px+env(safe-area-inset-bottom,0px))] z-40 border-t border-slate-200 bg-white px-4 py-2.5 flex items-center justify-between">
             <span className="text-[14px] leading-none text-slate-700 font-medium">This week&apos;s income</span>
             <span className="text-[14px] leading-none font-semibold text-slate-900">RM{thisWeekIncome.toFixed(0)}</span>
           </div>
           <button
             type="button"
             onClick={handleQuickAddBooking}
-            className="md:hidden fixed bottom-[98px] right-[10px] z-50 w-14 h-14 rounded-full bg-slate-950 text-white shadow-[0_10px_24px_rgba(15,23,42,0.35)] flex items-center justify-center"
+            className="md:hidden fixed bottom-[calc(128px+env(safe-area-inset-bottom,0px))] right-4 z-50 w-14 h-14 rounded-full bg-slate-950 text-white shadow-[0_10px_24px_rgba(15,23,42,0.35)] flex items-center justify-center active:scale-95 transition-transform"
             aria-label="Quick add booking"
           >
             <span className="text-[34px] leading-none">+</span>
@@ -805,6 +909,208 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
           </div>
         </div>
       )}
+
+      {/* ===== Mobile full-month calendar ===== */}
+      {monthPickerOpen && (
+        <div className="md:hidden fixed inset-0 z-[80] bg-white flex flex-col">
+          <div className="flex items-center justify-between px-2 h-14 border-b border-slate-100 flex-shrink-0">
+            <button
+              type="button"
+              onClick={() => { const d = new Date(pickerMonth); d.setUTCMonth(d.getUTCMonth() - 1, 1); setPickerMonth(toISO(d)); }}
+              className="w-11 h-11 grid place-items-center rounded-lg text-slate-500 active:bg-slate-100"
+              aria-label="Previous month"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMonthPickerOpen(false)}
+              className="flex items-center gap-1 px-2 py-1 rounded-lg active:bg-slate-100"
+              aria-label="Collapse calendar"
+            >
+              <span className="text-[26px] leading-none font-semibold tracking-tight text-slate-900">{monthLabel(pickerMonth)}</span>
+              <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" /></svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => { const d = new Date(pickerMonth); d.setUTCMonth(d.getUTCMonth() + 1, 1); setPickerMonth(toISO(d)); }}
+              className="w-11 h-11 grid place-items-center rounded-lg text-slate-500 active:bg-slate-100"
+              aria-label="Next month"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+            </button>
+          </div>
+          <div className="grid grid-cols-7 px-2 pt-3 pb-1">
+            {MON_INITIALS.map((m, i) => (
+              <div key={i} className="text-center text-[13px] font-medium text-slate-400">{m}</div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 px-2">
+            {monthMatrix(pickerMonth).map((cell) => {
+              const isSel = cell.iso === visibleDate;
+              const isToday = cell.iso === todayIso;
+              return (
+                <button key={cell.iso} type="button" onClick={() => goToDate(cell.iso)} className="flex justify-center py-1.5">
+                  <span className={`w-10 h-10 rounded-xl flex items-center justify-center text-[17px] font-medium transition-colors ${
+                    isSel ? 'bg-slate-900 text-white' : !cell.inMonth ? 'text-slate-300' : isToday ? 'text-teal-600 font-bold' : 'text-slate-700'
+                  }`}>
+                    {cell.date}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ===== Mobile full-screen booking detail (Overview) ===== */}
+      {mobileDetailOpen && selectedAppointment && (() => {
+        const app = selectedAppointment;
+        const client = clients.find((c) => c.id === app.clientId);
+        const service = services.find((s) => s.id === app.serviceId);
+        const therapist = staff.find((s) => s.id === app.staffId);
+        const color = colorFor(app.staffId || app.id);
+        const dotBg = color.border.replace('border', 'bg');
+        const dateLabel = new Date(app.date).toLocaleDateString('default', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+        const isCompleted = app.status === 'completed';
+        return (
+          <div className="md:hidden fixed inset-0 z-[90] bg-white flex flex-col">
+            {/* Top bar */}
+            <div className="flex items-center justify-between px-1 h-14 border-b border-slate-100 flex-shrink-0">
+              <button type="button" onClick={closeMobileDetail} aria-label="Close" className="w-11 h-11 grid place-items-center rounded-lg text-slate-700 active:bg-slate-100">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+              <h2 className="text-[18px] font-bold text-slate-900">Overview</h2>
+              <div className="flex items-center">
+                <button type="button" onClick={() => setDetailActionsOpen(true)} aria-label="Edit" className="w-11 h-11 grid place-items-center rounded-lg text-slate-600 active:bg-slate-100">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                </button>
+                <button type="button" onClick={() => setDetailActionsOpen(true)} aria-label="More options" className="w-11 h-11 grid place-items-center rounded-lg text-slate-600 active:bg-slate-100">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.75" /><circle cx="12" cy="12" r="1.75" /><circle cx="12" cy="19" r="1.75" /></svg>
+                </button>
+              </div>
+            </div>
+            {/* Tabs */}
+            <div className="flex px-4 border-b border-slate-100 flex-shrink-0">
+              {(['details', 'payments', 'history'] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setDetailTab(t)}
+                  className={`flex-1 py-3 text-[16px] font-medium capitalize border-b-2 -mb-px transition-colors ${
+                    detailTab === t ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-400'
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto px-4 py-5">
+              {detailTab === 'details' && (
+                <div className="space-y-5">
+                  <div className="flex gap-3">
+                    <span className={`mt-1.5 w-3 h-3 rounded-full flex-shrink-0 ${dotBg}`} />
+                    <div className="min-w-0">
+                      <p className="text-[16px] font-semibold text-slate-900 leading-snug">{service?.name || 'Service'}</p>
+                      <div className="flex flex-wrap gap-x-5 gap-y-0.5 mt-1 text-[14px] text-slate-500">
+                        <span>Cost: <span className="font-semibold text-slate-700">RM{Number(service?.price || 0).toFixed(0)}</span></span>
+                        <span>Duration: <span className="font-semibold text-slate-700">{service?.duration || 0} minutes</span></span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 items-center">
+                    <svg className="w-5 h-5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <p className="text-[15px] text-slate-700">{dateLabel} · {formatDisplayTime(app.time)} - {formatDisplayTime(app.endTime || app.time)}</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <svg className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[15px] text-slate-500 mb-2">1 Guest</p>
+                      <div className="flex items-start gap-3">
+                        <span className="w-9 h-9 rounded-full bg-slate-100 text-slate-600 text-xs font-bold flex items-center justify-center flex-shrink-0">
+                          {(client?.name || 'G').charAt(0).toUpperCase()}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-[15px] font-semibold text-slate-900">{client?.name || 'Guest'}</p>
+                          {client?.email && <p className="text-[14px] text-slate-500 truncate">{client.email}</p>}
+                          {client?.phone && <p className="text-[14px] text-slate-500">{client.phone}</p>}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 items-center">
+                    <span className="w-9 h-9 rounded-full bg-slate-100 text-slate-600 text-xs font-bold flex items-center justify-center flex-shrink-0">
+                      {(therapist?.name || outletSettings.shopName || 'S').charAt(0).toUpperCase()}
+                    </span>
+                    <p className="text-[15px] font-medium text-slate-900">{therapist?.name || outletSettings.shopName || 'Staff'}</p>
+                  </div>
+                  <div className="flex gap-3">
+                    <svg className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[15px] text-slate-700">Booked from {app.isOnDuty ? 'POS sale' : 'manual booking'}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-[13px] text-slate-400 truncate">Booking ID: {app.id}</p>
+                        <button type="button" onClick={() => navigator.clipboard?.writeText(app.id)} aria-label="Copy booking ID" className="text-slate-400 active:text-slate-600 flex-shrink-0">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {detailTab === 'payments' && (
+                <div className="py-10 text-center">
+                  <p className="text-[15px] text-slate-500">{isCompleted ? 'This appointment is marked completed.' : 'No payment recorded yet.'}</p>
+                  {!isCompleted && (
+                    <button type="button" onClick={handleCollectPayment} className="mt-4 inline-flex items-center px-5 py-3 rounded-xl bg-slate-900 text-white font-semibold text-sm active:scale-95 transition-transform">
+                      Collect payment
+                    </button>
+                  )}
+                </div>
+              )}
+              {detailTab === 'history' && (
+                <div className="py-2 divide-y divide-slate-100">
+                  <div className="flex justify-between py-3 text-[14px]"><span className="text-slate-500">Current status</span><span className="font-semibold text-slate-800 capitalize">{app.status}</span></div>
+                  <div className="flex justify-between py-3 text-[14px]"><span className="text-slate-500">Reminder</span><span className="font-semibold text-slate-800">{app.reminderSent ? 'Sent' : 'Not sent'}</span></div>
+                  <div className="flex justify-between py-3 text-[14px]"><span className="text-slate-500">Source</span><span className="font-semibold text-slate-800">{app.isOnDuty ? 'POS sale' : 'Manual booking'}</span></div>
+                </div>
+              )}
+            </div>
+            {/* Sticky Collect payment */}
+            <div className="flex-shrink-0 border-t border-slate-100 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] bg-white">
+              {isCompleted ? (
+                <div className="w-full py-4 rounded-full bg-slate-100 text-slate-500 font-semibold text-center text-[16px]">Completed</div>
+              ) : (
+                <button type="button" onClick={handleCollectPayment} className="w-full py-4 rounded-full bg-slate-950 text-white font-semibold text-[16px] active:scale-[0.99] transition-transform">
+                  Collect payment
+                </button>
+              )}
+            </div>
+
+            {/* Actions sheet */}
+            {detailActionsOpen && (
+              <div className="absolute inset-0 z-[95] flex flex-col justify-end" role="dialog" aria-modal="true">
+                <div className="absolute inset-0 bg-slate-900/40" onClick={() => setDetailActionsOpen(false)} />
+                <div className="relative bg-white rounded-t-3xl p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] shadow-2xl">
+                  <div className="w-10 h-1.5 bg-slate-200 rounded-full mx-auto mb-4" />
+                  <div className="space-y-1">
+                    <button type="button" onClick={() => { onUpdateStatus('completed'); closeMobileDetail(); }} className="w-full text-left px-4 py-3.5 rounded-2xl text-[15px] font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100">Mark completed</button>
+                    <button type="button" onClick={() => { onUpdateStatus('scheduled'); closeMobileDetail(); }} className="w-full text-left px-4 py-3.5 rounded-2xl text-[15px] font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100">Mark scheduled</button>
+                    <button type="button" onClick={() => { onUpdateStatus('no-show'); closeMobileDetail(); }} className="w-full text-left px-4 py-3.5 rounded-2xl text-[15px] font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100">Mark no-show</button>
+                    {outletSettings.reminderEnabled && app.status === 'scheduled' && (
+                      <button type="button" onClick={() => { setDetailActionsOpen(false); handleSendManualReminder(); }} className="w-full text-left px-4 py-3.5 rounded-2xl text-[15px] font-semibold text-indigo-600 hover:bg-indigo-50 active:bg-indigo-100">{app.reminderSent ? 'Resend reminder' : 'Send reminder'}</button>
+                    )}
+                    <button type="button" onClick={() => { onUpdateStatus('cancelled'); closeMobileDetail(); }} className="w-full text-left px-4 py-3.5 rounded-2xl text-[15px] font-semibold text-rose-600 hover:bg-rose-50 active:bg-rose-100">Cancel appointment</button>
+                    <button type="button" onClick={() => { if (app.id) handleDeleteAppointment(app.id); }} className="w-full text-left px-4 py-3.5 rounded-2xl text-[15px] font-semibold text-red-600 hover:bg-red-50 active:bg-red-100">Delete appointment</button>
+                  </div>
+                  <button type="button" onClick={() => setDetailActionsOpen(false)} className="w-full mt-3 py-3 rounded-2xl border border-slate-200 text-slate-500 font-semibold text-sm">Close</button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 };

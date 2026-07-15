@@ -18,6 +18,15 @@ import {
   PublicOutlet,
   PublicTeamMember,
 } from "../../services/bookingApi";
+import {
+  ANY_AVAILABLE_STAFF,
+  BookingEmptyState,
+  BookingMerchantHeader,
+  BookingServiceCard,
+  BookingStateScreen,
+  BookingStickyAction,
+  friendlyBookingError,
+} from "../../components/booking";
 
 type SelectedServiceSelection = {
   /** Unique per click/selection (allows selecting same service multiple times). */
@@ -446,7 +455,7 @@ export function BookingPage() {
                 }
               })
               .catch((e: unknown) => {
-                setError((e as Error)?.message || "Failed to load outlet");
+                setError(friendlyBookingError(e, "Could not load this shop."));
                 setLoading(false);
               });
           }
@@ -489,12 +498,12 @@ export function BookingPage() {
                 setLoading(false);
                 setError(null);
               } else {
-                setError(err.message || "Failed to load outlet");
+                setError(friendlyBookingError(err, "Could not load this shop."));
                 setLoading(false);
               }
             })
             .catch((e: unknown) => {
-              setError((e as Error)?.message || "Failed to load outlet");
+              setError(friendlyBookingError(e, "Could not load this shop."));
               setLoading(false);
             });
         }
@@ -624,7 +633,11 @@ export function BookingPage() {
     const firstSelection = selectedServices[0];
     const firstService = firstSelection.service;
     const selectedTeamMemberId = serviceTeamMembers[firstSelection.selectionId] || null;
-    fetchAvailableSlots(selectedDate, firstService, selectedTeamMemberId);
+    fetchAvailableSlots(
+      selectedDate,
+      firstService,
+      selectedTeamMemberId === ANY_AVAILABLE_STAFF ? null : selectedTeamMemberId
+    );
   }, [selectedServices, selectedDate, serviceTeamMembers, fetchAvailableSlots, outlet?.businessHours]);
 
   const handleConfirmBooking = async () => {
@@ -639,8 +652,11 @@ export function BookingPage() {
       setSubmitError("Please fill all required fields.");
       return;
     }
-    // Validate therapist selection for all selected service rows
-    const missingTherapist = selectedServices.some((sel) => !serviceTeamMembers[sel.selectionId]);
+    // Validate therapist selection for all selected service rows (Any available is allowed)
+    const missingTherapist = selectedServices.some((sel) => {
+      const id = serviceTeamMembers[sel.selectionId];
+      return !id;
+    });
     if (missingTherapist) {
       setSubmitError("Please select a therapist for each selected service.");
       return;
@@ -648,31 +664,34 @@ export function BookingPage() {
     setSubmitLoading(true);
     setSubmitError(null);
     try {
-      // Debug: Log full state before booking
-      console.log(`[Booking] Full state before submission:`, {
-        selectedServices: selectedServices.map((s) => ({ selectionId: s.selectionId, id: s.service.id, name: s.service.name })),
-        serviceTeamMembers,
-        team: team.map((t) => ({ id: t.id, name: t.name })),
-      });
-      
-      // Create bookings: one booking per selected service row (duplicates allowed)
       const bookingPromises = [];
       for (const sel of selectedServices) {
         const service = sel.service;
         const teamMemberId = serviceTeamMembers[sel.selectionId] || null;
-        console.log(`[Booking] Service: ${service.name} (${service.id}) [${sel.selectionId}], Therapist:`, teamMemberId);
         if (!teamMemberId) continue;
-          
-        // Find team member name for logging
+
+        if (teamMemberId === ANY_AVAILABLE_STAFF) {
+          bookingPromises.push(
+            createPublicBooking({
+              outletId,
+              serviceId: service.id,
+              date: selectedDate,
+              time: selectedTime,
+              customerName: customerName.trim(),
+              phone: phone.trim(),
+              email: email.trim() || undefined,
+            })
+          );
+          continue;
+        }
+
         const teamMember = team.find((t) => t.id === teamMemberId);
         if (!teamMember) {
-          console.error(`[Booking] ERROR: Team member ID ${teamMemberId} not found in team list! Available team members:`, team.map((t) => ({ id: t.id, name: t.name })));
-          setSubmitError(`Invalid therapist selected. Please try again.`);
+          setSubmitError("Invalid therapist selected. Please try again.");
           setSubmitLoading(false);
           return;
         }
-        console.log(`[Booking] Creating booking for service "${service.name}", therapist: ${teamMember.name} (ID: ${teamMemberId})`);
-          
+
         bookingPromises.push(
           createPublicBooking({
             outletId,
@@ -682,7 +701,7 @@ export function BookingPage() {
             customerName: customerName.trim(),
             phone: phone.trim(),
             email: email.trim() || undefined,
-            staffId: teamMemberId, // selected therapist
+            staffId: teamMemberId,
           })
         );
       }
@@ -690,7 +709,7 @@ export function BookingPage() {
       setBookingId(results[0]?.appointmentId || "confirmed");
     } catch (e: unknown) {
       console.error("[Booking] Error creating booking:", e);
-      setSubmitError((e as Error)?.message || "Booking failed.");
+      setSubmitError(friendlyBookingError(e, "Booking failed. Please try again."));
     } finally {
       setSubmitLoading(false);
     }
@@ -708,30 +727,23 @@ export function BookingPage() {
 
   if (!pathResolveDone || loading) {
     return (
-      <div className="bookglow-state-screen">
-        <div className="bookglow-state-card" role="status">
-          <span className="bookglow-spinner" aria-hidden />
-          <div>
-            <p className="font-semibold text-slate-900">Loading booking page</p>
-            <p className="mt-1 text-sm text-slate-500">Preparing services and availability…</p>
-          </div>
-        </div>
-      </div>
+      <BookingStateScreen
+        tone="loading"
+        title="Loading booking page"
+        description="Preparing services and availability…"
+      />
     );
   }
 
   if (error) {
     return (
-      <div className="bookglow-state-screen">
-        <div className="bookglow-state-card">
-          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-rose-50 text-rose-600" aria-hidden>!</div>
-          <div>
-            <h1 className="text-xl font-bold text-slate-900">Booking page unavailable</h1>
-            <p className="mt-2 font-medium text-rose-700">{error}</p>
-            <p className="mt-2 text-sm text-slate-500">Check the link or try again later.</p>
-          </div>
-        </div>
-      </div>
+      <BookingStateScreen
+        tone="error"
+        title="Booking page unavailable"
+        description="Check the link or try again later."
+      >
+        <p className="mt-2 font-medium text-rose-700">{friendlyBookingError(error, error)}</p>
+      </BookingStateScreen>
     );
   }
 
@@ -749,7 +761,9 @@ export function BookingPage() {
           <p className="mt-2 text-slate-600">We look forward to seeing you at {outlet?.name}.</p>
           <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <p className="font-semibold text-slate-900">{selectedServices.map((s) => s.service.name).join(", ")}</p>
-            <p className="mt-1 text-sm text-slate-500">{selectedDate} at {formatTimeToCompact(selectedTime)}</p>
+            <p className="mt-1 text-sm text-slate-500">
+              {selectedDate} at {formatTimeToCompact(selectedTime)}
+            </p>
           </div>
           <p className="mt-4 text-xs text-slate-400">Keep this page for your appointment details.</p>
         </div>
@@ -763,38 +777,13 @@ export function BookingPage() {
 
   return (
     <div className="bookglow-booking">
-      <nav className="booking-nav" aria-label="Booking page navigation">
-        <div className="booking-nav__inner">
-          <div className="booking-nav__identity">
-            <span className="booking-nav__mark" aria-hidden>{(outlet?.name || "B").charAt(0).toUpperCase()}</span>
-            <span className="booking-nav__brand">{outlet?.name || "Bookglow booking"}</span>
-          </div>
-          <div className="booking-nav__links">
-            <a href="#services">Services</a>
-            <a href="#team">Team</a>
-            <a href="#reviews">Reviews</a>
-            <a href="#address">Address</a>
-          </div>
-          <div className="booking-nav__actions">
-            {currentUserEmail && <span className="hidden text-xs font-medium text-slate-500 sm:inline">{currentUserEmail}</span>}
-            <button type="button" onClick={handleShare} disabled={shareLoading} className="booking-icon-button" aria-label="Share this page">
-              <svg className={`h-5 w-5 ${shareLoading ? "animate-pulse" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M16 6l-4-4m0 0L8 6m4-4v16" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate(`/book/${outlet?.bookingSlug ?? outletId}/auth?loginSource=homepage`)}
-              className="booking-icon-button"
-              aria-label="Customer login"
-            >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A7 7 0 0112 15a7 7 0 016.879 2.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </nav>
+      <BookingMerchantHeader
+        merchantName={outlet?.name || "Bookglow booking"}
+        currentUserEmail={currentUserEmail}
+        shareLoading={shareLoading}
+        onShare={handleShare}
+        onLogin={() => navigate(`/book/${outlet?.bookingSlug ?? outletId}/auth?loginSource=homepage`)}
+      />
 
       {/* Simple toast for share fallback */}
       {shareToast && (
@@ -919,43 +908,29 @@ export function BookingPage() {
             )}
 
             {services.length === 0 ? (
-              <p className="text-slate-500 py-4">No treatments available.</p>
+              <BookingEmptyState
+                title="No services available"
+                description="This business has not published bookable services yet."
+              />
             ) : filteredServices.length === 0 ? (
-              <p className="text-slate-500 py-4">No services match the selected filter or search.</p>
+              <BookingEmptyState
+                title="No matching services"
+                description="Try another category or clear your search."
+              />
             ) : (
               <div className="booking-service-list">
                 {filteredServices.map((s) => {
                   const selectedCount = selectedServices.filter((sel) => sel.service.id === s.id).length;
-                  const isSelected = selectedCount > 0;
                   return (
-                    <div
+                    <BookingServiceCard
                       key={s.id}
-                      className={`booking-service-card ${isSelected ? "booking-service-card--selected" : ""}`}
-                      onClick={() => handleServiceClick(s)}
-                    >
-                      <div className="booking-service-card__body">
-                        <div className="booking-service-card__icon">
-                          {isSelected ? "✓" : "+"}
-                        </div>
-                        <div>
-                          <p className="booking-service-card__name">{s.name}</p>
-                          <p className="booking-service-card__meta">{s.duration} min · {s.category}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {selectedCount > 1 && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-700 border border-teal-200">
-                            x{selectedCount}
-                          </span>
-                        )}
-                        <span className="booking-service-card__price">{s.price ? `RM ${s.price}` : "Free"}</span>
-                        {isSelected ? (
-                          <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                        ) : (
-                          <svg className="w-5 h-5 text-slate-400 group-hover:text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                        )}
-                      </div>
-                    </div>
+                      name={s.name}
+                      durationMinutes={s.duration}
+                      category={s.category}
+                      priceLabel={s.price ? `RM ${s.price}` : "Free"}
+                      selectedCount={selectedCount}
+                      onSelect={() => handleServiceClick(s)}
+                    />
                   );
                 })}
               </div>
@@ -1094,12 +1069,17 @@ export function BookingPage() {
                                 setServiceTeamMember(sel.selectionId, teamMemberId);
                                 // Recompute available slots if this is the first selected service
                                 if (sel.selectionId === selectedServices[0]?.selectionId && selectedDate) {
-                                  fetchAvailableSlots(selectedDate, service, teamMemberId);
+                                  fetchAvailableSlots(
+                                    selectedDate,
+                                    service,
+                                    teamMemberId === ANY_AVAILABLE_STAFF ? null : teamMemberId
+                                  );
                                 }
                               }}
                               className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 outline-none bg-white"
                             >
                               <option value="">Select therapist...</option>
+                              <option value={ANY_AVAILABLE_STAFF}>Any available</option>
                               {team
                                 .filter((member) => {
                                   const qs = member.qualifiedServices;
@@ -1194,13 +1174,12 @@ export function BookingPage() {
       </div>
 
       {step === "service" && selectedServices.length > 0 && (
-        <div className="booking-mobile-action lg:hidden">
-          <div className="min-w-0">
-            <p className="booking-mobile-action__title">{selectedServices.length} service{selectedServices.length === 1 ? "" : "s"} selected</p>
-            <p className="booking-mobile-action__meta">RM {selectedTotal.toFixed(2)} · Choose date and time next</p>
-          </div>
-          <button type="button" onClick={handleBookClick} className="booking-primary-button">Continue</button>
-        </div>
+        <BookingStickyAction
+          title={`${selectedServices.length} service${selectedServices.length === 1 ? "" : "s"} selected`}
+          meta={`RM ${selectedTotal.toFixed(2)} · Choose date and time next`}
+          actionLabel="Continue"
+          onAction={handleBookClick}
+        />
       )}
 
       {/* Booking flow modal / panel when step is set */}
@@ -1249,12 +1228,17 @@ export function BookingPage() {
                                   setServiceTeamMember(sel.selectionId, teamMemberId);
                                   // Recompute available slots if this is the first selected service
                                   if (sel.selectionId === selectedServices[0]?.selectionId && selectedDate) {
-                                    fetchAvailableSlots(selectedDate, service, teamMemberId);
+                                    fetchAvailableSlots(
+                                      selectedDate,
+                                      service,
+                                      teamMemberId === ANY_AVAILABLE_STAFF ? null : teamMemberId
+                                    );
                                   }
                                 }}
                                 className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 outline-none"
                               >
                                 <option value="">Select therapist...</option>
+                                <option value={ANY_AVAILABLE_STAFF}>Any available</option>
                                 {team.map((member) => (
                                   <option key={member.id} value={member.id}>
                                     {member.name}
@@ -1278,38 +1262,56 @@ export function BookingPage() {
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 mb-4 focus:ring-2 focus:ring-teal-500 outline-none"
                 />
                 <label className="block text-sm font-medium text-slate-700 mb-2">Time</label>
-                <div className="grid grid-cols-3 gap-2 mb-6">
-                  {(
-                    availableSlots.length > 0
-                      ? availableSlots
-                      : buildTimeSlotsForDate(
-                          selectedDate || todayLocalDate,
-                          outlet?.businessHours
-                        )
-                  ).map((t) => {
-                    const slotMinutes = parseTimeToMinutes(t);
-                    const isPastSlot =
-                      selectedDate === todayLocalDate && slotMinutes <= nowMinutes;
+                {slotsLoading ? (
+                  <BookingEmptyState title="Checking availability…" description="Finding open times for this date." />
+                ) : (
+                  (() => {
+                    const slots =
+                      availableSlots.length > 0
+                        ? availableSlots
+                        : buildTimeSlotsForDate(selectedDate || todayLocalDate, outlet?.businessHours);
+                    if (!selectedDate) {
+                      return (
+                        <BookingEmptyState title="Pick a date" description="Choose a date to see available times." />
+                      );
+                    }
+                    if (slots.length === 0) {
+                      return (
+                        <BookingEmptyState
+                          title="No availability"
+                          description="Try another date or therapist."
+                        />
+                      );
+                    }
                     return (
-                      <button
-                        key={t}
-                        type="button"
-                        disabled={isPastSlot}
-                        onClick={() => !isPastSlot && setSelectedTime(t)}
-                        className={`py-3 rounded-xl border text-sm font-medium transition-all ${
-                          isPastSlot
-                            ? "bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed opacity-60"
-                            : selectedTime === t
-                            ? "bg-teal-600 text-white border-teal-600"
-                            : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
-                        }`}
-                      >
-                        {formatTimeToCompact(t)}
-                      </button>
+                      <div className="grid grid-cols-3 gap-2 mb-6">
+                        {slots.map((t) => {
+                          const slotMinutes = parseTimeToMinutes(t);
+                          const isPastSlot =
+                            selectedDate === todayLocalDate && slotMinutes <= nowMinutes;
+                          return (
+                            <button
+                              key={t}
+                              type="button"
+                              disabled={isPastSlot}
+                              onClick={() => !isPastSlot && setSelectedTime(t)}
+                              className={`py-3 rounded-xl border text-sm font-medium transition-all ${
+                                isPastSlot
+                                  ? "bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed opacity-60"
+                                  : selectedTime === t
+                                    ? "bg-teal-600 text-white border-teal-600"
+                                    : "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
+                              }`}
+                            >
+                              {formatTimeToCompact(t)}
+                            </button>
+                          );
+                        })}
+                      </div>
                     );
-                  })}
-                </div>
-                <div className="flex gap-2">
+                  })()
+                )}
+                <div className="flex gap-2 mt-4">
                   <button type="button" onClick={() => setStep("service")} className="booking-secondary-button flex-1">
                     Back
                   </button>
@@ -1340,7 +1342,10 @@ export function BookingPage() {
                     {selectedServices.map((sel) => {
                       const service = sel.service;
                       const tmId = serviceTeamMembers[sel.selectionId];
-                      const member = team.find((t) => t.id === tmId);
+                      const member =
+                        tmId === ANY_AVAILABLE_STAFF
+                          ? { name: "Any available" }
+                          : team.find((t) => t.id === tmId);
                       return (
                         <p key={sel.selectionId} className="text-xs text-slate-500">
                           {service.name}: {member?.name || "—"}

@@ -1,13 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { outletService } from '../services/databaseService';
 import { Outlet } from '../types';
+import { PlatformPageHeader } from '../components/admin';
+import { ConfirmationDialog } from '../components/ui/ConfirmationDialog';
+import { StatusBadge } from '../components/ui/StatusBadge';
+import { Button } from '../components/ui/Button';
+import { LoadingSkeleton } from '../components/ui/LoadingSkeleton';
+import { ErrorState } from '../components/ui/ErrorState';
+import { EmptyState } from '../components/ui/EmptyState';
 
 const SuperAdminSubscribers: React.FC = () => {
   const [outlets, setOutlets] = useState<Outlet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
+  const [pendingToggle, setPendingToggle] = useState<{
+    outletId: string;
+    currentlyActive: boolean;
+    name: string;
+  } | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -48,13 +59,10 @@ const SuperAdminSubscribers: React.FC = () => {
     }
   };
 
-  const handleToggleAccess = async (outletId: string, currentlyActive: boolean | undefined) => {
-    const actionLabel = currentlyActive === false ? 'enable' : 'disable';
-    const confirmMessage =
-      currentlyActive === false
-        ? 'Re-enable portal access for this outlet?'
-        : 'Disable portal access for this outlet? Users mapped to this outlet will no longer be able to sign in.';
-    if (!window.confirm(confirmMessage)) return;
+  const confirmToggleAccess = async () => {
+    if (!pendingToggle) return;
+    const { outletId, currentlyActive } = pendingToggle;
+    setBusy(true);
     try {
       await outletService.update(outletId, { isActive: currentlyActive === false ? true : false });
       setOutlets((prev) =>
@@ -62,86 +70,157 @@ const SuperAdminSubscribers: React.FC = () => {
           o.outletID === outletId ? { ...o, isActive: currentlyActive === false ? true : false } : o
         )
       );
+      setPendingToggle(null);
     } catch (err) {
       console.error('Failed to toggle portal access:', err);
       alert('Failed to update access status. Please try again.');
+    } finally {
+      setBusy(false);
     }
   };
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-white">Subscribers</h2>
-        <p className="text-sm text-slate-400 mt-1">
-          All subscribed outlets with quick remote access controls.
-        </p>
-      </div>
+      <PlatformPageHeader
+        title="Subscribers"
+        description="All subscribed outlets with portal access controls. Disable is a platform-level action — confirm before changing."
+      />
 
-      {loading && <p className="text-slate-400 text-sm">Loading outlets…</p>}
+      {loading && <LoadingSkeleton rows={4} />}
       {error && !loading && (
-        <p className="text-red-400 text-sm">Error loading outlets: {error}</p>
+        <ErrorState title="Could not load outlets" message={error} />
       )}
 
-      {!loading && !error && (
-        <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950">
-          <table className="min-w-full text-sm">
-            <thead className="bg-slate-900 text-slate-400">
-              <tr>
-                <th className="px-4 py-2 text-left">Outlet ID</th>
-                <th className="px-4 py-2 text-left">Name</th>
-                <th className="px-4 py-2 text-left">Join Date</th>
-                <th className="px-4 py-2 text-left">Last Login</th>
-                <th className="px-4 py-2 text-right">Remote Control</th>
-              </tr>
-            </thead>
-            <tbody>
-              {outlets.map((o) => {
-                const joinDate = formatDate((o as any).createdAt, false);
-                const lastLogin = formatDate((o as any).lastLogin, true);
-                const isActive = (o as any).isActive !== false;
-                return (
-                  <tr key={o.outletID} className="border-t border-slate-900">
-                    <td className="px-4 py-2 font-mono text-xs text-slate-500">
-                      {o.outletID}
-                    </td>
-                    <td className="px-4 py-2 text-slate-100">
-                      {(o as any).name || (o as any).settings?.shopName || '—'}
-                    </td>
-                    <td className="px-4 py-2 text-slate-400 text-xs">{joinDate}</td>
-                    <td className="px-4 py-2 text-slate-400 text-xs">{lastLogin}</td>
-                    <td className="px-4 py-2 text-right">
-                      <button
-                        type="button"
-                        onClick={() => handleToggleAccess(o.outletID, isActive)}
-                        className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                          isActive
-                            ? 'bg-red-500 text-white hover:bg-red-400'
-                            : 'bg-emerald-500 text-slate-950 hover:bg-emerald-400'
-                        }`}
-                      >
-                        {isActive ? 'Disable portal' : 'Enable portal'}
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-              {outlets.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="px-4 py-6 text-center text-slate-500 text-sm"
-                  >
-                    No subscribers found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+      {!loading && !error && outlets.length === 0 && (
+        <EmptyState title="No subscribers found." description="Outlets will appear here when registered." />
       )}
+
+      {!loading && !error && outlets.length > 0 && (
+        <>
+          {/* Mobile cards */}
+          <div className="md:hidden space-y-3">
+            {outlets.map((o) => {
+              const joinDate = formatDate((o as any).createdAt, false);
+              const lastLogin = formatDate((o as any).lastLogin, true);
+              const isActive = (o as any).isActive !== false;
+              const name = (o as any).name || (o as any).settings?.shopName || '—';
+              return (
+                <div
+                  key={o.outletID}
+                  className="rounded-xl border border-slate-800 bg-slate-900/80 p-4 space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-slate-100 truncate">{name}</p>
+                      <p className="text-[11px] font-mono text-slate-500 truncate">{o.outletID}</p>
+                    </div>
+                    <StatusBadge tone={isActive ? 'success' : 'danger'}>
+                      {isActive ? 'Active' : 'Disabled'}
+                    </StatusBadge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-slate-400">
+                    <div>
+                      <p className="uppercase tracking-wide text-[10px] text-slate-500">Joined</p>
+                      <p>{joinDate}</p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-[10px] text-slate-500">Last login</p>
+                      <p>{lastLogin}</p>
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={isActive ? 'danger' : 'primary'}
+                    fullWidth
+                    onClick={() =>
+                      setPendingToggle({ outletId: o.outletID, currentlyActive: isActive, name })
+                    }
+                  >
+                    {isActive ? 'Disable portal' : 'Enable portal'}
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-800 bg-slate-950">
+            <table className="min-w-full text-sm">
+              <thead className="bg-slate-900 text-slate-400">
+                <tr>
+                  <th className="px-4 py-2 text-left">Outlet ID</th>
+                  <th className="px-4 py-2 text-left">Name</th>
+                  <th className="px-4 py-2 text-left">Status</th>
+                  <th className="px-4 py-2 text-left">Join Date</th>
+                  <th className="px-4 py-2 text-left">Last Login</th>
+                  <th className="px-4 py-2 text-right">Remote Control</th>
+                </tr>
+              </thead>
+              <tbody>
+                {outlets.map((o) => {
+                  const joinDate = formatDate((o as any).createdAt, false);
+                  const lastLogin = formatDate((o as any).lastLogin, true);
+                  const isActive = (o as any).isActive !== false;
+                  const name = (o as any).name || (o as any).settings?.shopName || '—';
+                  return (
+                    <tr key={o.outletID} className="border-t border-slate-900">
+                      <td className="px-4 py-2 font-mono text-xs text-slate-500">{o.outletID}</td>
+                      <td className="px-4 py-2 text-slate-100">{name}</td>
+                      <td className="px-4 py-2">
+                        <StatusBadge tone={isActive ? 'success' : 'danger'}>
+                          {isActive ? 'Active' : 'Disabled'}
+                        </StatusBadge>
+                      </td>
+                      <td className="px-4 py-2 text-slate-400 text-xs">{joinDate}</td>
+                      <td className="px-4 py-2 text-slate-400 text-xs">{lastLogin}</td>
+                      <td className="px-4 py-2 text-right">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={isActive ? 'danger' : 'primary'}
+                          onClick={() =>
+                            setPendingToggle({
+                              outletId: o.outletID,
+                              currentlyActive: isActive,
+                              name,
+                            })
+                          }
+                        >
+                          {isActive ? 'Disable portal' : 'Enable portal'}
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      <ConfirmationDialog
+        open={!!pendingToggle}
+        onClose={() => {
+          if (!busy) setPendingToggle(null);
+        }}
+        onConfirm={confirmToggleAccess}
+        busy={busy}
+        tone={pendingToggle?.currentlyActive ? 'danger' : 'primary'}
+        title={
+          pendingToggle?.currentlyActive
+            ? 'Disable portal access?'
+            : 'Re-enable portal access?'
+        }
+        description={
+          pendingToggle?.currentlyActive
+            ? `Disable portal access for ${pendingToggle?.name}? Users mapped to this outlet will no longer be able to sign in.`
+            : `Re-enable portal access for ${pendingToggle?.name}?`
+        }
+        confirmLabel={pendingToggle?.currentlyActive ? 'Disable portal' : 'Enable portal'}
+      />
     </div>
   );
 };
 
 export default SuperAdminSubscribers;
-

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Logo, NAV_ITEMS, PRIMARY_GREEN } from './constants';
 import { Button } from './components/Button';
 import { FloatingScreens } from './components/FloatingScreens';
+import { ProductPreviewPanel } from './components/ProductPreviewPanel';
 import { register, getAuthErrorMessage } from './services/authService';
 
 type ViewType = 'landing' | 'pricing' | 'integrations';
@@ -215,16 +216,22 @@ const IntegrationsView: React.FC = () => {
               "https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg",
               "https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg"
             ].map((icon, i) => (
-              <div key={i} className="bg-white p-4 rounded-xl shadow-sm border border-slate-50 flex items-center justify-center animate-pulse" style={{ animationDelay: `${i * 150}ms` }}>
+              <div key={i} className="bg-white p-4 rounded-xl shadow-sm border border-slate-50 flex items-center justify-center" style={{ animationDelay: `${i * 150}ms` }}>
                 <img src={icon} className="h-8 w-8 object-contain grayscale hover:grayscale-0 transition-all" alt="App" />
               </div>
             ))}
           </div>
-          <img 
-            src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?q=80&w=1974&auto=format&fit=crop" 
-            className="absolute bottom-0 right-0 w-[80%] h-full object-cover object-top rounded-t-[100px] z-10 border-l-8 border-t-8 border-white"
-            alt="Professional"
-          />
+          <div className="absolute bottom-4 right-4 w-[55%] z-10">
+            <ProductPreviewPanel
+              title="Connected tools"
+              subtitle="Integrations"
+              rows={[
+                { label: 'Calendar sync', meta: 'On' },
+                { label: 'Online booking', meta: 'Live' },
+                { label: 'Payments', meta: 'Ready' },
+              ]}
+            />
+          </div>
         </div>
       </section>
 
@@ -443,29 +450,47 @@ const PricingView: React.FC = () => {
                 <h3 className="text-xl font-bold text-slate-900">Share your Booking Page</h3>
               </div>
               <p className="text-slate-600 mb-8 leading-relaxed">Make it easy for customers to book—your availability, services, and brand.</p>
-              <div className="rounded-xl overflow-hidden shadow-md">
-                <img src="https://picsum.photos/seed/pricing1/600/400" className="w-full grayscale group-hover:grayscale-0 transition-all duration-500" alt="Booking page" />
-              </div>
+              <ProductPreviewPanel
+                title="Public booking page"
+                subtitle="Customer site"
+                rows={[
+                  { label: 'Signature massage', meta: '60 min' },
+                  { label: 'Express facial', meta: '45 min' },
+                  { label: 'Continue · RM 120', meta: 'CTA' },
+                ]}
+              />
             </div>
             <div className="group">
               <div className="flex items-center gap-3 mb-6">
                 <svg className="w-6 h-6 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                 <h3 className="text-xl font-bold text-slate-900">Get paid anytime</h3>
               </div>
-              <p className="text-slate-600 mb-8 leading-relaxed">In-person or online? You decide. Payments from your Booking Page to Tap to Pay.</p>
-              <div className="rounded-xl overflow-hidden shadow-md">
-                <img src="https://picsum.photos/seed/pricing2/600/400" className="w-full grayscale group-hover:grayscale-0 transition-all duration-500" alt="Payments" />
-              </div>
+              <p className="text-slate-600 mb-8 leading-relaxed">Track sales, payment methods, and daily totals from POS and reports.</p>
+              <ProductPreviewPanel
+                title="Sales snapshot"
+                subtitle="Merchant POS"
+                rows={[
+                  { label: 'Cash', meta: 'RM 420' },
+                  { label: 'Card', meta: 'RM 860' },
+                  { label: 'Member credit', meta: 'RM 120' },
+                ]}
+              />
             </div>
             <div className="group">
               <div className="flex items-center gap-3 mb-6">
                 <svg className="w-6 h-6 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-                <h3 className="text-xl font-bold text-slate-900">All-in-one solution</h3>
+                <h3 className="text-xl font-bold text-slate-900">All-in-one workspace</h3>
               </div>
-              <p className="text-slate-600 mb-8 leading-relaxed">Where purpose meets practice—grow your business from your desktop or mobile.</p>
-              <div className="rounded-xl overflow-hidden shadow-md">
-                <img src="https://picsum.photos/seed/pricing3/600/400" className="w-full grayscale group-hover:grayscale-0 transition-all duration-500" alt="All in one" />
-              </div>
+              <p className="text-slate-600 mb-8 leading-relaxed">Schedule, members, menu, staff, and finance stay connected in one merchant portal.</p>
+              <ProductPreviewPanel
+                title="Today overview"
+                subtitle="Dashboard"
+                rows={[
+                  { label: '8 bookings', meta: 'Today' },
+                  { label: 'Needs attention', meta: '2' },
+                  { label: 'Net profit', meta: 'Live' },
+                ]}
+              />
             </div>
           </div>
         </div>
@@ -533,11 +558,16 @@ const Hero: React.FC = () => {
           
           <div className="flex items-center gap-6 opacity-60">
              <div className="flex -space-x-2">
-                {[1,2,3,4].map(i => (
-                  <img key={i} src={`https://picsum.photos/seed/${i+100}/40/40`} className="w-8 h-8 rounded-full border-2 border-white" alt="User" />
+                {['A', 'B', 'C', 'D'].map((letter) => (
+                  <span
+                    key={letter}
+                    className="w-8 h-8 rounded-full border-2 border-white bg-teal-100 text-teal-800 grid place-items-center text-[10px] font-black"
+                  >
+                    {letter}
+                  </span>
                 ))}
              </div>
-             <p className="text-sm text-slate-600 font-medium">Trusted by 10,000+ spa professionals</p>
+             <p className="text-sm text-slate-600 font-medium">Built for salons, spas, and wellness teams</p>
           </div>
         </div>
 
@@ -553,51 +583,49 @@ const Testimonials: React.FC = () => {
   const testimonials = [
     {
       name: "Sarah Jenkins",
-      business: "Serenity Day Spa",
-      quote: "Bookglow has completely transformed how we handle bookings. Our no-show rate dropped by 50% in the first month alone!",
-      image: "https://picsum.photos/seed/sarah/100/100"
+      business: "Neighbourhood salon",
+      quote: "Bookglow keeps our online bookings and front-desk schedule in the same place. Clients book themselves, and we stay organised.",
+      initial: "S",
     },
     {
       name: "Marcus Thorne",
-      business: "Zenith Wellness",
-      quote: "The AI optimizer gave us insights into our peak hours we never noticed. It's like having a business consultant built-in.",
-      image: "https://picsum.photos/seed/marcus/100/100"
+      business: "Wellness studio",
+      quote: "POS, members, and daily reports finally sit next to the calendar. End-of-day checks are much faster.",
+      initial: "M",
     },
     {
       name: "Elena Rodriguez",
-      business: "Radiance Esthetics",
-      quote: "Finally, a scheduling tool that is actually beautiful and easy for my clients to use. The mobile app is a lifesaver.",
-      image: "https://picsum.photos/seed/elena/100/100"
+      business: "Beauty clinic",
+      quote: "The booking page is clear for customers, and our team can manage appointments from phone or desktop.",
+      initial: "E",
     }
   ];
 
   return (
-    <section id="industries" className="py-24 bg-white scroll-mt-20">
+    <section id="customers" className="py-24 bg-white scroll-mt-20">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4 text-slate-900">
-            Loved by wellness experts
+          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+            What merchants value
           </h2>
           <p className="text-slate-600 max-w-2xl mx-auto">
-            Discover how Bookglow is helping thousands of businesses streamline their operations and delight their clients.
+            Discover how Bookglow helps teams run bookings, sales, and customer visits together.
           </p>
         </div>
+
         <div className="grid md:grid-cols-3 gap-8">
-          {testimonials.map((t, i) => (
-            <div key={i} className="bg-slate-50 p-8 rounded-2xl border border-slate-100 relative group transition-all hover:shadow-lg">
-              <div className="mb-6 text-yellow-400 text-lg flex gap-0.5">
-                {[1, 2, 3, 4, 5].map(star => <span key={star}>★</span>)}
-              </div>
-              <p className="text-slate-700 italic mb-8 leading-relaxed">
-                "{t.quote}"
-              </p>
-              <div className="flex items-center gap-4">
-                <img src={t.image} alt={t.name} className="w-12 h-12 rounded-full object-cover border border-slate-200" />
+          {testimonials.map((t) => (
+            <div key={t.name} className="bg-slate-50 p-8 rounded-2xl border border-slate-100">
+              <div className="flex items-center gap-4 mb-6">
+                <span className="w-12 h-12 rounded-full bg-teal-100 text-teal-800 grid place-items-center text-sm font-black border border-slate-200">
+                  {t.initial}
+                </span>
                 <div>
-                  <h4 className="font-bold text-slate-900 text-sm">{t.name}</h4>
-                  <p className="text-slate-500 text-xs">{t.business}</p>
+                  <h4 className="font-bold text-slate-900">{t.name}</h4>
+                  <p className="text-xs text-slate-500 font-medium">{t.business}</p>
                 </div>
               </div>
+              <p className="text-slate-600 leading-relaxed text-sm italic">&ldquo;{t.quote}&rdquo;</p>
             </div>
           ))}
         </div>

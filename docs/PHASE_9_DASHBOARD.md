@@ -54,4 +54,4 @@
 
 ## Next
 
-**Phase 10 — Customer Site**
+**Phase 10 — Customer Site** — see `docs/PHASE_10_CUSTOMER_SITE.md`

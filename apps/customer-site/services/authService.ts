@@ -76,14 +76,20 @@ function getErrorMessage(code: string): string {
     case "auth/operation-not-allowed":
       return "Email/Password sign-up is not enabled for this app.";
     default:
-      return `Sign-up failed: ${code}`;
+      return "Sign-up failed. Please try again.";
   }
 }
 
 export function getAuthErrorMessage(error: unknown): string {
   const authError = error as AuthError & { code?: string };
   if (authError?.code) return getErrorMessage(authError.code);
-  if (error instanceof Error) return error.message;
+  if (error instanceof Error) {
+    const msg = error.message || "";
+    if (/firebase|firestore|auth\/|permission|INTERNAL|https?:\/\//i.test(msg)) {
+      return "Registration failed. Please try again.";
+    }
+    return msg;
+  }
   return "Registration failed. Please try again.";
 }
 

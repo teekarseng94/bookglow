@@ -3,6 +3,11 @@ import { Link } from 'react-router-dom';
 import { OutletSettings, Client, Staff, Service } from '../types';
 import { syncSetmoreViaCallable } from '../services/setmoreSyncService';
 import { Icons } from '../constants';
+import { PageHeader } from '../components/ui/PageHeader';
+import { StatusBadge } from '../components/ui/StatusBadge';
+import { Button } from '../components/ui/Button';
+import { Alert } from '../components/ui/Alert';
+import { Field } from '../components/ui/Field';
 
 interface ExternalIntegrationsProps {
   settings: OutletSettings;
@@ -40,6 +45,27 @@ const ExternalIntegrations: React.FC<ExternalIntegrationsProps> = ({
   const lastSyncedAt = settings.setmoreLastSyncedAt;
   const defaultStaffId = staff[0]?.id ?? '';
   const defaultServiceId = services[0]?.id ?? '';
+  const hasFeed = Boolean((feedUrl || settings.setmoreFeedUrl || '').trim());
+
+  const connectionTone = syncing
+    ? 'info'
+    : lastError
+      ? 'danger'
+      : lastSyncedAt
+        ? 'success'
+        : hasFeed
+          ? 'warning'
+          : 'neutral';
+
+  const connectionLabel = syncing
+    ? 'Syncing'
+    : lastError
+      ? 'Error'
+      : lastSyncedAt
+        ? 'Connected'
+        : hasFeed
+          ? 'Configured'
+          : 'Disconnected';
 
   const handleSaveUrl = () => {
     onUpdateSettings({ ...settings, setmoreFeedUrl: feedUrl.trim() || undefined });
@@ -81,69 +107,58 @@ const ExternalIntegrations: React.FC<ExternalIntegrationsProps> = ({
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-fadeIn pb-20">
-      <div className="flex items-center gap-4">
-        <Link
-          to="/settings"
-          className="p-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"
-          aria-label="Back to Settings"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-          </svg>
-        </Link>
-        <div>
-          <h2 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-slate-900">External Integrations</h2>
-          <p className="text-slate-500 text-sm">Sync appointments from Setmore (ICS/iCal feed).</p>
-        </div>
-      </div>
+    <div className="max-w-4xl mx-auto space-y-6 animate-fadeIn pb-20">
+      <PageHeader
+        title="External Integrations"
+        description="Sync appointments from Setmore (ICS/iCal feed). Only real integrations are shown."
+        actions={
+          <Link
+            to="/settings"
+            className="p-2 rounded-xl border border-[var(--line)] text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]"
+            aria-label="Back to Settings"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+            </svg>
+          </Link>
+        }
+        meta={<StatusBadge tone={connectionTone as any}>{connectionLabel}</StatusBadge>}
+      />
 
-      <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="bg-[var(--bg-surface)] p-6 sm:p-8 rounded-ui-lg border border-[var(--line)] shadow-ui-xs">
         <div className="flex items-center gap-4 mb-6">
           <div className="p-3 bg-sky-50 rounded-xl text-sky-600">
             <Icons.Calendar />
           </div>
-          <div>
-            <h3 className="text-app-section font-bold text-slate-900">Setmore Feed URL</h3>
-            <p className="text-xs text-slate-400 font-medium">Paste your Setmore ICS feed URL to import appointments.</p>
+          <div className="min-w-0">
+            <h3 className="text-app-section font-bold text-[var(--text-primary)]">Setmore Feed URL</h3>
+            <p className="text-xs text-[var(--text-muted)] font-medium">
+              Paste your Setmore ICS feed URL to import appointments.
+            </p>
           </div>
         </div>
 
         <div className="space-y-4">
-          <div>
-            <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
-              Setmore Feed URL
-            </label>
+          <Field id="setmore-feed-url" label="Setmore Feed URL">
             <input
+              id="setmore-feed-url"
               type="url"
-              placeholder="https://events.setmore.com/feeds/v1/NDYxYTA2YWE1ODllODMxYw=="
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-sky-500 text-sm font-medium"
+              placeholder="https://events.setmore.com/feeds/v1/…"
+              className="w-full p-3 bg-[var(--bg-soft)] border border-[var(--line)] rounded-ui-md outline-none focus-visible:shadow-ui-focus-strong text-sm font-medium"
               value={feedUrl}
               onChange={(e) => setFeedUrl(e.target.value)}
               onBlur={handleSaveUrl}
             />
-            <p className="text-[10px] text-slate-400 mt-2 italic">
-              Optional. Leave blank to use the default feed. Find in Setmore: Settings → Calendar Sync → Copy iCal feed URL.
-            </p>
-          </div>
+          </Field>
+          <p className="text-[10px] text-[var(--text-muted)] italic -mt-2">
+            Optional. Leave blank to use the default feed. Find in Setmore: Settings → Calendar Sync → Copy iCal feed URL.
+          </p>
 
           <div className="flex flex-wrap items-center gap-4 pt-2">
-            <button
-              type="button"
-              onClick={handleSyncNow}
-              disabled={syncing}
-              className="px-6 py-3 bg-sky-600 text-white font-bold rounded-xl hover:bg-sky-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {syncing ? (
-                <>
-                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Syncing…
-                </>
-              ) : (
-                <>Sync Setmore Appointments</>
-              )}
-            </button>
-            <span className="text-sm text-slate-500 font-medium">
+            <Button type="button" onClick={handleSyncNow} disabled={syncing}>
+              {syncing ? 'Syncing…' : 'Sync Setmore Appointments'}
+            </Button>
+            <span className="text-sm text-[var(--text-secondary)] font-medium">
               Last synced: {formatTimeAgo(lastSyncedAt)}
               {lastSyncedCount != null && lastSyncedCount > 0 && (
                 <span className="text-sky-600 ml-1">({lastSyncedCount} appointments)</span>
@@ -152,26 +167,21 @@ const ExternalIntegrations: React.FC<ExternalIntegrationsProps> = ({
           </div>
 
           {lastError && (
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
+            <Alert tone="warning" title="Sync issue">
               {lastError}
-            </div>
+            </Alert>
           )}
         </div>
       </div>
 
-      <div className="bg-sky-50 p-6 rounded-2xl border border-sky-100">
-        <h4 className="text-xs font-black uppercase text-sky-700 tracking-widest mb-3 flex items-center gap-2">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          How it works
-        </h4>
+      <div className="bg-sky-50 p-6 rounded-ui-lg border border-sky-100">
+        <h4 className="text-xs font-black uppercase text-sky-700 tracking-widest mb-3">How it works</h4>
         <ul className="text-sm text-sky-800 space-y-2 font-medium">
           <li>• Sync runs via a Firebase Cloud Function (no CORS). The feed is fetched server-side.</li>
           <li>• SUMMARY from the feed becomes customer name & service; we try to match existing members by name.</li>
           <li>• DTSTART/DTEND set appointment date and time.</li>
           <li>• Each event UID is used as the Firestore document ID so re-syncing updates instead of duplicating.</li>
-          <li>• Imported appointments appear on the Calendar in <span className="bg-sky-200/60 px-1 rounded">light blue</span> (Setmore).</li>
+          <li>• Imported appointments appear on the Calendar in light blue (Setmore).</li>
           <li>• Opening the Appointment page triggers an automatic sync once so staff always see the latest online bookings.</li>
         </ul>
       </div>

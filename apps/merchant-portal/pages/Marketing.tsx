@@ -1,6 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Service, Voucher } from '../types';
 import { voucherService } from '../services/voucherService';
+import { PageHeader } from '../components/ui/PageHeader';
+import { StatusBadge } from '../components/ui/StatusBadge';
+import { Button } from '../components/ui/Button';
+import { Alert } from '../components/ui/Alert';
+import { EmptyState } from '../components/ui/EmptyState';
+import { ConfirmationDialog } from '../components/ui/ConfirmationDialog';
 
 interface MarketingProps {
   outletID: string;
@@ -21,6 +27,7 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
   const [resettingVoucherId, setResettingVoucherId] = useState<string | null>(null);
   const [confirmingVoucherId, setConfirmingVoucherId] = useState<string | null>(null);
   const [saleCodeInputs, setSaleCodeInputs] = useState<Record<string, string>>({});
+  const [resetTarget, setResetTarget] = useState<Voucher | null>(null);
 
   const serviceNameMap = useMemo(() => {
     return new Map(services.map((s) => [s.id, s.name]));
@@ -59,13 +66,12 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
 
   const handleResetVoucher = async (voucher: Voucher) => {
     if (voucher.status === 'active') return;
-    const confirmed = window.confirm(`Reset "${voucher.name}" back to active?`);
-    if (!confirmed) return;
     try {
       setResettingVoucherId(voucher.id);
       setError(null);
       await voucherService.resetVoucher(voucher.id);
       await loadVouchers();
+      setResetTarget(null);
     } catch (e: any) {
       setError(e.message || 'Failed to reset voucher.');
     } finally {
@@ -130,64 +136,72 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
 
   if (role !== 'admin') {
     return (
-      <div className="bg-white border border-slate-200 rounded-2xl p-6">
-        <h2 className="text-xl font-bold text-slate-900">Marketing</h2>
-        <p className="text-slate-600 mt-2">Only admins can access voucher management.</p>
+      <div className="bg-[var(--bg-surface)] border border-[var(--line)] rounded-ui-lg p-6">
+        <PageHeader title="Marketing" description="Only admins can access voucher management." />
       </div>
     );
   }
 
+  const voucherStatusBadge = (voucher: Voucher) => {
+    if (voucher.status === 'active' && voucher.secretCode) {
+      return <StatusBadge tone="warning">Pending confirmation</StatusBadge>;
+    }
+    if (voucher.status === 'sold') return <StatusBadge tone="success">Sold</StatusBadge>;
+    if (voucher.status === 'redeemed') return <StatusBadge tone="info">Redeemed</StatusBadge>;
+    return <StatusBadge tone="neutral">{voucher.status}</StatusBadge>;
+  };
+
   return (
     <div className="space-y-6 animate-fadeIn">
-      <div>
-        <h2 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-slate-900">Marketing</h2>
-        <p className="text-sm text-slate-600">Create, sell, and track service voucher links.</p>
-      </div>
+      <PageHeader
+        title="Marketing"
+        description="Create, sell, and track service voucher links."
+      />
 
-      <form onSubmit={onCreate} className="bg-white border border-slate-200 rounded-2xl p-6 space-y-4">
-        <h3 className="text-lg font-bold text-slate-900">Create Voucher</h3>
+      <form onSubmit={onCreate} className="bg-[var(--bg-surface)] border border-[var(--line)] rounded-ui-lg p-6 space-y-4 shadow-ui-xs">
+        <h3 className="text-lg font-bold text-[var(--text-primary)]">Create Voucher</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-bold uppercase text-slate-500 mb-1.5">Voucher Name</label>
+            <label className="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5">Voucher Name</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full p-3 bg-[var(--bg-soft)] border border-[var(--line)] rounded-ui-md outline-none focus-visible:shadow-ui-focus-strong"
               placeholder="Example: Mother's Day Wellness Voucher"
               required
             />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase text-slate-500 mb-1.5">Sale Price</label>
+            <label className="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5">Sale Price</label>
             <input
               type="number"
               min={0}
               step="0.01"
               value={price}
               onChange={(e) => setPrice(parseFloat(e.target.value) || 0)}
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full p-3 bg-[var(--bg-soft)] border border-[var(--line)] rounded-ui-md outline-none focus-visible:shadow-ui-focus-strong"
               required
             />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase text-slate-500 mb-1.5">Expiry Date</label>
+            <label className="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5">Expiry Date</label>
             <input
               type="date"
               value={expiryDate}
               onChange={(e) => setExpiryDate(e.target.value)}
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full p-3 bg-[var(--bg-soft)] border border-[var(--line)] rounded-ui-md outline-none focus-visible:shadow-ui-focus-strong"
               required
             />
           </div>
           <div>
-            <label className="block text-xs font-bold uppercase text-slate-500 mb-1.5">Included Services</label>
+            <label className="block text-xs font-bold uppercase text-[var(--text-muted)] mb-1.5">Included Services</label>
             <select
               multiple
               value={selectedServiceIds}
               onChange={(e) =>
                 setSelectedServiceIds(Array.from(e.target.selectedOptions).map((opt) => opt.value))
               }
-              className="w-full p-3 min-h-[120px] bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full p-3 min-h-[120px] bg-[var(--bg-soft)] border border-[var(--line)] rounded-ui-md outline-none focus-visible:shadow-ui-focus-strong"
               required
             >
               {services.map((service) => (
@@ -198,26 +212,81 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
             </select>
           </div>
         </div>
-        {error && <p className="text-sm text-rose-600 font-medium">{error}</p>}
-        <button
-          type="submit"
-          disabled={isSaving}
-          className={`px-5 py-2.5 rounded-xl font-bold text-white ${
-            isSaving ? 'bg-slate-400 cursor-not-allowed' : 'bg-teal-600 hover:bg-teal-700'
-          }`}
-        >
+        {error && <Alert tone="danger">{error}</Alert>}
+        <Button type="submit" disabled={isSaving}>
           {isSaving ? 'Creating...' : 'Create Voucher'}
-        </button>
+        </Button>
       </form>
 
-      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100">
-          <h3 className="text-lg font-bold text-slate-900">Created Vouchers</h3>
+      <div className="bg-[var(--bg-surface)] border border-[var(--line)] rounded-ui-lg overflow-hidden shadow-ui-xs">
+        <div className="px-6 py-4 border-b border-[var(--line)]">
+          <h3 className="text-lg font-bold text-[var(--text-primary)]">Created Vouchers</h3>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* Mobile cards */}
+        <div className="md:hidden divide-y divide-[var(--line)]">
+          {vouchers.map((voucher) => (
+            <div key={voucher.id} className="p-4 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <p className="font-semibold text-[var(--text-primary)]">{voucher.name}</p>
+                {voucherStatusBadge(voucher)}
+              </div>
+              <p className="text-xs text-[var(--text-muted)]">
+                {voucher.serviceIds.map((id) => serviceNameMap.get(id) || id).join(', ')}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" size="sm" variant="secondary" onClick={() => handleCopyLink(voucher)}>
+                  {copiedVoucherId === voucher.id ? 'Copied link' : 'Copy buy link'}
+                </Button>
+                {voucher.secretCode ? (
+                  <Button type="button" size="sm" variant="secondary" onClick={() => handleCopySecretCode(voucher)}>
+                    {copiedSecretVoucherId === voucher.id ? 'Copied code' : 'Copy secret'}
+                  </Button>
+                ) : null}
+              </div>
+              {voucher.status === 'active' && voucher.secretCode ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="text"
+                    value={saleCodeInputs[voucher.id] || ''}
+                    onChange={(e) =>
+                      setSaleCodeInputs((prev) => ({ ...prev, [voucher.id]: e.target.value }))
+                    }
+                    placeholder="Enter secret code"
+                    className="flex-1 min-w-[8rem] p-2 text-xs bg-[var(--bg-soft)] border border-[var(--line)] rounded-ui-sm outline-none"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={confirmingVoucherId === voucher.id}
+                    onClick={() => handleConfirmSold(voucher)}
+                  >
+                    {confirmingVoucherId === voucher.id ? 'Confirming...' : 'Confirm Sold'}
+                  </Button>
+                </div>
+              ) : voucher.status !== 'active' ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  disabled={resettingVoucherId === voucher.id}
+                  onClick={() => setResetTarget(voucher)}
+                >
+                  {resettingVoucherId === voucher.id ? 'Resetting...' : 'Reset'}
+                </Button>
+              ) : null}
+            </div>
+          ))}
+          {vouchers.length === 0 && (
+            <EmptyState title="No vouchers created yet." className="border-0 rounded-none" />
+          )}
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-slate-50 text-[10px] font-black uppercase text-slate-500">
+              <tr className="bg-[var(--bg-soft)] text-[10px] font-black uppercase text-[var(--text-muted)]">
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Secret Code</th>
@@ -226,48 +295,32 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
                 <th className="px-4 py-3">Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[var(--line)]">
               {vouchers.map((voucher) => (
                 <tr key={voucher.id}>
-                  <td className="px-4 py-3 text-sm font-semibold text-slate-800">{voucher.name}</td>
-                  <td className="px-4 py-3 text-xs font-bold uppercase">
-                    {voucher.status === 'active' && voucher.secretCode ? (
-                      <span className="text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded-md">
-                        Pending Staff Confirmation
-                      </span>
-                    ) : (
-                      <span className="text-slate-600">{voucher.status}</span>
-                    )}
-                  </td>
+                  <td className="px-4 py-3 text-sm font-semibold text-[var(--text-primary)]">{voucher.name}</td>
+                  <td className="px-4 py-3">{voucherStatusBadge(voucher)}</td>
                   <td className="px-4 py-3">
                     {voucher.secretCode ? (
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-slate-700">{voucher.secretCode}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleCopySecretCode(voucher)}
-                          className="px-2 py-1 text-[11px] font-bold rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50"
-                        >
+                        <span className="text-xs font-mono text-[var(--text-secondary)]">{voucher.secretCode}</span>
+                        <Button type="button" size="sm" variant="ghost" onClick={() => handleCopySecretCode(voucher)}>
                           {copiedSecretVoucherId === voucher.id ? 'Copied' : 'Copy'}
-                        </button>
+                        </Button>
                       </div>
                     ) : (
-                      <span className="text-xs font-mono text-slate-400">-</span>
+                      <span className="text-xs font-mono text-[var(--text-muted)]">-</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-xs text-slate-600">
+                  <td className="px-4 py-3 text-xs text-[var(--text-secondary)]">
                     {voucher.serviceIds.map((id) => serviceNameMap.get(id) || id).join(', ')}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-teal-700">/buy-voucher/{voucher.slug}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleCopyLink(voucher)}
-                        className="px-2 py-1 text-[11px] font-bold rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50"
-                      >
+                      <span className="text-xs font-mono text-[var(--brand)]">/buy-voucher/{voucher.slug}</span>
+                      <Button type="button" size="sm" variant="ghost" onClick={() => handleCopyLink(voucher)}>
                         {copiedVoucherId === voucher.id ? 'Copied' : 'Copy'}
-                      </button>
+                      </Button>
                     </div>
                   </td>
                   <td className="px-4 py-3">
@@ -280,43 +333,36 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
                             setSaleCodeInputs((prev) => ({ ...prev, [voucher.id]: e.target.value }))
                           }
                           placeholder="Enter secret code"
-                          className="w-32 p-1.5 text-[11px] bg-white border border-slate-200 rounded-md outline-none focus:ring-2 focus:ring-teal-500"
+                          className="w-32 p-1.5 text-[11px] bg-[var(--bg-surface)] border border-[var(--line)] rounded-ui-sm outline-none"
                         />
-                        <button
+                        <Button
                           type="button"
-                          onClick={() => handleConfirmSold(voucher)}
+                          size="sm"
                           disabled={confirmingVoucherId === voucher.id}
-                          className={`px-3 py-1.5 text-[11px] font-bold rounded-md border ${
-                            confirmingVoucherId === voucher.id
-                              ? 'border-slate-200 text-slate-400 bg-slate-50 cursor-not-allowed'
-                              : 'border-teal-200 text-teal-700 bg-teal-50 hover:bg-teal-100'
-                          }`}
+                          onClick={() => handleConfirmSold(voucher)}
                         >
                           {confirmingVoucherId === voucher.id ? 'Confirming...' : 'Confirm Sold'}
-                        </button>
+                        </Button>
                       </div>
                     ) : voucher.status !== 'active' ? (
-                      <button
+                      <Button
                         type="button"
-                        onClick={() => handleResetVoucher(voucher)}
+                        size="sm"
+                        variant="secondary"
                         disabled={resettingVoucherId === voucher.id}
-                        className={`px-3 py-1.5 text-[11px] font-bold rounded-md border ${
-                          resettingVoucherId === voucher.id
-                            ? 'border-slate-200 text-slate-400 bg-slate-50 cursor-not-allowed'
-                            : 'border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100'
-                        }`}
+                        onClick={() => setResetTarget(voucher)}
                       >
                         {resettingVoucherId === voucher.id ? 'Resetting...' : 'Reset'}
-                      </button>
+                      </Button>
                     ) : (
-                      <span className="text-xs text-slate-400">-</span>
+                      <span className="text-xs text-[var(--text-muted)]">-</span>
                     )}
                   </td>
                 </tr>
               ))}
               {vouchers.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-slate-500">
+                  <td colSpan={6} className="px-4 py-8 text-center text-sm text-[var(--text-muted)]">
                     No vouchers created yet.
                   </td>
                 </tr>
@@ -325,6 +371,17 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
           </table>
         </div>
       </div>
+
+      <ConfirmationDialog
+        open={!!resetTarget}
+        onClose={() => setResetTarget(null)}
+        onConfirm={() => resetTarget && handleResetVoucher(resetTarget)}
+        busy={!!resettingVoucherId}
+        tone="primary"
+        title="Reset voucher?"
+        description={resetTarget ? `Reset "${resetTarget.name}" back to active?` : undefined}
+        confirmLabel="Reset"
+      />
     </div>
   );
 };

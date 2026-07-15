@@ -4,6 +4,10 @@ import { voucherService } from '../services/voucherService';
 import { outletService } from '../services/databaseService';
 import { Voucher } from '../types';
 import { useUserContext } from '../contexts/UserContext';
+import { StatusBadge } from '../components/ui/StatusBadge';
+import { Button } from '../components/ui/Button';
+import { Alert } from '../components/ui/Alert';
+import { Field } from '../components/ui/Field';
 
 const RedeemVoucher: React.FC = () => {
   const { unique_id = '' } = useParams();
@@ -56,25 +60,37 @@ const RedeemVoucher: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 sm:p-8">
-      <div className="max-w-xl mx-auto bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 space-y-5">
-        <h1 className="text-2xl font-bold text-slate-900">Redeem Voucher</h1>
-        {error && <p className="text-sm text-rose-600 font-semibold">{error}</p>}
+    <div className="min-h-screen bg-[var(--bg-soft)] p-4 sm:p-8">
+      <div className="max-w-xl mx-auto bg-[var(--bg-surface)] border border-[var(--line)] rounded-ui-lg p-6 sm:p-8 space-y-5 shadow-ui-xs">
+        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Redeem Voucher</h1>
+        {error && <Alert tone="danger">{error}</Alert>}
 
         {!error && voucher && (
           <>
             <div>
-              <h2 className="text-xl font-bold text-slate-800">{voucher.name}</h2>
-              <p className="text-sm text-slate-600 mt-1">Status: {voucher.status}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-xl font-bold text-[var(--text-primary)]">{voucher.name}</h2>
+                <StatusBadge
+                  tone={
+                    voucher.status === 'redeemed'
+                      ? 'info'
+                      : voucher.status === 'sold'
+                        ? 'success'
+                        : 'neutral'
+                  }
+                >
+                  {voucher.status}
+                </StatusBadge>
+              </div>
               {voucher.redeemedAt && (
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-[var(--text-muted)] mt-1">
                   Redeemed at: {new Date(voucher.redeemedAt).toLocaleString()}
                 </p>
               )}
             </div>
             {role !== 'admin' && (
-              <div className="space-y-3 p-4 rounded-xl border border-slate-200 bg-slate-50">
-                <label className="flex items-center gap-2 text-sm text-slate-700">
+              <div className="space-y-3 p-4 rounded-ui-md border border-[var(--line)] bg-[var(--bg-soft)]">
+                <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
                   <input
                     type="checkbox"
                     checked={staffConfirmed}
@@ -83,16 +99,16 @@ const RedeemVoucher: React.FC = () => {
                   I confirm I am staff authorized to redeem this voucher.
                 </label>
                 {requiredPin ? (
-                  <div>
-                    <label className="block text-xs font-bold uppercase text-slate-500 mb-1.5">Staff PIN</label>
+                  <Field id="staff-pin" label="Staff PIN">
                     <input
+                      id="staff-pin"
                       type="password"
                       value={staffPin}
                       onChange={(e) => setStaffPin(e.target.value)}
-                      className="w-full p-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500"
+                      className="w-full p-3 bg-[var(--bg-surface)] border border-[var(--line)] rounded-ui-md outline-none focus-visible:shadow-ui-focus-strong"
                       placeholder="Enter redemption PIN"
                     />
-                  </div>
+                  </Field>
                 ) : (
                   <p className="text-xs text-amber-700">
                     No staff PIN is configured for this outlet. Only manual confirmation is required.
@@ -101,7 +117,7 @@ const RedeemVoucher: React.FC = () => {
               </div>
             )}
 
-            <button
+            <Button
               type="button"
               disabled={
                 voucher.status !== 'sold' ||
@@ -109,14 +125,9 @@ const RedeemVoucher: React.FC = () => {
                 (role !== 'admin' && (!staffConfirmed || (requiredPin ? !staffPin : false)))
               }
               onClick={onConfirmRedemption}
-              className={`px-5 py-2.5 rounded-xl font-bold text-white ${
-                voucher.status !== 'sold' || isSubmitting
-                  ? 'bg-slate-400 cursor-not-allowed'
-                  : 'bg-teal-600 hover:bg-teal-700'
-              }`}
             >
               {isSubmitting ? 'Confirming...' : 'Confirm Redemption'}
-            </button>
+            </Button>
           </>
         )}
       </div>

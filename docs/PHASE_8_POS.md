@@ -44,4 +44,4 @@
 
 ## Next
 
-**Phase 9 — Dashboard**
+**Phase 9 — Dashboard** — see `docs/PHASE_9_DASHBOARD.md`

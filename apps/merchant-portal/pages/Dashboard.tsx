@@ -318,345 +318,213 @@ const Dashboard: React.FC<DashboardProps> = ({
     return Tag;
   };
 
+  // Preserve callback prop for parent parity (reminders live on Schedule; Dashboard keeps the contract).
+  void onMarkReminderSent;
+
+  const todayStr = formatLocalDate(new Date());
+  const todayApps = appointments
+    .filter(
+      (a) =>
+        a.date === todayStr &&
+        a.status !== 'cancelled' &&
+        a.status !== 'no-show' &&
+        typeof a.id === 'string' &&
+        !a.id.startsWith('app_onduty_'),
+    )
+    .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+    .slice(0, 5);
+
+  const outstandingCat = dashboardData.categorySummary.find((c) => c.label === 'Outstanding');
+  const outstandingValue = outstandingCat?.value ?? 0;
+
+  const attentionItems: AttentionItem[] = [];
+  if (outstandingValue > 0) {
+    attentionItems.push({
+      id: 'outstanding',
+      title: `Outstanding ${formatRM(outstandingValue)}`,
+      description: 'Partial or unpaid balances this month.',
+      actionLabel: 'Sales',
+      onAction: () => navigate('/sales-reports'),
+      tone: 'warning',
+    });
+  }
+  if (dashboardData.stats.profit < 0) {
+    attentionItems.push({
+      id: 'profit',
+      title: `Net profit ${formatRM(dashboardData.stats.profit)}`,
+      description: 'Expenses exceed revenue this month.',
+      actionLabel: 'Finance',
+      onAction: () => navigate('/finance'),
+      tone: 'warning',
+    });
+  }
+  if (todayApps.length === 0) {
+    attentionItems.push({
+      id: 'no-appts',
+      title: 'No appointments today',
+      description: 'Schedule is clear for today.',
+      actionLabel: 'Book',
+      onAction: () => navigate('/schedule'),
+      tone: 'info',
+    });
+  }
+
+  const dateLabel = new Date().toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  const maxDay = Math.max(...dashboardData.chartData.map((d) => d.sales), 0);
+  const todayIdx = (new Date().getDay() + 6) % 7;
+  const weekEmpty = dashboardData.totalSalesThisWeek <= 0;
+
   return (
-    <div className="space-y-8 animate-fadeIn">
-      {/* 1. Mobile title + date */}
-      <div className="lg:hidden -mt-1 mb-1">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Today</h1>
-        <p className="mt-0.5 text-sm text-slate-500">
-          {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-        </p>
-      </div>
+    <div className="space-y-6 lg:space-y-8 animate-fadeIn">
+      {/* 1. Today */}
+      <TodayHeader dateLabel={dateLabel} />
 
-      {/* 2. Top summary — revenue highlight on mobile */}
-      <div className="lg:hidden bg-gradient-to-br from-teal-600 to-teal-700 rounded-2xl p-5 text-white shadow-lg">
-        <p className="text-teal-100 text-xs font-semibold uppercase tracking-wider">This Month Revenue</p>
-        <p className="text-3xl font-black mt-1 tabular-nums">
-          {formatRM(dashboardData.stats.revenue)}
-        </p>
-        <p className="text-teal-200 text-xs mt-1">
-          {dashboardData.monthSales.length} transaction{dashboardData.monthSales.length !== 1 ? 's' : ''} this month
-        </p>
-      </div>
+      {/* 1b. Today summary — hero revenue, secondary metrics compact */}
+      <TodaySummary
+        heroLabel="This Month Revenue"
+        heroValue={formatRM(dashboardData.stats.revenue)}
+        heroHint={`${dashboardData.monthSales.length} transaction${dashboardData.monthSales.length !== 1 ? 's' : ''} this month`}
+        metrics={[
+          {
+            id: 'expenses',
+            label: 'Expenses',
+            value: formatRM(dashboardData.stats.expenses),
+            toneClass: 'text-rose-600',
+          },
+          {
+            id: 'profit',
+            label: 'Net Profit',
+            value: formatRM(dashboardData.stats.profit),
+            toneClass: 'text-amber-600',
+            emphasize: true,
+          },
+          {
+            id: 'clients',
+            label: 'Clients',
+            value: dashboardData.stats.clientCount.toString(),
+            toneClass: 'text-[var(--text-primary)]',
+          },
+          {
+            id: 'revenue-desktop',
+            label: 'Revenue',
+            value: formatRM(dashboardData.stats.revenue),
+            toneClass: 'text-emerald-600',
+          },
+        ]}
+      />
 
-      {/* 3. Compact metric grid — 2 cols on mobile, 4 on desktop */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
-        <StatCard
-          title="Revenue"
-          value={formatRM(dashboardData.stats.revenue)}
-          color="text-emerald-600"
-        />
-        <StatCard
-          title="Expenses"
-          value={formatRM(dashboardData.stats.expenses)}
-          color="text-rose-600"
-        />
-        <StatCard
-          title="Net Profit"
-          value={formatRM(dashboardData.stats.profit)}
-          color="text-amber-600"
-        />
-        <StatCard
-          title="Clients"
-          value={dashboardData.stats.clientCount.toString()}
-          color="text-slate-700"
-        />
-      </div>
+      {/* 2. Needs attention */}
+      <AttentionList items={attentionItems} />
 
-      {/* 4. Quick Actions — mobile only */}
-      <div className="lg:hidden">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Quick Actions</h3>
-        <div className="grid grid-cols-4 gap-2">
-          {[
-            { label: 'New Sale', icon: '💳', route: '/pos' },
-            { label: 'Booking', icon: '📅', route: '/schedule' },
-            { label: 'Member', icon: '👤', route: '/member' },
-            { label: 'Expense', icon: '📊', route: '/finance' },
-          ].map((action) => (
-            <button
-              key={action.label}
-              onClick={() => navigate(action.route)}
-              className="flex flex-col items-center gap-1.5 py-3 px-2 bg-white rounded-xl border border-slate-200 hover:border-teal-300 hover:bg-teal-50 active:scale-95 transition-all min-h-[72px]"
-            >
-              <span className="text-xl">{action.icon}</span>
-              <span className="text-[10px] font-bold text-slate-600 leading-tight text-center">{action.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* 3. Next appointments */}
+      <UpcomingAppointments
+        rows={todayApps.map((app) => {
+          const clientName = clients.find((c) => c.id === app.clientId)?.name || 'Guest';
+          const serviceName = services.find((s) => s.id === app.serviceId)?.name || '—';
+          return {
+            id: app.id,
+            timeLabel: formatCompactTime(app.time),
+            title: serviceName,
+            subtitle: clientName,
+            statusLabel: app.status || 'pending',
+            statusClassName:
+              app.status === 'completed'
+                ? 'bg-emerald-100 text-emerald-700'
+                : app.status === 'scheduled'
+                  ? 'bg-blue-50 text-blue-600'
+                  : 'bg-[var(--bg-soft)] text-[var(--text-muted)]',
+          };
+        })}
+        onAddBooking={() => navigate('/schedule')}
+      />
 
-      {/* 5. Today's Appointments Preview — mobile only */}
-      <div className="lg:hidden">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Today's Appointments</h3>
-        {(() => {
-          const todayStr = formatLocalDate(new Date());
-          const todayApps = appointments
-            .filter((a) => a.date === todayStr && a.status !== 'cancelled' && a.status !== 'no-show' && typeof a.id === 'string' && !a.id.startsWith('app_onduty_'))
-            .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
-            .slice(0, 5);
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+        <div className="lg:col-span-2 space-y-6 lg:space-y-8">
+          {/* 4. Sales snapshot */}
+          <SalesSnapshot
+            categories={dashboardData.categorySummary.map((cat) => {
+              const Icon = cat.icon;
+              return {
+                id: cat.label,
+                label: cat.label,
+                valueLabel: cat.value.toLocaleString(undefined, { minimumFractionDigits: 2 }),
+                icon: <Icon className={`w-4 h-4 ${cat.color}`} />,
+              };
+            })}
+            recentRows={recentSales.map((txn) => ({
+              id: txn.id,
+              title: txn.description,
+              meta: new Date(txn.date).toLocaleDateString(),
+              amountLabel: `$${txn.amount.toFixed(2)}`,
+            }))}
+          />
 
-          if (todayApps.length === 0) {
-            return (
-              <div className="bg-white rounded-2xl border border-slate-200 p-6 text-center">
-                <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Calendar className="w-6 h-6 text-slate-300" />
-                </div>
-                <p className="text-sm font-semibold text-slate-400">No appointments today</p>
-                <button
-                  onClick={() => navigate('/schedule')}
-                  className="mt-3 px-4 py-2 bg-teal-600 text-white text-xs font-bold rounded-lg hover:bg-teal-700 active:scale-95 transition-all"
-                >
-                  Add Booking
-                </button>
-              </div>
-            );
-          }
-
-          return (
-            <div className="space-y-2">
-              {todayApps.map((app) => {
-                const clientName = clients.find((c) => c.id === app.clientId)?.name || 'Guest';
-                const serviceName = services.find((s) => s.id === app.serviceId)?.name || '—';
-                return (
-                  <div key={app.id} className="bg-white rounded-xl border border-slate-200 px-4 py-3 flex items-center gap-3">
-                    <div className="text-center min-w-[44px]">
-                      <p className="text-sm font-black text-teal-600 tabular-nums">{formatCompactTime(app.time)}</p>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-slate-800 truncate">{serviceName}</p>
-                      <p className="text-xs text-slate-400 truncate">{clientName}</p>
-                    </div>
-                    <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-full ${
-                      app.status === 'completed' ? 'bg-emerald-100 text-emerald-700'
-                        : app.status === 'scheduled' ? 'bg-blue-50 text-blue-600'
-                        : 'bg-slate-100 text-slate-500'
-                    }`}>{app.status || 'pending'}</span>
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })()}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left: Total Sales chart + Category Summary, then Top Selling, then Calendar */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Total Sales bar chart + Category Summary row */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm">
-              <div className="flex justify-between items-center mb-1">
+          {/* 6. Staff / operational status */}
+          <OperationalStatus
+            title="Operational status"
+            actions={[
+              { id: 'pos', label: 'New Sale', icon: '💳', onClick: () => navigate('/pos') },
+              { id: 'booking', label: 'Booking', icon: '📅', onClick: () => navigate('/schedule') },
+              { id: 'member', label: 'Member', icon: '👤', onClick: () => navigate('/member') },
+              { id: 'expense', label: 'Expense', icon: '📊', onClick: () => navigate('/finance') },
+            ]}
+            calendarHeader={
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold tracking-tight flex items-center gap-2 text-[var(--text-primary)]">
+                  <Calendar className="w-5 h-5 text-[var(--brand)]" />
+                  Quick Calendar
+                </h3>
                 <div className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-blue-600" />
-                  <span className="text-app-label font-semibold uppercase text-slate-500">This Week</span>
-                </div>
-                <span className="text-xs font-semibold text-slate-400 tabular-nums">
-                  {dashboardData.weekTxnCount} txn{dashboardData.weekTxnCount !== 1 ? 's' : ''}
-                </span>
-              </div>
-              <p className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 tabular-nums">
-                {formatRM(dashboardData.totalSalesThisWeek)}
-              </p>
-              <p className="text-[10px] sm:text-app-label font-semibold uppercase tracking-wider text-slate-400 mt-0.5">
-                Total Sales
-              </p>
-
-              {(() => {
-                const maxDay = Math.max(...dashboardData.chartData.map((d) => d.sales), 0);
-                const todayIdx = (new Date().getDay() + 6) % 7; // DAY_LABELS is Mon..Sun
-                if (dashboardData.totalSalesThisWeek <= 0) {
-                  return (
-                    <div className="mt-4 h-40 flex flex-col items-center justify-center text-center border-t border-slate-100 pt-4">
-                      <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
-                        <BarChart3 className="w-6 h-6 text-slate-300" />
-                      </div>
-                      <p className="text-sm font-semibold text-slate-400">No sales data for this week yet.</p>
-                    </div>
-                  );
-                }
-                return (
-                  <>
-                    {/* Lightweight, dependency-free weekly bar chart (always renders) */}
-                    <div className="mt-4 flex items-end justify-between gap-1.5 sm:gap-2 h-32 sm:h-40">
-                      {dashboardData.chartData.map((d, i) => {
-                        const pct = maxDay > 0 ? (d.sales / maxDay) * 100 : 0;
-                        const barH = d.sales > 0 ? Math.max(pct, 6) : 0;
-                        const isToday = i === todayIdx;
-                        return (
-                          <div key={d.day} className="flex-1 min-w-0 h-full flex flex-col items-center gap-1.5">
-                            <div className="w-full flex-1 flex items-end">
-                              <div
-                                className={`w-full rounded-t-md transition-all ${isToday ? 'bg-teal-500' : 'bg-sky-300'}`}
-                                style={{ height: `${barH}%` }}
-                                title={`${d.day}: ${formatRM(d.sales)}`}
-                              />
-                            </div>
-                            <span className={`text-[10px] sm:text-xs ${isToday ? 'font-bold text-teal-600' : 'text-slate-400'}`}>
-                              {d.day}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {/* Compact stats strip */}
-                    <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-slate-100">
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Transactions</p>
-                        <p className="text-sm font-bold text-slate-800 tabular-nums">{dashboardData.weekTxnCount}</p>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Avg sale</p>
-                        <p className="text-sm font-bold text-slate-800 tabular-nums truncate">{formatRM(dashboardData.weekAvgSale)}</p>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Top item</p>
-                        <p className="text-sm font-bold text-slate-800 truncate" title={dashboardData.weekTopItem ?? undefined}>
-                          {dashboardData.weekTopItem ?? '—'}
-                        </p>
-                      </div>
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-
-            {/* Category Summary */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-              <h3 className="text-base font-semibold text-slate-900 mb-4">Category Summary</h3>
-              <div className="space-y-3">
-                {dashboardData.categorySummary.map((cat) => {
-                  const Icon = cat.icon;
-                  return (
-                    <div
-                      key={cat.label}
-                      className="flex items-center justify-between py-2 px-3 rounded-xl bg-slate-50 border border-slate-100"
+                  <span className="text-sm font-bold text-[var(--text-secondary)]">
+                    {new Date(`${quickDateStr}T00:00:00`).toLocaleDateString(undefined, {
+                      weekday: 'short',
+                      year: 'numeric',
+                      month: 'short',
+                      day: '2-digit',
+                    })}
+                  </span>
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={() => changeQuickDay(-1)}
+                      className="p-2 hover:bg-[var(--bg-soft)] rounded-ui-sm text-[var(--text-muted)]"
+                      aria-label="Previous day"
                     >
-                      <div className="flex items-center gap-2">
-                        <Icon className={`w-4 h-4 ${cat.color}`} />
-                        <span className="text-sm font-medium text-slate-700">{cat.label}</span>
-                      </div>
-                      <span className={`text-sm font-bold ${cat.color}`}>
-                        {cat.value.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* Top Selling table */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <h3 className="text-xl font-bold tracking-tight text-slate-900 mb-4">Top Selling</h3>
-            <div className="flex gap-1 p-1 bg-slate-100 rounded-xl mb-4">
-              {(['service', 'product', 'package', 'discount'] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setTopSellingTab(tab)}
-                  className={`flex-1 py-2 rounded-lg text-sm font-medium capitalize transition-colors ${
-                    topSellingTab === tab
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-slate-200">
-                    <th className="text-left py-3 px-2 text-xs font-bold uppercase text-blue-600">
-                      SKU
-                    </th>
-                    <th className="text-right py-3 px-2 text-xs font-bold uppercase text-blue-600">
-                      Quantity
-                    </th>
-                    <th className="text-right py-3 px-2 text-xs font-bold uppercase text-blue-600">
-                      Amount
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {topSellingByType.map((row, idx) => {
-                    const Icon = getIconForType(row.type);
-                    return (
-                      <tr
-                        key={`${row.type}-${row.name}-${idx}`}
-                        className="border-b border-slate-100 hover:bg-slate-50"
-                      >
-                        <td className="py-3 px-2 flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
-                            <Icon className="w-4 h-4 text-slate-600" />
-                          </div>
-                          <span className="text-sm font-medium text-slate-800 truncate max-w-[180px]">
-                            {row.name}
-                          </span>
-                        </td>
-                        <td className="py-3 px-2 text-right text-sm text-slate-600">{row.quantity}</td>
-                        <td className="py-3 px-2 text-right text-sm font-bold text-blue-600">
-                          {row.amount.toFixed(2)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {topSellingByType.length === 0 && (
-                <div className="py-8 text-center text-slate-400 text-sm">No data for this category.</div>
-              )}
-            </div>
-          </div>
-
-          {/* Quick Calendar */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold tracking-tight flex items-center gap-2 text-slate-900">
-                <Calendar className="w-5 h-5 text-blue-600" />
-                Quick Calendar
-              </h3>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-slate-700">
-                  {new Date(`${quickDateStr}T00:00:00`).toLocaleDateString(undefined, {
-                    weekday: 'short',
-                    year: 'numeric',
-                    month: 'short',
-                    day: '2-digit',
-                  })}
-                </span>
-                <div className="flex gap-1">
-                  <button
-                    onClick={() => changeQuickDay(-1)}
-                    className="p-2 hover:bg-slate-100 rounded-lg text-slate-500"
-                    aria-label="Previous day"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={() => changeQuickDay(1)}
-                    className="p-2 hover:bg-slate-100 rounded-lg text-slate-500"
-                    aria-label="Next day"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => changeQuickDay(1)}
+                      className="p-2 hover:bg-[var(--bg-soft)] rounded-ui-sm text-[var(--text-muted)]"
+                      aria-label="Next day"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="border border-slate-100 rounded-xl overflow-hidden">
+            }
+          >
+            <div className="border border-[var(--line)] rounded-ui-md overflow-hidden">
               <div className="max-h-[420px] overflow-y-auto">
                 {quickSlots.map((slot) => {
                   const appsInSlot = quickAppointments.filter((a) => isAppointmentInSlot(a, slot));
                   return (
-                    <div key={slot} className="flex border-b border-slate-50">
-                      <div className="w-20 flex-shrink-0 p-3 text-center text-[10px] font-black text-slate-400 bg-white border-r border-slate-100">
+                    <div key={slot} className="flex border-b border-[var(--line)]">
+                      <div className="w-20 shrink-0 p-3 text-center text-[10px] font-black text-[var(--text-muted)] bg-[var(--bg-surface)] border-r border-[var(--line)]">
                         {formatCompactTime(slot)}
                       </div>
-                      <div className="flex-1 p-2 min-h-[44px] bg-white">
+                      <div className="flex-1 p-2 min-h-[44px] bg-[var(--bg-surface)]">
                         {appsInSlot.length === 0 ? (
                           <div className="h-full" />
                         ) : (
@@ -667,7 +535,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                               return (
                                 <div
                                   key={app.id}
-                                  className="px-2 py-1 rounded-lg bg-blue-50 border border-blue-100 text-[10px] text-blue-700 font-bold truncate max-w-[260px]"
+                                  className="px-2 py-1 rounded-ui-sm bg-[var(--brand-soft)] border border-[var(--brand)]/20 text-[10px] text-[var(--brand-deep)] font-bold truncate max-w-[260px]"
                                   title={`${formatCompactTime(app.time)} ${clientName} · ${serviceName}`}
                                 >
                                   {formatCompactTime(app.time)} {clientName.split(' ')[0]} · {serviceName}
@@ -682,97 +550,155 @@ const Dashboard: React.FC<DashboardProps> = ({
                 })}
               </div>
             </div>
-          </div>
-        </div>
+          </OperationalStatus>
 
-        {/* Right column: Visitor list, Payment breakdown, Recent Sales */}
-        <div className="space-y-8">
-          {/* Visitor list */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold tracking-tight text-slate-900">Visitor</h3>
-              <span className="text-sm font-bold text-blue-600">{dashboardData.visitorTotalCount}</span>
-            </div>
-            <div className="space-y-2">
-              {dashboardData.visitors.map((v) => (
-                <div
-                  key={v.clientId}
-                  className="flex items-center justify-between py-2 px-3 rounded-xl bg-slate-50 border border-slate-100"
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold flex-shrink-0">
-                      {v.name.charAt(0)}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-slate-800 truncate">{v.name}</p>
-                      <p className="text-[10px] text-slate-500">{v.tier}</p>
-                    </div>
+          {/* 7. Secondary charts and trends */}
+          <DashboardChartSection
+            totalLabel={formatRM(dashboardData.totalSalesThisWeek)}
+            txnCountLabel={`${dashboardData.weekTxnCount} txn${dashboardData.weekTxnCount !== 1 ? 's' : ''}`}
+            empty={weekEmpty}
+            bars={dashboardData.chartData.map((d, i) => {
+              const pct = maxDay > 0 ? (d.sales / maxDay) * 100 : 0;
+              const barH = d.sales > 0 ? Math.max(pct, 6) : 0;
+              return {
+                day: d.day,
+                sales: d.sales,
+                heightPct: barH,
+                isToday: i === todayIdx,
+                title: `${d.day}: ${formatRM(d.sales)}`,
+              };
+            })}
+            statsStrip={
+              !weekEmpty ? (
+                <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-[var(--line)]">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                      Transactions
+                    </p>
+                    <p className="text-sm font-bold text-[var(--text-primary)] tabular-nums">
+                      {dashboardData.weekTxnCount}
+                    </p>
                   </div>
-                  <span className="text-sm font-bold text-blue-600 flex-shrink-0 ml-2">
-                    {v.spent.toFixed(2)}
-                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                      Avg sale
+                    </p>
+                    <p className="text-sm font-bold text-[var(--text-primary)] tabular-nums truncate">
+                      {formatRM(dashboardData.weekAvgSale)}
+                    </p>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                      Top item
+                    </p>
+                    <p
+                      className="text-sm font-bold text-[var(--text-primary)] truncate"
+                      title={dashboardData.weekTopItem ?? undefined}
+                    >
+                      {dashboardData.weekTopItem ?? '—'}
+                    </p>
+                  </div>
                 </div>
+              ) : null
+            }
+          />
+
+          <div className="bg-[var(--bg-surface)] p-6 rounded-ui-lg border border-[var(--line)] shadow-ui-xs">
+            <h3 className="text-xl font-bold tracking-tight text-[var(--text-primary)] mb-4">Top Selling</h3>
+            <div className="flex gap-1 p-1 bg-[var(--bg-soft)] rounded-ui-md mb-4">
+              {(['service', 'product', 'package', 'discount'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setTopSellingTab(tab)}
+                  className={`flex-1 py-2 rounded-ui-sm text-sm font-medium capitalize transition-colors ${
+                    topSellingTab === tab
+                      ? 'bg-[var(--brand)] text-white shadow-ui-xs'
+                      : 'text-[var(--text-secondary)] hover:bg-[var(--bg-selection)]'
+                  }`}
+                >
+                  {tab}
+                </button>
               ))}
-              {dashboardData.visitors.length === 0 && (
-                <div className="py-6 text-center text-slate-400 text-sm">No visitors this month.</div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-[var(--line)]">
+                    <th className="text-left py-3 px-2 text-xs font-bold uppercase text-[var(--brand)]">SKU</th>
+                    <th className="text-right py-3 px-2 text-xs font-bold uppercase text-[var(--brand)]">
+                      Quantity
+                    </th>
+                    <th className="text-right py-3 px-2 text-xs font-bold uppercase text-[var(--brand)]">
+                      Amount
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topSellingByType.map((row, idx) => {
+                    const Icon = getIconForType(row.type);
+                    return (
+                      <tr
+                        key={`${row.type}-${row.name}-${idx}`}
+                        className="border-b border-[var(--line)] hover:bg-[var(--bg-soft)]"
+                      >
+                        <td className="py-3 px-2 flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-ui-sm bg-[var(--bg-soft)] flex items-center justify-center">
+                            <Icon className="w-4 h-4 text-[var(--text-secondary)]" />
+                          </div>
+                          <span className="text-sm font-medium text-[var(--text-primary)] truncate max-w-[180px]">
+                            {row.name}
+                          </span>
+                        </td>
+                        <td className="py-3 px-2 text-right text-sm text-[var(--text-secondary)] tabular-nums">
+                          {row.quantity}
+                        </td>
+                        <td className="py-3 px-2 text-right text-sm font-bold text-[var(--brand)] tabular-nums">
+                          {row.amount.toFixed(2)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {topSellingByType.length === 0 && (
+                <DashboardEmptyState title="No data for this category." compact />
               )}
             </div>
           </div>
+        </div>
 
-          {/* Payment breakdown */}
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-            <h3 className="text-xl font-bold tracking-tight text-slate-900 mb-4">Payment</h3>
+        {/* 5. Customer activity + payment */}
+        <div className="space-y-6 lg:space-y-8">
+          <CustomerActivity
+            totalCount={dashboardData.visitorTotalCount}
+            rows={dashboardData.visitors.map((v) => ({
+              id: v.clientId,
+              name: v.name,
+              tier: v.tier,
+              spentLabel: v.spent.toFixed(2),
+            }))}
+          />
+
+          <div className="bg-[var(--bg-surface)] p-6 rounded-ui-lg border border-[var(--line)] shadow-ui-xs">
+            <h3 className="text-xl font-bold tracking-tight text-[var(--text-primary)] mb-4">Payment</h3>
             <div className="space-y-2">
               {dashboardData.paymentBreakdown.map((p) => (
                 <div
                   key={p.method}
-                  className="flex items-center justify-between py-2 px-3 rounded-xl bg-slate-50 border border-slate-100"
+                  className="flex items-center justify-between py-2 px-3 rounded-ui-sm bg-[var(--bg-soft)] border border-[var(--line)]"
                 >
                   <div className="flex items-center gap-2">
                     <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                    <span className="text-sm font-medium text-slate-700">{p.method}</span>
+                    <span className="text-sm font-medium text-[var(--text-secondary)]">{p.method}</span>
                   </div>
-                  <span className="text-sm font-bold text-slate-800">
+                  <span className="text-sm font-bold text-[var(--text-primary)] tabular-nums">
                     {p.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </span>
                 </div>
               ))}
               {dashboardData.paymentBreakdown.length === 0 && (
-                <div className="py-6 text-center text-slate-400 text-sm">No payments this month.</div>
-              )}
-            </div>
-          </div>
-
-          {/* Recent Sales */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="text-sm font-bold uppercase tracking-widest text-slate-500">
-                Recent Sales
-              </h3>
-            </div>
-            <div className="divide-y divide-slate-100">
-              {recentSales.map((txn) => (
-                <div
-                  key={txn.id}
-                  className="p-4 hover:bg-slate-50 transition-colors flex justify-between items-center"
-                >
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-sm font-semibold text-slate-700 truncate">
-                      {txn.description}
-                    </span>
-                    <span className="text-[10px] text-slate-400 font-medium uppercase">
-                      {new Date(txn.date).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <span className="text-sm font-bold flex-shrink-0 ml-2 text-emerald-600">
-                    ${txn.amount.toFixed(2)}
-                  </span>
-                </div>
-              ))}
-              {recentSales.length === 0 && (
-                <div className="p-8 text-center text-slate-400 italic text-sm">
-                  No sales recorded yet.
-                </div>
+                <DashboardEmptyState title="No payments this month." compact />
               )}
             </div>
           </div>
@@ -781,20 +707,5 @@ const Dashboard: React.FC<DashboardProps> = ({
     </div>
   );
 };
-
-const StatCard = ({
-  title,
-  value,
-  color,
-}: {
-  title: string;
-  value: string;
-  color: string;
-}) => (
-  <div className="bg-white p-4 lg:p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-    <p className="text-[10px] lg:text-app-label font-semibold uppercase text-slate-500 tracking-wider mb-1 lg:mb-2">{title}</p>
-    <p className={`text-lg lg:text-app-section font-bold ${color} tabular-nums`}>{value}</p>
-  </div>
-);
 
 export default Dashboard;

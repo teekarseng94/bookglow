@@ -17,6 +17,18 @@ import {
   CreditCard,
 } from 'lucide-react';
 import { Transaction, TransactionType, Client, Appointment, Service, OutletSettings } from '../types';
+import {
+  AttentionList,
+  CustomerActivity,
+  DashboardChartSection,
+  DashboardEmptyState,
+  OperationalStatus,
+  SalesSnapshot,
+  TodayHeader,
+  TodaySummary,
+  UpcomingAppointments,
+} from '../components/dashboard';
+import type { AttentionItem } from '../components/dashboard';
 
 interface DashboardProps {
   transactions: Transaction[];

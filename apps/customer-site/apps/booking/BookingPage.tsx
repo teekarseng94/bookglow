@@ -708,10 +708,13 @@ export function BookingPage() {
 
   if (!pathResolveDone || loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="mt-4 text-slate-600 font-medium">Loading...</p>
+      <div className="bookglow-state-screen">
+        <div className="bookglow-state-card" role="status">
+          <span className="bookglow-spinner" aria-hidden />
+          <div>
+            <p className="font-semibold text-slate-900">Loading booking page</p>
+            <p className="mt-1 text-sm text-slate-500">Preparing services and availability…</p>
+          </div>
         </div>
       </div>
     );
@@ -719,10 +722,14 @@ export function BookingPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 max-w-md text-center">
-          <p className="text-red-600 font-medium">{error}</p>
-          <p className="text-sm text-slate-500 mt-2">Check the link or try again later.</p>
+      <div className="bookglow-state-screen">
+        <div className="bookglow-state-card">
+          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-rose-50 text-rose-600" aria-hidden>!</div>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900">Booking page unavailable</h1>
+            <p className="mt-2 font-medium text-rose-700">{error}</p>
+            <p className="mt-2 text-sm text-slate-500">Check the link or try again later.</p>
+          </div>
         </div>
       </div>
     );
@@ -730,18 +737,21 @@ export function BookingPage() {
 
   if (bookingId) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 max-w-md text-center">
-          <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="bookglow-state-screen">
+        <div className="booking-success-card">
+          <div className="booking-success-icon">
+            <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-slate-800">Booking confirmed</h2>
-          <p className="text-slate-600 mt-2">We look forward to seeing you at {outlet?.name}.</p>
-          <p className="text-sm text-slate-500 mt-4">
-            {selectedServices.map((s) => s.service.name).join(", ")} · {selectedDate} at {formatTimeToCompact(selectedTime)}
-          </p>
+          <span className="booking-summary__eyebrow mt-5">Appointment secured</span>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Booking confirmed</h1>
+          <p className="mt-2 text-slate-600">We look forward to seeing you at {outlet?.name}.</p>
+          <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <p className="font-semibold text-slate-900">{selectedServices.map((s) => s.service.name).join(", ")}</p>
+            <p className="mt-1 text-sm text-slate-500">{selectedDate} at {formatTimeToCompact(selectedTime)}</p>
+          </div>
+          <p className="mt-4 text-xs text-slate-400">Keep this page for your appointment details.</p>
         </div>
       </div>
     );
@@ -749,77 +759,38 @@ export function BookingPage() {
 
   const address = outlet?.addressDisplay ?? "";
   const mapQuery = encodeURIComponent(address);
+  const selectedTotal = selectedServices.reduce((total, item) => total + Number(item.service.price || 0), 0);
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Top nav: Services, Team, Reviews, Address */}
-      <nav className="bg-white border-b border-slate-100 sticky top-0 z-20">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex gap-6 text-sm font-medium text-slate-600">
-            <a href="#services" className="text-slate-900 border-b-2 border-slate-900 pb-1">Services</a>
-            <a href="#team" className="hover:text-slate-900">Team</a>
-            <a href="#reviews" className="hover:text-slate-900">Reviews</a>
-            <a href="#address" className="hover:text-slate-900">Address</a>
+    <div className="bookglow-booking">
+      <nav className="booking-nav" aria-label="Booking page navigation">
+        <div className="booking-nav__inner">
+          <div className="booking-nav__identity">
+            <span className="booking-nav__mark" aria-hidden>{(outlet?.name || "B").charAt(0).toUpperCase()}</span>
+            <span className="booking-nav__brand">{outlet?.name || "Bookglow booking"}</span>
           </div>
-
-          {/* Top-right actions: Share + Login */}
-          <div className="flex items-center gap-3">
-            {currentUserEmail && (
-              <span className="hidden sm:inline text-xs font-medium text-slate-600">
-                {currentUserEmail}
-              </span>
-            )}
-            {/* Share this page */}
-            <button
-              type="button"
-              onClick={handleShare}
-              disabled={shareLoading}
-              className="relative p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-900 transition-colors group disabled:opacity-60 disabled:cursor-not-allowed"
-              aria-label="Share this page"
-            >
-              <svg
-                className={`w-5 h-5 ${shareLoading ? "animate-pulse" : ""}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M16 6l-4-4m0 0L8 6m4-4v16"
-                />
+          <div className="booking-nav__links">
+            <a href="#services">Services</a>
+            <a href="#team">Team</a>
+            <a href="#reviews">Reviews</a>
+            <a href="#address">Address</a>
+          </div>
+          <div className="booking-nav__actions">
+            {currentUserEmail && <span className="hidden text-xs font-medium text-slate-500 sm:inline">{currentUserEmail}</span>}
+            <button type="button" onClick={handleShare} disabled={shareLoading} className="booking-icon-button" aria-label="Share this page">
+              <svg className={`h-5 w-5 ${shareLoading ? "animate-pulse" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12v7a1 1 0 001 1h14a1 1 0 001-1v-7M16 6l-4-4m0 0L8 6m4-4v16" />
               </svg>
-              <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-9 whitespace-nowrap rounded-full bg-white px-3 py-1 text-[11px] font-medium text-slate-600 shadow-md border border-slate-100 opacity-0 group-hover:opacity-100 transition-opacity">
-                Share this page
-              </span>
             </button>
-
-            {/* Login */}
             <button
               type="button"
-              onClick={() =>
-                navigate(`/book/${outlet?.bookingSlug ?? outletId}/auth?loginSource=homepage`)
-              }
-              className="relative p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-900 transition-colors group"
-              aria-label="Login"
+              onClick={() => navigate(`/book/${outlet?.bookingSlug ?? outletId}/auth?loginSource=homepage`)}
+              className="booking-icon-button"
+              aria-label="Customer login"
             >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5.121 17.804A7 7 0 0112 15a7 7 0 016.879 2.804M15 10a3 3 0 11-6 0 3 3 0 016 0z"
-                />
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.121 17.804A7 7 0 0112 15a7 7 0 016.879 2.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-9 whitespace-nowrap rounded-full bg-white px-3 py-1 text-[11px] font-medium text-slate-600 shadow-md border border-slate-100 opacity-0 group-hover:opacity-100 transition-opacity">
-                Login
-              </span>
             </button>
           </div>
         </div>
@@ -834,25 +805,25 @@ export function BookingPage() {
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto px-4 py-8 flex flex-col lg:flex-row gap-8">
+      <div className="booking-layout">
         {/* Left column: scrollable content */}
-        <div className="flex-1 min-w-0 space-y-6 order-2 lg:order-1">
+        <div className="booking-main">
           {/* Services */}
-          <section id="services" className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-            <h2 className="text-lg font-bold text-slate-800 mb-4">Services</h2>
+          <section id="services" className="booking-section">
+            <div className="booking-section__header"><div><span className="booking-section__eyebrow">Book online</span><h2>Choose a service</h2></div></div>
 
             {services.length > 0 && (
               <>
                 {/* Mobile / tablet header (unchanged layout) */}
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4 lg:hidden">
-                  <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 flex-wrap sm:flex-nowrap">
+                  <div className="booking-filter-row">
                     <button
                       type="button"
                       onClick={() => setSelectedCategory(null)}
-                      className={`shrink-0 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                      className={`booking-filter-chip ${
                         selectedCategory == null
-                          ? "bg-blue-600 text-white shadow-sm"
-                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                          ? "booking-filter-chip--active"
+                          : ""
                       }`}
                     >
                       All
@@ -862,10 +833,10 @@ export function BookingPage() {
                         key={cat}
                         type="button"
                         onClick={() => setSelectedCategory(cat)}
-                        className={`shrink-0 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                        className={`booking-filter-chip ${
                           selectedCategory === cat
-                            ? "bg-blue-600 text-white shadow-sm"
-                            : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                            ? "booking-filter-chip--active"
+                            : ""
                         }`}
                       >
                         {cat}
@@ -873,7 +844,7 @@ export function BookingPage() {
                     ))}
                   </div>
                   <div className="flex-1 min-w-0 flex items-center gap-2">
-                    <div className="relative flex-1 max-w-xs">
+                    <div className="booking-search flex-1 max-w-xs">
                       <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                       </svg>
@@ -891,14 +862,14 @@ export function BookingPage() {
 
                 {/* Desktop header: categories left, large search on the right */}
                 <div className="hidden lg:flex items-center justify-between gap-6 mb-4">
-                  <div className="flex items-center gap-2 overflow-x-auto pb-2 flex-wrap">
+                  <div className="booking-filter-row">
                     <button
                       type="button"
                       onClick={() => setSelectedCategory(null)}
-                      className={`shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                      className={`booking-filter-chip ${
                         selectedCategory == null
-                          ? "bg-blue-600 text-white shadow-sm"
-                          : "bg-slate-100 text-slate-700 hover:bg-slate-200 hover:-translate-y-px"
+                          ? "booking-filter-chip--active"
+                          : ""
                       }`}
                     >
                       All
@@ -908,10 +879,10 @@ export function BookingPage() {
                         key={cat}
                         type="button"
                         onClick={() => setSelectedCategory(cat)}
-                        className={`shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+                        className={`booking-filter-chip ${
                           selectedCategory === cat
-                            ? "bg-blue-600 text-white shadow-sm"
-                            : "bg-slate-100 text-slate-700 hover:bg-slate-200 hover:-translate-y-px"
+                            ? "booking-filter-chip--active"
+                            : ""
                         }`}
                       >
                         {cat}
@@ -919,7 +890,7 @@ export function BookingPage() {
                     ))}
                   </div>
                   <div className="flex items-center justify-end flex-1">
-                    <div className="relative w-full max-w-sm">
+                    <div className="booking-search w-full max-w-sm">
                       <svg
                         className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
                         fill="none"
@@ -952,29 +923,23 @@ export function BookingPage() {
             ) : filteredServices.length === 0 ? (
               <p className="text-slate-500 py-4">No services match the selected filter or search.</p>
             ) : (
-              <div className="space-y-3">
+              <div className="booking-service-list">
                 {filteredServices.map((s) => {
                   const selectedCount = selectedServices.filter((sel) => sel.service.id === s.id).length;
                   const isSelected = selectedCount > 0;
                   return (
                     <div
                       key={s.id}
-                      className={`flex items-center justify-between p-4 rounded-xl border transition-colors cursor-pointer group ${
-                        isSelected
-                          ? "border-teal-500 bg-teal-50"
-                          : "border-slate-100 hover:border-slate-200"
-                      }`}
+                      className={`booking-service-card ${isSelected ? "booking-service-card--selected" : ""}`}
                       onClick={() => handleServiceClick(s)}
                     >
-                      <div className="flex items-center gap-4">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${
-                          isSelected ? "bg-teal-500 text-white" : "bg-slate-100 text-slate-500"
-                        }`}>
-                          {isSelected ? "✓" : "🌿"}
+                      <div className="booking-service-card__body">
+                        <div className="booking-service-card__icon">
+                          {isSelected ? "✓" : "+"}
                         </div>
                         <div>
-                          <p className="font-semibold text-slate-800">{s.name}</p>
-                          <p className="text-sm text-slate-500">{s.duration} min · {s.category}</p>
+                          <p className="booking-service-card__name">{s.name}</p>
+                          <p className="booking-service-card__meta">{s.duration} min · {s.category}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -983,7 +948,7 @@ export function BookingPage() {
                             x{selectedCount}
                           </span>
                         )}
-                        <span className="font-bold text-slate-800">{s.price ? `RM ${s.price}` : "Free"}</span>
+                        <span className="booking-service-card__price">{s.price ? `RM ${s.price}` : "Free"}</span>
                         {isSelected ? (
                           <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                         ) : (
@@ -998,15 +963,15 @@ export function BookingPage() {
           </section>
 
           {/* Team */}
-          <section id="team" className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-            <h2 className="text-lg font-bold text-slate-800 mb-4">Team</h2>
+          <section id="team" className="booking-section">
+            <div className="booking-section__header"><div><span className="booking-section__eyebrow">People</span><h2>Meet the team</h2></div></div>
             {team.length === 0 ? (
               <p className="text-slate-500 py-2">No team members listed.</p>
             ) : (
-              <div className="space-y-2">
+              <div className="booking-team-grid">
                 {team.map((m) => (
-                  <div key={m.id} className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50">
-                    <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-700 font-semibold overflow-hidden flex-shrink-0">
+                  <div key={m.id} className="booking-team-card">
+                    <div className="booking-team-card__avatar">
                       {m.profilePicture ? (
                         <img src={m.profilePicture} alt="" className="w-full h-full object-cover" />
                       ) : (
@@ -1014,7 +979,7 @@ export function BookingPage() {
                       )}
                     </div>
                     <span className="font-medium text-slate-800">{m.name}</span>
-                    <svg className="w-4 h-4 text-slate-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                    
                   </div>
                 ))}
               </div>
@@ -1022,8 +987,8 @@ export function BookingPage() {
           </section>
 
           {/* Good to know */}
-          <section className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-            <h2 className="text-lg font-bold text-slate-800 mb-4">Good to know</h2>
+          <section className="booking-section">
+            <div className="booking-section__header"><div><span className="booking-section__eyebrow">Before you visit</span><h2>Good to know</h2></div></div>
             <a href="#booking-policy" className="flex items-center gap-2 text-slate-700 hover:text-teal-600">
               <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
               Booking policy
@@ -1031,8 +996,8 @@ export function BookingPage() {
           </section>
 
           {/* Reviews */}
-          <section id="reviews" className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-            <h2 className="text-lg font-bold text-slate-800 mb-4">Reviews</h2>
+          <section id="reviews" className="booking-section">
+            <div className="booking-section__header"><div><span className="booking-section__eyebrow">Customer feedback</span><h2>Reviews</h2></div></div>
             <p className="text-slate-500 text-sm mb-4">Be the first to review us and share insights about your experience.</p>
             <button type="button" className="px-4 py-2 rounded-lg border border-slate-300 text-slate-800 font-medium text-sm hover:bg-slate-50">
               Write a review
@@ -1040,8 +1005,8 @@ export function BookingPage() {
           </section>
 
           {/* Address + Map */}
-          <section id="address" className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-            <h2 className="text-lg font-bold text-slate-800 mb-4">Address</h2>
+          <section id="address" className="booking-section">
+            <div className="booking-section__header"><div><span className="booking-section__eyebrow">Location</span><h2>Address</h2></div></div>
             {address ? (
               <>
                 <a
@@ -1070,31 +1035,39 @@ export function BookingPage() {
         </div>
 
         {/* Right column: sticky sidebar */}
-        <aside className="lg:w-80 flex-shrink-0 order-1 lg:order-2">
-          <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 sticky top-24 space-y-6">
-            <h1 className="text-xl font-bold text-slate-900">{outlet?.name ?? "Booking"}</h1>
+        <aside className="booking-sidebar">
+          <div className="booking-summary-card">
+            <div className="booking-merchant">
+              <span className="booking-merchant__mark" aria-hidden>{(outlet?.name || "B").charAt(0).toUpperCase()}</span>
+              <div className="min-w-0">
+                <span className="booking-summary__eyebrow">Book with</span>
+                <h1 className="booking-merchant__name">{outlet?.name ?? "Booking"}</h1>
+                <div className="booking-merchant__meta">
+                  <span className={`booking-status ${openClosed.isOpen ? "" : "booking-status--closed"}`}>{openClosed.isOpen ? "Open now" : "Closed"}</span>
+                  {address && <span className="truncate">{address}</span>}
+                </div>
+              </div>
+            </div>
             {selectedServices.length === 0 ? (
-              <p className="text-sm text-slate-500">
-                No services selected yet. Choose a treatment on the left to begin your booking.
-              </p>
+              <div className="booking-summary__empty"><p className="font-semibold text-slate-800">Start with a service</p><p className="mt-1">Choose one or more services to build your appointment.</p></div>
             ) : (
               <>
                 <button
                   type="button"
                   onClick={handleBookClick}
-                  className="w-full py-4 rounded-lg bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors"
+                  className="booking-primary-button mt-4 w-full"
                 >
-                  Book
+                  Continue · RM {selectedTotal.toFixed(2)}
                 </button>
 
                 {/* Selected Services with Team Member Selection */}
-                <div className="space-y-4 border-t border-slate-100 pt-4">
-                  <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">Selected Services</h3>
+                <div className="booking-summary__list">
+                  <h3 className="booking-summary__eyebrow">Selected services</h3>
                   {selectedServices.map((sel) => {
                     const service = sel.service;
                     const selectedTherapistId = serviceTeamMembers[sel.selectionId] || "";
                     return (
-                      <div key={sel.selectionId} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                      <div key={sel.selectionId} className="booking-summary__item">
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1">
                             <p className="font-semibold text-slate-800 text-sm">{service.name}</p>
@@ -1220,10 +1193,20 @@ export function BookingPage() {
         </aside>
       </div>
 
+      {step === "service" && selectedServices.length > 0 && (
+        <div className="booking-mobile-action lg:hidden">
+          <div className="min-w-0">
+            <p className="booking-mobile-action__title">{selectedServices.length} service{selectedServices.length === 1 ? "" : "s"} selected</p>
+            <p className="booking-mobile-action__meta">RM {selectedTotal.toFixed(2)} · Choose date and time next</p>
+          </div>
+          <button type="button" onClick={handleBookClick} className="booking-primary-button">Continue</button>
+        </div>
+      )}
+
       {/* Booking flow modal / panel when step is set */}
       {(step === "datetime" || step === "contact") && selectedServices.length > 0 && (
-        <div className="fixed inset-0 z-30 flex items-center justify-center p-4 bg-slate-900/50">
-          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6">
+        <div className="booking-modal-backdrop">
+          <div className="booking-modal-panel">
             {step === "datetime" && (
               <>
                 <h3 className="text-lg font-bold text-slate-800 mb-4">Select date & time</h3>
@@ -1327,7 +1310,7 @@ export function BookingPage() {
                   })}
                 </div>
                 <div className="flex gap-2">
-                  <button type="button" onClick={() => setStep("service")} className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-700 font-medium">
+                  <button type="button" onClick={() => setStep("service")} className="booking-secondary-button flex-1">
                     Back
                   </button>
                   <button
@@ -1340,7 +1323,7 @@ export function BookingPage() {
                       })
                     }
                     onClick={() => setStep("contact")}
-                    className="flex-1 py-3 rounded-xl bg-teal-600 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="booking-primary-button flex-1"
                   >
                     Continue
                   </button>
@@ -1382,14 +1365,14 @@ export function BookingPage() {
                 </div>
                 {submitError && <p className="mt-2 text-red-600 text-sm">{submitError}</p>}
                 <div className="flex gap-2 mt-6">
-                  <button type="button" onClick={() => setStep("datetime")} className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-700 font-medium">
+                  <button type="button" onClick={() => setStep("datetime")} className="booking-secondary-button flex-1">
                     Back
                   </button>
                   <button
                     type="button"
                     disabled={submitLoading || !customerName.trim() || !phone.trim()}
                     onClick={handleConfirmBooking}
-                    className="flex-1 py-3 rounded-xl bg-teal-600 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="booking-primary-button flex-1"
                   >
                     {submitLoading ? "Confirming..." : "Confirm Booking"}
                   </button>

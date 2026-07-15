@@ -1,6 +1,6 @@
 /**
- * Login page – email/password sign-in using authService.
- * If the URL path contains /book/, do not render the sign-in form (booking portal should be shown instead).
+ * Merchant sign-in page.
+ * Authentication behavior is intentionally unchanged; this file only owns presentation.
  */
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -15,11 +15,12 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Do not show login/landing when URL is a booking path — router should render PublicBookingPage instead
+  // Do not show merchant login when the URL belongs to the public booking route.
   if (isBookingPath) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-        <p className="text-slate-500">Loading booking…</p>
+      <div className="bookglow-login bookglow-login--loading">
+        <div className="bookglow-login__loader" aria-hidden="true" />
+        <p>Loading booking…</p>
       </div>
     );
   }
@@ -39,52 +40,91 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-sm rounded-xl bg-white shadow-lg border border-slate-200 p-6">
-        <h1 className="text-app-page font-bold text-slate-900 mb-6 text-center tracking-tight">Sign in</h1>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-              placeholder="you@example.com"
-              required
-              autoComplete="email"
-            />
+    <main className="bookglow-login">
+      <section className="bookglow-login__story" aria-label="Bookglow merchant workspace introduction">
+        <a href="/" className="bookglow-login__brand" aria-label="Bookglow home">
+          <span className="bookglow-login__mark" aria-hidden="true">✦</span>
+          <span>Bookglow</span>
+        </a>
+
+        <div className="bookglow-login__story-copy">
+          <span className="bookglow-login__eyebrow">Merchant workspace</span>
+          <h1>Run today’s bookings with less friction.</h1>
+          <p>
+            Your schedule, checkout, customers and team stay together in one calm operational workspace.
+          </p>
+        </div>
+
+        <div className="bookglow-login__preview" aria-hidden="true">
+          <div className="bookglow-login__preview-head">
+            <span>Today</span>
+            <strong>8 appointments</strong>
           </div>
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-slate-600 mb-1">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-              required
-              autoComplete="current-password"
-            />
+          <div className="bookglow-login__preview-row">
+            <span className="bookglow-login__preview-time">10:00</span>
+            <span><strong>Hair treatment</strong><small>Confirmed · 60 min</small></span>
           </div>
-          {error && (
-            <p className="text-sm text-red-600 whitespace-pre-line">{error}</p>
-          )}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-teal-600 px-4 py-2 font-medium text-white hover:bg-teal-700 focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Signing in…' : 'Sign in'}
-          </button>
-        </form>
-      </div>
-    </div>
+          <div className="bookglow-login__preview-row">
+            <span className="bookglow-login__preview-time">11:30</span>
+            <span><strong>Facial therapy</strong><small>Arriving soon · 45 min</small></span>
+          </div>
+        </div>
+      </section>
+
+      <section className="bookglow-login__form-side">
+        <div className="bookglow-login__mobile-brand">
+          <span className="bookglow-login__mark" aria-hidden="true">✦</span>
+          <span>Bookglow</span>
+        </div>
+
+        <div className="bookglow-login__card">
+          <div className="bookglow-login__heading">
+            <span className="bookglow-login__eyebrow">Welcome back</span>
+            <h2>Sign in to your workspace</h2>
+            <p>Use the merchant account connected to your outlet.</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="bookglow-login__form">
+            <div className="bookglow-login__field">
+              <label htmlFor="email">Email address</label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+                autoComplete="email"
+              />
+            </div>
+
+            <div className="bookglow-login__field">
+              <label htmlFor="password">Password</label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+              />
+            </div>
+
+            {error && (
+              <div className="bookglow-login__error" role="alert">
+                {error}
+              </div>
+            )}
+
+            <button type="submit" disabled={loading} className="bookglow-login__submit">
+              {loading ? 'Signing in…' : 'Sign in'}
+            </button>
+          </form>
+
+          <p className="bookglow-login__support">Having trouble signing in? Contact your Bookglow administrator.</p>
+        </div>
+      </section>
+    </main>
   );
 };
 

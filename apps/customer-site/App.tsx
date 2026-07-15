@@ -196,7 +196,7 @@ const IntegrationsView: React.FC = () => {
             Create connections that last by personalizing how you engage with your audience and vice versa.
           </p>
           <p className="text-slate-600 mb-10 leading-relaxed max-w-lg">
-            Using Zenflow's integrations, you can automate daily processes, book more appointments and offer top-tier customer service.
+            Using Bookglow's integrations, you can automate daily processes, book more appointments and offer top-tier customer service.
           </p>
           <Button size="lg" className="rounded-md px-10">
             Get started for FREE
@@ -330,7 +330,7 @@ const PricingView: React.FC = () => {
             <h1 className="text-[52px] font-bold leading-tight mb-2 text-slate-900">Get Booked.<br />Get Paid.</h1>
             <div className="mt-24 max-w-sm">
               <p className="text-slate-700 font-medium mb-4 leading-relaxed">
-                Highly recommend Zenflow to anyone. I must have tried a zillion apps and you can trust me that this is the best!
+                Highly recommend Bookglow to anyone. I must have tried a zillion apps and you can trust me that this is the best!
               </p>
               <p className="text-slate-500 text-sm mb-6">— Sruthi Ravindran</p>
               <div className="flex items-center gap-2">
@@ -384,7 +384,7 @@ const PricingView: React.FC = () => {
               {[
                 "Unlimited appointments", "Accept payments", "Branded Booking Page", "Branded Mobile App", 
                 "SMS reminders*", "Email reminders", "Email confirmations", "Recurring appointments",
-                "2-way calendar sync", "Remove Zenflow branding", "Block customers", "Google Reviews",
+                "2-way calendar sync", "Remove Bookglow branding", "Block customers", "Google Reviews",
                 "iOS and Android apps", "Custom notifications & reminders", "Team collaboration tools", "Donating 1% to plant trees"
               ].map((f, i) => (
                 <li key={i} className="flex items-center gap-3 text-sm text-slate-700">
@@ -554,7 +554,7 @@ const Testimonials: React.FC = () => {
     {
       name: "Sarah Jenkins",
       business: "Serenity Day Spa",
-      quote: "Zenflow has completely transformed how we handle bookings. Our no-show rate dropped by 50% in the first month alone!",
+      quote: "Bookglow has completely transformed how we handle bookings. Our no-show rate dropped by 50% in the first month alone!",
       image: "https://picsum.photos/seed/sarah/100/100"
     },
     {
@@ -579,7 +579,7 @@ const Testimonials: React.FC = () => {
             Loved by wellness experts
           </h2>
           <p className="text-slate-600 max-w-2xl mx-auto">
-            Discover how Zenflow is helping thousands of businesses streamline their operations and delight their clients.
+            Discover how Bookglow is helping thousands of businesses streamline their operations and delight their clients.
           </p>
         </div>
         <div className="grid md:grid-cols-3 gap-8">
@@ -647,7 +647,7 @@ const Footer: React.FC = () => {
            <a href="#" className="hover:text-slate-600 transition-colors">Cookie Settings</a>
         </div>
         <div className="text-sm text-slate-400">
-          © {new Date().getFullYear()} Zenflow Inc. All rights reserved.
+          © {new Date().getFullYear()} Bookglow Inc. All rights reserved.
         </div>
       </div>
     </footer>
@@ -664,7 +664,7 @@ const App: React.FC = () => {
   // /book/* is handled by its own route in index.tsx; this App is for landing/marketing only
 
   return (
-    <div className="min-h-screen gradient-bg transition-colors duration-300">
+    <div className="bookglow-public-site min-h-screen gradient-bg transition-colors duration-300">
       <Navbar onNavigate={setView} currentView={view} />
       
       {view === 'landing' && (

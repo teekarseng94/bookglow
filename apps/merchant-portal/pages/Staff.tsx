@@ -3,6 +3,19 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../firebase';
 import { Staff, Transaction, TransactionType, RoleCommission, Service } from '../types';
 import { Icons } from '../constants';
+import { ConfirmationDialog } from '../components/ui/ConfirmationDialog';
+import {
+  StaffCard,
+  StaffCommissionSection,
+  StaffEditor,
+  StaffPageHeader,
+  StaffPermissionSection,
+  StaffProfileSection,
+  StaffRoster,
+  StaffScheduleSection,
+  StaffServicesSection,
+  type StaffStatusKind,
+} from '../components/staff';
 
 const MAX_PHOTO_SIZE_MB = 2;
 const MAX_PHOTO_BYTES = MAX_PHOTO_SIZE_MB * 1024 * 1024;
@@ -69,6 +82,8 @@ const StaffPage: React.FC<StaffProps> = ({
   const [serviceSearch, setServiceSearch] = useState('');
   // Page-level success toast shown after a successful save
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [deletingStaff, setDeletingStaff] = useState(false);
 
   // Auto-dismiss the success toast
   useEffect(() => {
@@ -314,13 +329,34 @@ const StaffPage: React.FC<StaffProps> = ({
     setPhotoPreview(URL.createObjectURL(file));
   };
 
-  const handleDelete = async (id: string) => {
+  const requestDelete = (id: string) => {
     if (isLocked) return;
-    if (window.confirm("Are you sure you want to remove this staff member? Their historical performance will remain in financial records, but they will be removed from active service lists.")) {
-      await onDeleteStaff(id);
-      if (selectedStaffId === id) setSelectedStaffId(null);
+    setPendingDeleteId(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDeleteId || isLocked) return;
+    setDeletingStaff(true);
+    try {
+      await onDeleteStaff(pendingDeleteId);
+      if (selectedStaffId === pendingDeleteId) setSelectedStaffId(null);
+      setPendingDeleteId(null);
+    } finally {
+      setDeletingStaff(false);
     }
   };
+
+  const staffStatusFor = (member: { totalCommission: number; totalServices: number }): StaffStatusKind => {
+    if (member.totalCommission > 0) return 'earning';
+    if (member.totalServices > 0) return 'active';
+    return 'idle';
+  };
+
+  const pendingDeleteMember = pendingDeleteId
+    ? staff.find((s) => s.id === pendingDeleteId) || null
+    : null;
+
+  const editorRoleRate = roleCommissions.find((rc) => rc.role === formData.role)?.rate;
 
   const updateRoleRate = (role: string, rate: number) => {
     if (isLocked) return;
@@ -360,66 +396,54 @@ const StaffPage: React.FC<StaffProps> = ({
         </div>
       )}
 
-      <div className="flex flex-col gap-3">
-        <div>
-          <h2 className="text-2xl sm:text-app-page-lg font-bold tracking-tight text-slate-900 leading-tight">Staff Commission</h2>
-          <p className="text-slate-500 text-sm font-medium">Review staff performance and payouts.</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex p-1 bg-slate-100 rounded-xl overflow-x-auto">
-            {(['month', 'year', 'all', 'custom'] as PerformancePeriod[]).map((p) => (
-              <button 
-                key={p} 
-                onClick={() => setPeriod(p)} 
-                className={`px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap ${period === p ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-          {period === 'custom' && (
-            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2">
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="text-xs font-bold text-slate-700 outline-none border-none bg-transparent"
-              />
-              <span className="text-slate-400 font-bold">to</span>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="text-xs font-bold text-slate-700 outline-none border-none bg-transparent"
-              />
+      <StaffPageHeader
+        locked={isLocked}
+        addDisabled={isLocked}
+        ratesDisabled={isLocked}
+        onOpenRoleRates={() => setShowCommissionModal(true)}
+        onAddStaff={() => {
+          setEditingMember(null);
+          setFormData({ name: '', role: roleCommissions[0]?.role || '', email: '', phone: '', qualifiedServices: [] });
+          setPhotoFile(null);
+          setPhotoPreview(null);
+          setUploadError(null);
+          setServiceSearch('');
+          setShowModal(true);
+        }}
+        periodControls={
+          <>
+            <div className="flex p-1 bg-slate-100 rounded-xl overflow-x-auto">
+              {(['month', 'year', 'all', 'custom'] as PerformancePeriod[]).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPeriod(p)}
+                  className={`px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap ${period === p ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                  {p}
+                </button>
+              ))}
             </div>
-          )}
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button 
-            disabled={isLocked}
-            onClick={() => setShowCommissionModal(true)}
-            className={`px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all border shadow-sm text-sm ${isLocked ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 active:scale-95'}`}
-          >
-            {isLocked ? <Icons.Lock /> : <Icons.Settings />} Role Rates
-          </button>
-          <button 
-            disabled={isLocked}
-            onClick={() => {
-              setEditingMember(null);
-              setFormData({ name: '', role: roleCommissions[0]?.role || '', email: '', phone: '', qualifiedServices: [] });
-              setPhotoFile(null);
-              setPhotoPreview(null);
-              setUploadError(null);
-              setServiceSearch('');
-              setShowModal(true);
-            }}
-            className={`px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg text-sm ${isLocked ? 'bg-slate-50 text-slate-300 shadow-none cursor-not-allowed' : 'bg-teal-600 text-white hover:bg-teal-700 active:scale-95 shadow-teal-100'}`}
-          >
-            {isLocked ? <Icons.Lock /> : <Icons.Add />} Add Staff
-          </button>
-        </div>
-      </div>
+            {period === 'custom' && (
+              <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2">
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="text-xs font-bold text-slate-700 outline-none border-none bg-transparent"
+                />
+                <span className="text-slate-400 font-bold">to</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="text-xs font-bold text-slate-700 outline-none border-none bg-transparent"
+                />
+              </div>
+            )}
+          </>
+        }
+      />
 
       {/* Summary Stats Card — mobile */}
       {topPerformingStaff.length > 0 && (
@@ -535,69 +559,24 @@ const StaffPage: React.FC<StaffProps> = ({
 
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
         {/* Staff List Sidebar */}
-        <div className="xl:col-span-1 space-y-4 max-h-[calc(100vh-16rem)] overflow-y-auto pr-2">
-          {staffStats.map(member => (
-            <div 
-              key={member.id}
-              onClick={() => setSelectedStaffId(member.id)}
-              className={`p-4 rounded-2xl border cursor-pointer relative transition-all group ${
-                selectedStaffId === member.id 
-                  ? 'bg-teal-600 text-white shadow-xl translate-x-1' 
-                  : 'bg-white border-slate-200 text-slate-700 hover:border-teal-300'
-              }`}
-            >
-              <div className="flex justify-between items-start mb-3">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm overflow-hidden ${selectedStaffId === member.id ? 'bg-white/20' : 'bg-teal-50 text-teal-600'}`}>
-                    {member.profilePicture ? (
-                      <img src={member.profilePicture} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      member.name.charAt(0)
-                    )}
-                  </div>
-                  <div className="overflow-hidden">
-                    <p className="font-bold truncate text-sm leading-tight">{member.name}</p>
-                    <p className={`text-[9px] uppercase font-black tracking-tighter opacity-70`}>{member.role}</p>
-                  </div>
-                </div>
-                {!isLocked && (
-                  <div className="flex gap-1 opacity-100 xl:opacity-0 xl:group-hover:opacity-100 transition-opacity">
-                    <button
-                      type="button"
-                      aria-label={`Edit ${member.name}`}
-                      onClick={(e) => { e.stopPropagation(); handleEdit(member); }}
-                      className={`flex items-center justify-center min-w-[40px] min-h-[40px] rounded-lg hover:bg-black/5 ${selectedStaffId === member.id ? 'text-white' : 'text-slate-400'}`}
-                    >
-                      <Icons.Edit />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`Delete ${member.name}`}
-                      onClick={(e) => { e.stopPropagation(); handleDelete(member.id); }}
-                      className={`flex items-center justify-center min-w-[40px] min-h-[40px] rounded-lg hover:bg-rose-50 hover:text-rose-500 ${selectedStaffId === member.id ? 'text-white' : 'text-slate-400'}`}
-                    >
-                      <Icons.Trash />
-                    </button>
-                  </div>
-                )}
-              </div>
-              <div className={`mt-4 pt-4 border-t flex justify-between items-end ${selectedStaffId === member.id ? 'border-white/10' : 'border-slate-50'}`}>
-                 <div className="flex flex-col">
-                   <span className="text-[8px] font-black uppercase opacity-60">Services</span>
-                   <span className="text-xs font-bold">{member.totalServices}</span>
-                 </div>
-                 <div className="text-right">
-                   <span className="text-[8px] font-black uppercase opacity-60">Earnings</span>
-                   <span className="text-xs font-black block">${member.totalCommission.toLocaleString()}</span>
-                 </div>
-              </div>
-            </div>
-          ))}
-          {staffStats.length === 0 && (
-            <div className="p-8 text-center text-slate-400 italic text-sm bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-              No staff members registered.
-            </div>
-          )}
+        <div className="xl:col-span-1">
+          <StaffRoster empty={staffStats.length === 0}>
+            {staffStats.map((member) => (
+              <StaffCard
+                key={member.id}
+                name={member.name}
+                role={member.role}
+                photoUrl={member.profilePicture}
+                status={staffStatusFor(member)}
+                contextLabel={`${member.totalServices} services · $${member.totalCommission.toLocaleString()}`}
+                selected={selectedStaffId === member.id}
+                onSelect={() => setSelectedStaffId(member.id)}
+                actionsDisabled={isLocked}
+                onEdit={() => handleEdit(member)}
+                onDelete={() => requestDelete(member.id)}
+              />
+            ))}
+          </StaffRoster>
         </div>
 
         {/* Staff Performance Details */}
@@ -745,231 +724,212 @@ const StaffPage: React.FC<StaffProps> = ({
         </div>
       </div>
 
-      {/* Add/Edit Staff Modal — full-screen sheet on mobile, centered card on desktop */}
-      {showModal && (
-        <div
-          className="fixed inset-0 z-[70] bg-slate-900/50 sm:backdrop-blur-sm flex justify-center sm:items-center sm:p-4"
-          onClick={handleRequestClose}
-        >
-          <form
-            onSubmit={handleSubmit}
-            onClick={(e) => e.stopPropagation()}
-            className="bg-white w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-md sm:rounded-2xl shadow-2xl sm:animate-scaleIn flex flex-col overflow-hidden"
-          >
-            {/* Sticky header */}
-            <div className={`flex-shrink-0 px-5 py-4 pt-[calc(1rem+env(safe-area-inset-top,0px))] sm:pt-4 flex justify-between items-center text-white ${editingMember ? 'bg-amber-600' : 'bg-teal-600'}`}>
-              <h3 className="text-lg font-bold">{editingMember ? 'Edit Staff' : 'Add New Staff'}</h3>
-              <button
-                type="button"
-                onClick={handleRequestClose}
-                aria-label="Close"
-                className="flex items-center justify-center min-w-[44px] min-h-[44px] -mr-2 rounded-lg hover:bg-white/10 transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-
-            {/* Scrollable body */}
-            <div className="flex-1 overflow-y-auto overscroll-contain p-5 sm:p-6 space-y-5">
-              {editingMember && (
-                <div className="flex flex-col items-center gap-2 pb-1">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handlePhotoChange}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="rounded-full overflow-hidden w-24 h-24 border-2 border-slate-200 hover:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-slate-50 flex items-center justify-center"
-                  >
-                    {photoPreview ? (
-                      <img src={photoPreview} alt="Profile preview" className="w-full h-full object-cover" />
-                    ) : (
-                      <Icons.Staff className="w-12 h-12 text-slate-300" />
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="text-sm font-semibold text-teal-600 hover:text-teal-700"
-                  >
-                    Change Photo
-                  </button>
-                </div>
-              )}
-              <div>
-                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Full Name</label>
+      {/* Add/Edit Staff Editor — full-screen on mobile, centered on desktop */}
+      <StaffEditor
+        open={showModal}
+        title={editingMember ? 'Edit Staff' : 'Add New Staff'}
+        tone={editingMember ? 'edit' : 'create'}
+        onClose={handleRequestClose}
+        onSubmit={handleSubmit}
+        saving={uploadLoading}
+        saveLabel={editingMember ? 'Save Changes' : 'Add Staff'}
+        saveStatus={uploadLoading ? 'saving' : uploadError ? 'failed' : 'idle'}
+      >
+        <StaffProfileSection
+          photoSlot={
+            editingMember ? (
+              <div className="flex flex-col items-center gap-2 pb-1">
                 <input
-                  required
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handlePhotoChange}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="rounded-full overflow-hidden w-24 h-24 border-2 border-slate-200 hover:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-500 bg-slate-50 flex items-center justify-center"
+                >
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="Profile preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <Icons.Staff className="w-12 h-12 text-slate-300" />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-sm font-semibold text-teal-600 hover:text-teal-700"
+                >
+                  Change Photo
+                </button>
+                {uploadLoading ? (
+                  <p className="text-xs font-semibold text-teal-600">Uploading photo…</p>
+                ) : null}
+              </div>
+            ) : undefined
+          }
+        >
+          <div>
+            <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Full Name</label>
+            <input
+              required
+              type="text"
+              className="w-full p-4 min-h-[48px] bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-base font-medium"
+              value={formData.name ?? ''}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Assigned Role</label>
+            <select
+              required
+              className="w-full p-4 min-h-[48px] bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-base font-medium"
+              value={formData.role ?? ''}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+            >
+              <option value="" disabled>-- Select Role --</option>
+              {roleCommissions.map((rc) => (
+                <option key={rc.role} value={rc.role}>{rc.role}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Email</label>
+              <input
+                type="email"
+                className="w-full p-4 min-h-[48px] bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-base font-medium"
+                value={formData.email ?? ''}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Phone</label>
+              <input
+                type="tel"
+                className="w-full p-4 min-h-[48px] bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-base font-medium"
+                value={formData.phone ?? ''}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              />
+            </div>
+          </div>
+        </StaffProfileSection>
+
+        <StaffServicesSection
+          selectedCount={qualifiedCount}
+          toolbar={
+            <div className="space-y-2">
+              <div className="flex items-center justify-end gap-1">
+                <button
+                  type="button"
+                  onClick={selectAllQualified}
+                  className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-teal-600 hover:bg-teal-50"
+                >
+                  Select all
+                </button>
+                <button
+                  type="button"
+                  onClick={clearAllQualified}
+                  className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-400 hover:bg-slate-50"
+                >
+                  Clear all
+                </button>
+              </div>
+              <div className="relative">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
+                </svg>
+                <input
                   type="text"
-                  className="w-full p-4 min-h-[48px] bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-base font-medium"
-                  value={formData.name ?? ''}
-                  onChange={e => setFormData({ ...formData, name: e.target.value })}
+                  value={serviceSearch}
+                  onChange={(e) => setServiceSearch(e.target.value)}
+                  placeholder="Search services..."
+                  className="w-full pl-9 pr-3 py-2.5 min-h-[44px] bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm"
                 />
               </div>
-
-              <div>
-                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Assigned Role</label>
-                <select
-                  required
-                  className="w-full p-4 min-h-[48px] bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-base font-medium"
-                  value={formData.role ?? ''}
-                  onChange={e => setFormData({ ...formData, role: e.target.value })}
-                >
-                  <option value="" disabled>-- Select Role --</option>
-                  {roleCommissions.map(rc => (
-                    <option key={rc.role} value={rc.role}>{rc.role}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Email + phone stack on mobile, side-by-side on ≥640px */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-4">
-                <div>
-                  <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Email</label>
-                  <input
-                    type="email"
-                    className="w-full p-4 min-h-[48px] bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-base font-medium"
-                    value={formData.email ?? ''}
-                    onChange={e => setFormData({ ...formData, email: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Phone</label>
-                  <input
-                    type="tel"
-                    className="w-full p-4 min-h-[48px] bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-base font-medium"
-                    value={formData.phone ?? ''}
-                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              {/* Qualified services: count + search + select/clear all */}
-              <div className="border-t border-slate-100 pt-4">
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">
-                      Qualified Services
-                    </p>
-                    <p className="text-[11px] text-slate-400">
-                      {qualifiedCount} selected · trained to perform
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <button
-                      type="button"
-                      onClick={selectAllQualified}
-                      className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-teal-600 hover:bg-teal-50"
-                    >
-                      Select all
-                    </button>
-                    <button
-                      type="button"
-                      onClick={clearAllQualified}
-                      className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-400 hover:bg-slate-50"
-                    >
-                      Clear all
-                    </button>
-                  </div>
-                </div>
-
-                <div className="relative mb-2">
-                  <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
-                  </svg>
-                  <input
-                    type="text"
-                    value={serviceSearch}
-                    onChange={(e) => setServiceSearch(e.target.value)}
-                    placeholder="Search services..."
-                    className="w-full pl-9 pr-3 py-2.5 min-h-[44px] bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm"
-                  />
-                </div>
-
-                <div className="mt-1 space-y-3 sm:max-h-64 sm:overflow-y-auto">
-                  {(Object.entries(filteredServicesByCategory) as [string, Service[]][]).map(([cat, list]) => (
-                    <div key={cat}>
-                      <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
-                        {cat}
-                      </p>
-                      <div className="grid grid-cols-1 gap-1">
-                        {list.map((s) => {
-                          const assigned = (formData.qualifiedServices ?? []).includes(s.id);
-                          return (
-                            <label
-                              key={s.id}
-                              className={`flex items-center gap-3 px-3 min-h-[44px] rounded-lg cursor-pointer transition-colors ${assigned ? 'bg-teal-50' : 'hover:bg-slate-50'}`}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={assigned}
-                                onChange={() => toggleQualifiedService(s.id)}
-                                className="w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
-                              />
-                              <span className="flex-1 text-sm text-slate-700 truncate">{s.name}</span>
-                              {typeof s.duration === 'number' && s.duration > 0 && (
-                                <span className="text-[11px] text-slate-400 font-medium flex-shrink-0">{s.duration} min</span>
-                              )}
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                  {Object.keys(filteredServicesByCategory).length === 0 && (
-                    <p className="py-6 text-center text-sm text-slate-400">
-                      {services.length === 0 ? 'No services available yet.' : 'No services match your search.'}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {uploadError && (
-                <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-2">{uploadError}</p>
-              )}
             </div>
+          }
+        >
+          <div className="mt-1 space-y-3 sm:max-h-64 sm:overflow-y-auto">
+            {(Object.entries(filteredServicesByCategory) as [string, Service[]][]).map(([cat, list]) => (
+              <div key={cat}>
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-1">
+                  {cat}
+                </p>
+                <div className="grid grid-cols-1 gap-1">
+                  {list.map((s) => {
+                    const assigned = (formData.qualifiedServices ?? []).includes(s.id);
+                    return (
+                      <label
+                        key={s.id}
+                        className={`flex items-center gap-3 px-3 min-h-[44px] rounded-lg cursor-pointer transition-colors ${assigned ? 'bg-teal-50' : 'hover:bg-slate-50'}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={assigned}
+                          onChange={() => toggleQualifiedService(s.id)}
+                          className="w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                        />
+                        <span className="flex-1 text-sm text-slate-700 truncate">{s.name}</span>
+                        {typeof s.duration === 'number' && s.duration > 0 && (
+                          <span className="text-[11px] text-slate-400 font-medium flex-shrink-0">{s.duration} min</span>
+                        )}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+            {Object.keys(filteredServicesByCategory).length === 0 && (
+              <p className="py-6 text-center text-sm text-slate-400">
+                {services.length === 0 ? 'No services available yet.' : 'No services match your search.'}
+              </p>
+            )}
+          </div>
+        </StaffServicesSection>
 
-            {/* Sticky footer — always visible, clears iPhone safe area */}
-            <div className="flex-shrink-0 border-t border-slate-100 bg-white px-5 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] flex gap-3">
-              <button
-                type="button"
-                onClick={handleRequestClose}
-                disabled={uploadLoading}
-                className="flex-1 min-h-[48px] py-3 bg-slate-100 text-slate-600 font-bold rounded-xl active:scale-95 transition-transform disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={uploadLoading}
-                className={`flex-[2] min-h-[48px] py-3 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-transform ${editingMember ? 'bg-amber-600 shadow-amber-100' : 'bg-teal-600 shadow-teal-100'} disabled:opacity-70 disabled:cursor-not-allowed`}
-              >
-                {uploadLoading ? (
-                  <>
-                    <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    Saving…
-                  </>
-                ) : editingMember ? (
-                  'Save Changes'
-                ) : (
-                  'Add Staff'
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+        <StaffScheduleSection />
+
+        <StaffPermissionSection roleLabel={formData.role || ''} />
+
+        <StaffCommissionSection
+          roleLabel={formData.role || ''}
+          ratePercent={typeof editorRoleRate === 'number' ? editorRoleRate : null}
+          manageDisabled={isLocked}
+          onManageRates={() => {
+            setShowCommissionModal(true);
+          }}
+        />
+
+        {uploadError && (
+          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-2 mt-3">{uploadError}</p>
+        )}
+      </StaffEditor>
+
+      <ConfirmationDialog
+        open={Boolean(pendingDeleteId)}
+        onClose={() => {
+          if (!deletingStaff) setPendingDeleteId(null);
+        }}
+        onConfirm={confirmDelete}
+        tone="danger"
+        busy={deletingStaff}
+        title="Remove staff member?"
+        confirmLabel="Remove"
+        description={
+          pendingDeleteMember
+            ? `Remove ${pendingDeleteMember.name} from the active roster? Their historical performance will remain in financial records, but they will be removed from active service lists.`
+            : 'Their historical performance will remain in financial records, but they will be removed from active service lists.'
+        }
+      />
 
       {/* Role Commission Rates Modal */}
       {showCommissionModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl animate-scaleIn overflow-hidden">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-800 text-white">
               <h3 className="text-lg font-bold">Role & Commission Settings</h3>

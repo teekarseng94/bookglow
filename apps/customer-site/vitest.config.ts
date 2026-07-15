@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config';
 
 /**
- * Vitest config for the V2 foundation tests.
+ * Vitest config for the current customer-site unit tests.
  * Tests target pure logic (reducer, persistence, guards) so a jsdom environment
  * is used to provide a sessionStorage implementation without extra deps.
  */

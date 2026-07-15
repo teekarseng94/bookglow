@@ -3,6 +3,16 @@ import React, { useState, useMemo, useEffect, useRef, useLayoutEffect } from 're
 import { Appointment, Staff, Client, Service, RoleCommission, OutletSettings } from '../types';
 import { Icons } from '../constants';
 import { generateReminderMessage } from '../services/geminiService';
+import {
+  ScheduleBookingDetailPanel,
+  ScheduleBookingList,
+  ScheduleDateStrip,
+  ScheduleEmptyState,
+  ScheduleLoadingState,
+  SchedulePageHeader,
+  ScheduleToolbar,
+  type ScheduleBookingDaySection,
+} from '../components/schedule';
 
 interface AppointmentsCalendarProps {
   appointments: Appointment[];
@@ -427,6 +437,46 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
     return grouped;
   }, [mobileAgendaDates, activeAppointments]);
 
+  const mobileAgendaSections = useMemo<ScheduleBookingDaySection[]>(() => {
+    return mobileAgendaDates.map((date) => {
+      const dayAppointments = appointmentsByDate.get(date) || [];
+      return {
+        date,
+        heading: dayHeadingLabel(date),
+        bookings: dayAppointments.map((app) => {
+          const client = clients.find((c) => c.id === app.clientId);
+          const service = services.find((s) => s.id === app.serviceId);
+          const therapist = staff.find((s) => s.id === app.staffId);
+          const color = colorFor(app.staffId || app.id);
+          return {
+            id: app.id,
+            timeLabel: `${formatDisplayTime(app.time)}${app.endTime ? ` – ${formatDisplayTime(app.endTime)}` : ''}`,
+            customerName: client?.name || 'Guest',
+            serviceName: service?.name || 'Service',
+            staffName: therapist?.name || outletSettings.shopName || 'Staff',
+            status: app.status,
+            accentClassName: `${color.bg} ${color.border}`,
+          };
+        }),
+      };
+    });
+  }, [mobileAgendaDates, appointmentsByDate, clients, services, staff, outletSettings.shopName]);
+
+  const desktopDateLabel = useMemo(
+    () =>
+      new Date(selectedDate).toLocaleDateString('default', {
+        month: 'long',
+        year: 'numeric',
+        day: viewMode === 'month' ? undefined : 'numeric',
+      }),
+    [selectedDate, viewMode],
+  );
+
+  const openMobileDetailById = (id: string) => {
+    const app = activeAppointments.find((a) => a.id === id);
+    if (app) openMobileDetail(app);
+  };
+
   const thisWeekIncome = useMemo(() => {
     const weekSet = new Set(weekDates);
     return activeAppointments.reduce((sum, app) => {
@@ -591,152 +641,60 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
   };
 
   return (
-    <div className="animate-fadeIn md:space-y-6 md:pb-24">
-      {/* Syncing with Setmore... */}
-      {isSyncingSetmore && (
-        <div className="flex items-center gap-3 px-4 py-2.5 bg-sky-50 border border-sky-200 rounded-xl text-sky-700 text-sm font-medium">
-          <span className="w-4 h-4 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
-          Syncing with Setmore…
-        </div>
-      )}
+    <div className="animate-fadeIn md:space-y-4 md:pb-24">
+      {isSyncingSetmore && <ScheduleLoadingState />}
 
-      {/* Calendar Header */}
-      <div className="hidden md:flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-6">
-          <div className="flex bg-slate-100 p-1 rounded-xl shadow-inner">
-            {(['day', 'week', 'month'] as ViewMode[]).map(mode => (
-              <button key={mode} onClick={() => setViewMode(mode)} className={`px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${viewMode === mode ? 'bg-white text-teal-600 shadow-md transform scale-105' : 'text-slate-400 hover:text-slate-600'}`}>
-                {mode}
-              </button>
-            ))}
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => navigate('prev')} className="p-2 hover:bg-slate-50 rounded-lg text-slate-400 border border-slate-100"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg></button>
-            <button onClick={setToday} className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 border border-slate-100 rounded-lg">Today</button>
-            <button onClick={() => navigate('next')} className="p-2 hover:bg-slate-50 rounded-lg text-slate-400 border border-slate-100"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg></button>
-          </div>
-        </div>
-        <div className="flex items-center gap-4 w-full lg:w-auto">
-          <h2 className="text-xl font-black text-slate-800 hidden xl:block">
-            {new Date(selectedDate).toLocaleDateString('default', { month: 'long', year: 'numeric', day: viewMode === 'month' ? undefined : 'numeric' })}
-          </h2>
-          <input type="date" className="flex-1 lg:flex-none p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm outline-none focus:ring-2 focus:ring-teal-500 shadow-sm" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
-        </div>
-      </div>
+      <SchedulePageHeader
+        dateLabel={desktopDateLabel}
+        viewLabel={`${viewMode} view`}
+        onNewBooking={handleQuickAddBooking}
+      />
 
-      <div className="bg-white md:rounded-3xl md:border md:border-slate-200 md:shadow-sm md:overflow-hidden md:min-h-[600px] flex flex-col">
+      <ScheduleToolbar
+        viewMode={viewMode}
+        selectedDate={selectedDate}
+        onViewModeChange={setViewMode}
+        onPrev={() => navigate('prev')}
+        onNext={() => navigate('next')}
+        onToday={setToday}
+        onDateChange={setSelectedDate}
+      />
+
+      <div className="bg-[var(--bg-surface)] md:rounded-ui-lg md:border md:border-[var(--line)] md:shadow-ui-xs md:overflow-hidden md:min-h-[600px] flex flex-col">
         {viewMode === 'day' && (
           <>
-          <div className="md:hidden sticky top-0 z-30 bg-white border-b border-slate-100">
-            {/* Native header: menu · Month YYYY ˅ · bell · avatar */}
-            <div className="flex items-center justify-between px-2 h-14">
-              <button
-                type="button"
-                onClick={() => window.dispatchEvent(new CustomEvent('bookglow:open-more-menu'))}
-                className="w-11 h-11 flex items-center justify-center rounded-lg text-slate-700 active:bg-slate-100"
-                aria-label="Open menu"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
-              </button>
-              <button
-                type="button"
-                onClick={() => { setPickerMonth(visibleDate); setMonthPickerOpen(true); }}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg active:bg-slate-100 min-w-0"
-                aria-label="Open month calendar"
-              >
-                <span className="text-[26px] leading-none font-semibold tracking-tight text-slate-900 truncate">{monthLabel(visibleDate)}</span>
-                <svg className="w-5 h-5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
-              </button>
-              <div className="flex items-center gap-0.5">
-                <span className="w-9 h-9 flex items-center justify-center text-slate-500" aria-hidden>
-                  <svg className="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-                </span>
-                <span className="w-9 h-9 rounded-full bg-slate-100 text-slate-600 text-xs font-bold flex items-center justify-center">
-                  {(outletSettings.shopName || 'A').charAt(0).toUpperCase()}
-                </span>
-              </div>
-            </div>
-            {/* Week strip: Monday–Sunday; highlights the visible day */}
-            <div className="grid grid-cols-7 px-1.5 pb-2">
-              {weekOf(visibleDate).map((iso, i) => {
-                const isSel = iso === visibleDate;
-                const isToday = iso === todayIso;
-                return (
-                  <button
-                    key={iso}
-                    type="button"
-                    onClick={() => goToDate(iso)}
-                    className="flex flex-col items-center gap-1.5 py-1"
-                  >
-                    <span className="text-[13px] font-medium text-slate-400">{MON_INITIALS[i]}</span>
-                    <span className={`w-9 h-9 rounded-xl flex items-center justify-center text-[17px] font-medium transition-colors ${
-                      isSel ? 'bg-slate-900 text-white' : isToday ? 'text-teal-600 font-bold' : 'text-slate-700'
-                    }`}>
-                      {new Date(iso).getUTCDate()}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+          <ScheduleDateStrip
+            weekDates={weekOf(visibleDate)}
+            visibleDate={visibleDate}
+            todayIso={todayIso}
+            dayInitials={MON_INITIALS}
+            monthLabel={monthLabel(visibleDate)}
+            shopInitial={(outletSettings.shopName || 'A').charAt(0).toUpperCase()}
+            onOpenMenu={() => window.dispatchEvent(new CustomEvent('bookglow:open-more-menu'))}
+            onOpenMonthPicker={() => { setPickerMonth(visibleDate); setMonthPickerOpen(true); }}
+            onSelectDate={goToDate}
+          />
+
+          <div ref={agendaContainerRef}>
+            <ScheduleBookingList
+              days={mobileAgendaSections}
+              onSelectBooking={openMobileDetailById}
+              loadMoreRef={agendaLoadMoreRef}
+            />
           </div>
 
-          <div ref={agendaContainerRef} className="md:hidden bg-white px-4 pt-4 pb-[calc(8.5rem+env(safe-area-inset-bottom,0px))] space-y-5">
-            {mobileAgendaDates.map((date) => {
-              const dayAppointments = appointmentsByDate.get(date) || [];
-              return (
-                <section key={date} data-agenda-date={date} className="space-y-2 scroll-mt-[116px]">
-                  <h4 className="text-[18px] leading-tight font-semibold text-slate-900">
-                    {dayHeadingLabel(date)}
-                  </h4>
-                  {dayAppointments.length === 0 ? (
-                    <p className="text-slate-400 text-[15px]">Nothing planned</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {dayAppointments.map((app) => {
-                        const client = clients.find((c) => c.id === app.clientId);
-                        const service = services.find((s) => s.id === app.serviceId);
-                        const color = colorFor(app.staffId || app.id);
-                        return (
-                          <button
-                            key={app.id}
-                            type="button"
-                            onClick={() => openMobileDetail(app)}
-                            className={`w-full text-left rounded-lg border-l-4 ${color.bg} ${color.border} px-3 py-2.5 transition-transform active:scale-[0.99]`}
-                          >
-                            <div className="flex items-baseline gap-1.5 min-w-0">
-                              <span className="text-[14px] font-semibold text-slate-900 flex-shrink-0 truncate max-w-[55%]">
-                                {client?.name || 'Guest'}
-                              </span>
-                              <span className="text-[14px] text-slate-500 truncate">
-                                {service?.name || 'Service'}
-                              </span>
-                            </div>
-                            <p className="text-[13px] text-slate-500 mt-0.5">
-                              {formatDisplayTime(app.time)} - {formatDisplayTime(app.endTime || app.time)}
-                            </p>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </section>
-              );
-            })}
-            <div ref={agendaLoadMoreRef} className="h-2" aria-hidden />
-          </div>
-
-          <div className="hidden md:block overflow-x-auto flex-1">
-            <table className="w-full border-collapse">
+          <div className="hidden md:block overflow-x-auto flex-1 schedule-desktop-workspace">
+            <table className="w-full border-collapse min-w-[720px]">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="p-4 w-24 sticky left-0 bg-slate-50 z-20 border-r border-slate-100 shadow-sm"></th>
+                <tr className="bg-[var(--bg-soft)] border-b border-[var(--line)]">
+                  <th className="p-3 w-20 sticky left-0 bg-[var(--bg-soft)] z-20 border-r border-[var(--line)]"></th>
                   {staff.map(member => (
-                    <th key={member.id} className="p-4 min-w-[220px] border-r border-slate-100 text-left">
+                    <th key={member.id} className="p-3 min-w-[200px] border-r border-[var(--line)] text-left">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-teal-600 text-white flex items-center justify-center font-bold text-sm shadow-md">{member.name.charAt(0)}</div>
-                        <div>
-                          <p className="text-sm font-black text-slate-800 leading-tight">{member.name}</p>
-                          <p className="text-[9px] font-black uppercase text-slate-400 tracking-tighter">{member.role}</p>
+                        <div className="w-9 h-9 rounded-ui-sm bg-[var(--brand)] text-white flex items-center justify-center font-bold text-sm shadow-ui-xs">{member.name.charAt(0)}</div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-[var(--text-primary)] leading-tight truncate">{member.name}</p>
+                          <p className="text-[10px] font-bold uppercase text-[var(--text-muted)] tracking-wide">{member.role}</p>
                         </div>
                       </div>
                     </th>
@@ -745,12 +703,11 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
               </thead>
               <tbody>
                 {hours.map(hour => (
-                  <tr key={hour} className="border-b border-slate-50 group hover:bg-slate-50/30 transition-colors">
-                    <td className="p-4 text-center text-[10px] font-black text-slate-400 sticky left-0 bg-white group-hover:bg-slate-50/50 z-10 border-r border-slate-100">
+                  <tr key={hour} className="border-b border-[var(--line)] group hover:bg-[var(--bg-soft)]/40 transition-colors">
+                    <td className="p-3 text-center text-[10px] font-bold text-[var(--text-muted)] sticky left-0 bg-[var(--bg-surface)] group-hover:bg-[var(--bg-soft)]/50 z-10 border-r border-[var(--line)]">
                       {hour.replace(':', '')}
                     </td>
                     {staff.map(member => {
-                      // Find appointments for this staff member on this date that match this time slot (exclude cancelled)
                       const app = activeAppointments.find(a =>
                         a.date === selectedDate &&
                         a.staffId === member.id &&
@@ -760,15 +717,15 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
                       const client = app ? clients.find(c => c.id === app.clientId) : null;
 
                       return (
-                        <td key={member.id} className="p-1.5 border-r border-slate-50 min-h-[100px] cursor-pointer" onClick={() => app ? handleAppointmentClick(app) : handleEmptySlotClick(member.id, hour, selectedDate)}>
+                        <td key={member.id} className="p-1.5 border-r border-[var(--line)] min-h-[88px] cursor-pointer" onClick={() => app ? handleAppointmentClick(app) : handleEmptySlotClick(member.id, hour, selectedDate)}>
                           {app ? (
-                            <div className={`p-3 rounded-2xl border-l-4 h-full shadow-sm animate-fadeIn transition-all hover:scale-[1.02] flex flex-col justify-between ${getCategoryColor(service?.category || '')}`}>
+                            <div className={`p-2.5 rounded-ui-sm border-l-4 h-full shadow-ui-xs animate-fadeIn transition-all hover:scale-[1.01] flex flex-col justify-between ${getCategoryColor(service?.category || '')}`}>
                               <div>
-                                <div className="flex items-start justify-between">
+                                <div className="flex items-start justify-between gap-1">
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-black truncate">{client?.name || 'Guest'}</p>
+                                    <p className="text-xs font-bold truncate">{client?.name || 'Guest'}</p>
                                     {app.endTime && (
-                                      <p className="text-[9px] font-bold text-slate-600 mt-0.5">
+                                      <p className="text-[9px] font-bold text-[var(--text-secondary)] mt-0.5">
                                         {app.time.replace(':', '')} - {app.endTime.replace(':', '')}
                                       </p>
                                     )}
@@ -793,7 +750,7 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
                               </div>
                             </div>
                           ) : (
-                            <div className="h-12 w-full flex items-center justify-center opacity-0 group-hover:opacity-100 text-slate-200 transition-opacity"><Icons.Add /></div>
+                            <div className="h-12 w-full flex items-center justify-center opacity-0 group-hover:opacity-100 text-[var(--line-strong)] transition-opacity"><Icons.Add /></div>
                           )}
                         </td>
                       );
@@ -806,20 +763,36 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
           </>
         )}
 
-        {/* Other view modes (week, month) would have similar updates for the reminderSent icon */}
+        {viewMode !== 'day' && (
+          <div className="p-6">
+            <ScheduleEmptyState
+              title={`${viewMode.charAt(0).toUpperCase()}${viewMode.slice(1)} view`}
+              description="Switch to Day view for the full staff schedule workspace and booking actions."
+              action={
+                <button
+                  type="button"
+                  className="text-sm font-semibold text-[var(--brand)]"
+                  onClick={() => setViewMode('day')}
+                >
+                  Open Day view
+                </button>
+              }
+            />
+          </div>
+        )}
       </div>
 
       {/* Mobile income bar (above bottom nav) + floating add button */}
       {!mobileDetailOpen && (
         <>
-          <div className="md:hidden fixed left-0 right-0 bottom-[calc(72px+env(safe-area-inset-bottom,0px))] z-40 border-t border-slate-200 bg-white px-4 py-2.5 flex items-center justify-between">
-            <span className="text-[14px] leading-none text-slate-700 font-medium">This week&apos;s income</span>
-            <span className="text-[14px] leading-none font-semibold text-slate-900">RM{thisWeekIncome.toFixed(0)}</span>
+          <div className="md:hidden fixed left-0 right-0 bottom-[calc(72px+var(--safe-bottom))] z-40 border-t border-[var(--line)] bg-[var(--bg-surface)] px-4 py-2.5 flex items-center justify-between">
+            <span className="text-[14px] leading-none text-[var(--text-secondary)] font-medium">This week&apos;s income</span>
+            <span className="text-[14px] leading-none font-semibold text-[var(--text-primary)]">RM{thisWeekIncome.toFixed(0)}</span>
           </div>
           <button
             type="button"
             onClick={handleQuickAddBooking}
-            className="md:hidden fixed bottom-[calc(128px+env(safe-area-inset-bottom,0px))] right-4 z-50 w-14 h-14 rounded-full bg-slate-950 text-white shadow-[0_10px_24px_rgba(15,23,42,0.35)] flex items-center justify-center active:scale-95 transition-transform"
+            className="md:hidden fixed bottom-[calc(128px+var(--safe-bottom))] right-4 z-50 w-14 h-14 rounded-full bg-[var(--text-primary)] text-white shadow-ui-md flex items-center justify-center active:scale-95 transition-transform"
             aria-label="Quick add booking"
           >
             <span className="text-[34px] leading-none">+</span>
@@ -964,7 +937,7 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
       )}
 
       {/* ===== Mobile full-screen booking detail (Overview) ===== */}
-      {mobileDetailOpen && selectedAppointment && (() => {
+      {selectedAppointment && (() => {
         const app = selectedAppointment;
         const client = clients.find((c) => c.id === app.clientId);
         const service = services.find((s) => s.id === app.serviceId);
@@ -974,141 +947,38 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
         const dateLabel = new Date(app.date).toLocaleDateString('default', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
         const isCompleted = app.status === 'completed';
         return (
-          <div className="md:hidden fixed inset-0 z-[90] bg-white flex flex-col">
-            {/* Top bar */}
-            <div className="flex items-center justify-between px-1 h-14 border-b border-slate-100 flex-shrink-0">
-              <button type="button" onClick={closeMobileDetail} aria-label="Close" className="w-11 h-11 grid place-items-center rounded-lg text-slate-700 active:bg-slate-100">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-              <h2 className="text-[18px] font-bold text-slate-900">Overview</h2>
-              <div className="flex items-center">
-                <button type="button" onClick={() => setDetailActionsOpen(true)} aria-label="Edit" className="w-11 h-11 grid place-items-center rounded-lg text-slate-600 active:bg-slate-100">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                </button>
-                <button type="button" onClick={() => setDetailActionsOpen(true)} aria-label="More options" className="w-11 h-11 grid place-items-center rounded-lg text-slate-600 active:bg-slate-100">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.75" /><circle cx="12" cy="12" r="1.75" /><circle cx="12" cy="19" r="1.75" /></svg>
-                </button>
-              </div>
-            </div>
-            {/* Tabs */}
-            <div className="flex px-4 border-b border-slate-100 flex-shrink-0">
-              {(['details', 'payments', 'history'] as const).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setDetailTab(t)}
-                  className={`flex-1 py-3 text-[16px] font-medium capitalize border-b-2 -mb-px transition-colors ${
-                    detailTab === t ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-400'
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto px-4 py-5">
-              {detailTab === 'details' && (
-                <div className="space-y-5">
-                  <div className="flex gap-3">
-                    <span className={`mt-1.5 w-3 h-3 rounded-full flex-shrink-0 ${dotBg}`} />
-                    <div className="min-w-0">
-                      <p className="text-[16px] font-semibold text-slate-900 leading-snug">{service?.name || 'Service'}</p>
-                      <div className="flex flex-wrap gap-x-5 gap-y-0.5 mt-1 text-[14px] text-slate-500">
-                        <span>Cost: <span className="font-semibold text-slate-700">RM{Number(service?.price || 0).toFixed(0)}</span></span>
-                        <span>Duration: <span className="font-semibold text-slate-700">{service?.duration || 0} minutes</span></span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex gap-3 items-center">
-                    <svg className="w-5 h-5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    <p className="text-[15px] text-slate-700">{dateLabel} · {formatDisplayTime(app.time)} - {formatDisplayTime(app.endTime || app.time)}</p>
-                  </div>
-                  <div className="flex gap-3">
-                    <svg className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[15px] text-slate-500 mb-2">1 Guest</p>
-                      <div className="flex items-start gap-3">
-                        <span className="w-9 h-9 rounded-full bg-slate-100 text-slate-600 text-xs font-bold flex items-center justify-center flex-shrink-0">
-                          {(client?.name || 'G').charAt(0).toUpperCase()}
-                        </span>
-                        <div className="min-w-0">
-                          <p className="text-[15px] font-semibold text-slate-900">{client?.name || 'Guest'}</p>
-                          {client?.email && <p className="text-[14px] text-slate-500 truncate">{client.email}</p>}
-                          {client?.phone && <p className="text-[14px] text-slate-500">{client.phone}</p>}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex gap-3 items-center">
-                    <span className="w-9 h-9 rounded-full bg-slate-100 text-slate-600 text-xs font-bold flex items-center justify-center flex-shrink-0">
-                      {(therapist?.name || outletSettings.shopName || 'S').charAt(0).toUpperCase()}
-                    </span>
-                    <p className="text-[15px] font-medium text-slate-900">{therapist?.name || outletSettings.shopName || 'Staff'}</p>
-                  </div>
-                  <div className="flex gap-3">
-                    <svg className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[15px] text-slate-700">Booked from {app.isOnDuty ? 'POS sale' : 'manual booking'}</p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <p className="text-[13px] text-slate-400 truncate">Booking ID: {app.id}</p>
-                        <button type="button" onClick={() => navigator.clipboard?.writeText(app.id)} aria-label="Copy booking ID" className="text-slate-400 active:text-slate-600 flex-shrink-0">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              {detailTab === 'payments' && (
-                <div className="py-10 text-center">
-                  <p className="text-[15px] text-slate-500">{isCompleted ? 'This appointment is marked completed.' : 'No payment recorded yet.'}</p>
-                  {!isCompleted && (
-                    <button type="button" onClick={handleCollectPayment} className="mt-4 inline-flex items-center px-5 py-3 rounded-xl bg-slate-900 text-white font-semibold text-sm active:scale-95 transition-transform">
-                      Collect payment
-                    </button>
-                  )}
-                </div>
-              )}
-              {detailTab === 'history' && (
-                <div className="py-2 divide-y divide-slate-100">
-                  <div className="flex justify-between py-3 text-[14px]"><span className="text-slate-500">Current status</span><span className="font-semibold text-slate-800 capitalize">{app.status}</span></div>
-                  <div className="flex justify-between py-3 text-[14px]"><span className="text-slate-500">Reminder</span><span className="font-semibold text-slate-800">{app.reminderSent ? 'Sent' : 'Not sent'}</span></div>
-                  <div className="flex justify-between py-3 text-[14px]"><span className="text-slate-500">Source</span><span className="font-semibold text-slate-800">{app.isOnDuty ? 'POS sale' : 'Manual booking'}</span></div>
-                </div>
-              )}
-            </div>
-            {/* Sticky Collect payment */}
-            <div className="flex-shrink-0 border-t border-slate-100 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] bg-white">
-              {isCompleted ? (
-                <div className="w-full py-4 rounded-full bg-slate-100 text-slate-500 font-semibold text-center text-[16px]">Completed</div>
-              ) : (
-                <button type="button" onClick={handleCollectPayment} className="w-full py-4 rounded-full bg-slate-950 text-white font-semibold text-[16px] active:scale-[0.99] transition-transform">
-                  Collect payment
-                </button>
-              )}
-            </div>
-
-            {/* Actions sheet */}
-            {detailActionsOpen && (
-              <div className="absolute inset-0 z-[95] flex flex-col justify-end" role="dialog" aria-modal="true">
-                <div className="absolute inset-0 bg-slate-900/40" onClick={() => setDetailActionsOpen(false)} />
-                <div className="relative bg-white rounded-t-3xl p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] shadow-2xl">
-                  <div className="w-10 h-1.5 bg-slate-200 rounded-full mx-auto mb-4" />
-                  <div className="space-y-1">
-                    <button type="button" onClick={() => { onUpdateStatus('completed'); closeMobileDetail(); }} className="w-full text-left px-4 py-3.5 rounded-2xl text-[15px] font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100">Mark completed</button>
-                    <button type="button" onClick={() => { onUpdateStatus('scheduled'); closeMobileDetail(); }} className="w-full text-left px-4 py-3.5 rounded-2xl text-[15px] font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100">Mark scheduled</button>
-                    <button type="button" onClick={() => { onUpdateStatus('no-show'); closeMobileDetail(); }} className="w-full text-left px-4 py-3.5 rounded-2xl text-[15px] font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100">Mark no-show</button>
-                    {outletSettings.reminderEnabled && app.status === 'scheduled' && (
-                      <button type="button" onClick={() => { setDetailActionsOpen(false); handleSendManualReminder(); }} className="w-full text-left px-4 py-3.5 rounded-2xl text-[15px] font-semibold text-indigo-600 hover:bg-indigo-50 active:bg-indigo-100">{app.reminderSent ? 'Resend reminder' : 'Send reminder'}</button>
-                    )}
-                    <button type="button" onClick={() => { onUpdateStatus('cancelled'); closeMobileDetail(); }} className="w-full text-left px-4 py-3.5 rounded-2xl text-[15px] font-semibold text-rose-600 hover:bg-rose-50 active:bg-rose-100">Cancel appointment</button>
-                    <button type="button" onClick={() => { if (app.id) handleDeleteAppointment(app.id); }} className="w-full text-left px-4 py-3.5 rounded-2xl text-[15px] font-semibold text-red-600 hover:bg-red-50 active:bg-red-100">Delete appointment</button>
-                  </div>
-                  <button type="button" onClick={() => setDetailActionsOpen(false)} className="w-full mt-3 py-3 rounded-2xl border border-slate-200 text-slate-500 font-semibold text-sm">Close</button>
-                </div>
-              </div>
-            )}
-          </div>
+          <ScheduleBookingDetailPanel
+            open={mobileDetailOpen}
+            serviceName={service?.name || 'Service'}
+            servicePriceLabel={`RM${Number(service?.price || 0).toFixed(0)}`}
+            serviceDurationLabel={`${service?.duration || 0} minutes`}
+            dateTimeLabel={`${dateLabel} · ${formatDisplayTime(app.time)} - ${formatDisplayTime(app.endTime || app.time)}`}
+            customerName={client?.name || 'Guest'}
+            customerEmail={client?.email}
+            customerPhone={client?.phone}
+            staffName={therapist?.name || outletSettings.shopName || 'Staff'}
+            bookingId={app.id}
+            status={app.status}
+            reminderSent={Boolean(app.reminderSent)}
+            sourceLabel={app.isOnDuty ? 'POS sale' : 'Manual booking'}
+            accentDotClassName={dotBg}
+            isCompleted={isCompleted}
+            detailTab={detailTab}
+            actionsOpen={detailActionsOpen}
+            reminderEnabled={Boolean(outletSettings.reminderEnabled)}
+            onClose={closeMobileDetail}
+            onOpenActions={() => setDetailActionsOpen(true)}
+            onCloseActions={() => setDetailActionsOpen(false)}
+            onTabChange={setDetailTab}
+            onCollectPayment={handleCollectPayment}
+            onCopyBookingId={() => navigator.clipboard?.writeText(app.id)}
+            onMarkCompleted={() => { onUpdateStatus('completed'); closeMobileDetail(); }}
+            onMarkScheduled={() => { onUpdateStatus('scheduled'); closeMobileDetail(); }}
+            onMarkNoShow={() => { onUpdateStatus('no-show'); closeMobileDetail(); }}
+            onCancel={() => { onUpdateStatus('cancelled'); closeMobileDetail(); }}
+            onDelete={() => { if (app.id) handleDeleteAppointment(app.id); }}
+            onSendReminder={() => { setDetailActionsOpen(false); handleSendManualReminder(); }}
+          />
         );
       })()}
     </div>

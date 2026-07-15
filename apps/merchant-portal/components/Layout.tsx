@@ -1,8 +1,7 @@
-
-import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate, NavLink, useLocation } from 'react-router-dom';
-import { Icons } from '../constants';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { User } from 'firebase/auth';
+import { Icons } from '../constants';
 import type { UserRole } from '../contexts/UserContext';
 
 interface LayoutProps {
@@ -13,13 +12,22 @@ interface LayoutProps {
   shopName: string;
   user?: User | null;
   onLogout?: () => void;
-  /** Current outlet id (multi-tenant) — so you can confirm which outlet data is shown/saved */
   outletId?: string | null;
-  /** Current outlet display name */
   outletName?: string | null;
-  /** User role from Firestore: admin (all links) or cashier (POS, Member, Menu, Sales Report only; no Dashboard) */
   role?: UserRole | null;
 }
+
+type NavItem = {
+  id: string;
+  label: string;
+  shortLabel?: string;
+  icon: React.ReactNode;
+};
+
+type NavGroup = {
+  label: string;
+  ids: string[];
+};
 
 const MoreHorizontalIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -29,29 +37,56 @@ const MoreHorizontalIcon = () => (
   </svg>
 );
 
-const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, isAdmin, shopName, user, onLogout, outletId, outletName, role }) => {
+const pageTitles: Record<string, string> = {
+  dashboard: 'Today',
+  pos: 'Point of Sale',
+  schedule: 'Schedule',
+  appointments: 'Schedule',
+  member: 'Members',
+  menu: 'Menu & Inventory',
+  'sales-reports': 'Sales Reports',
+  transactions: 'Sales History',
+  finance: 'Expenses',
+  marketing: 'Marketing',
+  staff: 'Staff & Team',
+  settings: 'Settings',
+  report: 'Report',
+};
+
+const Layout: React.FC<LayoutProps> = ({
+  children,
+  activeTab,
+  setActiveTab: _setActiveTab,
+  isAdmin,
+  shopName,
+  user,
+  onLogout,
+  outletId,
+  outletName,
+  role,
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
-  // Schedule owns its own native mobile header (month + week strip), so hide the
-  // generic mobile top bar there and let the page content go full-bleed on mobile.
   const isScheduleRoute = /^\/(schedule|appointments)(\/|$)/.test(location.pathname);
+
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMobileProfileMenu, setShowMobileProfileMenu] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const mobileProfileMenuRef = useRef<HTMLDivElement>(null);
   const moreMenuRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside (desktop + mobile more popover)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (profileMenuRef.current && !profileMenuRef.current.contains(target)) {
         setShowProfileMenu(false);
       }
-      if (mobileProfileMenuRef.current && !mobileProfileMenuRef.current.contains(event.target as Node)) {
+      if (mobileProfileMenuRef.current && !mobileProfileMenuRef.current.contains(target)) {
         setShowMobileProfileMenu(false);
       }
-      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(target)) {
         if ((event.target as HTMLElement).closest('[data-more-menu-trigger]')) return;
         setIsMoreMenuOpen(false);
       }
@@ -60,67 +95,56 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, isAd
     if (showProfileMenu || showMobileProfileMenu || isMoreMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showProfileMenu, showMobileProfileMenu, isMoreMenuOpen]);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsMoreMenuOpen(false);
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsMoreMenuOpen(false);
+        setShowProfileMenu(false);
+        setShowMobileProfileMenu(false);
+      }
     };
-    if (isMoreMenuOpen) window.addEventListener('keydown', onKey);
+    window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [isMoreMenuOpen]);
+  }, []);
 
   useEffect(() => {
     setIsMoreMenuOpen(false);
+    setShowProfileMenu(false);
+    setShowMobileProfileMenu(false);
   }, [location.pathname]);
 
-  // Let pages that render their own header (e.g. Schedule) open the shared "More" nav.
   useEffect(() => {
     const open = () => setIsMoreMenuOpen(true);
     window.addEventListener('bookglow:open-more-menu', open);
     return () => window.removeEventListener('bookglow:open-more-menu', open);
   }, []);
 
-  const handleLogout = () => {
-    setShowProfileMenu(false);
-    onLogout?.();
-  };
-
   const getUserInitials = () => {
     if (user?.displayName) {
       return user.displayName
         .split(' ')
-        .map(n => n[0])
+        .map((name) => name[0])
         .join('')
         .toUpperCase()
         .slice(0, 2);
     }
-    if (user?.email) {
-      return user.email[0].toUpperCase();
-    }
+    if (user?.email) return user.email[0].toUpperCase();
     return role === 'admin' ? 'AD' : 'CA';
   };
 
-  const getUserDisplayName = () => {
-    return user?.displayName || user?.email || (role === 'admin' ? 'Administrator' : 'Cashier');
-  };
+  const getUserDisplayName = () => user?.displayName || user?.email || (role === 'admin' ? 'Administrator' : 'Cashier');
+  const roleTitle = role === 'admin' ? 'Administrator' : 'Cashier';
 
-  // Role-based title for header (from Firestore). When role not yet loaded, show Cashier so we never show admin by mistake.
-  const getRoleDisplayTitle = () => {
-    if (role === 'admin') return 'Spa Administrator';
-    return 'Cashier'; // cashier or role not yet loaded
-  };
-  const allNavItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: <Icons.Dashboard /> },
-    { id: 'pos', label: 'Point of Sale', icon: <Icons.POS /> },
+  const allNavItems: NavItem[] = [
+    { id: 'dashboard', label: 'Today', icon: <Icons.Dashboard /> },
     { id: 'schedule', label: 'Schedule', icon: <Icons.Calendar /> },
-    { id: 'member', label: 'Member', icon: <Icons.Clients /> },
-    { id: 'menu', label: 'Menu', icon: <Icons.Services /> },
-    { id: 'sales-reports', label: 'Sales Reports', icon: <Icons.Reports /> },
+    { id: 'pos', label: 'Point of Sale', shortLabel: 'POS', icon: <Icons.POS /> },
+    { id: 'member', label: 'Members', icon: <Icons.Clients /> },
+    { id: 'menu', label: 'Menu & Inventory', shortLabel: 'Menu', icon: <Icons.Services /> },
+    { id: 'sales-reports', label: 'Sales Reports', shortLabel: 'Reports', icon: <Icons.Reports /> },
     { id: 'transactions', label: 'Sales History', icon: <Icons.Finance /> },
     { id: 'finance', label: 'Expenses', icon: <Icons.Finance /> },
     { id: 'marketing', label: 'Marketing', icon: <Icons.Marketing /> },
@@ -129,395 +153,278 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, isAd
     { id: 'report', label: 'Report', icon: <Icons.Flag /> },
   ];
 
-  // Cashier: POS, Member, Menu, Sales Report only (no Dashboard, no Report — admin only)
-  const cashierTabIds = ['pos', 'member', 'menu', 'sales-reports'];
-  const navItems = role === 'admin'
-    ? allNavItems
-    : allNavItems.filter((item) => cashierTabIds.includes(item.id));
+  const cashierTabIds = new Set(['pos', 'member', 'menu', 'sales-reports']);
+  const navItems = role === 'admin' ? allNavItems : allNavItems.filter((item) => cashierTabIds.has(item.id));
 
-  const mobileBottomNavItems =
-    role === 'admin'
-      ? [
-          { id: 'dashboard', label: 'Today', icon: <Icons.Dashboard /> },
-          { id: 'schedule', label: 'Schedule', icon: <Icons.Calendar /> },
-          { id: 'pos', label: 'POS', icon: <Icons.POS /> },
-          { id: 'member', label: 'Members', icon: <Icons.Clients /> },
-        ]
-      : [
-          { id: 'pos', label: 'POS', icon: <Icons.POS /> },
-          { id: 'member', label: 'Members', icon: <Icons.Clients /> },
-          { id: 'menu', label: 'Menu', icon: <Icons.Services /> },
-          { id: 'sales-reports', label: 'Reports', icon: <Icons.Reports /> },
-        ];
+  const navGroups: NavGroup[] = role === 'admin'
+    ? [
+        { label: 'Workday', ids: ['dashboard', 'schedule', 'pos'] },
+        { label: 'Customers', ids: ['member', 'marketing'] },
+        { label: 'Business', ids: ['menu', 'sales-reports', 'transactions', 'finance', 'staff'] },
+        { label: 'Workspace', ids: ['settings', 'report'] },
+      ]
+    : [
+        { label: 'Workday', ids: ['pos'] },
+        { label: 'Customers', ids: ['member'] },
+        { label: 'Business', ids: ['menu', 'sales-reports'] },
+      ];
+
+  const groupedNavItems = navGroups
+    .map((group) => ({ ...group, items: group.ids.map((id) => navItems.find((item) => item.id === id)).filter(Boolean) as NavItem[] }))
+    .filter((group) => group.items.length > 0);
+
+  const mobileBottomNavItems = role === 'admin'
+    ? allNavItems.filter((item) => ['dashboard', 'schedule', 'pos', 'member'].includes(item.id))
+    : allNavItems.filter((item) => ['pos', 'member', 'menu', 'sales-reports'].includes(item.id));
 
   const mobilePrimaryIds = new Set(mobileBottomNavItems.map((item) => item.id));
-  const tabForBottomNav = location.pathname.startsWith('/member-details/')
-    ? 'member'
-    : activeTab;
+  const tabForBottomNav = location.pathname.startsWith('/member-details/') ? 'member' : activeTab;
   const moreTabActive = !mobilePrimaryIds.has(tabForBottomNav);
-
   const moreNavItems = navItems.filter((item) => !mobilePrimaryIds.has(item.id));
 
+  const currentPageTitle = location.pathname.startsWith('/member-details/')
+    ? 'Member details'
+    : pageTitles[activeTab] || activeTab.replaceAll('-', ' ');
+
+  const resolvedOutletName = outletName || shopName || outletId || 'Bookglow';
+  const todayLabel = useMemo(
+    () => new Date().toLocaleDateString('en-MY', { weekday: 'short', day: 'numeric', month: 'short' }),
+    []
+  );
+
+  const handleLogout = () => {
+    setShowProfileMenu(false);
+    setShowMobileProfileMenu(false);
+    onLogout?.();
+  };
+
   const mobileBottomNavItemClass = (isActive: boolean) =>
-    `flex flex-1 flex-col items-center justify-center gap-0.5 min-w-0 px-1 md:px-2 py-1.5 rounded-lg transition-colors ${
-      isActive ? 'text-teal-600 font-semibold' : 'text-slate-400 font-medium'
-    }`;
+    `bookglow-mobile-nav-item ${isActive ? 'bookglow-mobile-nav-item--active' : ''}`;
+
+  const ProfileMenu = ({ mobile = false }: { mobile?: boolean }) => (
+    <div className="bookglow-profile-menu" role="menu" aria-label="User menu">
+      <div className="bookglow-profile-menu__header">
+        <div className="bookglow-profile-menu__avatar">{getUserInitials()}</div>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-slate-900">{getUserDisplayName()}</p>
+          <p className="truncate text-xs text-slate-500">{roleTitle}</p>
+        </div>
+      </div>
+      {role === 'admin' && (
+        <button
+          type="button"
+          role="menuitem"
+          onClick={() => {
+            navigate('/settings');
+            setShowProfileMenu(false);
+            setShowMobileProfileMenu(false);
+          }}
+          className="bookglow-profile-menu__item"
+        >
+          <Icons.Settings />
+          Settings
+        </button>
+      )}
+      {onLogout && (
+        <button type="button" role="menuitem" onClick={handleLogout} className="bookglow-profile-menu__item bookglow-profile-menu__item--danger">
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          Sign out
+        </button>
+      )}
+      {mobile && <p className="px-4 pb-3 pt-1 text-[11px] text-slate-400">{user?.email}</p>}
+    </div>
+  );
 
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-900 overflow-hidden">
-      {/* Desktop Sidebar */}
-      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col hidden lg:flex">
-        <div className="p-6 border-b border-slate-100">
-          <h1 className="text-xl font-bold text-teal-600 flex items-center gap-2 overflow-hidden">
-            <span className="w-8 h-8 bg-teal-600 rounded-lg flex-shrink-0 flex items-center justify-center text-white text-lg">
-              {shopName.charAt(0)}
-            </span>
-            <span className="truncate">{shopName}</span>
-          </h1>
+    <div className="bookglow-app-shell">
+      <aside className="bookglow-sidebar hidden lg:flex" aria-label="Bookglow navigation">
+        <div className="bookglow-sidebar__brand">
+          <div className="bookglow-brand-mark" aria-hidden>✦</div>
+          <div className="min-w-0">
+            <p className="bookglow-wordmark">Bookglow</p>
+            <p className="truncate text-xs text-slate-500">{resolvedOutletName}</p>
+          </div>
         </div>
-        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.id}
-              to={`/${item.id}`}
-              className={({ isActive }) =>
-                `w-full flex items-center gap-3 px-4 py-4 rounded-xl transition-all min-h-[48px] ${
-                  isActive ? 'bg-teal-50 text-teal-700 font-semibold shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
-                }`
-              }
-            >
-              {item.icon}
-              {item.label}
-            </NavLink>
+
+        <div className="bookglow-sidebar__context">
+          <span className="bookglow-status-dot" aria-hidden />
+          <div className="min-w-0">
+            <p className="truncate text-xs font-semibold text-slate-700">{roleTitle} workspace</p>
+            <p className="truncate text-[11px] text-slate-400">{todayLabel}</p>
+          </div>
+        </div>
+
+        <nav className="bookglow-sidebar__nav">
+          {groupedNavItems.map((group) => (
+            <div key={group.label} className="bookglow-nav-group">
+              <p className="bookglow-nav-group__label">{group.label}</p>
+              <div className="space-y-1">
+                {group.items.map((item) => (
+                  <NavLink
+                    key={item.id}
+                    to={`/${item.id}`}
+                    className={({ isActive: routeActive }) => `bookglow-nav-link ${routeActive ? 'bookglow-nav-link--active' : ''}`}
+                  >
+                    <span className="bookglow-nav-link__icon">{item.icon}</span>
+                    <span className="truncate">{item.label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
-        
-        <div className="p-4 border-t border-slate-100 text-[10px] text-slate-400">
-          © 2024 {shopName} v1.7 • {role === 'admin' ? 'Admin View' : 'Cashier View'}
+
+        <div className="bookglow-sidebar__footer" ref={profileMenuRef}>
+          <button
+            type="button"
+            onClick={() => setShowProfileMenu((open) => !open)}
+            className="bookglow-sidebar-profile"
+            aria-expanded={showProfileMenu}
+          >
+            <span className="bookglow-sidebar-profile__avatar">{getUserInitials()}</span>
+            <span className="min-w-0 flex-1 text-left">
+              <span className="block truncate text-sm font-semibold text-slate-800">{getUserDisplayName()}</span>
+              <span className="block truncate text-[11px] text-slate-400">{roleTitle}</span>
+            </span>
+            <svg className={`h-4 w-4 text-slate-400 transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {showProfileMenu && <ProfileMenu />}
         </div>
       </aside>
 
-      {/* Mobile Top Nav — improved: shop name + contextual subtitle */}
-      <div className={`${isScheduleRoute ? 'hidden' : 'flex'} lg:hidden fixed top-0 w-full bg-white border-b border-slate-200 z-50 items-center justify-between px-3 py-1.5 h-14`}>
-         {/* Hamburger — opens More menu */}
-         {moreNavItems.length > 0 ? (
-           <button
-             type="button"
-             data-more-menu-trigger
-             onClick={() => setIsMoreMenuOpen((open) => !open)}
-             className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg hover:bg-slate-100 active:bg-slate-200 transition-colors"
-             aria-label="More pages"
-             aria-expanded={isMoreMenuOpen}
-           >
-             <svg className="w-5 h-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-             </svg>
-           </button>
-         ) : (
-           <div className="min-h-[44px] min-w-[44px]" aria-hidden />
-         )}
-
-         {/* Shop name + subtitle */}
-         <div className="flex-1 flex flex-col items-center justify-center px-2 min-w-0">
-           <h1 className="text-sm font-bold text-teal-600 truncate max-w-[200px] leading-tight">{shopName}</h1>
-           <p className="text-[11px] text-slate-400 font-medium leading-tight">
-             {(() => {
-               const now = new Date();
-               return `Today, ${now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`;
-             })()}
-           </p>
-         </div>
-           
-         {/* Mobile Profile Dropdown */}
-         <div className="relative" ref={mobileProfileMenuRef}>
-           <button
-             onClick={() => setShowMobileProfileMenu(!showMobileProfileMenu)}
-             className="rounded-lg hover:bg-slate-100 active:bg-slate-200 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
-             aria-label="User menu"
-           >
-             <div className={`w-9 h-9 rounded-full border-2 flex items-center justify-center font-bold text-xs ${
-               isAdmin 
-                 ? 'bg-teal-100 border-teal-200 text-teal-700' 
-                 : 'bg-slate-100 border-slate-200 text-slate-600'
-             }`}>
-               {getUserInitials()}
-             </div>
-           </button>
-
-           {/* Mobile Dropdown Menu */}
-           {showMobileProfileMenu && (
-             <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50 animate-fadeIn">
-               <div className="px-4 py-3 border-b border-slate-100">
-                 <p className="text-sm font-semibold text-slate-900">{getUserDisplayName()}</p>
-                 {user?.email && (
-                   <p className="text-xs text-slate-500 mt-1 truncate">{user.email}</p>
-                 )}
-               </div>
-               <div className="py-1">
-                 {role === 'admin' && (
-                   <button
-                     onClick={() => {
-                       navigate('/settings');
-                       setShowMobileProfileMenu(false);
-                     }}
-                     className="w-full text-left px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 active:bg-slate-100 flex items-center gap-3 min-h-[48px] transition-colors"
-                   >
-                     <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                     </svg>
-                     Settings
-                   </button>
-                 )}
-                 {onLogout && (
-                   <button
-                     onClick={() => {
-                       setShowMobileProfileMenu(false);
-                       handleLogout();
-                     }}
-                     className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 active:bg-red-100 flex items-center gap-3 min-h-[48px] transition-colors"
-                   >
-                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                     </svg>
-                     Sign Out
-                   </button>
-                 )}
-               </div>
-             </div>
-           )}
-         </div>
-      </div>
-
-      {/* Mobile bottom navigation — primary destinations + More (overflow → popover, not drawer) */}
-      <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom,0px)] shadow-[0_-4px_12px_-2px_rgba(15,23,42,0.06)]"
-        aria-label="Primary"
-      >
-        <div className="flex h-[72px] min-h-[64px] max-h-[80px] items-stretch">
-          {mobileBottomNavItems.map((item) => (
-            <NavLink
-              key={item.id}
-              to={`/${item.id}`}
-              onClick={() => setIsMoreMenuOpen(false)}
-              className={({ isActive }) =>
-                mobileBottomNavItemClass(
-                  isActive || (item.id === 'member' && location.pathname.startsWith('/member-details/'))
-                )
-              }
-            >
-              <span className="[&_svg]:stroke-[2.25] flex h-6 w-6 shrink-0 items-center justify-center">
-                {item.icon}
-              </span>
-              <span className="max-w-full truncate text-center text-[10px] leading-tight tracking-tight md:hidden">
-                {item.label}
-              </span>
-            </NavLink>
-          ))}
-          {moreNavItems.length > 0 && (
+      <div className="bookglow-workspace">
+        <header className={`${isScheduleRoute ? 'hidden' : 'flex'} bookglow-mobile-header lg:hidden`}>
+          {moreNavItems.length > 0 ? (
             <button
               type="button"
               data-more-menu-trigger
               onClick={() => setIsMoreMenuOpen((open) => !open)}
-              className={mobileBottomNavItemClass(moreTabActive)}
-              aria-label="More navigation"
+              className="bookglow-icon-button"
+              aria-label="Open navigation"
               aria-expanded={isMoreMenuOpen}
-              aria-current={moreTabActive ? 'page' : undefined}
             >
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center">
-                <MoreHorizontalIcon />
-              </span>
-              <span className="max-w-full truncate text-center text-[10px] leading-tight tracking-tight md:hidden">More</span>
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
             </button>
+          ) : (
+            <div className="h-11 w-11" aria-hidden />
           )}
-        </div>
-      </nav>
 
-      {/* Mobile “More” — floating card above bottom nav (overflow routes only) */}
-      {isMoreMenuOpen && moreNavItems.length > 0 && (
-        <>
-          <button
-            type="button"
-            className="fixed inset-0 z-[55] cursor-default bg-slate-900/30 lg:hidden"
-            aria-label="Close menu"
-            onClick={() => setIsMoreMenuOpen(false)}
-          />
-          <div
-            ref={moreMenuRef}
-            className="fixed bottom-[calc(72px+env(safe-area-inset-bottom,0px)+10px)] right-3 left-auto z-[60] w-[min(100vw-1.5rem,18rem)] overflow-hidden rounded-2xl border border-slate-200 bg-white py-2 shadow-xl lg:hidden"
-            role="dialog"
-            aria-label="More destinations"
-          >
-            <div className="max-h-[min(70vh,28rem)] overflow-y-auto py-1">
-              {moreNavItems.map((item, idx) => {
-                const showDividerBefore = item.id === 'settings' && idx > 0;
-                return (
-                  <React.Fragment key={item.id}>
-                    {showDividerBefore && <div className="mx-2 my-1 border-t border-slate-100" role="separator" />}
-                    <NavLink
-                      to={`/${item.id}`}
-                      onClick={() => setIsMoreMenuOpen(false)}
-                      className={({ isActive }) =>
-                        `flex min-h-[48px] items-center gap-3 px-4 py-3 text-base font-normal transition-colors ${
-                          isActive
-                            ? 'bg-slate-50 font-semibold text-slate-900'
-                            : 'text-slate-900 hover:bg-slate-50'
-                        }`
-                      }
-                    >
-                      <span className="flex h-5 w-5 shrink-0 items-center justify-center text-slate-500 [&_svg]:h-5 [&_svg]:w-5">
-                        {item.icon}
-                      </span>
-                      <span className="truncate">{item.label}</span>
-                    </NavLink>
-                  </React.Fragment>
-                );
-              })}
-            </div>
+          <div className="min-w-0 flex-1 text-center">
+            <p className="truncate text-[11px] font-medium text-slate-400">{resolvedOutletName}</p>
+            <h1 className="truncate text-sm font-semibold text-slate-900">{currentPageTitle}</h1>
           </div>
-        </>
-      )}
 
-      {/* Main Content — bottom padding on small screens so content clears the fixed bottom nav + safe area */}
-      <main className={`flex-1 flex flex-col overflow-y-auto ${isScheduleRoute ? 'pt-0' : 'pt-14'} pb-[calc(72px+env(safe-area-inset-bottom,0px))] lg:pb-0 lg:pt-0`}>
-        <header className="bg-white border-b border-slate-200 px-6 py-4 lg:px-8 sticky top-0 z-10 hidden lg:block">
-          <div className="flex justify-between items-center flex-wrap gap-2">
-            <div className="flex items-center gap-3">
-              <h2 className="text-app-section font-bold capitalize tracking-tight text-slate-900">
-                {activeTab === 'member' ? 'Member' : activeTab === 'appointments' ? 'Appointment' : activeTab.replace('-', ' ')}
-              </h2>
+          <div className="relative" ref={mobileProfileMenuRef}>
+            <button
+              type="button"
+              onClick={() => setShowMobileProfileMenu((open) => !open)}
+              className="bookglow-mobile-avatar"
+              aria-label="Open user menu"
+              aria-expanded={showMobileProfileMenu}
+            >
+              {getUserInitials()}
+            </button>
+            {showMobileProfileMenu && <ProfileMenu mobile />}
+          </div>
+        </header>
+
+        <header className="bookglow-desktop-utility hidden lg:flex">
+          <div className="min-w-0">
+            <p className="bookglow-eyebrow">{resolvedOutletName}</p>
+            <div className="flex items-center gap-2">
+              <h2 className="truncate text-lg font-semibold tracking-tight text-slate-900">{currentPageTitle}</h2>
               {outletId && (
-                <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200" title="Data is loaded and saved for this outlet">
-                  Outlet: {outletName || outletId}
-                  {outletName && outletName !== outletId && (
-                    <span className="text-slate-400 ml-1">({outletId})</span>
-                  )}
+                <span className="bookglow-outlet-pill" title={`Data is loaded and saved for ${outletId}`}>
+                  Live outlet
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-4">
-               {/* Profile Dropdown - Entire Section Clickable */}
-               <div className="relative" ref={profileMenuRef} style={{ zIndex: 1000 }}>
-                 <button
-                   type="button"
-                   onClick={(e) => {
-                     e.preventDefault();
-                     e.stopPropagation();
-                     console.log('Profile button clicked'); // Debug log
-                     setShowProfileMenu(!showProfileMenu);
-                   }}
-                   onMouseDown={(e) => e.stopPropagation()}
-                   className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-100 active:bg-slate-200 transition-all group cursor-pointer"
-                   aria-label="User menu"
-                   aria-expanded={showProfileMenu}
-                   title="Click to view profile menu and sign out"
-                   style={{ 
-                     position: 'relative',
-                     zIndex: 1000,
-                     pointerEvents: 'auto'
-                   }}
-                 >
-                   {/* User Info Text - role from Firestore (admin/cashier) */}
-                   <div className="flex flex-col items-end text-right">
-                     <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900">
-                       {getRoleDisplayTitle()}
-                     </span>
-                     <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest group-hover:text-slate-500">
-                       {role === 'admin' ? 'Full Permissions' : 'Restricted Access'}
-                     </span>
-                     {user?.email && (
-                       <span className="text-xs text-slate-500 mt-0.5 hidden lg:block">{user.email}</span>
-                     )}
-                   </div>
-                   
-                   {/* Avatar */}
-                   <div className={`w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold text-sm transition-all group-hover:border-teal-400 group-hover:shadow-md ${
-                     isAdmin 
-                       ? 'bg-teal-100 border-teal-200 text-teal-700' 
-                       : 'bg-slate-100 border-slate-200 text-slate-600'
-                   }`}>
-                     {getUserInitials()}
-                   </div>
-                   
-                   {/* Dropdown Arrow */}
-                   <svg 
-                     className={`w-4 h-4 text-slate-400 transition-transform group-hover:text-slate-600 ${showProfileMenu ? 'rotate-180' : ''}`}
-                     fill="none" 
-                     stroke="currentColor" 
-                     viewBox="0 0 24 24"
-                   >
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                   </svg>
-                 </button>
-
-                 {/* Dropdown Menu */}
-                 {showProfileMenu && (
-                   <div 
-                     className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-slate-200 py-2 animate-fadeIn"
-                     onClick={(e) => e.stopPropagation()}
-                     style={{ 
-                       zIndex: 9999,
-                       position: 'absolute',
-                       top: '100%',
-                       right: 0
-                     }}
-                   >
-                     {/* User Info */}
-                     <div className="px-4 py-3 border-b border-slate-100">
-                       <p className="text-sm font-semibold text-slate-900">{getRoleDisplayTitle()}</p>
-                       {user?.email && (
-                         <p className="text-xs text-slate-500 mt-1 truncate">{user.email}</p>
-                       )}
-                       <div className="mt-2">
-                         <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                           role === 'admin' 
-                             ? 'bg-teal-100 text-teal-700' 
-                             : 'bg-slate-100 text-slate-600'
-                         }`}>
-                           {role === 'admin' ? 'Administrator' : 'Cashier'}
-                         </span>
-                       </div>
-                     </div>
-
-                     {/* Menu Items */}
-                     <div className="py-1">
-                       {role === 'admin' && (
-                         <button
-                           onClick={() => {
-                             navigate('/settings');
-                             setShowProfileMenu(false);
-                           }}
-                           className="w-full text-left px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 active:bg-slate-100 flex items-center gap-3 transition-colors min-h-[48px]"
-                         >
-                           <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                           </svg>
-                           Settings
-                         </button>
-                       )}
-                       {onLogout && (
-                         <button
-                           onClick={handleLogout}
-                           className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 active:bg-red-100 flex items-center gap-3 transition-colors min-h-[48px]"
-                         >
-                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                           </svg>
-                           Sign Out
-                         </button>
-                       )}
-                     </div>
-                   </div>
-                 )}
-               </div>
+          </div>
+          <div className="flex items-center gap-3 text-right">
+            <div>
+              <p className="text-sm font-semibold text-slate-700">{roleTitle}</p>
+              <p className="text-[11px] text-slate-400">{user?.email || 'Secure session'}</p>
             </div>
+            <span className={`bookglow-utility-avatar ${isAdmin ? 'bookglow-utility-avatar--admin' : ''}`}>{getUserInitials()}</span>
           </div>
         </header>
-        <div className={isScheduleRoute ? 'px-0 py-0 lg:px-8 lg:py-8' : 'px-5 py-4 sm:px-5 lg:px-8 lg:py-8'}>
-          {children}
-        </div>
-      </main>
+
+        <main className={`bookglow-main-scroll ${isScheduleRoute ? 'bookglow-main-scroll--schedule' : ''}`}>
+          <div className={`bookglow-content-frame ${isScheduleRoute ? 'bookglow-content-frame--schedule' : ''}`}>
+            <div className="bookglow-page">{children}</div>
+          </div>
+        </main>
+
+        <nav className="bookglow-mobile-nav lg:hidden" aria-label="Primary navigation">
+          <div className="bookglow-mobile-nav__inner">
+            {mobileBottomNavItems.map((item) => (
+              <NavLink
+                key={item.id}
+                to={`/${item.id}`}
+                onClick={() => setIsMoreMenuOpen(false)}
+                className={({ isActive: routeActive }) =>
+                  mobileBottomNavItemClass(routeActive || (item.id === 'member' && location.pathname.startsWith('/member-details/')))
+                }
+              >
+                <span className="bookglow-mobile-nav-item__icon">{item.icon}</span>
+                <span className="bookglow-mobile-nav-item__label">{item.shortLabel || item.label}</span>
+              </NavLink>
+            ))}
+            {moreNavItems.length > 0 && (
+              <button
+                type="button"
+                data-more-menu-trigger
+                onClick={() => setIsMoreMenuOpen((open) => !open)}
+                className={mobileBottomNavItemClass(moreTabActive)}
+                aria-label="More pages"
+                aria-expanded={isMoreMenuOpen}
+              >
+                <span className="bookglow-mobile-nav-item__icon"><MoreHorizontalIcon /></span>
+                <span className="bookglow-mobile-nav-item__label">More</span>
+              </button>
+            )}
+          </div>
+        </nav>
+
+        {isMoreMenuOpen && moreNavItems.length > 0 && (
+          <>
+            <button type="button" className="bookglow-more-backdrop lg:hidden" aria-label="Close navigation" onClick={() => setIsMoreMenuOpen(false)} />
+            <div ref={moreMenuRef} className="bookglow-more-sheet lg:hidden" role="dialog" aria-modal="true" aria-label="More pages">
+              <div className="bookglow-more-sheet__handle" aria-hidden />
+              <div className="bookglow-more-sheet__header">
+                <div>
+                  <p className="bookglow-eyebrow">Bookglow workspace</p>
+                  <h2 className="text-lg font-semibold text-slate-900">More pages</h2>
+                </div>
+                <button type="button" onClick={() => setIsMoreMenuOpen(false)} className="bookglow-icon-button" aria-label="Close navigation">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="bookglow-more-sheet__grid">
+                {moreNavItems.map((item) => (
+                  <NavLink
+                    key={item.id}
+                    to={`/${item.id}`}
+                    onClick={() => setIsMoreMenuOpen(false)}
+                    className={({ isActive: routeActive }) => `bookglow-more-link ${routeActive ? 'bookglow-more-link--active' : ''}`}
+                  >
+                    <span className="bookglow-more-link__icon">{item.icon}</span>
+                    <span>{item.label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 };

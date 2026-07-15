@@ -9,6 +9,15 @@ import { outletService, apiIntegrationService } from '../services/databaseServic
 import { generateApiKey, sha256Hex } from '../utils/apiKeyHash';
 import { shopNameToBookingSlug, isValidBookingSlug } from '../utils/bookingSlug';
 import { db } from '../firebase';
+import { Button } from '../components/ui/Button';
+import {
+  OperatingHoursRow,
+  SettingsNavigation,
+  SettingsPageHeader,
+  SettingsSaveBar,
+  SettingsSection,
+  type SettingsSectionId,
+} from '../components/settings';
 
 const BOOKING_BASE_URL = 'https://bookglow-83fb3.web.app/book';
 // Cloud Function endpoint used by MyChatBot to verify API key for this outlet
@@ -26,100 +35,11 @@ interface SettingsProps {
 }
 
 const LoadingSpinner = () => (
-  <div className="min-h-screen flex items-center justify-center bg-slate-50">
+  <div className="min-h-screen flex items-center justify-center bg-[var(--bg-canvas)]">
     <div className="text-center">
-      <div className="inline-block w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mb-4" />
-      <p className="text-slate-600">Loading settings...</p>
+      <div className="inline-block w-12 h-12 border-4 border-[var(--brand)] border-t-transparent rounded-full animate-spin mb-4" />
+      <p className="text-[var(--text-secondary)]">Loading settings...</p>
     </div>
-  </div>
-);
-
-/**
- * Collapsible settings section. On mobile (<lg) it acts as a native-style
- * accordion row (tap header to expand); on desktop (lg+) content is always
- * shown so the existing desktop layout is preserved. Content/forms are passed
- * as children untouched — no save logic changes.
- */
-const SettingsSection: React.FC<{
-  icon: React.ReactNode;
-  iconWrap: string;
-  title: string;
-  description: string;
-  defaultOpen?: boolean;
-  className?: string;
-  children: React.ReactNode;
-}> = ({ icon, iconWrap, title, description, defaultOpen = false, className = '', children }) => {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <div className={`bg-white rounded-2xl border border-slate-200 shadow-sm ${className}`}>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        className="w-full flex items-center gap-3 sm:gap-4 text-left p-4 sm:p-6 lg:p-8 lg:pb-0 lg:cursor-default"
-      >
-        <div className={`p-2 sm:p-3 rounded-xl flex-shrink-0 [&_svg]:w-[18px] [&_svg]:h-[18px] sm:[&_svg]:w-5 sm:[&_svg]:h-5 ${iconWrap}`}>{icon}</div>
-        <div className="min-w-0 flex-1">
-          <h3 className="text-base sm:text-app-section font-bold text-slate-900 leading-tight">{title}</h3>
-          <p className="text-xs text-slate-400 font-medium truncate lg:whitespace-normal lg:overflow-visible">{description}</p>
-        </div>
-        <svg
-          className={`lg:hidden w-5 h-5 text-slate-400 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
-          fill="none" stroke="currentColor" viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-      <div className={`${open ? 'block' : 'hidden'} lg:block px-4 pb-4 sm:px-6 sm:pb-6 lg:px-8 lg:pb-8 lg:pt-6`}>
-        {children}
-      </div>
-    </div>
-  );
-};
-
-// Compact single-row operating-hours control (day · open–close · toggle). ~48px tall.
-const OperatingHourRow: React.FC<{
-  day: string;
-  openTime: string;
-  closeTime: string;
-  isOpen: boolean;
-  onChangeOpenTime: (v: string) => void;
-  onChangeCloseTime: (v: string) => void;
-  onToggleOpen: (v: boolean) => void;
-}> = ({ day, openTime, closeTime, isOpen, onChangeOpenTime, onChangeCloseTime, onToggleOpen }) => (
-  <div className="flex items-center gap-2 sm:gap-3 py-1">
-    <span className="w-[74px] sm:w-24 flex-shrink-0 text-[12.5px] sm:text-sm font-medium text-slate-700 capitalize">{day}</span>
-    {isOpen ? (
-      <div className="flex items-center gap-1.5 flex-1 min-w-0">
-        <input
-          type="time"
-          value={openTime}
-          onChange={(e) => onChangeOpenTime(e.target.value)}
-          className="flex-1 min-w-0 h-9 px-2 bg-slate-50 border border-slate-200 rounded-lg text-[12.5px] sm:text-sm outline-none focus:ring-2 focus:ring-teal-500"
-          aria-label={`${day} opening time`}
-        />
-        <span className="text-slate-400 text-xs flex-shrink-0">–</span>
-        <input
-          type="time"
-          value={closeTime}
-          onChange={(e) => onChangeCloseTime(e.target.value)}
-          className="flex-1 min-w-0 h-9 px-2 bg-slate-50 border border-slate-200 rounded-lg text-[12.5px] sm:text-sm outline-none focus:ring-2 focus:ring-teal-500"
-          aria-label={`${day} closing time`}
-        />
-      </div>
-    ) : (
-      <span className="flex-1 text-[13px] text-slate-400 italic">Closed</span>
-    )}
-    <button
-      type="button"
-      role="switch"
-      aria-checked={isOpen}
-      aria-label={`Toggle ${day} open`}
-      onClick={() => onToggleOpen(!isOpen)}
-      className={`relative flex-shrink-0 w-10 h-6 rounded-full transition-colors ${isOpen ? 'bg-teal-600' : 'bg-slate-300'}`}
-    >
-      <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${isOpen ? 'left-5' : 'left-1'}`} />
-    </button>
   </div>
 );
 
@@ -152,6 +72,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
   const [apiError, setApiError] = useState<string | null>(null);
   const [apiRevealedKey, setApiRevealedKey] = useState<string | null>(null);
   const [copyField, setCopyField] = useState<'outlet' | 'key' | 'webhook' | null>(null);
+  const [activeSection, setActiveSection] = useState<SettingsSectionId>('business-profile');
 
   // Load outlet data from Firestore using outletId
   useEffect(() => {
@@ -403,40 +324,74 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
     }
   };
 
-  return (
-    <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 lg:space-y-8 animate-fadeIn pb-[calc(6rem+env(safe-area-inset-bottom,0px))] sm:pb-20">
-      <div className="flex flex-wrap justify-between items-end gap-3 sm:gap-4 -mt-1 lg:mt-0">
-        <div>
-          <h2 className="text-xl sm:text-app-page-lg font-bold tracking-tight text-slate-900">Settings</h2>
-          <p className="text-xs sm:text-sm font-normal text-slate-500 hidden sm:block">Manage your outlet and app preferences.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            to="/settings/integrations"
-            className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl border border-sky-200 bg-sky-50 text-sky-700 font-bold text-xs sm:text-sm hover:bg-sky-100 transition-colors"
-          >
-            <Icons.Calendar />
-            <span className="hidden sm:inline">External Integrations (Setmore)</span>
-            <span className="sm:hidden">Setmore</span>
-          </Link>
-          <button
-            type="button"
-            onClick={handleOpenApiModal}
-            className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl border border-teal-200 bg-teal-50 text-teal-700 font-bold text-xs sm:text-sm hover:bg-teal-100 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-            <span className="hidden sm:inline">API Integration (Chatbot)</span>
-            <span className="sm:hidden">API</span>
-          </button>
-        </div>
-      </div>
+  const scrollToSection = (id: SettingsSectionId) => {
+    setActiveSection(id);
+    const el = document.getElementById(`settings-${id}`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
-      {/* Share Booking Link (Owner) */}
+  const bookingSaveStatus =
+    bookingInfoStatus === 'success'
+      ? 'success'
+      : bookingInfoStatus === 'error'
+        ? 'error'
+        : bookingInfoStatus === 'saving'
+          ? 'saving'
+          : 'idle';
+
+  return (
+    <div className="animate-fadeIn pb-[calc(6rem+var(--safe-bottom))] sm:pb-20">
+      <SettingsPageHeader
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Link
+              to="/settings/integrations"
+              className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-ui-sm border border-sky-200 bg-sky-50 text-sky-700 font-bold text-xs sm:text-sm hover:bg-sky-100 transition-colors"
+            >
+              <Icons.Calendar />
+              <span className="hidden sm:inline">External Integrations</span>
+              <span className="sm:hidden">Setmore</span>
+            </Link>
+            <Button variant="secondary" size="sm" onClick={handleOpenApiModal}>
+              API Integration
+            </Button>
+          </div>
+        }
+      />
+
+      <div className="mt-4 lg:mt-6 flex gap-6 items-start max-w-6xl mx-auto">
+        <SettingsNavigation activeId={activeSection} onSelect={scrollToSection} />
+
+        <div className="min-w-0 flex-1 max-w-3xl space-y-4 sm:space-y-5">
+      {/* 1. Business profile */}
       <SettingsSection
+        id="settings-business-profile"
+        defaultOpen
+        iconWrap="bg-teal-50 text-teal-600"
+        title="Business profile"
+        description="Customize your brand and outlet details."
+        icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>}
+      >
+        <div className="max-w-md">
+          <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Shop Name</label>
+          <input 
+            type="text" 
+            placeholder="e.g. ZenFlow Spa"
+            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-bold"
+            value={settings.shopName}
+            onChange={handleShopNameChange}
+          />
+          <p className="text-[10px] text-slate-400 mt-2 italic">This name will appear in the sidebar, invoices, and browser title.</p>
+        </div>
+      </SettingsSection>
+
+      {/* 2. Booking page */}
+      <SettingsSection
+        id="settings-booking-page"
         defaultOpen
         iconWrap="bg-emerald-50 text-emerald-600"
-        title="Share Booking Link"
-        description="Your unique public booking URL. Share it or print the QR code for your spa counter."
+        title="Booking page"
+        description="Public booking link, path, address and phone shown to customers."
         icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>}
       >
         {bookingUrl ? (
@@ -455,7 +410,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                   className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 outline-none focus:ring-2 focus:ring-teal-500"
                 />
                 <p className="text-[10px] text-slate-400 mt-1">
-                  Last segment of your public link (e.g. baliWellness). Leave empty to use your outlet id. Save with &quot;Booking Page Info&quot; below.
+                  Last segment of your public link (e.g. baliWellness). Leave empty to use your outlet id. Save with Save Changes under Operating hours.
                 </p>
                 {bookingSlugError && (
                   <p className="text-xs text-red-600 mt-1">{bookingSlugError}</p>
@@ -497,264 +452,104 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         ) : (
           <p className="text-slate-500 text-sm">Loading your outlet link…</p>
         )}
-      </SettingsSection>
 
-      {/* Booking Page Info: Address, Phone, Operating Hours */}
-      {effectiveOutletId && (
-        <SettingsSection
-          iconWrap="bg-sky-50 text-sky-600"
-          title="Booking Page Info"
-          description="Address, phone and hours shown on your public booking page."
-          icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
-        >
-          {(contextLoading || outletLoading) ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
-              <span className="ml-3 text-slate-600">Loading outlet information...</span>
-            </div>
-          ) : (
-            <>
-            <div className="space-y-4 sm:space-y-6">
-            <div>
-              <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Address (one line)</label>
-              <textarea
-                rows={2}
-                placeholder="e.g. 43-G, Jln Damai Perdana 6/1F, Bandar Damai Perdana, 56000 Cheras, Kuala Lumpur"
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm"
-                value={addressDisplay}
-                onChange={(e) => setAddressDisplay(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Phone Number</label>
-              <input
-                type="text"
-                placeholder="e.g. +60 169929123"
-                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-3">Operating Hours (for Open/Closed status)</label>
-              <div className="divide-y divide-slate-100">
-                {DAYS.map((day) => {
-                  const dayKey = day;
-                  const hours = businessHours[dayKey] || { open: '09:00', close: '17:00', isOpen: true };
-                  return (
-                    <OperatingHourRow
-                      key={day}
-                      day={day}
-                      openTime={hours.open || '09:00'}
-                      closeTime={hours.close || '17:00'}
-                      isOpen={hours.isOpen !== false}
-                      onChangeOpenTime={(value) =>
-                        setBusinessHours((prev) => ({ ...prev, [dayKey]: { ...(prev[dayKey] || hours), open: value } }))
-                      }
-                      onChangeCloseTime={(value) =>
-                        setBusinessHours((prev) => ({ ...prev, [dayKey]: { ...(prev[dayKey] || hours), close: value } }))
-                      }
-                      onToggleOpen={(checked) =>
-                        setBusinessHours((prev) => ({ ...prev, [dayKey]: { ...(prev[dayKey] || hours), isOpen: checked } }))
-                      }
-                    />
-                  );
-                })}
+        {effectiveOutletId && (
+          <div className="mt-6 pt-6 border-t border-slate-100 space-y-4">
+            {(contextLoading || outletLoading) ? (
+              <div className="flex items-center justify-center py-6">
+                <div className="w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
+                <span className="ml-3 text-slate-600">Loading outlet information...</span>
               </div>
-              <p className="text-[10px] text-slate-400 mt-2">Used to show &quot;Open / Closes at X&quot; on the booking page.</p>
-            </div>
-            <div className="pt-4 flex items-center justify-between">
-              <div className="text-xs">
-                {!effectiveOutletId && (
-                  <span className="text-red-600 font-semibold">⚠ Outlet ID missing - button disabled</span>
-                )}
-                {bookingInfoStatus === 'success' && (
-                  <span className="text-emerald-600 font-semibold">Booking page info saved.</span>
-                )}
-                {bookingInfoStatus === 'error' && (
-                  <span className="text-red-600">Failed to save booking info. Please try again.</span>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (bookingInfoStatus === 'saving' || !effectiveOutletId) return;
-                  handleSaveBookingInfo();
-                }}
-                disabled={bookingInfoStatus === 'saving' || !effectiveOutletId}
-                className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all ${
-                  bookingInfoStatus === 'saving'
-                    ? 'bg-teal-400 text-white cursor-wait opacity-50'
-                    : bookingInfoStatus === 'success'
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-teal-600 text-white hover:bg-teal-700 active:scale-95'
-                }`}
-              >
-                {bookingInfoStatus === 'saving' ? (
-                  <span className="flex items-center gap-2">
-                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Saving…
-                  </span>
-                ) : bookingInfoStatus === 'success' ? (
-                  '✓ Saved'
-                ) : (
-                  'Save Booking Info'
-                )}
-              </button>
-            </div>
-            </div>
-            </>
-          )}
-        </SettingsSection>
-      )}
-
-
-      {/* Business Profile Section */}
-      <SettingsSection
-        iconWrap="bg-teal-50 text-teal-600"
-        title="Business Profile"
-        description="Customize your brand and outlet details."
-        icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>}
-      >
-        <div className="max-w-md">
-          <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Shop Name</label>
-          <input 
-            type="text" 
-            placeholder="e.g. ZenFlow Spa"
-            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-bold"
-            value={settings.shopName}
-            onChange={handleShopNameChange}
-          />
-          <p className="text-[10px] text-slate-400 mt-2 italic">This name will appear in the sidebar, invoices, and browser title.</p>
-        </div>
-      </SettingsSection>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-        {/* Global Toggle */}
-        <SettingsSection
-          className="h-fit"
-          iconWrap="bg-teal-50 text-teal-600"
-          title="Outlet Environment"
-          description={'Toggle "restricted mode" for shared terminals.'}
-          icon={<Icons.Dashboard />}
-        >
-          <div className="space-y-6">
-          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
-            <div className="flex flex-col">
-              <span className="text-sm font-bold text-slate-700">Enable Outlet Mode</span>
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Active restrictions for non-admins</span>
-            </div>
-            <button 
-              onClick={toggleOutletMode}
-              className={`w-12 h-6 rounded-full transition-colors relative ${settings.isOutletModeEnabled ? 'bg-teal-600' : 'bg-slate-300'}`}
-            >
-              <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settings.isOutletModeEnabled ? 'left-7' : 'left-1'}`}></div>
-            </button>
-          </div>
-
-          <div className={`p-4 rounded-xl border transition-all ${settings.isAdminAuthenticated ? 'bg-teal-50 border-teal-200' : 'bg-rose-50 border-rose-200'}`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${settings.isAdminAuthenticated ? 'bg-teal-600 text-white' : 'bg-rose-600 text-white'}`}>
-                  {settings.isAdminAuthenticated ? <Icons.Dashboard /> : <Icons.Lock />}
+            ) : (
+              <>
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Address (one line)</label>
+                  <textarea
+                    rows={2}
+                    placeholder="e.g. 43-G, Jln Damai Perdana 6/1F, Bandar Damai Perdana, 56000 Cheras, Kuala Lumpur"
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+                    value={addressDisplay}
+                    onChange={(e) => setAddressDisplay(e.target.value)}
+                  />
                 </div>
                 <div>
-                  <span className="block text-sm font-black uppercase text-slate-800">
-                    {settings.isAdminAuthenticated ? 'Admin Authenticated' : 'Restricted Access'}
-                  </span>
-                  <span className="text-[10px] text-slate-500 font-bold">Currently in {settings.isAdminAuthenticated ? 'Manager' : 'Staff'} View</span>
+                  <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Phone Number</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. +60 169929123"
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                  />
                 </div>
-              </div>
-              <button 
-                onClick={toggleAdminAuth}
-                className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest shadow-sm transition-all ${
-                  settings.isAdminAuthenticated 
-                    ? 'bg-white text-rose-600 hover:bg-rose-50' 
-                    : 'bg-teal-600 text-white hover:bg-teal-700'
-                }`}
-              >
-                {settings.isAdminAuthenticated ? 'Logout Admin' : 'Simulate Admin'}
-              </button>
-            </div>
+              </>
+            )}
           </div>
-          </div>
-        </SettingsSection>
-
-        {/* Permissions Table */}
-        <SettingsSection
-          className="h-fit"
-          iconWrap="bg-amber-50 text-amber-600"
-          title="Feature Permissions"
-          description="Control which features require admin elevation."
-          icon={<Icons.Lock />}
-        >
-          <div className={`space-y-4 ${!settings.isOutletModeEnabled ? 'opacity-30 pointer-events-none grayscale' : ''}`}>
-            {permissionList.map(perm => (
-              <div 
-                key={perm.id} 
-                onClick={() => toggleFeatureLock(perm.id)}
-                className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between group ${
-                  settings.lockedFeatures.includes(perm.id) 
-                    ? 'bg-slate-900 border-slate-900 text-white shadow-lg translate-x-1' 
-                    : 'bg-slate-50 border-slate-100 text-slate-800 hover:bg-white hover:border-slate-300'
-                }`}
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold">{perm.label}</span>
-                    {settings.lockedFeatures.includes(perm.id) && <span className="text-amber-400"><Icons.Lock /></span>}
-                  </div>
-                  <p className={`text-[10px] mt-1 text-slate-400`}>{perm.description}</p>
-                </div>
-                <div className={`w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center ${
-                  settings.lockedFeatures.includes(perm.id) ? 'border-teal-500 bg-teal-500' : 'border-slate-300 bg-transparent'
-                }`}>
-                  {settings.lockedFeatures.includes(perm.id) && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>}
-                </div>
-              </div>
-            ))}
-          </div>
-        </SettingsSection>
-      </div>
-
-      {/* Voucher Redemption Security */}
-      <SettingsSection
-        iconWrap="bg-rose-50 text-rose-600"
-        title="Voucher Redemption Security"
-        description="Set a staff PIN required on public voucher redemption links."
-        icon={<Icons.Lock />}
-      >
-        <div className="max-w-md space-y-2">
-          <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
-            Voucher Redemption PIN
-          </label>
-          <input
-            type="password"
-            value={settings.voucherRedemptionPin || ''}
-            onChange={(e) =>
-              onUpdateSettings({
-                ...settings,
-                voucherRedemptionPin: e.target.value,
-              })
-            }
-            placeholder="e.g. 1234"
-            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-rose-500 text-sm font-medium"
-          />
-          <p className="text-[10px] text-slate-400">
-            Leave blank to disable PIN checking and use confirmation checkbox only.
-          </p>
-        </div>
+        )}
       </SettingsSection>
 
-      {/* Automated Reminders Section */}
+      {/* 3. Operating hours */}
       <SettingsSection
+        id="settings-operating-hours"
+        defaultOpen
+        iconWrap="bg-sky-50 text-sky-600"
+        title="Operating hours"
+        description="Hours used for Open / Closed status on the booking page."
+        icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+      >
+        {!effectiveOutletId ? (
+          <p className="text-sm text-red-600 font-semibold">Outlet ID missing — cannot save hours.</p>
+        ) : (contextLoading || outletLoading) ? (
+          <div className="flex items-center justify-center py-6">
+            <div className="w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
+            <span className="ml-3 text-slate-600">Loading outlet information...</span>
+          </div>
+        ) : (
+          <>
+            <div>
+              {DAYS.map((day) => {
+                const dayKey = day;
+                const hours = businessHours[dayKey] || { open: '09:00', close: '17:00', isOpen: true };
+                return (
+                  <OperatingHoursRow
+                    key={day}
+                    day={day}
+                    openTime={hours.open || '09:00'}
+                    closeTime={hours.close || '17:00'}
+                    isOpen={hours.isOpen !== false}
+                    onChangeOpenTime={(value) =>
+                      setBusinessHours((prev) => ({ ...prev, [dayKey]: { ...(prev[dayKey] || hours), open: value } }))
+                    }
+                    onChangeCloseTime={(value) =>
+                      setBusinessHours((prev) => ({ ...prev, [dayKey]: { ...(prev[dayKey] || hours), close: value } }))
+                    }
+                    onToggleOpen={(checked) =>
+                      setBusinessHours((prev) => ({ ...prev, [dayKey]: { ...(prev[dayKey] || hours), isOpen: checked } }))
+                    }
+                  />
+                );
+              })}
+            </div>
+            <p className="text-[10px] text-slate-400 mt-2">
+              Saves address, phone, booking path and hours together. Closing without Save Changes does not write these fields.
+            </p>
+            <SettingsSaveBar
+              status={bookingSaveStatus}
+              disabled={!effectiveOutletId}
+              onSave={() => {
+                if (bookingInfoStatus === 'saving' || !effectiveOutletId) return;
+                handleSaveBookingInfo();
+              }}
+            />
+          </>
+        )}
+      </SettingsSection>
+
+      {/* 4. Notifications */}
+      <SettingsSection
+        id="settings-notifications"
         iconWrap="bg-indigo-50 text-indigo-600"
-        title="Communication & Reminders"
+        title="Notifications & reminders"
         description="Configure automated client notifications for upcoming bookings."
         icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>}
       >
@@ -821,132 +616,286 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         </div>
       </SettingsSection>
 
-      {/* Payment Method Configuration */}
+      {/* 5. Receipt & payment */}
       <SettingsSection
-        iconWrap="bg-teal-50 text-teal-600"
-        title="Payment Methods"
-        description="Add or remove accepted payment options for POS checkout."
+        id="settings-receipt-payment"
+        iconWrap="bg-emerald-50 text-emerald-600"
+        title="Receipt & payment"
+        description="POS payment methods and printed receipt layout for this outlet."
         icon={<Icons.POS />}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="space-y-4">
-             <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest">Active Methods</label>
-             <div className="space-y-2">
-               {settings.paymentMethods.map((method, index) => (
-                 <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 group">
-                    {editingMethod?.index === index ? (
-                      <form onSubmit={handleEditMethod} className="flex-1 flex gap-2">
-                         <input autoFocus type="text" className="flex-1 p-1 px-2 text-sm bg-white border border-teal-200 rounded outline-none" value={editingMethod.name} onChange={(e) => setEditingMethod({ ...editingMethod, name: e.target.value })} />
-                         <button type="submit" className="text-teal-600 font-bold text-xs">Save</button>
-                         <button type="button" onClick={() => setEditingMethod(null)} className="text-slate-400 font-bold text-xs">Cancel</button>
-                      </form>
-                    ) : (
-                      <>
-                        <span className="text-sm font-bold text-slate-700">{method}</span>
-                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => setEditingMethod({ index, name: method })} className="text-slate-400 hover:text-teal-600"><Icons.Edit /></button>
-                          <button onClick={() => removePaymentMethod(index)} className="text-slate-400 hover:text-rose-500"><Icons.Trash /></button>
-                        </div>
-                      </>
-                    )}
-                 </div>
-               ))}
-             </div>
+        <div className="space-y-8">
+          <div>
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">Payment methods</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest">Active Methods</label>
+                <div className="space-y-2">
+                  {settings.paymentMethods.map((method, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 group">
+                      {editingMethod?.index === index ? (
+                        <form onSubmit={handleEditMethod} className="flex-1 flex gap-2">
+                          <input autoFocus type="text" className="flex-1 p-1 px-2 text-sm bg-white border border-teal-200 rounded outline-none" value={editingMethod.name} onChange={(e) => setEditingMethod({ ...editingMethod, name: e.target.value })} />
+                          <button type="submit" className="text-teal-600 font-bold text-xs">Save</button>
+                          <button type="button" onClick={() => setEditingMethod(null)} className="text-slate-400 font-bold text-xs">Cancel</button>
+                        </form>
+                      ) : (
+                        <>
+                          <span className="text-sm font-bold text-slate-700">{method}</span>
+                          <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => setEditingMethod({ index, name: method })} className="text-slate-400 hover:text-teal-600"><Icons.Edit /></button>
+                            <button onClick={() => removePaymentMethod(index)} className="text-slate-400 hover:text-rose-500"><Icons.Trash /></button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest">Add New Method</label>
+                <form onSubmit={addPaymentMethod} className="flex gap-2">
+                  <input type="text" placeholder="e.g. PayPal, Apple Pay..." className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium" value={newMethodName} onChange={(e) => setNewMethodName(e.target.value)} />
+                  <button type="submit" className="px-5 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 shadow-sm">Add</button>
+                </form>
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-4">
-            <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest">Add New Method</label>
-            <form onSubmit={addPaymentMethod} className="flex gap-2">
-              <input type="text" placeholder="e.g. PayPal, Apple Pay..." className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium" value={newMethodName} onChange={(e) => setNewMethodName(e.target.value)} />
-              <button type="submit" className="px-5 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 shadow-sm">Add</button>
-            </form>
+          <div className="border-t border-slate-100 pt-6">
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">Receipt layout</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Header Title</label>
+                <input
+                  type="text"
+                  value={settings.receiptHeaderTitle || 'Tax Invoice'}
+                  onChange={(e) => handleReceiptLayoutChange('receiptHeaderTitle', e.target.value)}
+                  className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  placeholder="Tax Invoice"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Company Name</label>
+                <input
+                  type="text"
+                  value={settings.receiptCompanyName || settings.shopName || ''}
+                  onChange={(e) => handleReceiptLayoutChange('receiptCompanyName', e.target.value)}
+                  className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  placeholder="ZenFlow Spa"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Company Phone</label>
+                <input
+                  type="text"
+                  value={settings.receiptPhone || ''}
+                  onChange={(e) => handleReceiptLayoutChange('receiptPhone', e.target.value)}
+                  className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  placeholder="+60 12-345 6789"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Company Address</label>
+                <input
+                  type="text"
+                  value={settings.receiptAddress || ''}
+                  onChange={(e) => handleReceiptLayoutChange('receiptAddress', e.target.value)}
+                  className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  placeholder="Outlet address for receipt"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Footer Note</label>
+                <input
+                  type="text"
+                  value={settings.receiptFooterNote || 'Thank you for your visit!'}
+                  onChange={(e) => handleReceiptLayoutChange('receiptFooterNote', e.target.value)}
+                  className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  placeholder="Thank you for your visit!"
+                />
+              </div>
+            </div>
+            <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">Live Receipt Preview</p>
+              <div className="mx-auto w-full max-w-[340px] bg-white border border-slate-300 rounded-lg p-4 font-mono text-[11px] text-slate-700 space-y-1">
+                <div className="text-center border-b border-dashed border-slate-300 pb-2 mb-2">
+                  <p className="font-bold text-sm">{settings.receiptCompanyName || settings.shopName || 'ZenFlow Spa'}</p>
+                  <p>{settings.receiptHeaderTitle || 'Tax Invoice'}</p>
+                  {(settings.receiptPhone || '').trim() && <p>Phone: {settings.receiptPhone}</p>}
+                  {(settings.receiptAddress || '').trim() && <p>{settings.receiptAddress}</p>}
+                  <p>{new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</p>
+                  <p>Customer: Jane Doe</p>
+                </div>
+                <div className="flex justify-between"><span>Swedish Massage</span><span>1 x RM 80.00</span></div>
+                <div className="flex justify-between"><span>Aroma Oil</span><span>1 x RM 20.00</span></div>
+                <div className="border-t border-dashed border-slate-300 pt-1 mt-1 flex justify-between font-bold text-slate-900">
+                  <span>Total</span><span>RM 100.00</span>
+                </div>
+                <p className="pt-1">Payment: Cash</p>
+                <div className="text-center border-t border-dashed border-slate-300 pt-2 mt-2">
+                  <p>{settings.receiptFooterNote || 'Thank you for your visit!'}</p>
+                </div>
+              </div>
+            </div>
+            <p className="text-[10px] text-slate-400 mt-3">Receipt layout values are stored in outlet settings and used by POS when user clicks Print Receipt.</p>
           </div>
         </div>
       </SettingsSection>
 
-      {/* Receipt Layout Configuration */}
+      {/* 6. Access & permissions */}
+      <div id="settings-access-permissions" className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 scroll-mt-4">
+        <SettingsSection
+          className="h-fit"
+          iconWrap="bg-teal-50 text-teal-600"
+          title="Outlet Environment"
+          description={'Toggle "restricted mode" for shared terminals.'}
+          icon={<Icons.Dashboard />}
+        >
+          <div className="space-y-6">
+          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-slate-700">Enable Outlet Mode</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Active restrictions for non-admins</span>
+            </div>
+            <button 
+              onClick={toggleOutletMode}
+              className={`w-12 h-6 rounded-full transition-colors relative ${settings.isOutletModeEnabled ? 'bg-teal-600' : 'bg-slate-300'}`}
+            >
+              <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settings.isOutletModeEnabled ? 'left-7' : 'left-1'}`}></div>
+            </button>
+          </div>
+
+          <div className={`p-4 rounded-xl border transition-all ${settings.isAdminAuthenticated ? 'bg-teal-50 border-teal-200' : 'bg-rose-50 border-rose-200'}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${settings.isAdminAuthenticated ? 'bg-teal-600 text-white' : 'bg-rose-600 text-white'}`}>
+                  {settings.isAdminAuthenticated ? <Icons.Dashboard /> : <Icons.Lock />}
+                </div>
+                <div>
+                  <span className="block text-sm font-black uppercase text-slate-800">
+                    {settings.isAdminAuthenticated ? 'Admin Authenticated' : 'Restricted Access'}
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-bold">Currently in {settings.isAdminAuthenticated ? 'Manager' : 'Staff'} View</span>
+                </div>
+              </div>
+              <button 
+                onClick={toggleAdminAuth}
+                className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest shadow-sm transition-all ${
+                  settings.isAdminAuthenticated 
+                    ? 'bg-white text-rose-600 hover:bg-rose-50' 
+                    : 'bg-teal-600 text-white hover:bg-teal-700'
+                }`}
+              >
+                {settings.isAdminAuthenticated ? 'Logout Admin' : 'Simulate Admin'}
+              </button>
+            </div>
+          </div>
+          </div>
+        </SettingsSection>
+
+        <SettingsSection
+          className="h-fit"
+          iconWrap="bg-amber-50 text-amber-600"
+          title="Feature Permissions"
+          description="Control which features require admin elevation."
+          icon={<Icons.Lock />}
+        >
+          <div className={`space-y-4 ${!settings.isOutletModeEnabled ? 'opacity-30 pointer-events-none grayscale' : ''}`}>
+            {permissionList.map(perm => (
+              <div 
+                key={perm.id} 
+                onClick={() => toggleFeatureLock(perm.id)}
+                className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between group ${
+                  settings.lockedFeatures.includes(perm.id) 
+                    ? 'bg-slate-900 border-slate-900 text-white shadow-lg translate-x-1' 
+                    : 'bg-slate-50 border-slate-100 text-slate-800 hover:bg-white hover:border-slate-300'
+                }`}
+              >
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold">{perm.label}</span>
+                    {settings.lockedFeatures.includes(perm.id) && <span className="text-amber-400"><Icons.Lock /></span>}
+                  </div>
+                  <p className={`text-[10px] mt-1 text-slate-400`}>{perm.description}</p>
+                </div>
+                <div className={`w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center ${
+                  settings.lockedFeatures.includes(perm.id) ? 'border-teal-500 bg-teal-500' : 'border-slate-300 bg-transparent'
+                }`}>
+                  {settings.lockedFeatures.includes(perm.id) && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </SettingsSection>
+      </div>
+
+      {/* 7. Integrations */}
       <SettingsSection
-        iconWrap="bg-emerald-50 text-emerald-600"
-        title="Receipt Layout"
-        description="Customize receipt company information per outlet. Changes apply to POS printed receipts."
-        icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
+        id="settings-integrations"
+        iconWrap="bg-sky-50 text-sky-600"
+        title="Integrations"
+        description="External calendars and chatbot API access for this outlet."
+        icon={<Icons.Calendar />}
       >
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-          <div>
-            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Header Title</label>
-            <input
-              type="text"
-              value={settings.receiptHeaderTitle || 'Tax Invoice'}
-              onChange={(e) => handleReceiptLayoutChange('receiptHeaderTitle', e.target.value)}
-              className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-              placeholder="Tax Invoice"
-            />
-          </div>
-          <div>
-            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Company Name</label>
-            <input
-              type="text"
-              value={settings.receiptCompanyName || settings.shopName || ''}
-              onChange={(e) => handleReceiptLayoutChange('receiptCompanyName', e.target.value)}
-              className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-              placeholder="ZenFlow Spa"
-            />
-          </div>
-          <div>
-            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Company Phone</label>
-            <input
-              type="text"
-              value={settings.receiptPhone || ''}
-              onChange={(e) => handleReceiptLayoutChange('receiptPhone', e.target.value)}
-              className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-              placeholder="+60 12-345 6789"
-            />
-          </div>
-          <div>
-            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Company Address</label>
-            <input
-              type="text"
-              value={settings.receiptAddress || ''}
-              onChange={(e) => handleReceiptLayoutChange('receiptAddress', e.target.value)}
-              className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-              placeholder="Outlet address for receipt"
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Footer Note</label>
-            <input
-              type="text"
-              value={settings.receiptFooterNote || 'Thank you for your visit!'}
-              onChange={(e) => handleReceiptLayoutChange('receiptFooterNote', e.target.value)}
-              className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-              placeholder="Thank you for your visit!"
-            />
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Link
+            to="/settings/integrations"
+            className="flex items-start gap-3 p-4 rounded-xl border border-sky-200 bg-sky-50 hover:bg-sky-100 transition-colors"
+          >
+            <Icons.Calendar />
+            <div>
+              <p className="text-sm font-bold text-slate-900">External Integrations</p>
+              <p className="text-xs text-slate-500 mt-0.5">Setmore and other calendar sync settings</p>
+            </div>
+          </Link>
+          <button
+            type="button"
+            onClick={handleOpenApiModal}
+            className="flex items-start gap-3 p-4 rounded-xl border border-teal-200 bg-teal-50 hover:bg-teal-100 transition-colors text-left"
+          >
+            <svg className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+            <div>
+              <p className="text-sm font-bold text-slate-900">Chatbot API Integration</p>
+              <p className="text-xs text-slate-500 mt-0.5">Outlet ID, API key, and webhook URL</p>
+            </div>
+          </button>
         </div>
-        <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">Live Receipt Preview</p>
-          <div className="mx-auto w-full max-w-[340px] bg-white border border-slate-300 rounded-lg p-4 font-mono text-[11px] text-slate-700 space-y-1">
-            <div className="text-center border-b border-dashed border-slate-300 pb-2 mb-2">
-              <p className="font-bold text-sm">{settings.receiptCompanyName || settings.shopName || 'ZenFlow Spa'}</p>
-              <p>{settings.receiptHeaderTitle || 'Tax Invoice'}</p>
-              {(settings.receiptPhone || '').trim() && <p>Phone: {settings.receiptPhone}</p>}
-              {(settings.receiptAddress || '').trim() && <p>{settings.receiptAddress}</p>}
-              <p>{new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</p>
-              <p>Customer: Jane Doe</p>
-            </div>
-            <div className="flex justify-between"><span>Swedish Massage</span><span>1 x RM 80.00</span></div>
-            <div className="flex justify-between"><span>Aroma Oil</span><span>1 x RM 20.00</span></div>
-            <div className="border-t border-dashed border-slate-300 pt-1 mt-1 flex justify-between font-bold text-slate-900">
-              <span>Total</span><span>RM 100.00</span>
-            </div>
-            <p className="pt-1">Payment: Cash</p>
-            <div className="text-center border-t border-dashed border-slate-300 pt-2 mt-2">
-              <p>{settings.receiptFooterNote || 'Thank you for your visit!'}</p>
-            </div>
-          </div>
-        </div>
-        <p className="text-[10px] text-slate-400 mt-3">Receipt layout values are stored in outlet settings and used by POS when user clicks Print Receipt.</p>
       </SettingsSection>
+
+      {/* 8. Advanced */}
+      <SettingsSection
+        id="settings-advanced"
+        iconWrap="bg-rose-50 text-rose-600"
+        title="Advanced settings"
+        description="Voucher redemption security and other advanced outlet controls."
+        icon={<Icons.Lock />}
+      >
+        <div className="max-w-md space-y-2">
+          <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
+            Voucher Redemption PIN
+          </label>
+          <input
+            type="password"
+            value={settings.voucherRedemptionPin || ''}
+            onChange={(e) =>
+              onUpdateSettings({
+                ...settings,
+                voucherRedemptionPin: e.target.value,
+              })
+            }
+            placeholder="e.g. 1234"
+            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-rose-500 text-sm font-medium"
+          />
+          <p className="text-[10px] text-slate-400">
+            Leave blank to disable PIN checking and use confirmation checkbox only.
+          </p>
+        </div>
+      </SettingsSection>
+        </div>
+      </div>
+
       {showApiModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50">
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg max-h-[90vh] overflow-y-auto">

@@ -1,9 +1,17 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Transaction, TransactionType, Staff, Client } from '../types';
-import { Icons } from '../constants';
 import TransactionDetailModal from '../components/TransactionDetailModal';
 import { collection, query, where, orderBy, Timestamp, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
+import {
+  ReportDateRangeBar,
+  ReportEmptyState,
+  ReportFiltersSheet,
+  ReportPageHeader,
+  ReportSummaryStrip,
+  ReportTxnCard,
+} from '../components/reports';
+import { Button } from '../components/ui/Button';
 
 interface SalesReportsProps {
   transactions: Transaction[];
@@ -52,6 +60,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
   const [endDate, setEndDate] = useState<string>(today);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedStaffId, setSelectedStaffId] = useState<string>('ALL');
+  const [showFiltersSheet, setShowFiltersSheet] = useState(false);
   
   // Real-time collection data for selected date (from transactions collection)
   const [dailySales, setDailySales] = useState<Transaction[]>([]);
@@ -235,9 +244,16 @@ const SalesReports: React.FC<SalesReportsProps> = ({
         }
       `}</style>
       <div className="space-y-4 sales-report-print-area">
-      <div className="lg:hidden -mt-1">
-        <h1 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-slate-900">Sales Reports</h1>
-        <p className="mt-1 text-sm text-slate-600">Collection totals and daily breakdown.</p>
+      <div className="no-print">
+        <ReportPageHeader
+          title="Sales Reports"
+          description="Collection totals and daily breakdown."
+          actions={
+            <Button type="button" variant="secondary" size="sm" onClick={handlePrint}>
+              Print
+            </Button>
+          }
+        />
       </div>
       <div className="flex flex-col lg:flex-row gap-6 animate-fadeIn">
       {/* Collection Summary Sidebar - included in print */}
@@ -260,7 +276,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
               </p>
             </div>
           ) : (
-            <p className="text-4xl font-black text-teal-700 mb-6">
+            <p className="text-4xl font-black text-teal-700 mb-6 tabular-nums">
               RM {collectionTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           )}
@@ -277,12 +293,12 @@ const SalesReports: React.FC<SalesReportsProps> = ({
                     <div className={`w-8 h-8 ${iconColor} rounded-lg flex items-center justify-center`}>
                       <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
-                        <path fillRule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2v-5zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clipRule="evenodd" />
+                        <path fillRule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clipRule="evenodd" />
                       </svg>
                     </div>
                     <span className="text-sm font-semibold text-slate-700">{label}</span>
                   </div>
-                  <span className={`text-lg font-bold ${textColor}`}>
+                  <span className={`text-lg font-bold tabular-nums ${textColor}`}>
                     RM {amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
@@ -291,97 +307,39 @@ const SalesReports: React.FC<SalesReportsProps> = ({
           </div>
         </div>
 
-        {/* Work Summary Card */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-          <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-4">Work</h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                <span className="text-sm text-slate-600">Order</span>
-              </div>
-              <span className="text-lg font-bold text-slate-800">{collectionSummary.orderCount}</span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                </svg>
-                <span className="text-sm text-slate-600">Item</span>
-              </div>
-              <span className="text-lg font-bold text-slate-800">{collectionSummary.itemCount}</span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                <span className="text-sm text-slate-600">Customer</span>
-              </div>
-              <span className="text-lg font-bold text-slate-800">{collectionSummary.customerCount}</span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                <span className="text-sm text-slate-600">Staff</span>
-              </div>
-              <span className="text-lg font-bold text-slate-800">{collectionSummary.staffCount}</span>
-            </div>
-          </div>
-        </div>
+        <ReportSummaryStrip
+          className="!grid-cols-2"
+          items={[
+            { label: 'Orders', value: String(collectionSummary.orderCount), tone: 'neutral' },
+            { label: 'Items', value: String(collectionSummary.itemCount), tone: 'neutral' },
+            { label: 'Customers', value: String(collectionSummary.customerCount), tone: 'neutral' },
+            { label: 'Staff', value: String(collectionSummary.staffCount), tone: 'neutral' },
+          ]}
+        />
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 space-y-6">
-        {/* Header with Date Navigation & Print */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigateDate('prev')}
-              className="text-slate-400 hover:text-slate-600 transition-colors p-2"
-              aria-label="Previous day"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <span className="text-lg font-bold text-slate-800 min-w-[180px] text-center">
-              {startDate === endDate
-                ? formatDate(startDate)
-                : `${formatDate(startDate)} – ${formatDate(endDate)}`}
-            </span>
-            <button
-              onClick={() => navigateDate('next')}
-              className="text-slate-400 hover:text-slate-600 transition-colors p-2"
-              aria-label="Next day"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-            <button
-              onClick={handlePrint}
-              className="ml-4 text-blue-600 hover:text-blue-700 transition-colors p-2"
-              aria-label="Print"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-              </svg>
-            </button>
-          </div>
-          <h2 className="text-app-section font-bold text-slate-900">Collection</h2>
-        </div>
+      <div className="flex-1 space-y-4 sm:space-y-6 min-w-0">
+        <ReportDateRangeBar
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={setStartDate}
+          onEndDateChange={setEndDate}
+          onPrev={() => navigateDate('prev')}
+          onNext={() => navigateDate('next')}
+          onPrint={handlePrint}
+          onOpenFilters={() => setShowFiltersSheet(true)}
+          title="Collection"
+          rangeLabel={
+            startDate === endDate
+              ? formatDate(startDate)
+              : `${formatDate(startDate)} – ${formatDate(endDate)}`
+          }
+        />
 
-        {/* Filter Bar */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-end gap-6">
-          <div className="flex-1 min-w-[200px]">
+        {/* Desktop filter bar */}
+        <div className="hidden sm:grid bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
             <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5">Date From</label>
             <input 
               type="date" 
@@ -390,7 +348,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
               onChange={(e) => setStartDate(e.target.value)}
             />
           </div>
-          <div className="flex-1 min-w-[200px]">
+          <div>
             <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5">Date To</label>
             <input 
               type="date" 
@@ -399,7 +357,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
               onChange={(e) => setEndDate(e.target.value)}
             />
           </div>
-          <div className="flex-1 min-w-[200px]">
+          <div>
             <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5">Category</label>
             <select 
               className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-sm"
@@ -412,7 +370,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
               ))}
             </select>
           </div>
-          <div className="flex-1 min-w-[200px]">
+          <div>
             <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5">Staff Member</label>
             <select 
               className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-sm"
@@ -435,6 +393,30 @@ const SalesReports: React.FC<SalesReportsProps> = ({
             </h3>
           </div>
           <div className="divide-y divide-slate-100">
+            {/* Mobile structured cards */}
+            <div className="sm:hidden space-y-2 p-3">
+              {filteredData.map((txn) => {
+                const client = clients.find((c) => c.id === txn.clientId);
+                const txnDate = new Date(txn.date);
+                return (
+                  <ReportTxnCard
+                    key={txn.id}
+                    amountLabel={`RM${txn.amount.toFixed(2)}`}
+                    amountTone="in"
+                    customer={client?.name || 'Guest'}
+                    dateTimeLabel={`${txnDate.toLocaleDateString('en-GB')} · ${txnDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`}
+                    paymentMethod={txn.paymentMethod || '—'}
+                    statusLabel="Sale"
+                    statusTone="success"
+                    description={`${txn.items?.length || 0} items`}
+                    onClick={() => setSelectedTransaction(txn)}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Desktop rows */}
+            <div className="hidden sm:block">
             {filteredData.map(txn => {
               const client = clients.find(c => c.id === txn.clientId);
               const receiptNumber = txn.id.replace(/\D/g, '').slice(-10) || txn.id.slice(-8);
@@ -469,13 +451,14 @@ const SalesReports: React.FC<SalesReportsProps> = ({
                       </p>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <p className="text-lg font-bold text-blue-600 mb-1">{txn.amount.toFixed(2)}</p>
+                      <p className="text-lg font-bold text-blue-600 mb-1 tabular-nums">{txn.amount.toFixed(2)}</p>
                       <p className="text-xs text-slate-400">{txn.items?.length || 0} Items</p>
                     </div>
                   </div>
                 </div>
               );
             })}
+            </div>
             {collectionLoading ? (
               <div className="p-12 flex flex-col items-center justify-center gap-3 text-slate-500">
                 <svg className="animate-spin h-10 w-10 text-teal-600" fill="none" viewBox="0 0 24 24">
@@ -485,18 +468,54 @@ const SalesReports: React.FC<SalesReportsProps> = ({
                 <span className="text-sm font-medium">Loading report...</span>
               </div>
             ) : filteredData.length === 0 && !collectionError ? (
-              <div className="p-12 text-center text-slate-400 italic text-sm">
-                {dailySales.length === 0
-                  ? (startDate === endDate
-                      ? `No sales found for ${formatDate(startDate)}.`
-                      : `No sales found between ${formatDate(startDate)} and ${formatDate(endDate)}.`)
-                  : 'No matching sales for the selected filters.'}
+              <div className="p-6">
+                <ReportEmptyState
+                  title="No sales found"
+                  description={
+                    dailySales.length === 0
+                      ? (startDate === endDate
+                          ? `No sales found for ${formatDate(startDate)}.`
+                          : `No sales found between ${formatDate(startDate)} and ${formatDate(endDate)}.`)
+                      : 'No matching sales for the selected filters.'
+                  }
+                />
               </div>
             ) : null}
           </div>
         </div>
       </div>
       </div>
+
+      <ReportFiltersSheet open={showFiltersSheet} onClose={() => setShowFiltersSheet(false)}>
+        <div className="space-y-4">
+          <label className="block">
+            <span className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5">Date From</span>
+            <input type="date" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+          </label>
+          <label className="block">
+            <span className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5">Date To</span>
+            <input type="date" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+          </label>
+          <label className="block">
+            <span className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5">Category</span>
+            <select className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
+              <option value="ALL">All Categories</option>
+              {serviceCategories.map((cat) => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
+            <span className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5">Staff Member</span>
+            <select className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold" value={selectedStaffId} onChange={(e) => setSelectedStaffId(e.target.value)}>
+              <option value="ALL">All Staff</option>
+              {staff.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </ReportFiltersSheet>
 
       {/* Transaction Detail Modal - use latest from dailySales so payment method edit reflects immediately */}
       {selectedTransaction && (

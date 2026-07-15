@@ -14,6 +14,63 @@ export default {
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
+      colors: {
+        /* Existing teal utility classes resolve to Bookglow brand — do not remap other palettes. */
+        teal: {
+          50: '#f4f0ff',
+          100: '#eae2ff',
+          200: '#d9ccff',
+          300: '#bea8ff',
+          400: '#9e7cf1',
+          500: '#8563e1',
+          600: '#7656d6',
+          700: '#6244bd',
+          800: '#4f369b',
+          900: '#3e2b7d',
+          950: '#28194f',
+        },
+        brand: {
+          DEFAULT: 'var(--brand)',
+          hover: 'var(--brand-hover)',
+          deep: 'var(--brand-deep)',
+          soft: 'var(--brand-soft)',
+          border: 'var(--brand-border)',
+        },
+        canvas: 'var(--bg-canvas)',
+        surface: 'var(--bg-surface)',
+        soft: 'var(--bg-soft)',
+      },
+      spacing: {
+        /* 4px rhythm aliases (opt-in; existing Tailwind spacing unchanged) */
+        'ui-1': 'var(--space-1)',
+        'ui-2': 'var(--space-2)',
+        'ui-3': 'var(--space-3)',
+        'ui-4': 'var(--space-4)',
+        'ui-5': 'var(--space-5)',
+        'ui-6': 'var(--space-6)',
+        'ui-8': 'var(--space-8)',
+        'ui-10': 'var(--space-10)',
+        'ui-12': 'var(--space-12)',
+        'safe-t': 'var(--safe-top)',
+        'safe-r': 'var(--safe-right)',
+        'safe-b': 'var(--safe-bottom)',
+        'safe-l': 'var(--safe-left)',
+      },
+      borderRadius: {
+        'ui-xs': 'var(--radius-xs)',
+        'ui-sm': 'var(--radius-sm)',
+        'ui-md': 'var(--radius-md)',
+        'ui-lg': 'var(--radius-lg)',
+        'ui-xl': 'var(--radius-xl)',
+      },
+      boxShadow: {
+        'ui-xs': 'var(--shadow-xs)',
+        'ui-sm': 'var(--shadow-sm)',
+        'ui-md': 'var(--shadow-md)',
+        'ui-lg': 'var(--shadow-lg)',
+        'ui-focus': 'var(--focus-ring)',
+        'ui-focus-strong': 'var(--focus-ring-strong)',
+      },
       fontSize: {
         /** ~32px — primary screen title (mobile-first reference) */
         'app-page': ['2rem', { lineHeight: '2.25rem', letterSpacing: '-0.02em' }],
@@ -25,6 +82,12 @@ export default {
         'app-body': ['0.9375rem', { lineHeight: '1.5rem' }],
         /** ~11px — small caps labels */
         'app-label': ['0.6875rem', { lineHeight: '1rem', letterSpacing: '0.06em' }],
+      },
+      screens: {
+        sm: '640px',
+        md: '768px',
+        lg: '1024px',
+        xl: '1280px',
       },
       keyframes: {
         fadeIn: {

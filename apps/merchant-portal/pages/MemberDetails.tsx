@@ -9,6 +9,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Trash2 } from 'lucide-react';
 import { Client, Transaction, TransactionType, Appointment, CartItem, Staff, Service } from '../types';
 import { useMemberDetailsData } from '../hooks/useMemberDetailsData';
+import {
+  MemberActionBar,
+  MemberBalanceSection,
+  MemberHistorySection,
+  MemberSummary,
+} from '../components/members';
+import { Button } from '../components/ui/Button';
 
 // Lazy load modals to avoid circular dependency
 const PointsHistoryModal = lazy(() => import('../components/PointsHistoryModal'));
@@ -481,151 +488,130 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
         </div>
       )}
       <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="p-2 rounded-xl hover:bg-white/80 text-slate-600 transition-colors" aria-label="Back">
+        <div className="flex items-center gap-4 min-w-0">
+          <button onClick={() => navigate(-1)} className="p-2 rounded-xl hover:bg-white/80 text-slate-600 transition-colors shrink-0" aria-label="Back">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           </button>
-          <h2 className="text-xl font-bold text-slate-800">Member Details</h2>
+          <h2 className="text-xl font-bold text-slate-800 truncate">Member Details</h2>
         </div>
-        <button
+        <Button
+          type="button"
+          variant="primary"
+          size="sm"
           onClick={() => navigate('/pos', { state: { selectedMember: { id: client.id, name: client.name, phone: client.phone || '' } } })}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-600 text-white font-semibold text-sm hover:bg-teal-700 active:scale-95 transition-all shadow-sm"
           title="Quick POS – start sale with this member"
         >
           <ShoppingCart className="w-5 h-5" />
           <span className="hidden sm:inline">Quick POS</span>
-        </button>
+        </Button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex items-center gap-4">
-        <div className="relative flex-shrink-0">
-          <div className="w-16 h-16 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-2xl font-bold border-2 border-white shadow-md">
-            {client.name.charAt(0)}
-          </div>
-          <div className="absolute bottom-0 right-0 w-5 h-5 bg-teal-500 rounded-full border-2 border-white flex items-center justify-center">
-            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-          </div>
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-bold text-slate-800 truncate">{client.name}</h3>
-          <p className="text-sm text-slate-600">{client.phone || '—'}</p>
-        </div>
-        <div className="text-right flex-shrink-0">
-          <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">Join Date</span>
-          <p className="text-sm font-semibold text-slate-700">{formatJoinDate(client.createdAt)}</p>
-        </div>
-      </div>
+      {/* 1. Identity */}
+      <MemberSummary
+        name={client.name}
+        phone={client.phone}
+        joinDateLabel={formatJoinDate(client.createdAt)}
+        avatarInitial={client.name.charAt(0)}
+      />
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <button
-            type="button"
-            onClick={() => setShowCreditModal(true)}
-            className="text-center cursor-pointer hover:bg-slate-50 rounded-xl p-2 -m-2 transition-colors"
-          >
-            <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-blue-100 text-blue-600 mb-2"><span className="text-lg font-bold">$</span></div>
-            <p className="text-xs font-medium text-slate-500 uppercase">Credit</p>
-            <p className="text-lg font-bold text-slate-800">{credit.toFixed(2)}</p>
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowPointsModal(true)}
-            className="text-center cursor-pointer hover:bg-slate-50 rounded-xl p-2 -m-2 transition-colors"
-          >
-            <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-emerald-100 text-emerald-600 mb-2">
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-            </div>
-            <p className="text-xs font-medium text-slate-500 uppercase">Point</p>
-            <p className="text-lg font-bold text-slate-800">{currentPointsBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
-          </button>
-          <button
-            type="button"
-            onClick={() => {
+      {/* 2–5. Credits / Points / Vouchers / Outstanding — kept separate */}
+      <MemberBalanceSection
+        items={[
+          {
+            id: 'credit',
+            label: 'Credit',
+            value: credit.toFixed(2),
+            toneClass: 'bg-blue-100 text-blue-600',
+            icon: <span className="text-lg font-bold">$</span>,
+            onClick: () => setShowCreditModal(true),
+          },
+          {
+            id: 'points',
+            label: 'Point',
+            value: currentPointsBalance.toLocaleString('en-US', { minimumFractionDigits: 2 }),
+            toneClass: 'bg-emerald-100 text-emerald-600',
+            icon: (
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </svg>
+            ),
+            onClick: () => setShowPointsModal(true),
+          },
+          {
+            id: 'voucher',
+            label: 'Voucher',
+            value: String(vouchers),
+            toneClass: 'bg-sky-100 text-sky-600',
+            icon: (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+              </svg>
+            ),
+            disabled: vouchers < 1,
+            hint: vouchers > 0 ? 'Tap to redeem' : undefined,
+            onClick: () => {
               if (vouchers < 1) return;
               navigate('/pos', {
                 state: {
                   selectedMember: { id: client.id, name: client.name, phone: client.phone || '' },
-                  redeemVoucher: true
-                }
+                  redeemVoucher: true,
+                },
               });
-            }}
-            disabled={vouchers < 1}
-            className={`text-center rounded-xl p-2 -m-2 transition-colors ${vouchers > 0 ? 'cursor-pointer hover:bg-slate-50' : 'cursor-default'}`}
-          >
-            <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-sky-100 text-sky-600 mb-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
-            </div>
-            <p className="text-xs font-medium text-slate-500 uppercase">Voucher</p>
-            <p className="text-lg font-bold text-slate-800">{vouchers}</p>
-            {vouchers > 0 && (
-              <p className="text-[10px] font-semibold text-sky-600 uppercase mt-0.5">
-                Tap to redeem
-              </p>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowOutstandingModal(true)}
-            className="text-center cursor-pointer hover:bg-slate-50 rounded-xl p-2 -m-2 transition-colors"
-          >
-            <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl mb-2" style={{ backgroundColor: '#ffedeb' }}>
-              <span className="text-lg font-bold" style={{ color: '#f44336' }}>$</span>
-            </div>
-            <p className="text-xs font-medium text-slate-500 uppercase">Outstanding</p>
-            <p className="text-lg font-bold text-slate-800">{currentOutstandingBalance.toFixed(2)}</p>
-          </button>
-        </div>
+            },
+          },
+          {
+            id: 'outstanding',
+            label: 'Outstanding',
+            value: currentOutstandingBalance.toFixed(2),
+            toneClass: 'bg-[#ffedeb] text-[#f44336]',
+            icon: <span className="text-lg font-bold">$</span>,
+            onClick: () => setShowOutstandingModal(true),
+          },
+        ]}
+      />
+
+      {/* 6–7. Visits / transactions history nav */}
+      <div className="space-y-2">
+        <MemberHistorySection
+          title="Recent"
+          description={lastSale ? formatRelativeTime(lastSale.date) : '—'}
+          onOpen={() => setActiveView('recent')}
+          icon={
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+          }
+        />
+        <MemberHistorySection
+          title="Sales"
+          description={lastSale ? `${formatRelativeTime(lastSale.date)}, ${lastSale.amount.toFixed(2)}` : 'No sales'}
+          onOpen={() => setActiveView('sales')}
+          icon={
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          }
+        />
+        <MemberHistorySection
+          title="Appointments"
+          description={nextAppointment ? `${nextAppointment.date}, ${nextAppointment.time}` : 'No upcoming'}
+          onOpen={() => setActiveView('appointments')}
+          icon={
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          }
+        />
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="divide-y divide-slate-100">
-          <button type="button" onClick={() => setActiveView('recent')} className="w-full flex items-center gap-4 p-4 text-left hover:bg-slate-50 transition-colors">
-            <div className="w-10 h-10 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center flex-shrink-0">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-slate-800">Recent</p>
-              <p className="text-sm text-slate-500">{lastSale ? formatRelativeTime(lastSale.date) : '—'}</p>
-            </div>
-            <svg className="w-5 h-5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-          </button>
-          <button type="button" onClick={() => setActiveView('sales')} className="w-full flex items-center gap-4 p-4 text-left hover:bg-slate-50 transition-colors">
-            <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center flex-shrink-0">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-slate-800">Sales</p>
-              <p className="text-sm text-slate-500">{lastSale ? `${formatRelativeTime(lastSale.date)}, ${lastSale.amount.toFixed(2)}` : 'No sales'}</p>
-            </div>
-            <svg className="w-5 h-5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-          </button>
-          <button type="button" onClick={() => setActiveView('appointments')} className="w-full flex items-center gap-4 p-4 text-left hover:bg-slate-50 transition-colors">
-            <div className="w-10 h-10 rounded-xl bg-teal-100 text-teal-600 flex items-center justify-center flex-shrink-0">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-slate-800">Appointments</p>
-              <p className="text-sm text-slate-500">{nextAppointment ? `${nextAppointment.date}, ${nextAppointment.time}` : 'No upcoming'}</p>
-            </div>
-            <svg className="w-5 h-5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /></svg>
-            <span className="font-semibold text-slate-800">Photos</span>
-          </div>
-          <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-        </div>
+      {/* 8. Notes / media */}
+      <MemberHistorySection title="Photos" description="Member media and notes">
         <div className="grid grid-cols-4 gap-3">
           <button type="button" className="aspect-square rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 hover:border-teal-300 hover:bg-teal-50/50 transition-colors">
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
           </button>
         </div>
-      </div>
+      </MemberHistorySection>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
         <div className="grid grid-cols-4 gap-4">
@@ -643,17 +629,22 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
         </div>
       </div>
 
-      {/* Delete Member - red button at bottom */}
-      <div className="pt-4 pb-8">
-        <button
-          type="button"
-          onClick={() => setShowDeleteConfirm(true)}
-          className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 active:scale-[0.98] transition-all shadow-sm"
-        >
-          <Trash2 className="w-5 h-5" />
-          Delete Member
-        </button>
-      </div>
+      {/* Actions — delete remains visible */}
+      <MemberActionBar
+        className="static border-0 bg-transparent px-0 pb-8 backdrop-blur-none shadow-none !justify-stretch [&>div]:w-full [&>div:last-child]:hidden"
+        leading={
+          <button
+            type="button"
+            onClick={() => setShowDeleteConfirm(true)}
+            className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 active:scale-[0.98] transition-all shadow-sm"
+          >
+            <Trash2 className="w-5 h-5" />
+            Delete Member
+          </button>
+        }
+      >
+        <span className="sr-only">Actions</span>
+      </MemberActionBar>
 
       {/* Delete confirmation modal */}
       {showDeleteConfirm && client && (

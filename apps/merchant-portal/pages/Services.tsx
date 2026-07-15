@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import * as LucideIcons from 'lucide-react';
-import { Search, MoreVertical } from 'lucide-react';
+import { MoreVertical } from 'lucide-react';
 import { Service, Product, Package, PackageService } from '../types';
 import { Icons } from '../constants';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
@@ -11,6 +11,18 @@ import { GripVertical } from 'lucide-react';
 import { getCurrentOutletID } from '../services/databaseService';
 import { uploadImage, deleteImage, getServiceImagePath } from '../services/storageService';
 import { SERVICE_ICON_CATEGORIES } from '../serviceIcons';
+import { Button } from '../components/ui/Button';
+import {
+  InventoryEmptyState,
+  InventoryEntityCard,
+  InventoryFiltersSheet,
+  InventoryPageHeader,
+  InventoryToolbar,
+  InventoryTypeTabs,
+  InventoryEditPanel,
+  type InventoryCatalogTab,
+  type InventorySortOption,
+} from '../components/inventory';
 
 interface ServicesProps {
   services: Service[];
@@ -33,8 +45,8 @@ interface ServicesProps {
   isLocked?: boolean;
 }
 
-type CatalogTab = 'services' | 'products' | 'packages';
-type SortOption = 'a-z' | 'z-a' | 'price-low' | 'price-high';
+type CatalogTab = InventoryCatalogTab;
+type SortOption = InventorySortOption;
 
 const Services: React.FC<ServicesProps> = ({ 
   services, 
@@ -80,6 +92,7 @@ const Services: React.FC<ServicesProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [menuSearchQuery, setMenuSearchQuery] = useState('');
   const [menuSortBy, setMenuSortBy] = useState<SortOption>('a-z');
+  const [filtersSheetOpen, setFiltersSheetOpen] = useState(false);
 
   const categoriesForTab = useMemo(() => {
     if (activeTab === 'services') return categories;
@@ -739,124 +752,150 @@ const Services: React.FC<ServicesProps> = ({
     return Object.entries(byCategory).sort(([a], [b]) => a.localeCompare(b));
   }, [services, serviceSelectorSearch]);
 
+  const closeItemModal = () => {
+    setShowItemModal(false);
+    setImagePreview(null);
+    setImageFile(null);
+    setShowServiceSelectorModal(false);
+    setOpenPackageServiceMenuId(null);
+  };
+
+  const itemModalTitle = `${editingItem ? 'Edit' : 'Add New'} ${
+    formData.type === 'service' ? 'Service' : formData.type === 'product' ? 'Product' : 'Package'
+  }`;
+
   return (
-    <div className="space-y-6 animate-fadeIn">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-slate-900 leading-tight">Catalog Management</h2>
-          <p className="text-sm font-normal text-slate-600">Manage treatments, retail inventory, and bundled packages.</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex p-1 bg-slate-100 rounded-xl mr-2">
-            <button 
-              onClick={() => setActiveTab('services')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === 'services' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-400'}`}
+    <div className="space-y-4 animate-fadeIn">
+      <InventoryPageHeader
+        primaryLabel={`New ${activeTab === 'services' ? 'Service' : activeTab === 'products' ? 'Product' : 'Package'}`}
+        onPrimaryAction={handleOpenAddModal}
+        primaryDisabled={Boolean(isLocked)}
+        secondaryActions={
+          <>
+            <InventoryTypeTabs activeTab={activeTab} onChange={setActiveTab} />
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={Boolean(isLocked)}
+              onClick={() => !isLocked && setShowCategoryModal(true)}
             >
-              Services
-            </button>
-            <button 
-              onClick={() => setActiveTab('products')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === 'products' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-400'}`}
+              {isLocked ? <Icons.Lock /> : <Icons.Settings />} Categories
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={Boolean(isLocked)}
+              onClick={() => {
+                if (isLocked) return;
+                setReorderCategoriesList([...categories]);
+                setShowRearrangeCategoriesModal(true);
+              }}
             >
-              Products
-            </button>
-            <button 
-              onClick={() => setActiveTab('packages')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === 'packages' ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-400'}`}
-            >
-              Packages
-            </button>
-          </div>
-          <button 
-            onClick={() => !isLocked && setShowCategoryModal(true)}
-            className={`px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all border shadow-sm ${
-              isLocked ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 active:scale-95'
-            }`}
-          >
-            {isLocked ? <Icons.Lock /> : <Icons.Settings />} Categories
-          </button>
-          <button 
-            onClick={() => {
-              if (isLocked) return;
-              setReorderCategoriesList([...categories]);
-              setShowRearrangeCategoriesModal(true);
-            }}
-            className={`px-4 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all border shadow-sm ${
-              isLocked ? 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 active:scale-95'
-            }`}
-          >
-            {isLocked ? <Icons.Lock /> : <GripVertical className="w-4 h-4" />} Rearrange Categories
-          </button>
-          <button 
-            onClick={handleOpenAddModal}
-            className={`px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg ${
-              isLocked ? 'bg-slate-50 text-slate-300 shadow-none cursor-not-allowed' : 'bg-teal-600 text-white hover:bg-teal-700 active:scale-95 shadow-teal-100'
-            }`}
-          >
-            {isLocked ? <Icons.Lock /> : <Icons.Add />} New {activeTab === 'services' ? 'Service' : activeTab === 'products' ? 'Product' : 'Package'}
-          </button>
-        </div>
-      </div>
+              {isLocked ? <Icons.Lock /> : <GripVertical className="w-4 h-4" />} Rearrange
+            </Button>
+          </>
+        }
+      />
 
-      {/* Category bar, Search bar, Sort dropdown */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="flex-1 overflow-x-auto scrollbar-thin">
-          <div className="flex gap-2 pb-2 min-w-0">
-            <button
-              type="button"
-              onClick={() => setSelectedCategory('All')}
-              className={`flex-shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${
-                selectedCategory === 'All'
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              All
-            </button>
-            {categoriesForTab.map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => setSelectedCategory(cat)}
-                className={`flex-shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${
-                  selectedCategory === cat
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 flex-shrink-0">
-          <div className="relative flex-1 sm:min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search by name..."
-              value={menuSearchQuery}
-              onChange={(e) => setMenuSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+      <InventoryToolbar
+        categories={categoriesForTab}
+        selectedCategory={selectedCategory}
+        onCategoryChange={setSelectedCategory}
+        searchQuery={menuSearchQuery}
+        onSearchChange={setMenuSearchQuery}
+        sortBy={menuSortBy}
+        onSortChange={setMenuSortBy}
+        onOpenFiltersSheet={() => setFiltersSheetOpen(true)}
+      />
+
+      <InventoryFiltersSheet
+        open={filtersSheetOpen}
+        onClose={() => setFiltersSheetOpen(false)}
+        categories={categoriesForTab}
+        selectedCategory={selectedCategory}
+        onCategoryChange={(cat) => {
+          setSelectedCategory(cat);
+        }}
+      />
+
+      {/* Mobile dense entity list */}
+      <div className="md:hidden space-y-2">
+        {activeTab === 'services' && filteredServices.length === 0 && (
+          <InventoryEmptyState title="No services found" />
+        )}
+        {activeTab === 'services' &&
+          serviceOrder.map((id) => {
+            const service = filteredServices.find((s) => s.id === id);
+            if (!service) return null;
+            return (
+              <InventoryEntityCard
+                key={service.id}
+                name={service.name}
+                category={service.category || '—'}
+                priceLabel={`$${service.price.toLocaleString()}`}
+                metaLabel={`${service.duration} min`}
+                visible={service.isVisible !== false}
+                thumbnail={
+                  service.imageUrl ? (
+                    <img src={service.imageUrl} alt="" className="w-10 h-10 rounded-ui-sm object-cover" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-ui-sm bg-[var(--brand-soft)] text-[var(--brand)] flex items-center justify-center text-sm">
+                      {service.iconId ? renderServiceIcon(service.iconId, 'w-5 h-5') : getCategoryIcon(service.category)}
+                    </div>
+                  )
+                }
+                actionsDisabled={Boolean(isLocked)}
+                onEdit={() => !isLocked && handleOpenEditModal(service, 'services')}
+                onDelete={() => !isLocked && setItemToDelete({ id: service.id, name: service.name, type: 'services' })}
+              />
+            );
+          })}
+        {activeTab === 'products' && filteredProducts.length === 0 && (
+          <InventoryEmptyState title="No products found" />
+        )}
+        {activeTab === 'products' &&
+          filteredProducts.map((product) => (
+            <InventoryEntityCard
+              key={product.id}
+              name={product.name}
+              category={product.category || '—'}
+              priceLabel={`$${product.price.toLocaleString()}`}
+              metaLabel={`${product.stock} units`}
+              lowStock={product.stock <= 5}
+              thumbnail={
+                <div className="w-10 h-10 rounded-ui-sm bg-amber-50 text-amber-600 flex items-center justify-center">
+                  <Icons.POS />
+                </div>
+              }
+              actionsDisabled={Boolean(isLocked)}
+              onEdit={() => !isLocked && handleOpenEditModal(product, 'products')}
+              onDelete={() => !isLocked && setItemToDelete({ id: product.id, name: product.name, type: 'products' })}
             />
-          </div>
-          <div className="flex-shrink-0">
-            <label className="sr-only">Sort by</label>
-            <select
-              value={menuSortBy}
-              onChange={(e) => setMenuSortBy(e.target.value as SortOption)}
-              className="w-full sm:w-auto px-4 py-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium"
-            >
-              <option value="a-z">A–Z</option>
-              <option value="z-a">Z–A</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-            </select>
-          </div>
-        </div>
+          ))}
+        {activeTab === 'packages' && filteredPackages.length === 0 && (
+          <InventoryEmptyState title="No packages found" />
+        )}
+        {activeTab === 'packages' &&
+          filteredPackages.map((pkg) => (
+            <InventoryEntityCard
+              key={pkg.id}
+              name={pkg.name}
+              category={pkg.category || '—'}
+              priceLabel={`$${pkg.price.toLocaleString()}`}
+              metaLabel={`${pkg.services?.length || 0} services`}
+              thumbnail={
+                <div className="w-10 h-10 rounded-ui-sm bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                  <Icons.Package />
+                </div>
+              }
+              actionsDisabled={Boolean(isLocked)}
+              onEdit={() => !isLocked && handleOpenEditModal(pkg, 'packages')}
+              onDelete={() => !isLocked && setItemToDelete({ id: pkg.id, name: pkg.name, type: 'packages' })}
+            />
+          ))}
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="hidden md:block bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -1016,29 +1055,16 @@ const Services: React.FC<ServicesProps> = ({
         </div>
       </div>
 
-      {/* Item Modal */}
-      {showItemModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className={`rounded-2xl w-full max-w-2xl shadow-2xl animate-scaleIn overflow-hidden ${
-            formData.type === 'package' ? 'bg-white border border-slate-200' : 'bg-white'
-          }`}>
-            <div className={`p-6 border-b flex justify-between items-center ${
-              formData.type === 'package'
-                ? 'border-slate-100 bg-white'
-                : `text-white ${formData.type === 'service' ? 'bg-teal-600' : formData.type === 'product' ? 'bg-amber-600' : 'bg-indigo-600'} border-slate-100`
-            }`}>
-              <h3 className="text-app-section font-bold text-slate-900">
-                {editingItem ? 'Edit' : 'Add New'} {formData.type === 'service' ? 'Service' : formData.type === 'product' ? 'Product' : 'Package'}
-              </h3>
-              <button
-                type="button"
-                onClick={() => { setShowItemModal(false); setShowServiceSelectorModal(false); setOpenPackageServiceMenuId(null); }}
-                className={formData.type === 'package' ? 'p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600' : ''}
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            <form onSubmit={handleSubmit} className={`max-h-[85vh] overflow-y-auto scrollbar-thin ${formData.type === 'package' ? 'p-8 space-y-8' : 'p-8 space-y-6'}`}>
+      {/* Item Modal — presentation chrome via InventoryEditPanel; handlers unchanged */}
+      <InventoryEditPanel
+        open={showItemModal}
+        title={itemModalTitle}
+        onClose={closeItemModal}
+        formId="inventory-edit-form"
+        saving={isUploadingImage}
+        saveDisabled={Boolean(isLocked)}
+      >
+            <form id="inventory-edit-form" onSubmit={handleSubmit} className={`${formData.type === 'package' ? 'space-y-8' : 'space-y-6'}`}>
               {/* Service Image / Icon Section */}
               {formData.type === 'service' && (
                 <div className="mb-6">
@@ -1418,55 +1444,17 @@ const Services: React.FC<ServicesProps> = ({
               </div>
               )}
 
-              <div className={`pt-6 flex gap-3 ${formData.type === 'package' ? 'border-t border-slate-100' : ''}`}>
+              <div className={`pt-4 ${formData.type === 'package' ? 'border-t border-slate-100' : ''}`}>
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowItemModal(false);
-                    setImagePreview(null);
-                    setImageFile(null);
-                    setShowServiceSelectorModal(false);
-                    setOpenPackageServiceMenuId(null);
-                  }}
-                  className={`flex-1 py-3.5 font-semibold rounded-xl transition-colors ${
-                    formData.type === 'package'
-                      ? 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
-                      : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                  }`}
+                  onClick={closeItemModal}
+                  className="text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isUploadingImage}
-                  className={`flex-[2] py-3.5 font-semibold rounded-xl flex items-center justify-center gap-2 transition-all ${
-                    isUploadingImage
-                      ? 'bg-slate-300 text-white cursor-not-allowed'
-                      : formData.type === 'package'
-                        ? 'bg-slate-800 text-white hover:bg-slate-900'
-                        : formData.type === 'service'
-                          ? 'bg-teal-600 hover:bg-teal-700 text-white shadow-lg'
-                          : formData.type === 'product'
-                            ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-lg'
-                            : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg'
-                  }`}
-                >
-                  {isUploadingImage ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      <span>Uploading...</span>
-                    </>
-                  ) : formData.type === 'package' ? (
-                    <span>Save package</span>
-                  ) : (
-                    <span>Save {formData.type}</span>
-                  )}
+                  Cancel without saving
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </InventoryEditPanel>
 
       {/* Service Selector Modal (Add service to package) */}
       {showServiceSelectorModal && (

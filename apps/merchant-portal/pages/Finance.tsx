@@ -3,6 +3,8 @@ import React, { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Transaction, TransactionType } from '../types';
 import { Icons } from '../constants';
+import { ReportEmptyState, ReportPageHeader, ReportTxnCard } from '../components/reports';
+import { Button } from '../components/ui/Button';
 
 interface FinanceProps {
   transactions: Transaction[];
@@ -113,32 +115,26 @@ const Finance: React.FC<FinanceProps> = ({
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-slate-900 leading-tight">Financial Records</h2>
-          <p className="text-sm font-normal text-slate-600">Track your daily income and expenditures</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <button 
-            onClick={() => setShowCategoryModal(true)} 
-            className="px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all border shadow-sm bg-white border-slate-200 text-slate-600 hover:bg-slate-50 active:scale-95"
-          >
-            <Icons.Settings /> Categories
-          </button>
-          <button 
-            onClick={() => setShowExpenseModal(true)} 
-            className="px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg bg-rose-600 text-white hover:bg-rose-700 active:scale-95 shadow-rose-100"
-          >
-            <Icons.Add /> Record Expense
-          </button>
-        </div>
-      </div>
+      <ReportPageHeader
+        title="Financial Records"
+        description="Track your daily income and expenditures"
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" variant="secondary" onClick={() => setShowCategoryModal(true)}>
+              Categories
+            </Button>
+            <Button type="button" variant="primary" onClick={() => setShowExpenseModal(true)}>
+              Record Expense
+            </Button>
+          </div>
+        }
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Analytics Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+        {/* Analytics Section — chart supports decisions; below header */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm h-80">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-6 flex items-center gap-2">
+          <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm h-72 sm:h-80">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-4 sm:mb-6 flex items-center gap-2">
               <Icons.Finance /> Cashflow Overview
             </h3>
             <ResponsiveContainer width="100%" height="80%">
@@ -158,10 +154,40 @@ const Finance: React.FC<FinanceProps> = ({
           </div>
 
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-slate-100">
+            <div className="p-4 sm:p-6 border-b border-slate-100">
                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Expense Ledger</h3>
             </div>
-            <div className="overflow-x-auto">
+
+            {/* Mobile cards */}
+            <div className="sm:hidden space-y-2 p-3">
+              {expenseHistory.map((txn) => (
+                <div key={txn.id} className="relative">
+                  <ReportTxnCard
+                    amountLabel={`-$${txn.amount.toLocaleString()}`}
+                    amountTone="out"
+                    customer={txn.description}
+                    dateTimeLabel={new Date(txn.date).toLocaleDateString()}
+                    paymentMethod={txn.category}
+                    statusLabel="Expense"
+                    statusTone="danger"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => onDeleteTransaction(txn.id)}
+                    className="absolute top-2 right-2 min-w-[40px] min-h-[40px] rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50"
+                    aria-label={`Delete ${txn.description}`}
+                  >
+                    <Icons.Trash />
+                  </button>
+                </div>
+              ))}
+              {expenseHistory.length === 0 ? (
+                <ReportEmptyState title="No expenses recorded yet." description="Record an expense to see it in the ledger." />
+              ) : null}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
                   <tr className="text-slate-400 text-[10px] uppercase tracking-widest font-bold bg-slate-50/50">
@@ -182,9 +208,9 @@ const Finance: React.FC<FinanceProps> = ({
                           {txn.category}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm font-black text-rose-600">-${txn.amount.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-sm font-black text-rose-600 tabular-nums">-${txn.amount.toLocaleString()}</td>
                       <td className="px-6 py-4 text-right">
-                        <button onClick={() => onDeleteTransaction(txn.id)} className="text-slate-300 hover:text-rose-500 transition-colors p-2">
+                        <button onClick={() => onDeleteTransaction(txn.id)} className="text-slate-300 hover:text-rose-500 transition-colors p-2" aria-label="Delete expense">
                           <Icons.Trash />
                         </button>
                       </td>
@@ -220,7 +246,7 @@ const Finance: React.FC<FinanceProps> = ({
                            <div className="w-2 h-2 rounded-full bg-rose-500"></div>
                            <span className="text-sm font-bold text-slate-600">{cat}</span>
                         </div>
-                        <span className="text-sm font-black text-slate-800">${catTotal.toLocaleString()}</span>
+                        <span className="text-sm font-black text-slate-800 tabular-nums">${catTotal.toLocaleString()}</span>
                      </div>
                    );
                  })}
@@ -236,7 +262,7 @@ const Finance: React.FC<FinanceProps> = ({
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl animate-scaleIn overflow-hidden">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-rose-600 text-white">
               <h3 className="text-lg font-bold">Record New Expense</h3>
-              <button onClick={() => setShowExpenseModal(false)} className="hover:rotate-90 transition-transform">
+              <button onClick={() => setShowExpenseModal(false)} className="hover:rotate-90 transition-transform" aria-label="Close">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
@@ -274,7 +300,7 @@ const Finance: React.FC<FinanceProps> = ({
                     type="number" 
                     min="0.01"
                     step="0.01"
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-rose-500 font-black text-rose-600 text-lg"
+                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-rose-500 font-black text-rose-600 text-lg tabular-nums"
                     value={newExpense.amount}
                     onChange={e => setNewExpense({ ...newExpense, amount: e.target.value })}
                   />
@@ -318,7 +344,7 @@ const Finance: React.FC<FinanceProps> = ({
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl animate-scaleIn overflow-hidden">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-800 text-white">
               <h3 className="text-lg font-bold">Manage Expense Categories</h3>
-              <button onClick={() => setShowCategoryModal(false)} className="hover:rotate-90 transition-transform">
+              <button onClick={() => setShowCategoryModal(false)} className="hover:rotate-90 transition-transform" aria-label="Close">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
@@ -335,6 +361,7 @@ const Finance: React.FC<FinanceProps> = ({
                 <button 
                   type="submit"
                   className="p-3 bg-teal-600 text-white rounded-xl hover:bg-teal-700 transition-colors shadow-sm"
+                  aria-label="Add category"
                 >
                   <Icons.Add />
                 </button>
@@ -347,6 +374,7 @@ const Finance: React.FC<FinanceProps> = ({
                     <button 
                       onClick={() => onDeleteCategory(cat)}
                       className="p-1.5 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"
+                      aria-label={`Delete ${cat}`}
                     >
                       <Icons.Trash />
                     </button>

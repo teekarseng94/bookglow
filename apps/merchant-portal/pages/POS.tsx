@@ -5,6 +5,21 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Service, Product, Package, Client, Transaction, TransactionType, CartItem, Staff, RoleCommission, Appointment, OutletSettings } from '../types';
 import { Icons } from '../constants';
 import ReceiptTemplate from '../components/ReceiptTemplate';
+import {
+  POSCartItem,
+  POSCartSheet,
+  POSCatalogueList,
+  POSCatalogueSection,
+  POSCatalogueToolbar,
+  POSItemCard,
+  POSMemberSummary,
+  POSPageHeader,
+  POSPaymentSection,
+  POSSaleCompleteActions,
+  POSStickyCartAction,
+  POSTotals,
+} from '../components/pos';
+import type { POSCatalogTab, POSSortBy } from '../components/pos';
 
 export interface SelectedMemberFromRoute {
   id: string;
@@ -46,8 +61,8 @@ const POS: React.FC<POSProps> = ({
   const [cart, setCart] = useState<CartItem[]>([]);
   const [globalSearch, setGlobalSearch] = useState('');
   const [posCategory, setPosCategory] = useState<string>('All');
-  const [posSortBy, setPosSortBy] = useState<'a-z' | 'z-a' | 'price-low' | 'price-high'>('a-z');
-  const [activeCatalog, setActiveCatalog] = useState<'all' | 'services' | 'products' | 'packages'>('all');
+  const [posSortBy, setPosSortBy] = useState<POSSortBy>('a-z');
+  const [activeCatalog, setActiveCatalog] = useState<POSCatalogTab>('all');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -516,294 +531,288 @@ const POS: React.FC<POSProps> = ({
 
   return (
     <div className="flex flex-col md:grid md:grid-cols-[2fr_1fr] md:gap-4 lg:gap-6 h-full pb-28 md:pb-0">
-      <div className="lg:hidden -mt-1 md:col-span-2">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Point of Sale</h1>
-        <p className="mt-0.5 text-xs sm:text-sm text-slate-500">Add items and complete checkout.</p>
+      <div className="md:col-span-2">
+        <POSPageHeader
+          banner={
+            isVoucherRedemptionMode ? (
+              <div className="rounded-ui-md bg-sky-100 border border-sky-300 px-4 py-3 flex items-center gap-2 text-sky-800 text-sm font-medium">
+                <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                </svg>
+                <span>
+                  Voucher redemption — Add a service or package, assign therapist, then complete. Payment: $0
+                  (Voucher).
+                </span>
+              </div>
+            ) : null
+          }
+        />
       </div>
-      {isVoucherRedemptionMode && (
-        <div className="md:col-span-2 rounded-xl bg-sky-100 border border-sky-300 px-4 py-3 flex items-center gap-2 text-sky-800 text-sm font-medium">
-          <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>
-          <span>Voucher redemption — Add a service or package, assign therapist, then complete. Payment: $0 (Voucher).</span>
-        </div>
-      )}
+
       <div className="space-y-6 md:pr-1 md:overflow-y-auto md:max-h-[calc(100vh-8rem)] md:self-start">
-        <div className="flex flex-col md:flex-row md:flex-wrap gap-2 md:gap-2 lg:gap-4">
-          <div className="relative flex-1">
-            <input type="text" placeholder="Search catalog..." className="w-full pl-11 pr-4 py-2.5 md:py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none shadow-sm" value={globalSearch} onChange={(e) => setGlobalSearch(e.target.value)} />
-            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"><svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></div>
-          </div>
-          <div className="overflow-x-auto scrollbar-thin pb-1 md:overflow-visible md:pb-0">
-            <div className="flex items-center gap-2 min-w-max md:min-w-0 md:flex-wrap">
-              <div className="flex bg-slate-100 p-1 rounded-xl shadow-inner flex-shrink-0">
-                {(['all', 'services', 'products', 'packages'] as const).map(cat => (
-                  <button key={cat} onClick={() => setActiveCatalog(cat)} className={`px-3 py-1.5 rounded-lg text-[9px] md:text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeCatalog === cat ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-400'}`}>{cat}</button>
-                ))}
-              </div>
-              <select value={posSortBy} onChange={(e) => setPosSortBy(e.target.value as 'a-z' | 'z-a' | 'price-low' | 'price-high')} className="flex-shrink-0 md:ml-auto px-3 py-2 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-xs md:text-sm font-medium">
-                <option value="a-z">A–Z</option>
-                <option value="z-a">Z–A</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
-              </select>
-            </div>
-          </div>
-        </div>
+        <POSCatalogueToolbar
+          search={globalSearch}
+          onSearchChange={setGlobalSearch}
+          activeCatalog={activeCatalog}
+          onCatalogChange={setActiveCatalog}
+          sortBy={posSortBy}
+          onSortChange={setPosSortBy}
+          categories={posCategories}
+          selectedCategory={posCategory}
+          onCategoryChange={setPosCategory}
+        />
 
-        <div className="overflow-x-auto scrollbar-thin pb-2">
-          <div className="flex gap-2 min-w-0">
-            {posCategories.map((cat) => (
-              <button key={cat} type="button" onClick={() => setPosCategory(cat)} className={`flex-shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${posCategory === cat ? 'bg-teal-600 text-white shadow-sm' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
-                {cat}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-8 min-h-[60vh]">
-          {(activeCatalog === 'all' || activeCatalog === 'services') && filteredServices.length > 0 && (
-            <section className="animate-fadeIn">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-teal-700 mb-4 flex items-center gap-2"><Icons.Services /> Treatments</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
-                {filteredServices.map(service => (
-                  <button key={service.id} onClick={() => addToCart(service, 'service')} className="bg-white p-3 md:p-4 rounded-xl border border-slate-200 hover:border-teal-500 hover:shadow-md transition-all text-left">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="font-bold text-slate-800 leading-tight">{service.name}</span>
-                      <span className="text-emerald-600 font-black text-sm">${service.price}</span>
-                    </div>
-                    <div className="flex items-center justify-between mt-2 text-[8px] md:text-[9px] font-black text-slate-400 uppercase">
-                      <span>{service.duration} mins</span>
-                      <span className="text-amber-500">+{service.points} PTS</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </section>
+        <POSCatalogueList>
+          {(activeCatalog === 'all' || activeCatalog === 'services') && (
+            <POSCatalogueSection
+              title="Treatments"
+              icon={<Icons.Services />}
+              titleClassName="text-teal-700"
+              empty={filteredServices.length === 0}
+              emptyMessage="No services found. Try a different category or search."
+            >
+              {filteredServices.map((service) => (
+                <POSItemCard
+                  key={service.id}
+                  name={service.name}
+                  priceLabel={`$${service.price}`}
+                  metaLeft={`${service.duration} mins`}
+                  metaRight={`+${service.points} PTS`}
+                  onAdd={() => addToCart(service, 'service')}
+                  accent="brand"
+                />
+              ))}
+            </POSCatalogueSection>
           )}
 
-          {(activeCatalog === 'all' || activeCatalog === 'products') && filteredProducts.length > 0 && (
-            <section className="animate-fadeIn">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-amber-700 mb-4 flex items-center gap-2"><Icons.POS /> Retail Products</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                {filteredProducts.map(product => (
-                  <button key={product.id} onClick={() => addToCart(product, 'product')} className="bg-white p-4 rounded-xl border border-slate-200 hover:border-amber-500 hover:shadow-md transition-all text-left">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="font-bold text-slate-800">{product.name}</span>
-                      <span className="text-emerald-600 font-black text-sm">${product.price}</span>
-                    </div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Stock: {product.stock}</span>
-                  </button>
-                ))}
-              </div>
-            </section>
+          {(activeCatalog === 'all' || activeCatalog === 'products') &&
+            (filteredProducts.length > 0 || activeCatalog === 'products') && (
+            <POSCatalogueSection
+              title="Retail Products"
+              icon={<Icons.POS />}
+              titleClassName="text-amber-700"
+              empty={filteredProducts.length === 0}
+              emptyMessage="No products found. Try a different category or search."
+            >
+              {filteredProducts.map((product) => (
+                <POSItemCard
+                  key={product.id}
+                  name={product.name}
+                  priceLabel={`$${product.price}`}
+                  metaLeft={`Stock: ${product.stock}`}
+                  onAdd={() => addToCart(product, 'product')}
+                  accent="amber"
+                />
+              ))}
+            </POSCatalogueSection>
           )}
 
-          {(activeCatalog === 'all' || activeCatalog === 'packages') && filteredPackages.length > 0 && (
-            <section className="animate-fadeIn">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-indigo-700 mb-4 flex items-center gap-2"><Icons.Package /> Bundled Packages</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                {filteredPackages.map(pkg => (
-                  <button key={pkg.id} onClick={() => addToCart(pkg, 'package')} className="bg-white p-4 rounded-xl border border-slate-200 hover:border-indigo-500 hover:shadow-md transition-all text-left group">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="font-bold text-slate-800 leading-tight">{pkg.name}</span>
-                      <span className="text-emerald-600 font-black text-sm">${pkg.price}</span>
-                    </div>
+          {(activeCatalog === 'all' || activeCatalog === 'packages') &&
+            (filteredPackages.length > 0 || activeCatalog === 'packages') && (
+            <POSCatalogueSection
+              title="Bundled Packages"
+              icon={<Icons.Package />}
+              titleClassName="text-indigo-700"
+              empty={filteredPackages.length === 0}
+              emptyMessage="No packages found. Try a different category or search."
+            >
+              {filteredPackages.map((pkg) => (
+                <POSItemCard
+                  key={pkg.id}
+                  name={pkg.name}
+                  priceLabel={`$${pkg.price}`}
+                  metaRight={`+${pkg.points} PTS`}
+                  accent="indigo"
+                  onAdd={() => addToCart(pkg, 'package')}
+                  chips={
                     <div className="flex flex-wrap gap-1 mb-3">
                       {pkg.services.map((ps, idx) => {
-                        const srv = services.find(s => s.id === ps.serviceId);
-                        return <span key={idx} className="text-[9px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500 font-bold">{ps.quantity}x {srv?.name.split(' ')[0]}</span>
+                        const srv = services.find((s) => s.id === ps.serviceId);
+                        return (
+                          <span
+                            key={idx}
+                            className="text-[9px] bg-[var(--bg-soft)] px-1.5 py-0.5 rounded text-[var(--text-muted)] font-bold"
+                          >
+                            {ps.quantity}x {srv?.name.split(' ')[0]}
+                          </span>
+                        );
                       })}
                     </div>
-                    <div className="flex items-center justify-between text-[10px] font-black text-amber-500 uppercase">
-                      <span>+{pkg.points} PTS</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {(activeCatalog === 'all' || activeCatalog === 'services') && filteredServices.length === 0 && (
-            <section className="animate-fadeIn">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-teal-700 mb-4 flex items-center gap-2"><Icons.Services /> Treatments</h3>
-              <div className="py-12 text-center text-slate-500 text-sm">No services found. Try a different category or search.</div>
-            </section>
-          )}
-          {(activeCatalog === 'all' || activeCatalog === 'products') && filteredProducts.length === 0 && activeCatalog === 'products' && (
-            <div className="py-12 text-center text-slate-500 text-sm">No products found. Try a different category or search.</div>
-          )}
-          {(activeCatalog === 'all' || activeCatalog === 'packages') && filteredPackages.length === 0 && activeCatalog === 'packages' && (
-            <div className="py-12 text-center text-slate-500 text-sm">No packages found. Try a different category or search.</div>
-          )}
-          {activeCatalog === 'all' && filteredServices.length === 0 && filteredProducts.length === 0 && filteredPackages.length === 0 && (
-            <div className="py-12 text-center text-slate-500 text-sm">No items found. Try a different category or search.</div>
-          )}
-        </div>
-      </div>
-
-      {/* Mobile Cart Bottom Bar — sticky above bottom nav */}
-      <div className="md:hidden fixed bottom-[calc(72px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-[45] border-t border-slate-200 bg-white shadow-[0_-4px_12px_rgba(15,23,42,0.12)]">
-        <button
-          type="button"
-          onClick={() => setIsCartOpen(true)}
-          className="w-full flex items-center justify-between px-4 py-3 min-h-[60px]"
-        >
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center justify-center w-8 h-8 bg-teal-100 text-teal-700 rounded-full text-sm font-black">
-              {cart.length}
-            </span>
-            <span className="text-base font-bold text-slate-800 tabular-nums">
-              ${total.toFixed(2)}
-            </span>
-          </div>
-          <span className={`inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-            cart.length > 0
-              ? 'bg-teal-600 text-white shadow-lg shadow-teal-200 active:scale-95'
-              : 'bg-slate-100 text-slate-400'
-          }`}>
-            {cart.length > 0 ? 'Checkout' : 'No items'}
-            {cart.length > 0 && (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-              </svg>
-            )}
-          </span>
-        </button>
-      </div>
-
-      {/* Order Summary sidebar: sticky on tablet/desktop, slide-up sheet on mobile */}
-      <div
-        className={`
-          md:sticky md:top-20 md:h-[calc(100vh-8rem)]
-          md:flex md:flex-col
-          ${isCartOpen ? 'fixed inset-0 z-[50] flex items-end md:static md:z-auto' : 'hidden md:flex'}
-        `}
-      >
-        {/* Mobile overlay background */}
-        {isCartOpen && (
-          <div
-            className="absolute inset-0 bg-slate-900/40 md:hidden"
-            onClick={() => setIsCartOpen(false)}
-          />
-        )}
-
-        <div
-          className={`
-            relative bg-white/95 border border-slate-200 rounded-t-2xl md:rounded-2xl shadow-md
-            flex flex-col h-full overflow-hidden
-            w-full md:w-auto
-            max-h-[90vh] md:max-h-none
-            md:h-[calc(100vh-8rem)]
-            md:static md:shadow-md
-            mb-[calc(72px+env(safe-area-inset-bottom,0px))] md:mb-0
-          `}
-        >
-          {/* Real-time Clock and Date Display */}
-          <div className="py-2 px-3 border-b border-slate-200 bg-gradient-to-r from-teal-50 to-slate-50 shrink-0">
-            <div className="flex flex-col items-center justify-center">
-              <div className="text-xl font-black text-teal-700 tabular-nums leading-tight">
-                {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}
-              </div>
-              <div className="text-xs font-semibold text-slate-600 mt-0.5">
-                {currentTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-              </div>
-            </div>
-          </div>
-
-          <div className="px-3 py-2 sm:px-4 sm:py-2.5 border-b border-slate-100 bg-slate-50/60 shrink-0">
-            <div className="flex items-center justify-between mb-0">
-              <h3 className="text-lg font-semibold text-slate-900">Order Summary</h3>
-              <button
-                onClick={() => setIsCartOpen(false)}
-                className="md:hidden p-1.5 rounded-lg hover:bg-slate-200 transition-colors"
-                aria-label="Close cart"
-              >
-                <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-        <div className="flex-1 min-h-0 overflow-y-auto px-3 py-2 sm:p-4 space-y-2 scrollbar-thin">
-          {!saleComplete && (
-            <div className="space-y-2 pb-1">
-              {quickPOSMemberName && (
-                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-teal-50 border border-teal-200">
-                  <span className="text-[11px] font-semibold text-teal-700">Customer: {quickPOSMemberName} selected.</span>
-                </div>
-              )}
-              {selectedClientData && memberCreditBalance > 0 && (
-                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-blue-50 border border-blue-200">
-                  <span className="text-[11px] font-semibold text-blue-700">
-                    Member credit: RM {memberCreditBalance.toFixed(2)}
-                  </span>
-                </div>
-              )}
-              <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Customer</label>
-              <div className="relative" ref={customerDropdownRef}>
-                <input
-                  ref={customerInputRef}
-                  type="text"
-                  placeholder="Search by name or phone..."
-                  autoComplete="off"
-                  className="w-full min-h-[40px] py-2 px-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium box-border"
-                  value={selectedClientData ? selectedClientData.name : customerSearchQuery}
-                  onChange={(e) => {
-                    setCustomerSearchQuery(e.target.value);
-                    setSelectedClient('');
-                    setQuickPOSMemberName(null);
-                    setCustomerDropdownOpen(true);
-                  }}
-                  onFocus={() => setCustomerDropdownOpen(true)}
-                  onBlur={() => setTimeout(() => setCustomerDropdownOpen(false), 180)}
+                  }
                 />
-                {customerDropdownOpen && customerDropdownRect &&
-                  createPortal(
-                    <div
-                      className="max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl text-sm py-1"
-                      style={{
-                        position: 'fixed',
-                        top: customerDropdownRect.top + 4,
-                        left: customerDropdownRect.left,
-                        width: customerDropdownRect.width,
-                        zIndex: 9999,
+              ))}
+            </POSCatalogueSection>
+          )}
+
+          {activeCatalog === 'all' &&
+            filteredServices.length === 0 &&
+            filteredProducts.length === 0 &&
+            filteredPackages.length === 0 && (
+              <div className="py-12 text-center text-[var(--text-muted)] text-sm">
+                No items found. Try a different category or search.
+              </div>
+            )}
+        </POSCatalogueList>
+      </div>
+
+      <POSStickyCartAction
+        itemCount={cart.length}
+        totalLabel={`$${total.toFixed(2)}`}
+        onOpen={() => setIsCartOpen(true)}
+      />
+
+      <POSCartSheet
+        open={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        clockLabel={currentTime.toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false,
+        })}
+        dateLabel={currentTime.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        })}
+        footer={
+          saleComplete ? (
+            <POSSaleCompleteActions onPrint={handlePrint} onNewSale={handleNewSale} />
+          ) : (
+            <>
+              <POSPaymentSection
+                useCustomDateTime={useCustomDateTime}
+                onCustomDateTimeChange={setUseCustomDateTime}
+                customDate={customDate}
+                onCustomDateChange={setCustomDate}
+                customTime={customTime}
+                onCustomTimeChange={setCustomTime}
+                currentDateTimeLabel={currentTime.toLocaleString('en-GB', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                  hour12: false,
+                })}
+                paymentMethod={selectedPaymentMethod}
+                onPaymentMethodChange={setSelectedPaymentMethod}
+                paymentMethods={paymentMethodsWithCredit}
+                paymentDisabled={isVoucherRedemptionMode}
+                paymentHint={
+                  isVoucherRedemptionMode ? (
+                    <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">
+                      Payment is fixed to <span className="font-semibold text-[var(--brand)]">Voucher (RM 0)</span>{' '}
+                      for this redemption.
+                    </p>
+                  ) : null
+                }
+              />
+              <POSTotals
+                totalLabel={`$${total}`}
+                warning={
+                  cart.some((i) => i.type === 'package') && !selectedClient ? (
+                    <p className="text-xs text-amber-600 font-medium">
+                      Select a member to purchase bundle packages.
+                    </p>
+                  ) : null
+                }
+                checkoutLabel="Complete Sale"
+                onCheckout={handleCheckout}
+                checkoutDisabled={
+                  cart.length === 0 || (cart.some((i) => i.type === 'package') && !selectedClient)
+                }
+                isProcessing={isProcessing}
+                hasRedemptions={hasRedemptionsInCart}
+              />
+            </>
+          )
+        }
+      >
+        {!saleComplete && (
+          <POSMemberSummary
+            quickPOSMemberName={quickPOSMemberName}
+            creditLabel={
+              selectedClientData && memberCreditBalance > 0
+                ? `Member credit: RM ${memberCreditBalance.toFixed(2)}`
+                : null
+            }
+          >
+            <div className="relative" ref={customerDropdownRef}>
+              <input
+                ref={customerInputRef}
+                type="text"
+                placeholder="Search by name or phone..."
+                autoComplete="off"
+                className="w-full min-h-[40px] py-2 px-3 bg-[var(--bg-surface)] border border-[var(--line)] rounded-ui-md outline-none focus-visible:shadow-ui-focus-strong text-sm font-medium box-border"
+                value={selectedClientData ? selectedClientData.name : customerSearchQuery}
+                onChange={(e) => {
+                  setCustomerSearchQuery(e.target.value);
+                  setSelectedClient('');
+                  setQuickPOSMemberName(null);
+                  setCustomerDropdownOpen(true);
+                }}
+                onFocus={() => setCustomerDropdownOpen(true)}
+                onBlur={() => setTimeout(() => setCustomerDropdownOpen(false), 180)}
+              />
+              {customerDropdownOpen &&
+                customerDropdownRect &&
+                createPortal(
+                  <div
+                    className="max-h-56 overflow-y-auto rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] shadow-ui-lg text-sm py-1"
+                    style={{
+                      position: 'fixed',
+                      top: customerDropdownRect.top + 4,
+                      left: customerDropdownRect.left,
+                      width: customerDropdownRect.width,
+                      zIndex: 9999,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      className="w-full px-3 py-2.5 text-left hover:bg-[var(--bg-soft)] border-b border-[var(--line)] text-[var(--text-muted)] font-medium"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setSelectedClient('');
+                        setCustomerSearchQuery('');
+                        setQuickPOSMemberName(null);
+                        setCustomerDropdownOpen(false);
                       }}
                     >
-                      <button
-                        type="button"
-                        className="w-full px-3 py-2.5 text-left hover:bg-slate-50 border-b border-slate-100 text-slate-500 font-medium"
-                        onMouseDown={(e) => { e.preventDefault(); setSelectedClient(''); setCustomerSearchQuery(''); setQuickPOSMemberName(null); setCustomerDropdownOpen(false); }}
-                      >
-                        Guest (Anonymous)
-                      </button>
-                      {customerSuggestions.length === 0 ? (
-                        <div className="px-3 py-4 text-slate-400 text-center">No matching customer</div>
-                      ) : (
-                        customerSuggestions.map((client) => (
-                          <button
-                            key={client.id}
-                            type="button"
-                            className="w-full px-3 py-2.5 text-left hover:bg-teal-50 flex justify-between items-center gap-2"
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              setSelectedClient(client.id);
-                              setCustomerSearchQuery(client.name);
-                              setQuickPOSMemberName(null);
-                              setCustomerDropdownOpen(false);
-                            }}
-                          >
-                            <span className="font-medium text-slate-800 truncate">{client.name}</span>
-                            {client.phone && <span className="text-slate-400 text-xs shrink-0">{client.phone.slice(-4)}</span>}
-                          </button>
-                        ))
-                      )}
-                    </div>,
-                    document.body
-                  )}
-              </div>
+                      Guest (Anonymous)
+                    </button>
+                    {customerSuggestions.length === 0 ? (
+                      <div className="px-3 py-4 text-[var(--text-muted)] text-center">No matching customer</div>
+                    ) : (
+                      customerSuggestions.map((client) => (
+                        <button
+                          key={client.id}
+                          type="button"
+                          className="w-full px-3 py-2.5 text-left hover:bg-[var(--brand-soft)] flex justify-between items-center gap-2"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setSelectedClient(client.id);
+                            setCustomerSearchQuery(client.name);
+                            setQuickPOSMemberName(null);
+                            setCustomerDropdownOpen(false);
+                          }}
+                        >
+                          <span className="font-medium text-[var(--text-primary)] truncate">{client.name}</span>
+                          {client.phone ? (
+                            <span className="text-[var(--text-muted)] text-xs shrink-0">{client.phone.slice(-4)}</span>
+                          ) : null}
+                        </button>
+                      ))
+                    )}
+                  </div>,
+                  document.body,
+                )}
             </div>
-          )}
-          <div className="space-y-2">
+          </POSMemberSummary>
+        )}
+
+        <div className="space-y-2">
           {saleComplete ? (
             <div className="flex flex-col items-center justify-center py-6 animate-fadeIn">
               <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
@@ -812,10 +821,12 @@ const POS: React.FC<POSProps> = ({
                 </svg>
               </div>
               <p className="text-xl font-bold text-emerald-800">Sale Complete!</p>
-              {lastSaleData && (
-                <p className="text-2xl font-black text-slate-800 mt-3">Order Total: ${lastSaleData.total.toFixed(2)}</p>
-              )}
-              <p className="text-sm text-slate-500 mt-2">Print receipt or start next sale</p>
+              {lastSaleData ? (
+                <p className="text-2xl font-black text-[var(--text-primary)] mt-3 tabular-nums">
+                  Order Total: ${lastSaleData.total.toFixed(2)}
+                </p>
+              ) : null}
+              <p className="text-sm text-[var(--text-muted)] mt-2">Print receipt or start next sale</p>
             </div>
           ) : (
             <>
@@ -828,216 +839,103 @@ const POS: React.FC<POSProps> = ({
                 const lineTotal = item.voucherRedemption ? 0 : item.price * item.quantity;
                 const showOriginalPrice = item.voucherRedemption && (item.originalPrice ?? 0) > 0;
                 return (
-                  <div key={lineId} className="bg-white p-2.5 rounded-xl border border-slate-200 animate-fadeIn relative group shadow-sm">
-                    <button onClick={() => removeFromCart(lineId)} className="absolute -top-2 -right-2 w-6 h-6 bg-rose-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-10"><Icons.Trash /></button>
-                    <div className="flex justify-between items-start mb-1.5">
-                      <div className="flex-1 pr-2 min-w-0">
-                        <p className="text-sm font-bold text-slate-800 leading-tight">{displayName}</p>
-                        {showOriginalPrice ? (
-                          <p className="text-xs text-slate-400 font-bold uppercase mt-0.5">
-                            <span className="line-through">{item.quantity} x ${(item.originalPrice ?? 0).toFixed(2)}</span>
-                            <span className="ml-2 text-emerald-600">100% discount · $0</span>
-                          </p>
-                        ) : (
-                          <p className="text-xs text-slate-400 font-bold uppercase mt-0.5">{item.quantity} x ${item.price.toFixed(2)}</p>
-                        )}
-                      </div>
-                      <span className={`font-black text-sm shrink-0 ${item.voucherRedemption ? 'text-emerald-600' : 'text-slate-700'}`}>${lineTotal.toFixed(2)}</span>
-                    </div>
-                    {item.type === 'service' && item.redeemPointsEnabled && item.redeemPoints && (
-                      <div className="mt-1 mb-1 flex items-center justify-between">
-                        <button
-                          type="button"
-                          onClick={() => toggleRedeemWithPoints(lineId)}
-                          className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-colors ${
-                            item.redeemedWithPoints
-                              ? 'bg-amber-500 border-amber-500 text-white'
-                              : 'bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100'
-                          }`}
-                        >
-                          {item.redeemedWithPoints ? 'Redeeming' : 'Redeem'} · {item.redeemPoints} pts
-                        </button>
-                        {selectedClientData && (
-                          <span className="text-[10px] font-bold text-slate-400">
-                            Balance: {selectedClientData.points.toLocaleString()} pts
+                  <POSCartItem
+                    key={lineId}
+                    displayName={displayName}
+                    qtyPriceLabel={
+                      showOriginalPrice ? (
+                        <p>
+                          <span className="line-through">
+                            {item.quantity} x ${(item.originalPrice ?? 0).toFixed(2)}
                           </span>
-                        )}
-                      </div>
-                    )}
-                    {item.type === 'service' && (
-                      <div className="pt-1.5 border-t border-slate-100 min-w-0">
-                        <label className="block text-[9px] font-black uppercase tracking-wider text-slate-400 mb-1">
-                          Therapist
-                        </label>
-                        <select
-                          className={`w-full min-h-[36px] py-1.5 px-2 text-sm rounded-lg border outline-none font-semibold box-border ${
-                            item.staffId
-                              ? 'bg-slate-50 border-slate-200 text-slate-700'
-                              : 'bg-rose-50 border-rose-200 text-rose-600'
-                          }`}
-                          value={item.staffId || ''}
-                          onChange={(e) => updateStaffAssignment(lineId, e.target.value)}
-                        >
-                          <option value="">-- Assign Therapist --</option>
-                          {staff
-                            .filter((s) => {
-                              const qs = s.qualifiedServices;
-                              if (!qs || qs.length === 0) return true;
-                              return qs.includes(item.id);
-                            })
-                            .map((s) => (
-                              <option key={s.id} value={s.id}>
-                                {s.name}
-                              </option>
-                            ))}
-                        </select>
-                      </div>
-                    )}
-                  </div>
+                          <span className="ml-2 text-emerald-600">100% discount · $0</span>
+                        </p>
+                      ) : (
+                        <p>
+                          {item.quantity} x ${item.price.toFixed(2)}
+                        </p>
+                      )
+                    }
+                    lineTotalLabel={`$${lineTotal.toFixed(2)}`}
+                    lineTotalEmphasized={!!item.voucherRedemption}
+                    onRemove={() => removeFromCart(lineId)}
+                    redeemControl={
+                      item.type === 'service' && item.redeemPointsEnabled && item.redeemPoints ? (
+                        <div className="mt-1 mb-1 flex items-center justify-between">
+                          <button
+                            type="button"
+                            onClick={() => toggleRedeemWithPoints(lineId)}
+                            className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-colors ${
+                              item.redeemedWithPoints
+                                ? 'bg-amber-500 border-amber-500 text-white'
+                                : 'bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100'
+                            }`}
+                          >
+                            {item.redeemedWithPoints ? 'Redeeming' : 'Redeem'} · {item.redeemPoints} pts
+                          </button>
+                          {selectedClientData ? (
+                            <span className="text-[10px] font-bold text-[var(--text-muted)]">
+                              Balance: {selectedClientData.points.toLocaleString()} pts
+                            </span>
+                          ) : null}
+                        </div>
+                      ) : null
+                    }
+                    staffControl={
+                      item.type === 'service' ? (
+                        <div className="pt-1.5 border-t border-[var(--line)] min-w-0">
+                          <label className="block text-[9px] font-black uppercase tracking-wider text-[var(--text-muted)] mb-1">
+                            Therapist
+                          </label>
+                          <select
+                            className={`w-full min-h-[36px] py-1.5 px-2 text-sm rounded-ui-sm border outline-none font-semibold box-border ${
+                              item.staffId
+                                ? 'bg-[var(--bg-soft)] border-[var(--line)] text-[var(--text-primary)]'
+                                : 'bg-rose-50 border-rose-200 text-rose-600'
+                            }`}
+                            value={item.staffId || ''}
+                            onChange={(e) => updateStaffAssignment(lineId, e.target.value)}
+                          >
+                            <option value="">-- Assign Therapist --</option>
+                            {staff
+                              .filter((s) => {
+                                const qs = s.qualifiedServices;
+                                if (!qs || qs.length === 0) return true;
+                                return qs.includes(item.id);
+                              })
+                              .map((s) => (
+                                <option key={s.id} value={s.id}>
+                                  {s.name}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+                      ) : null
+                    }
+                  />
                 );
               })}
               {cart.length === 0 && (
                 <div className="text-center py-10">
-                  <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <svg className="w-7 h-7 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                  <div className="w-14 h-14 bg-[var(--bg-soft)] rounded-full flex items-center justify-center mx-auto mb-3">
+                    <svg className="w-7 h-7 text-[var(--text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                      />
+                    </svg>
                   </div>
-                  <p className="text-sm font-semibold text-slate-400">No items selected</p>
-                  <p className="text-xs text-slate-300 mt-1">Tap a service or product to start a sale.</p>
+                  <p className="text-sm font-semibold text-[var(--text-muted)]">No items selected</p>
+                  <p className="text-xs text-[var(--text-muted)] mt-1">Tap a service or product to start a sale.</p>
                 </div>
               )}
             </>
           )}
-          </div>
         </div>
+      </POSCartSheet>
 
-        <div className="shrink-0 p-3 sm:p-4 border-t border-slate-100 bg-slate-50/80 flex flex-col gap-2">
-          {saleComplete ? (
-            <div className="space-y-3 animate-fadeIn">
-              <button
-                type="button"
-                onClick={handlePrint}
-                className="w-full py-3 rounded-xl font-semibold border-2 border-slate-300 text-slate-700 hover:bg-slate-100 flex items-center justify-center gap-2 transition-colors"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h2z" /></svg>
-                Print Receipt
-              </button>
-              <button
-                type="button"
-                onClick={handlePrint}
-                className="w-full py-3 rounded-xl font-semibold border-2 border-slate-300 text-slate-700 hover:bg-slate-100 flex items-center justify-center gap-2 transition-colors"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-                Save PDF
-              </button>
-              <button
-                type="button"
-                onClick={handleNewSale}
-                className="w-full py-4 rounded-xl font-black bg-teal-600 text-white hover:bg-teal-700 active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-teal-100"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                Done
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="space-y-2 mb-2">
-                {/* Sale date & time selection */}
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">
-                      Sale Date &amp; Time
-                    </label>
-                    <label className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                      <input
-                        type="checkbox"
-                        checked={useCustomDateTime}
-                        onChange={(e) => setUseCustomDateTime(e.target.checked)}
-                        className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
-                      />
-                      <span>Custom</span>
-                    </label>
-                  </div>
-                  {useCustomDateTime ? (
-                    <div className="flex gap-2">
-                      <input
-                        type="date"
-                        value={customDate}
-                        onChange={(e) => setCustomDate(e.target.value)}
-                        className="flex-1 min-h-[38px] py-1.5 px-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-teal-500 box-border"
-                      />
-                      <input
-                        type="time"
-                        value={customTime}
-                        onChange={(e) => setCustomTime(e.target.value)}
-                        className="w-24 min-h-[38px] py-1.5 px-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-teal-500 box-border"
-                      />
-                    </div>
-                  ) : (
-                    <p className="text-[11px] text-slate-500 tabular-nums">
-                      {currentTime.toLocaleString('en-GB', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                        hour12: false,
-                      })}
-                    </p>
-                  )}
-                </div>
-
-                {/* Payment method & total */}
-                <div className="space-y-1">
-                  <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Payment Method</label>
-                  <select
-                    className="w-full min-h-[38px] py-1.5 px-2 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-bold box-border"
-                    value={selectedPaymentMethod}
-                    onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                    disabled={isVoucherRedemptionMode}
-                  >
-                    {paymentMethodsWithCredit.map((method) => (
-                      <option key={method} value={method}>
-                        {method}
-                      </option>
-                    ))}
-                  </select>
-                  {isVoucherRedemptionMode && (
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      Payment is fixed to <span className="font-semibold text-teal-600">Voucher (RM 0)</span> for this redemption.
-                    </p>
-                  )}
-                </div>
-                <div className="flex justify-between text-base font-black text-slate-900 pt-1">
-                  <span>Total</span>
-                  <span>${total}</span>
-                </div>
-              </div>
-              {cart.some((i) => i.type === 'package') && !selectedClient && (
-                <p className="text-xs text-amber-600 font-medium">Select a member to purchase bundle packages.</p>
-              )}
-              <button 
-                disabled={cart.length === 0 || isProcessing || (cart.some((i) => i.type === 'package') && !selectedClient)} 
-                onClick={handleCheckout} 
-                className={`w-full py-2 rounded-xl font-semibold shadow-sm transition-all flex items-center justify-center gap-2 min-h-[38px] text-xs ${
-                  cart.length === 0 || (cart.some((i) => i.type === 'package') && !selectedClient)
-                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                    : isProcessing
-                    ? 'bg-teal-400 text-white cursor-wait'
-                    : hasRedemptionsInCart
-                    ? 'bg-amber-400 text-slate-900 hover:bg-amber-500 active:scale-95 shadow-amber-100'
-                    : 'bg-teal-600 text-white hover:bg-teal-700 active:scale-95 shadow-teal-100'
-                }`}
-              >
-                {isProcessing ? 'Finalizing...' : 'Complete Sale'}
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-      </div>
-
-      {/* Hidden ReceiptTemplate: invisible on screen, targeted by @media print */}
       {lastSaleData && <ReceiptTemplate data={lastSaleData} />}
     </div>
   );

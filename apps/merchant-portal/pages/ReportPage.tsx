@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Transaction, TransactionType, Staff } from '../types';
+import { ReportPageHeader, ReportSummaryStrip, ReportFiltersSheet } from '../components/reports';
+import { Button } from '../components/ui/Button';
 
 // Report-specific icons (match image)
 const ReportIcons = {
@@ -641,6 +643,7 @@ function MonthlySummaryCard({ data, monthLabel }: { data: MonthlySummaryData; mo
 const ReportPage: React.FC<ReportPageProps> = ({ transactions, outletID, staff }) => {
   const [reportNav, setReportNav] = useState('monthly-summary');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showNavSheet, setShowNavSheet] = useState(false);
 
   // Report period: single month (for Summary Report and first card)
   const now = new Date();
@@ -717,8 +720,8 @@ const ReportPage: React.FC<ReportPageProps> = ({ transactions, outletID, staff }
 
   return (
     <div className="flex min-h-[calc(100vh-5rem)] bg-slate-50 -mt-4 lg:-mt-8 -ml-4 lg:-ml-8 -mr-4 lg:-mr-8 pr-4 lg:pr-8">
-      {/* Left sidebar - Report sub-nav (full height to top of content area) */}
-      <aside className="w-64 flex-shrink-0 bg-slate-100 border-r border-slate-200 flex flex-col">
+      {/* Left sidebar - desktop only */}
+      <aside className="hidden md:flex w-64 flex-shrink-0 bg-slate-100 border-r border-slate-200 flex-col">
         <div className="p-3 border-b border-slate-200">
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2">
@@ -758,18 +761,21 @@ const ReportPage: React.FC<ReportPageProps> = ({ transactions, outletID, staff }
 
       {/* Main content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-auto">
-        {/* Top bar - no orange/split icon; keep title only */}
-        <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 bg-white border-b border-slate-200">
-          <button type="button" className="p-2 rounded-lg hover:bg-slate-100 text-slate-600" aria-label="Back">
-            <ReportIcons.Close />
-          </button>
-          <h1 className="text-app-section font-bold text-slate-900">Monthly Summary</h1>
-          <div className="w-9" />
+        <div className="flex-shrink-0 px-4 sm:px-6 py-4 bg-white border-b border-slate-200">
+          <ReportPageHeader
+            title="Monthly Summary"
+            description="Outlet collection and monthly performance."
+            actions={
+              <Button type="button" variant="secondary" size="sm" className="md:hidden" onClick={() => setShowNavSheet(true)}>
+                Reports
+              </Button>
+            }
+          />
         </div>
 
         {/* Date controls */}
-        <div className="flex-shrink-0 flex items-center gap-4 px-6 py-4 bg-white border-b border-slate-100">
-          <button type="button" onClick={() => goReportMonth(-1)} className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 text-slate-600">
+        <div className="flex-shrink-0 flex flex-wrap items-center gap-3 sm:gap-4 px-4 sm:px-6 py-4 bg-white border-b border-slate-100">
+          <button type="button" onClick={() => goReportMonth(-1)} className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 text-slate-600" aria-label="Previous month">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
@@ -778,48 +784,55 @@ const ReportPage: React.FC<ReportPageProps> = ({ transactions, outletID, staff }
             <ReportIcons.Calendar />
             <span>{reportMonthLabel}</span>
           </div>
-          <button type="button" onClick={() => goReportMonth(1)} className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 text-slate-600">
+          <button type="button" onClick={() => goReportMonth(1)} className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 text-slate-600" aria-label="Next month">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
-          <div className="ml-auto flex items-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">
-            <ReportIcons.Filter />
-            <span className="text-sm font-medium">Filter</span>
-          </div>
         </div>
 
-        {/* Summary Report (TnG, Cash, Other, Total Revenue) */}
-        <div className="flex-shrink-0 px-6 py-4 bg-slate-50 border-b border-slate-100">
+        {/* Summary Report */}
+        <div className="flex-shrink-0 px-4 sm:px-6 py-4 bg-slate-50 border-b border-slate-100">
           <h2 className="text-sm font-semibold text-slate-700 mb-3">Summary Report</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl">
-            <div className="bg-white rounded-lg border border-slate-200 p-4">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">TnG</p>
-              <p className="text-lg font-bold text-slate-800 mt-1">RM {formatMoney(summaryReport.tng)}</p>
-            </div>
-            <div className="bg-white rounded-lg border border-slate-200 p-4">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Cash</p>
-              <p className="text-lg font-bold text-slate-800 mt-1">RM {formatMoney(summaryReport.cash)}</p>
-            </div>
-            <div className="bg-white rounded-lg border border-slate-200 p-4">
-              <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Other</p>
-              <p className="text-lg font-bold text-slate-800 mt-1">RM {formatMoney(summaryReport.other)}</p>
-            </div>
-            <div className="bg-white rounded-lg border border-teal-200 bg-teal-50/50 p-4">
-              <p className="text-xs font-medium text-teal-700 uppercase tracking-wide">Total Revenue</p>
-              <p className="text-lg font-bold text-teal-800 mt-1">RM {formatMoney(summaryReport.totalRevenue)}</p>
-            </div>
-          </div>
+          <ReportSummaryStrip
+            items={[
+              { label: 'TnG', value: `RM ${formatMoney(summaryReport.tng)}`, tone: 'neutral' },
+              { label: 'Cash', value: `RM ${formatMoney(summaryReport.cash)}`, tone: 'neutral' },
+              { label: 'Other', value: `RM ${formatMoney(summaryReport.other)}`, tone: 'neutral' },
+              { label: 'Total Revenue', value: `RM ${formatMoney(summaryReport.totalRevenue)}`, tone: 'net-positive' },
+            ]}
+          />
         </div>
 
         {/* Two-column monthly cards (real data from transactions) */}
-        <div className="flex-1 p-6 overflow-auto">
+        <div className="flex-1 p-4 sm:p-6 overflow-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
             <MonthlySummaryCard data={month1Data} monthLabel={month1Label} />
             <MonthlySummaryCard data={month2Data} monthLabel={month2Label} />
           </div>
         </div>
       </main>
+
+      <ReportFiltersSheet open={showNavSheet} onClose={() => setShowNavSheet(false)} title="Report sections">
+        <div className="space-y-2">
+          {SIDEBAR_ITEMS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => {
+                setReportNav(item.id);
+                setShowNavSheet(false);
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-sm font-medium min-h-[44px] ${
+                reportNav === item.id ? 'bg-blue-600 text-white' : 'bg-slate-50 text-slate-700'
+              }`}
+            >
+              {item.icon}
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </ReportFiltersSheet>
     </div>
   );
 };

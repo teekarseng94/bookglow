@@ -1,0 +1,19 @@
+{
+  "name": "bookglow",
+  "private": true,
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "firebase-tools": "^13.35.0"
+  },
+  "scripts": {
+    "dev": "concurrently -n merchant,customer -c blue,magenta \"npm run dev:merchant\" \"npm run dev:customer\"",
+    "dev:merchant": "npm --prefix apps/merchant-portal run dev -- --port 5173",
+    "dev:customer": "npm --prefix apps/customer-site run dev -- --port 5174",
+    "build": "npm run build:merchant && npm run build:customer",
+    "build:merchant": "npm --prefix apps/merchant-portal run build -- --outDir ../../dist-dashboard",
+    "build:customer": "npm --prefix apps/customer-site run build -- --outDir ../../dist-booking",
+    "deploy": "deploy-all.bat",
+    "deploy:hosting": "firebase deploy --only hosting",
+    "deploy:firestore": "firebase deploy --only firestore"
+  }
+}

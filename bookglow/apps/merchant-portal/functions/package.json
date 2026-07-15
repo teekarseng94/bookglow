@@ -1,0 +1,16 @@
+{
+  "name": "zenflow-functions",
+  "description": "Cloud Functions for ZenFlow Spa Manager (image upload proxy to avoid CORS)",
+  "main": "index.js",
+  "type": "commonjs",
+  "engines": {
+    "node": "20"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "firebase-admin": "^12.0.0",
+    "firebase-functions": "^4.6.0",
+    "node-ical": "^0.16.0",
+    "zenflow-spa-manager": "file:.."
+  }
+}

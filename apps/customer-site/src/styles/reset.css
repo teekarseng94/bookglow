@@ -1,0 +1,60 @@
+/**
+ * Bookglow V2 reset.
+ *
+ * IMPORTANT: every rule is scoped under `.bg-v2` so it can never affect the
+ * existing live marketing/booking pages (which rely on the Tailwind CDN).
+ * The V2 application shell renders inside an element with class `bg-v2`.
+ */
+
+.bg-v2 *,
+.bg-v2 *::before,
+.bg-v2 *::after {
+  box-sizing: border-box;
+}
+
+.bg-v2 {
+  margin: 0;
+}
+
+.bg-v2 h1,
+.bg-v2 h2,
+.bg-v2 h3,
+.bg-v2 h4,
+.bg-v2 p,
+.bg-v2 figure {
+  margin: 0;
+}
+
+.bg-v2 ul,
+.bg-v2 ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bg-v2 img,
+.bg-v2 svg {
+  display: block;
+  max-width: 100%;
+}
+
+.bg-v2 button,
+.bg-v2 input,
+.bg-v2 select,
+.bg-v2 textarea {
+  font: inherit;
+  color: inherit;
+}
+
+.bg-v2 button {
+  cursor: pointer;
+}
+
+.bg-v2 button:disabled {
+  cursor: not-allowed;
+}
+
+.bg-v2 a {
+  color: inherit;
+  text-decoration: none;
+}

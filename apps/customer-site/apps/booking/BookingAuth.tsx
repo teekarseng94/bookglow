@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { Logo } from "../../constants";
 import {
   registerWithGoogleForBooking,
@@ -9,6 +9,7 @@ import {
 } from "../../services/authService";
 
 export default function BookingAuth() {
+  const { bookingPath } = useParams<{ bookingPath: string }>();
   const [searchParams] = useSearchParams();
   const [showEmail, setShowEmail] = useState(false);
   const [email, setEmail] = useState("");
@@ -174,8 +175,11 @@ export default function BookingAuth() {
             </form>
           )}
 
+          {/* TODO(phase-1): show the resolved merchant display name here instead
+              of the raw booking path/slug. Do not add a Firestore listener just
+              for this label — reuse the merchant summary loaded elsewhere. */}
           <p className="mt-6 text-[11px] text-slate-400">
-            You are booking for <span className="font-semibold text-slate-600">{outletId}</span>{" "}
+            You are booking for <span className="font-semibold text-slate-600">{bookingPath}</span>{" "}
             ({loginSource})
           </p>
         </div>

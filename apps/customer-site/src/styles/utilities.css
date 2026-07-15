@@ -1,0 +1,45 @@
+/**
+ * Bookglow V2 utilities.
+ *
+ * Small, governed helper classes. All scoped under `.bg-v2` (or prefixed
+ * `bgv2-`) so they never collide with the existing Tailwind CDN classes.
+ */
+
+/* Screen-reader-only content that stays keyboard-focusable. */
+.bg-v2 .bgv2-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Visible focus ring for all interactive elements (accessibility foundation). */
+.bg-v2 :focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Constrain and centre main booking content. */
+.bg-v2 .bgv2-content {
+  width: 100%;
+  max-width: var(--booking-content-width);
+  margin-inline: auto;
+}
+
+/* Minimum touch target (44x44) for compact controls. */
+.bg-v2 .bgv2-touch-target {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Prevent accidental horizontal overflow of any V2 subtree. */
+.bg-v2 .bgv2-no-x-overflow {
+  max-width: 100%;
+  overflow-x: hidden;
+}

@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "bookglow-83fb3"
+  },
+  "targets": {
+    "bookglow-83fb3": {
+      "hosting": {
+        "booking-site": [
+          "bookglow-83fb3"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

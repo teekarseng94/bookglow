@@ -1,0 +1,811 @@
+
+import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Transaction, TransactionType, Client } from '../types';
+import { Icons } from '../constants';
+
+interface TransactionsProps {
+  transactions: Transaction[];
+  clients: Client[];
+  onUpdateTransaction: (id: string, data: Partial<Transaction>) => Promise<void>;
+  onDeleteTransaction: (id: string) => Promise<void>;
+  isDeleteLocked?: boolean;
+}
+
+type SortField = 'date' | 'amount' | 'client';
+type SortOrder = 'asc' | 'desc';
+// Record-type filter. Commission is an EXPENSE linked to a sale (parentSaleId) — see types.ts.
+type FilterKey = 'ALL' | 'SALE' | 'COMMISSION' | 'EXPENSE';
+
+// A commission is an expense document tied back to a sale, or explicitly labelled as commission.
+const isCommissionTxn = (t: Transaction): boolean =>
+  t.type === TransactionType.EXPENSE &&
+  (!!t.parentSaleId || /commission/i.test(t.category || '') || /commission/i.test(t.description || ''));
+
+// App-wide currency is Malaysian Ringgit (RM), matching receipts / reports / POS / dashboard.
+const formatRM = (n: number): string => `RM${n.toLocaleString()}`;
+
+// Visual metadata (label, colours, sign) derived from the transaction — no schema changes.
+const getTxnMeta = (t: Transaction) => {
+  if (t.type === TransactionType.SALE) {
+    return { label: 'Sale', sign: '+', dot: 'bg-green-500', amount: 'text-green-600', badge: 'bg-green-50 text-green-700' };
+  }
+  if (isCommissionTxn(t)) {
+    return { label: 'Commission', sign: '-', dot: 'bg-amber-500', amount: 'text-amber-600', badge: 'bg-amber-50 text-amber-700' };
+  }
+  return { label: 'Expense', sign: '-', dot: 'bg-rose-500', amount: 'text-rose-600', badge: 'bg-rose-50 text-rose-700' };
+};
+
+const Transactions: React.FC<TransactionsProps> = ({ 
+  transactions, 
+  clients, 
+  onUpdateTransaction, 
+  onDeleteTransaction,
+  isDeleteLocked 
+}) => {
+  const navigate = useNavigate();
+  const [search, setSearch] = useState('');
+  const [filterType, setFilterType] = useState<FilterKey>('ALL');
+  const [sortField, setSortField] = useState<SortField>('date');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [editingTxn, setEditingTxn] = useState<Transaction | null>(null);
+  const [deletingTxn, setDeletingTxn] = useState<Transaction | null>(null);
+  const [expandedTxn, setExpandedTxn] = useState<string | null>(null);
+  const [detailTxn, setDetailTxn] = useState<Transaction | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showSortSheet, setShowSortSheet] = useState(false); // mobile sort/filter bottom sheet
+
+  const sortedAndFilteredTransactions = useMemo(() => {
+    const filtered = transactions.filter(t => {
+      // Exclude voided sales so Sales History only shows active/deleted sales (voided in Sales Reports = removed from list)
+      if ((t as Transaction & { status?: string }).status === 'voided') return false;
+
+      const client = clients.find(c => c.id === t.clientId);
+      const clientName = client?.name || (t.type === TransactionType.SALE ? 'Guest' : '');
+      
+      const matchesSearch = t.description.toLowerCase().includes(search.toLowerCase()) || 
+                           t.category.toLowerCase().includes(search.toLowerCase()) ||
+                           clientName.toLowerCase().includes(search.toLowerCase());
+      
+      const matchesType =
+        filterType === 'ALL' ? true :
+        filterType === 'SALE' ? t.type === TransactionType.SALE :
+        filterType === 'COMMISSION' ? isCommissionTxn(t) :
+        /* EXPENSE */ t.type === TransactionType.EXPENSE && !isCommissionTxn(t);
+      return matchesSearch && matchesType;
+    });
+
+    return filtered.sort((a, b) => {
+      let comparison = 0;
+      if (sortField === 'date') {
+        comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+      } else if (sortField === 'amount') {
+        comparison = a.amount - b.amount;
+      } else if (sortField === 'client') {
+        const clientA = clients.find(c => c.id === a.clientId)?.name || 'Guest';
+        const clientB = clients.find(c => c.id === b.clientId)?.name || 'Guest';
+        comparison = clientA.localeCompare(clientB);
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+  }, [transactions, search, filterType, sortField, sortOrder, clients]);
+
+  // Summary of the currently filtered records (derived, no calculation changes).
+  const summary = useMemo(() => {
+    let totalIn = 0;
+    let totalOut = 0;
+    for (const t of sortedAndFilteredTransactions) {
+      if (t.type === TransactionType.SALE) totalIn += t.amount;
+      else totalOut += t.amount;
+    }
+    return { totalIn, totalOut, net: totalIn - totalOut };
+  }, [sortedAndFilteredTransactions]);
+
+  const filterChips: { key: FilterKey; label: string }[] = [
+    { key: 'ALL', label: 'All' },
+    { key: 'SALE', label: 'Sales' },
+    { key: 'COMMISSION', label: 'Commission' },
+    { key: 'EXPENSE', label: 'Expense' },
+  ];
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTxn) return;
+    await onUpdateTransaction(editingTxn.id, {
+      date: editingTxn.date,
+      description: editingTxn.description,
+      amount: editingTxn.amount,
+      category: editingTxn.category,
+      clientId: editingTxn.clientId,
+      paymentMethod: editingTxn.paymentMethod
+    });
+    setEditingTxn(null);
+  };
+
+  // Calculate points that would be deducted for a sale
+  const calculatePointsForSale = (txn: Transaction): number => {
+    if (txn.type !== TransactionType.SALE || !txn.clientId || txn.clientId === 'guest' || txn.category === 'Redemption') {
+      return 0;
+    }
+    if (txn.items && txn.items.length > 0) {
+      return txn.items.reduce((sum, item) => {
+        const itemPoints = item.points !== undefined ? item.points : Math.floor(item.price);
+        return sum + (itemPoints * item.quantity);
+      }, 0);
+    }
+    return Math.floor(txn.amount);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingTxn) return;
+    
+    const pointsToDeduct = calculatePointsForSale(deletingTxn);
+    const client = clients.find(c => c.id === deletingTxn.clientId);
+    const clientName = client?.name || 'Guest';
+    
+    try {
+      await onDeleteTransaction(deletingTxn.id);
+      setDeletingTxn(null);
+      
+      // Show success toast
+      if (pointsToDeduct > 0) {
+        setToastMessage(`Sale deleted and ${pointsToDeduct.toLocaleString()} points deducted from ${clientName}.`);
+        setTimeout(() => setToastMessage(null), 5000);
+      } else {
+        setToastMessage('Sale deleted successfully.');
+        setTimeout(() => setToastMessage(null), 3000);
+      }
+    } catch (error: any) {
+      alert(`Failed to delete sale: ${error.message || 'Unknown error'}`);
+    }
+  };
+
+  const toggleExpand = (id: string) => {
+    setExpandedTxn(expandedTxn === id ? null : id);
+  };
+
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      <div className="lg:hidden -mt-1">
+        <h1 className="text-xl sm:text-app-page-lg font-bold tracking-tight text-slate-900">Sales History</h1>
+        <p className="mt-0.5 text-xs text-slate-500 hidden sm:block">Review, edit, or filter past transactions.</p>
+      </div>
+      {/* Info banner — full on desktop, slim one-line note on mobile (minimal vertical space) */}
+      <div className="hidden md:flex bg-teal-50 border border-teal-100 rounded-xl p-4 items-center gap-3">
+        <div className="bg-teal-600 text-white p-2 rounded-lg">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        </div>
+        <p className="text-teal-800 text-xs font-medium">
+          Management Console: Review, edit, or remove historical records to maintain data accuracy.
+        </p>
+      </div>
+      <div className="md:hidden flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
+        <svg className="w-3.5 h-3.5 flex-shrink-0 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        <span>Management mode: review, edit, remove records</span>
+      </div>
+
+      {/* Filters: full-width search, type chips, and compact sort controls */}
+      <div className="space-y-3">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search transactions"
+            className="w-full pl-10 sm:pl-11 pr-4 py-2.5 sm:py-3 min-h-[42px] sm:min-h-[48px] bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 shadow-sm text-sm sm:text-base transition-all"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 sm:justify-between">
+          {/* Record-type chips (horizontally scrollable on mobile) */}
+          <div className="flex gap-2 overflow-x-auto flex-1 min-w-0 -mx-1 px-1 pb-1 sm:pb-0">
+            {filterChips.map((chip) => (
+              <button
+                key={chip.key}
+                type="button"
+                onClick={() => setFilterType(chip.key)}
+                className={`flex-shrink-0 px-3.5 sm:px-4 min-h-[38px] sm:min-h-[40px] rounded-full text-xs font-bold whitespace-nowrap border transition-all ${
+                  filterType === chip.key
+                    ? 'bg-teal-600 text-white border-teal-600 shadow-sm'
+                    : 'bg-white text-slate-500 border-slate-200 hover:border-teal-300'
+                }`}
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Mobile: single Sort button that opens a bottom sheet */}
+          <button
+            type="button"
+            onClick={() => setShowSortSheet(true)}
+            className="sm:hidden flex-shrink-0 inline-flex items-center gap-1.5 px-3 min-h-[38px] rounded-full border border-slate-200 bg-white text-slate-600 text-xs font-bold shadow-sm active:scale-95 transition-all"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4h13M3 8h9M3 12h5m4 6l4 4m0 0l4-4m-4 4V10" /></svg>
+            Sort
+          </button>
+
+          {/* Tablet / desktop: inline sort selects */}
+          <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sort</span>
+            <select
+              aria-label="Sort by"
+              className="bg-white border border-slate-200 px-3 py-2.5 min-h-[44px] rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-teal-500 shadow-sm transition-all"
+              value={sortField}
+              onChange={(e) => setSortField(e.target.value as SortField)}
+            >
+              <option value="date">Date</option>
+              <option value="amount">Amount</option>
+              <option value="client">Client Name</option>
+            </select>
+            <select
+              aria-label="Sort order"
+              className="bg-white border border-slate-200 px-3 py-2.5 min-h-[44px] rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-teal-500 shadow-sm transition-all"
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as SortOrder)}
+            >
+              <option value="desc">Descending</option>
+              <option value="asc">Ascending</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Summary chips for the filtered records */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <div className="bg-white rounded-xl border border-slate-200 p-3 text-center shadow-sm">
+          <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Total In</p>
+          <p className="text-sm sm:text-lg font-black text-green-600 tabular-nums truncate">+RM{summary.totalIn.toLocaleString()}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-3 text-center shadow-sm">
+          <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Total Out</p>
+          <p className="text-sm sm:text-lg font-black text-rose-600 tabular-nums truncate">-RM{summary.totalOut.toLocaleString()}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-3 text-center shadow-sm">
+          <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Net</p>
+          <p className={`text-sm sm:text-lg font-black tabular-nums truncate ${summary.net >= 0 ? 'text-teal-600' : 'text-rose-600'}`}>
+            {summary.net < 0 ? '-' : ''}RM{Math.abs(summary.net).toLocaleString()}
+          </p>
+        </div>
+      </div>
+
+      {sortedAndFilteredTransactions.length === 0 ? (
+        /* Empty state */
+        <div className="bg-white rounded-2xl border border-dashed border-slate-200 p-10 sm:p-16 flex flex-col items-center justify-center text-center">
+          <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300 mb-4">
+            <Icons.Reports />
+          </div>
+          <h3 className="text-base font-bold text-slate-500">No transactions found.</h3>
+          <p className="text-sm text-slate-400 mt-1">
+            {search || filterType !== 'ALL' ? 'Try adjusting your search or filters.' : 'Completed sales and expenses will appear here.'}
+          </p>
+          {!search && filterType === 'ALL' && (
+            <button
+              type="button"
+              onClick={() => navigate('/pos')}
+              className="mt-5 px-5 min-h-[44px] rounded-xl bg-teal-600 text-white text-sm font-bold shadow-lg shadow-teal-100 hover:bg-teal-700 active:scale-95 transition-all"
+            >
+              Go to POS
+            </button>
+          )}
+        </div>
+      ) : (
+        <>
+          {/* Mobile: compact transaction cards (tap to open full detail sheet). No horizontal scroll. */}
+          <div className="md:hidden space-y-2.5 pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
+            {sortedAndFilteredTransactions.map((txn) => {
+              const meta = getTxnMeta(txn);
+              const client = clients.find(c => c.id === txn.clientId);
+              const clientName = client?.name || (txn.type === TransactionType.SALE ? 'Guest' : '');
+              const txnDate = new Date(txn.date);
+              const subline = [clientName, txn.paymentMethod].filter(Boolean).join(' · ');
+              return (
+                <div
+                  key={txn.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setDetailTxn(txn)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDetailTxn(txn); } }}
+                  className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3 cursor-pointer active:scale-[0.99] transition-transform"
+                >
+                  {/* Row 1: type badge + amount */}
+                  <div className="flex items-center justify-between gap-3">
+                    <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${meta.badge}`}>{meta.label}</span>
+                    <span className={`text-base font-black tabular-nums flex-shrink-0 ${meta.amount}`}>{meta.sign}{formatRM(txn.amount)}</span>
+                  </div>
+                  {/* Row 2: date/time */}
+                  <p className="text-[11px] text-slate-400 font-semibold mt-1.5">
+                    {txnDate.toLocaleDateString()} · {txnDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                  {/* Row 3: description */}
+                  <p className="text-sm font-bold text-slate-800 mt-0.5 break-words line-clamp-1">{txn.description}</p>
+                  {/* Row 4: client · payment method (only when present) */}
+                  {subline && (
+                    <p className="text-[11px] text-slate-500 mt-1 truncate">{subline}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* iPad / desktop: table (compact padding on iPad, roomier on desktop) */}
+          <div className="hidden md:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="text-slate-400 text-[10px] uppercase tracking-widest font-bold bg-slate-50 border-b border-slate-100">
+                    <th className="px-3 lg:px-6 py-4">Status</th>
+                    <th className="px-3 lg:px-6 py-4">Date &amp; Description</th>
+                    <th className="px-3 lg:px-6 py-4">Client</th>
+                    <th className="px-3 lg:px-6 py-4">Category</th>
+                    <th className="px-3 lg:px-6 py-4">Method</th>
+                    <th className="px-3 lg:px-6 py-4 text-right">Amount</th>
+                    <th className="px-3 lg:px-6 py-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {sortedAndFilteredTransactions.map(txn => {
+                    const client = clients.find(c => c.id === txn.clientId);
+                    const isExpanded = expandedTxn === txn.id;
+                    const txnDate = new Date(txn.date);
+                    const meta = getTxnMeta(txn);
+
+                    return (
+                      <React.Fragment key={txn.id}>
+                        <tr
+                          className={`hover:bg-slate-50 transition-colors cursor-pointer ${isExpanded ? 'bg-slate-50' : ''}`}
+                          onClick={() => toggleExpand(txn.id)}
+                        >
+                          <td className="px-3 lg:px-6 py-4">
+                            <span className={`inline-flex items-center w-2 h-2 rounded-full ${meta.dot}`}></span>
+                          </td>
+                          <td className="px-3 lg:px-6 py-4">
+                            <div className="flex flex-col">
+                              <span className="text-xs text-slate-500 font-bold">
+                                {txnDate.toLocaleDateString()} {txnDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                              <span className="text-sm font-bold text-slate-800 max-w-xs truncate">{txn.description}</span>
+                            </div>
+                          </td>
+                          <td className="px-3 lg:px-6 py-4 text-sm text-slate-600">
+                            {client ? (
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 bg-teal-50 rounded-full flex items-center justify-center text-[10px] font-bold text-teal-600 flex-shrink-0">
+                                  {client.name.charAt(0)}
+                                </div>
+                                <span className="truncate">{client.name}</span>
+                              </div>
+                            ) : (txn.type === TransactionType.SALE ? <span className="text-slate-300">Guest</span> : <span className="text-slate-300">—</span>)}
+                          </td>
+                          <td className="px-3 lg:px-6 py-4">
+                            <span className="px-2 py-1 bg-slate-100 text-slate-500 text-[10px] font-bold uppercase rounded-md">{txn.category}</span>
+                          </td>
+                          <td className="px-3 lg:px-6 py-4 text-xs font-bold text-slate-500">
+                            {txn.paymentMethod || '—'}
+                          </td>
+                          <td className={`px-3 lg:px-6 py-4 text-sm font-bold text-right tabular-nums ${meta.amount}`}>
+                            {meta.sign}{formatRM(txn.amount)}
+                          </td>
+                          <td className="px-3 lg:px-6 py-4 text-right">
+                            <div className="flex justify-end gap-2 lg:gap-3" onClick={e => e.stopPropagation()}>
+                              <button
+                                disabled={isDeleteLocked}
+                                onClick={() => setEditingTxn(txn)}
+                                className={`p-2 rounded-lg transition-all ${
+                                  isDeleteLocked
+                                    ? 'text-slate-200 cursor-not-allowed'
+                                    : 'text-slate-400 hover:text-teal-600 hover:bg-teal-50'
+                                }`}
+                              >
+                                {isDeleteLocked ? <Icons.Lock /> : <Icons.Edit />}
+                              </button>
+                              <button
+                                disabled={isDeleteLocked}
+                                onClick={() => setDeletingTxn(txn)}
+                                className={`p-2 rounded-lg transition-all ${
+                                  isDeleteLocked
+                                    ? 'text-slate-200 cursor-not-allowed'
+                                    : 'text-slate-400 hover:text-rose-500 hover:bg-rose-50'
+                                }`}
+                              >
+                                {isDeleteLocked ? <Icons.Lock /> : <Icons.Trash />}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+
+                        {isExpanded && txn.items && txn.items.length > 0 && (
+                          <tr className="bg-slate-50">
+                            <td colSpan={7} className="px-6 lg:px-12 py-6 border-y border-slate-100">
+                              <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm max-w-2xl animate-fadeIn">
+                                 <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Sale Breakdown</h4>
+                                 <div className="space-y-3">
+                                   {txn.items.map((item, idx) => (
+                                     <div key={idx} className="flex justify-between items-center text-sm border-b border-slate-50 pb-2">
+                                       <div className="flex flex-col">
+                                         <span className="font-semibold text-slate-700">{item.name}</span>
+                                         <span className="text-[10px] text-slate-400 uppercase font-bold">{item.type}</span>
+                                       </div>
+                                       <div className="text-right">
+                                         <span className="text-slate-500 font-medium">Qty: {item.quantity}</span>
+                                         <span className="ml-6 font-bold text-slate-800">{formatRM(item.price * item.quantity)}</span>
+                                       </div>
+                                     </div>
+                                   ))}
+                                 </div>
+                                 <div className="mt-4 pt-4 border-t-2 border-dashed border-slate-100">
+                                   <div className="flex justify-between mb-1">
+                                     <span className="text-xs font-bold text-slate-400 uppercase">Payment Method</span>
+                                     <span className="text-sm font-black text-slate-600">{txn.paymentMethod || 'Not specified'}</span>
+                                   </div>
+                                   <div className="flex justify-between">
+                                     <span className="text-xs font-bold text-slate-400 uppercase">Total Transaction Amount</span>
+                                     <span className="text-lg font-black text-teal-600">{formatRM(txn.amount)}</span>
+                                   </div>
+                                 </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Mobile transaction detail bottom sheet */}
+      {detailTxn && (() => {
+        const meta = getTxnMeta(detailTxn);
+        const client = clients.find(c => c.id === detailTxn.clientId);
+        const clientName = client?.name || (detailTxn.type === TransactionType.SALE ? 'Guest' : '—');
+        const d = new Date(detailTxn.date);
+        return (
+          <div className="fixed inset-0 z-[70] md:hidden">
+            <div className="absolute inset-0 bg-slate-900/50" onClick={() => setDetailTxn(null)} />
+            <div className="absolute bottom-0 inset-x-0 bg-white rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col animate-fadeIn">
+              <div className="flex-shrink-0 pt-3 pb-1 flex justify-center">
+                <div className="w-10 h-1.5 rounded-full bg-slate-200" />
+              </div>
+              <div className="flex-shrink-0 px-5 py-2 flex items-center justify-between border-b border-slate-100">
+                <h3 className="text-base font-black text-slate-800">Transaction Details</h3>
+                <button
+                  type="button"
+                  onClick={() => setDetailTxn(null)}
+                  aria-label="Close"
+                  className="flex items-center justify-center min-w-[44px] min-h-[44px] -mr-2 rounded-lg text-slate-400 hover:bg-slate-100"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full ${meta.badge}`}>{meta.label}</span>
+                  <span className={`text-xl font-black tabular-nums ${meta.amount}`}>{meta.sign}{formatRM(detailTxn.amount)}</span>
+                </div>
+
+                <div className="space-y-2.5 pt-1">
+                  <div className="flex justify-between gap-4 text-sm">
+                    <span className="text-slate-400 font-semibold flex-shrink-0">Date &amp; Time</span>
+                    <span className="text-slate-700 font-bold text-right">{d.toLocaleDateString()} · {d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                  <div className="flex justify-between gap-4 text-sm">
+                    <span className="text-slate-400 font-semibold flex-shrink-0">Description</span>
+                    <span className="text-slate-700 font-bold text-right break-words min-w-0">{detailTxn.description}</span>
+                  </div>
+                  <div className="flex justify-between gap-4 text-sm">
+                    <span className="text-slate-400 font-semibold flex-shrink-0">Client</span>
+                    <span className="text-slate-700 font-bold text-right">{clientName}</span>
+                  </div>
+                  <div className="flex justify-between gap-4 text-sm">
+                    <span className="text-slate-400 font-semibold flex-shrink-0">Category</span>
+                    <span className="text-slate-700 font-bold text-right">{detailTxn.category || '—'}</span>
+                  </div>
+                  <div className="flex justify-between gap-4 text-sm">
+                    <span className="text-slate-400 font-semibold flex-shrink-0">Payment Method</span>
+                    <span className="text-slate-700 font-bold text-right">{detailTxn.paymentMethod || '—'}</span>
+                  </div>
+                </div>
+
+                {detailTxn.items && detailTxn.items.length > 0 && (
+                  <div className="mt-2 pt-3 border-t border-slate-100">
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Breakdown</h4>
+                    <div className="space-y-2">
+                      {detailTxn.items.map((item, idx) => (
+                        <div key={idx} className="flex justify-between items-center gap-3 text-sm">
+                          <div className="min-w-0">
+                            <p className="font-semibold text-slate-700 truncate">{item.name}</p>
+                            <p className="text-[10px] text-slate-400 uppercase font-bold">{item.type} · Qty {item.quantity}</p>
+                          </div>
+                          <span className="font-bold text-slate-800 tabular-nums flex-shrink-0">{formatRM(item.price * item.quantity)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex-shrink-0 border-t border-slate-100 px-5 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] flex gap-3">
+                <button
+                  type="button"
+                  disabled={isDeleteLocked}
+                  onClick={() => { setEditingTxn(detailTxn); setDetailTxn(null); }}
+                  className={`flex-1 min-h-[48px] rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${
+                    isDeleteLocked ? 'bg-slate-50 text-slate-300 cursor-not-allowed' : 'bg-teal-600 text-white shadow-lg shadow-teal-100 hover:bg-teal-700 active:scale-95'
+                  }`}
+                >
+                  {isDeleteLocked ? <Icons.Lock /> : <Icons.Edit />} Edit
+                </button>
+                {!isDeleteLocked && (
+                  <button
+                    type="button"
+                    onClick={() => { setDeletingTxn(detailTxn); setDetailTxn(null); }}
+                    className="flex-1 min-h-[48px] rounded-xl font-bold flex items-center justify-center gap-2 bg-rose-50 text-rose-600 hover:bg-rose-100 active:scale-95 transition-all"
+                  >
+                    <Icons.Trash /> Delete
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Mobile sort & filter bottom sheet */}
+      {showSortSheet && (
+        <div className="fixed inset-0 z-[70] sm:hidden" role="dialog" aria-modal="true">
+          <div className="absolute inset-0 bg-slate-900/50" onClick={() => setShowSortSheet(false)} />
+          <div className="absolute bottom-0 inset-x-0 bg-white rounded-t-3xl shadow-2xl animate-fadeIn">
+            <div className="pt-3 pb-1 flex justify-center">
+              <div className="w-10 h-1.5 rounded-full bg-slate-200" />
+            </div>
+            <div className="px-5 pt-2 pb-[calc(1.25rem+env(safe-area-inset-bottom,0px))] space-y-5">
+              <h3 className="text-base font-black text-slate-800">Sort &amp; Filter</h3>
+
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2">Record Type</p>
+                <div className="flex flex-wrap gap-2">
+                  {filterChips.map((chip) => (
+                    <button
+                      key={chip.key}
+                      type="button"
+                      onClick={() => setFilterType(chip.key)}
+                      className={`px-3.5 min-h-[40px] rounded-full text-xs font-bold border transition-all ${
+                        filterType === chip.key ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-slate-500 border-slate-200'
+                      }`}
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2">Sort By</p>
+                <div className="flex flex-wrap gap-2">
+                  {([['date', 'Date'], ['amount', 'Amount'], ['client', 'Client Name']] as [SortField, string][]).map(([key, label]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setSortField(key)}
+                      className={`px-3.5 min-h-[40px] rounded-full text-xs font-bold border transition-all ${
+                        sortField === key ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-slate-500 border-slate-200'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-2">Order</p>
+                <div className="flex flex-wrap gap-2">
+                  {([['desc', 'Descending'], ['asc', 'Ascending']] as [SortOrder, string][]).map(([key, label]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setSortOrder(key)}
+                      className={`px-3.5 min-h-[40px] rounded-full text-xs font-bold border transition-all ${
+                        sortOrder === key ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-slate-500 border-slate-200'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => { setFilterType('ALL'); setSortField('date'); setSortOrder('desc'); }}
+                  className="flex-1 min-h-[48px] rounded-xl border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-colors"
+                >
+                  Clear
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSortSheet(false)}
+                  className="flex-[2] min-h-[48px] rounded-xl bg-teal-600 text-white font-bold shadow-lg shadow-teal-100 hover:bg-teal-700 active:scale-95 transition-all"
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Transaction Modal */}
+      {editingTxn && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl animate-scaleIn overflow-hidden">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-teal-600 text-white">
+              <h3 className="text-lg font-bold">Edit Historical Record</h3>
+              <button onClick={() => setEditingTxn(null)} className="hover:rotate-90 transition-transform">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <form onSubmit={handleSaveEdit} className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
+                  <input 
+                    required
+                    type="date" 
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500"
+                    value={editingTxn.date.split('T')[0]}
+                    onChange={e => setEditingTxn({ ...editingTxn, date: new Date(e.target.value).toISOString() })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Amount (RM)</label>
+                  <input 
+                    required
+                    type="number" 
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500"
+                    value={editingTxn.amount}
+                    onChange={e => setEditingTxn({ ...editingTxn, amount: parseFloat(e.target.value) })}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                <input 
+                  required
+                  type="text" 
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500"
+                  value={editingTxn.description}
+                  onChange={e => setEditingTxn({ ...editingTxn, description: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
+                  <input 
+                    required
+                    type="text" 
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500"
+                    value={editingTxn.category}
+                    onChange={e => setEditingTxn({ ...editingTxn, category: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Payment Method</label>
+                  <input 
+                    type="text" 
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500"
+                    value={editingTxn.paymentMethod || ''}
+                    onChange={e => setEditingTxn({ ...editingTxn, paymentMethod: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Link to Client</label>
+                <select 
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500"
+                  value={editingTxn.clientId || ''}
+                  onChange={e => setEditingTxn({ ...editingTxn, clientId: e.target.value || undefined })}
+                >
+                  <option value="">No Client (Guest)</option>
+                  {clients.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              <button 
+                type="submit" 
+                className="w-full py-4 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-lg transition-all"
+              >
+                Save Changes
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {deletingTxn && (() => {
+        const pointsToDeduct = calculatePointsForSale(deletingTxn);
+        const client = clients.find(c => c.id === deletingTxn.clientId);
+        const clientName = client?.name || 'Guest';
+        const receiptNumber = deletingTxn.id.replace(/\D/g, '').slice(-10) || deletingTxn.id.slice(-8);
+        const formattedReceipt = '#' + receiptNumber.padStart(10, '0');
+        
+        return (
+          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl animate-scaleIn overflow-hidden">
+              <div className="p-6 text-center">
+                <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Icons.Trash />
+                </div>
+                <h3 className="text-xl font-bold text-slate-800 mb-2">Delete Transaction?</h3>
+                <p className="text-slate-500 text-sm mb-4">
+                  Are you sure you want to delete this {deletingTxn.type.toLowerCase()} of <span className="font-bold text-slate-700">{formatRM(deletingTxn.amount)}</span>?
+                </p>
+                {pointsToDeduct > 0 && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 text-left">
+                    <p className="text-sm font-semibold text-amber-800 mb-1 flex items-center gap-2">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      Points Deduction Required
+                    </p>
+                    <p className="text-xs text-amber-700 mb-2">
+                      Deleting this sale will also deduct <span className="font-bold text-amber-900">{pointsToDeduct.toLocaleString()}</span> points from <span className="font-semibold">{clientName}</span>.
+                    </p>
+                    <p className="text-[10px] text-amber-600 font-mono">
+                      Receipt: {formattedReceipt}
+                    </p>
+                  </div>
+                )}
+                <div className="flex flex-col gap-2">
+                  <button 
+                    onClick={confirmDelete}
+                    className="w-full py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-lg transition-all"
+                  >
+                    Yes, Delete{pointsToDeduct > 0 ? ' & Deduct Points' : ''}
+                  </button>
+                  <button 
+                    onClick={() => setDeletingTxn(null)}
+                    className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 bg-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] animate-fadeIn flex items-center gap-3 max-w-md">
+          <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+          </svg>
+          <p className="text-sm font-medium flex-1">{toastMessage}</p>
+          <button
+            onClick={() => setToastMessage(null)}
+            className="text-white/80 hover:text-white transition-colors"
+            aria-label="Close"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Transactions;

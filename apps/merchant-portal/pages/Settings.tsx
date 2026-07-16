@@ -376,7 +376,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Shop Name</label>
           <input 
             type="text" 
-            placeholder="e.g. ZenFlow Spa"
+            placeholder="e.g. Bookglow Spa"
             className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-bold"
             value={settings.shopName}
             onChange={handleShopNameChange}
@@ -607,10 +607,10 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
               AI Messaging
             </h4>
             <p className="text-xs text-indigo-800 leading-relaxed font-medium">
-              ZenFlow uses AI to draft personalized, welcoming messages for each client. When reminders are triggered from the dashboard or calendar, they are simulated based on these settings.
+              Bookglow can draft personalized, welcoming messages for each client. When reminders are triggered from the dashboard or calendar, they are simulated based on these settings.
             </p>
             <div className="mt-4 p-3 bg-white/60 rounded-xl text-[10px] text-indigo-600 italic border border-white/40">
-              "Hi Sarah! Just a gentle reminder of your Swedish Massage tomorrow at 11:00 AM at ZenFlow Spa. We can't wait to see you!"
+              "Hi Sarah! Just a gentle reminder of your Swedish Massage tomorrow at 11:00 AM at Bookglow Spa. We can't wait to see you!"
             </div>
           </div>
         </div>
@@ -683,7 +683,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                   value={settings.receiptCompanyName || settings.shopName || ''}
                   onChange={(e) => handleReceiptLayoutChange('receiptCompanyName', e.target.value)}
                   className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                  placeholder="ZenFlow Spa"
+                  placeholder="Bookglow Spa"
                 />
               </div>
               <div>
@@ -721,7 +721,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">Live Receipt Preview</p>
               <div className="mx-auto w-full max-w-[340px] bg-white border border-slate-300 rounded-lg p-4 font-mono text-[11px] text-slate-700 space-y-1">
                 <div className="text-center border-b border-dashed border-slate-300 pb-2 mb-2">
-                  <p className="font-bold text-sm">{settings.receiptCompanyName || settings.shopName || 'ZenFlow Spa'}</p>
+                  <p className="font-bold text-sm">{settings.receiptCompanyName || settings.shopName || 'Bookglow Spa'}</p>
                   <p>{settings.receiptHeaderTitle || 'Tax Invoice'}</p>
                   {(settings.receiptPhone || '').trim() && <p>Phone: {settings.receiptPhone}</p>}
                   {(settings.receiptAddress || '').trim() && <p>{settings.receiptAddress}</p>}

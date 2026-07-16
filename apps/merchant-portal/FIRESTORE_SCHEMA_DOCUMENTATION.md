@@ -23,7 +23,7 @@ This document describes the Firestore database schema for a multi-outlet booking
 ```typescript
 {
   outletID: string;           // Unique identifier: "outlet_001", "outlet_002", etc.
-  name: string;               // "ZenFlow Spa - Downtown"
+  name: string;               // "Bookglow Spa - Downtown"
   address: {
     street: string;
     city: string;

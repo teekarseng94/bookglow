@@ -26,6 +26,8 @@ export interface Service {
   redeemPoints?: number;
   /** If false, service is hidden from customer-facing booking page; default true */
   isVisible?: boolean;
+  /** Menu drag-and-drop order; persisted by serviceService.updateDisplayOrders */
+  displayOrder?: number;
 }
 
 export interface RoleCommission {
@@ -127,6 +129,8 @@ export interface Appointment {
   sourceSaleId?: string;
   /** Optional: Same as sourceSaleId; stored in bookings collection for triggers and queries */
   saleId?: string;
+  /** Optional: origin marker (e.g. setmore sync writes "setmore") */
+  source?: string;
 }
 
 export interface CartItem {
@@ -165,6 +169,14 @@ export interface Transaction {
   paymentMethod?: string;
   /** Set on commission expense docs to link back to the sale; used to avoid duplicate commissions for the same sale */
   parentSaleId?: string;
+  /** Runtime status used by void/sales history (e.g. "voided") */
+  status?: string;
+  /** Staff remarks shown/edited in transaction detail */
+  remarks?: string;
+  /** Partial-payment indicator used by dashboard outstanding rollups */
+  paymentStatus?: string;
+  /** Outstanding amount owed for partial payments */
+  outstanding?: number;
 }
 
 export interface DashboardStats {
@@ -198,6 +210,10 @@ export interface OutletSettings {
   roleCommissions?: RoleCommission[];
   /** Optional staff PIN required to confirm voucher redemption on public redeem page. */
   voucherRedemptionPin?: string;
+  /** Setmore ICS/feed URL for external calendar sync */
+  setmoreFeedUrl?: string;
+  /** ISO timestamp of last successful Setmore sync */
+  setmoreLastSyncedAt?: string;
 }
 
 /** Daily operating hours for booking page (e.g. "8:00" - "17:00") */

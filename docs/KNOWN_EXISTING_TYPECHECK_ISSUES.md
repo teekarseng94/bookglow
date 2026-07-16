@@ -1,18 +1,7 @@
-# Known Existing Merchant TypeScript Issues
+# Known Merchant TypeScript Issues
 
-The production Vite build passes. A strict `tsc --noEmit` run still reports errors that were already present outside the UI retrofit scope.
+**Status:** Cleared as of 2026-07-16 type-safety stabilization.
 
-Affected legacy areas include:
+Merchant `npm run typecheck` (`tsc --noEmit`) now exits **0**.
 
-- `components/ErrorBoundary.tsx`
-- `hooks/useFirestoreData.ts`
-- `lib/supabase.ts`
-- `pages/AppointmentsCalendar.tsx`
-- `pages/Marketing.tsx`
-- `pages/ReportPage.tsx`
-- `pages/SalesReports.tsx`
-- `services/setmoreSyncService.ts`
-
-The redesigned files `components/Layout.tsx` and `pages/Login.tsx` do not appear in the TypeScript error output.
-
-These issues were not changed because this delivery is intentionally restricted to layout, visual structure and responsive behavior. Fixing them should be a separate logic-safe maintenance phase.
+Previously documented legacy errors (ErrorBoundary without `@types/react`, missing domain fields, prop mismatches, etc.) were repaired as compile-contract fixes only — no Firestore or business-logic changes.

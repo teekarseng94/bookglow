@@ -431,7 +431,7 @@ export const useFirestoreData = (outletID: string, role: FirestoreUserRole = nul
   }, [outletID, isCashier]);
 
   // Client operations
-  const handleAddClient = useCallback(async (client: Omit<Client, 'id' | 'points'> & { points?: number }) => {
+  const handleAddClient = useCallback(async (client: Omit<Client, 'id' | 'points' | 'outletID'> & { points?: number; outletID?: string }) => {
     try {
       console.log('Adding client to Firestore:', client);
       const id = await clientService.add(client, outletID);
@@ -560,7 +560,7 @@ export const useFirestoreData = (outletID: string, role: FirestoreUserRole = nul
   );
 
   // Staff operations
-  const handleAddStaff = useCallback(async (member: Omit<Staff, 'id'>) => {
+  const handleAddStaff = useCallback(async (member: Omit<Staff, 'id' | 'outletID'> & { outletID?: string }) => {
     try {
       console.log('Adding staff to Firestore:', member, 'outletID:', outletID);
       // Ensure outletID is set

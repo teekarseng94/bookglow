@@ -1,6 +1,6 @@
 {
   "name": "zenflow-functions",
-  "description": "Cloud Functions for ZenFlow Spa Manager (image upload proxy to avoid CORS)",
+  "description": "Cloud Functions for Bookglow (image upload proxy to avoid CORS)",
   "main": "index.js",
   "type": "commonjs",
   "engines": {

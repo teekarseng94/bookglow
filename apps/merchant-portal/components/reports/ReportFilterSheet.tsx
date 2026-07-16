@@ -37,7 +37,7 @@ function ChipButton({
   active: boolean;
   label: string;
   onClick: () => void;
-}) {
+}): React.ReactElement {
   return (
     <button
       type="button"

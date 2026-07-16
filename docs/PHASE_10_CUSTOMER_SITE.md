@@ -14,7 +14,7 @@
 | `apps/customer-site/components/FloatingScreens.tsx` | Product UI previews |
 | `apps/customer-site/services/authService.ts` | Friendly auth errors |
 
-**Not touched:** `booking-v2` (experimental; not live). No new booking implementation.
+**Not touched (at Phase 10):** experimental `booking-v2` was unmounted. It was later removed in structural cleanup.
 
 ---
 

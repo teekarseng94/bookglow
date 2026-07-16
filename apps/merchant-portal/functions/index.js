@@ -1,5 +1,5 @@
 /**
- * Cloud Functions for ZenFlow Spa Manager
+ * Cloud Functions for Bookglow
  * 
  * uploadServiceImage: Receives image as base64 and uploads to Firebase Storage.
  * Used to avoid CORS when the web app cannot upload directly to Storage.

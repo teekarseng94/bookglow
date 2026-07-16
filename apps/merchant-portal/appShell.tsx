@@ -1,6 +1,8 @@
 /**
  * App shell: BrowserRouter + ErrorBoundary + AppBootstrap.
- * Clean URLs (e.g. /book/outlet_002). Hosting must rewrite all routes to index.html.
+ * Clean URLs. Hosting must rewrite all routes to index.html.
+ * Legacy /book/:id on this host redirects to the customer booking site.
+
  */
 import './index.css';
 import React from 'react';

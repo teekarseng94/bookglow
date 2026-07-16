@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Service, Product, Package, Client, Transaction, TransactionType, CartItem, Staff, RoleCommission, Appointment, OutletSettings } from '../types';
 import { Icons } from '../constants';
-import ReceiptTemplate from '../components/ReceiptTemplate';
+import ReceiptTemplate, { type ReceiptTemplateData } from '../components/ReceiptTemplate';
 import {
   POSCartItem,
   POSCartSheet,
@@ -73,13 +73,7 @@ const POS: React.FC<POSProps> = ({
   const customerInputRef = React.useRef<HTMLInputElement>(null);
   const customerDropdownRef = React.useRef<HTMLDivElement>(null);
   const [saleComplete, setSaleComplete] = useState(false);
-  const [lastSaleData, setLastSaleData] = useState<{
-    items: CartItem[];
-    total: number;
-    date: string;
-    customerName: string;
-    paymentMethod: string;
-  } | null>(null);
+  const [lastSaleData, setLastSaleData] = useState<ReceiptTemplateData | null>(null);
 
   // Apply selectedMember from Quick POS or voucher redemption (Member Details → /pos with state)
   const [isVoucherRedemptionMode, setIsVoucherRedemptionMode] = useState(false);

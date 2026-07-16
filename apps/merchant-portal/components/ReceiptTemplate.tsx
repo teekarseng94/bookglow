@@ -25,7 +25,7 @@ interface ReceiptTemplateProps {
 const ReceiptTemplate: React.FC<ReceiptTemplateProps> = ({ data }) => {
   const { items, total, date, customerName, paymentMethod, receiptSettings } = data;
   const dateFormatted = new Date(date).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
-  const companyName = receiptSettings?.receiptCompanyName?.trim() || receiptSettings?.shopName || 'ZenFlow Spa';
+  const companyName = receiptSettings?.receiptCompanyName?.trim() || receiptSettings?.shopName || 'Bookglow';
   const headerTitle = receiptSettings?.receiptHeaderTitle?.trim() || 'Tax Invoice';
   const phone = receiptSettings?.receiptPhone?.trim();
   const address = receiptSettings?.receiptAddress?.trim();

@@ -1,6 +1,6 @@
-# Quick Start Guide - Localhost Login
+# Quick Start Guide - Localhost Login (Bookglow)
 
-## 🚀 Default Login Credentials for Localhost
+## Default Login Credentials for Localhost
 
 ### Step 1: Create User in Firebase Console
 

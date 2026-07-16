@@ -17,16 +17,18 @@ type SortFilter = 'Recent' | 'New' | 'Birthday' | 'Name';
 
 interface CRMProps {
   clients: Client[];
-  onAddClient: (client: Omit<Client, 'id' | 'points'> & { points?: number }) => Promise<void>;
+  onAddClient: (
+    client: Omit<Client, 'id' | 'points' | 'outletID'> & { points?: number; outletID?: string }
+  ) => Promise<void | string | undefined>;
   onUpdateClient: (id: string, client: Partial<Client>) => Promise<void>;
   onUndoImport?: (sessionId: string) => Promise<number>;
   onDeleteAllClients?: () => Promise<number>;
   transactions: Transaction[];
-  onUpdatePoints: (clientId: string, change: number) => void;
-  onAddTransaction: (txn: Transaction) => Promise<void>;
+  onUpdatePoints: (clientId: string, change: number) => void | Promise<void>;
+  onAddTransaction: (txn: Transaction) => Promise<void | string | undefined>;
   services: Service[];
   rewards: Reward[];
-  onUpdateRewards: (rewards: Reward[]) => void;
+  onUpdateRewards: (rewards: Reward[]) => void | Promise<void>;
   isExportLocked?: boolean;
 }
 
@@ -453,7 +455,7 @@ const CRM: React.FC<CRMProps> = ({
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `zenflow_clients_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `bookglow_clients_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

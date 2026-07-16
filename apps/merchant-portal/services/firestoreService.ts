@@ -105,7 +105,7 @@ export const clientService = {
   },
 
   // Add new client (points optional for import; default 0)
-  add: async (client: Omit<Client, 'id' | 'points'> & { points?: number }, outletID: string = currentOutletID): Promise<string> => {
+  add: async (client: Omit<Client, 'id' | 'points' | 'outletID'> & { points?: number; outletID?: string }, outletID: string = currentOutletID): Promise<string> => {
     if (!hasValidOutlet(outletID)) throw new Error('outletID is required (user must be mapped to an outlet in users collection).');
     const initialPoints = typeof client.points === 'number' && client.points >= 0 ? client.points : 0;
     const raw = {
@@ -311,7 +311,7 @@ export const staffService = {
   },
 
   // Add new staff
-  add: async (staff: Omit<Staff, 'id'>, outletID: string = currentOutletID): Promise<string> => {
+  add: async (staff: Omit<Staff, 'id' | 'outletID'> & { outletID?: string }, outletID: string = currentOutletID): Promise<string> => {
     if (!hasValidOutlet(outletID)) throw new Error('outletID is required (user must be mapped to an outlet in users collection).');
     const staffData = {
       ...staff,

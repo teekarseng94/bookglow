@@ -1,6 +1,6 @@
-# ZenFlow Spa Manager 2.0
+# Bookglow Merchant Portal
 
-A comprehensive CRM, POS, and financial tracking system for spa and wellness centers with Firebase/Firestore backend, multi-tenant (outlet) support, and AI-powered insights.
+A comprehensive CRM, POS, and financial tracking system for service businesses with Firebase/Firestore backend, multi-tenant (outlet) support, and AI-powered insights.
 
 ---
 
@@ -57,7 +57,7 @@ Then deploy hosting as usual (`npm run build` then `firebase deploy --only hosti
 
 | File | Purpose |
 |------|--------|
-| **index.html** | Single HTML shell: title "ZenFlow Spa Manager", Tailwind CDN, Inter font, `#root` mount point, and loading placeholder until React hydrates. |
+| **index.html** | Single HTML shell: title "Bookglow", Inter font, `#root` mount point, and loading placeholder until React hydrates. |
 | **index.tsx** | App entry: mounts React with StrictMode, wraps app in ErrorBoundary, subscribes to Firebase auth, provides UserContext, and mounts `App`. Handles missing root element gracefully. |
 | **App.tsx** | Main app: auth + outlet checks via ProtectedRoute, loads Firestore data with `useFirestoreData`, manages active tab and POS-from-appointment flow. Renders Layout and tab content (Dashboard, POS, CRM, Staff, Services, etc.) with feature-locking and commission/points logic. |
 | **vite.config.ts** | Vite config: dev server (port 5173), React plugin, env loading for `GEMINI_API_KEY`/`API_KEY`, path alias `@` → project root. |
@@ -65,7 +65,7 @@ Then deploy hosting as usual (`npm run build` then `firebase deploy --only hosti
 | **package.json** | Dependencies (React 19, Firebase, Recharts, @google/genai, recharts) and scripts: dev, build, preview, deploy, deploy:all, deploy:firestore, deploy:rules, deploy:indexes. |
 | **constants.tsx** | Shared constants: `COLORS`, nav **Icons** (Dashboard, Calendar, Clients, POS, Finance, Services, Staff, etc.), and initial seed data: `INITIAL_SERVICES`, `INITIAL_PRODUCTS`, `INITIAL_PACKAGES`, `INITIAL_STAFF`, `INITIAL_ROLE_COMMISSIONS`, `INITIAL_REWARDS`, `INITIAL_EXPENSE_CATEGORIES`. |
 | **types.ts** | Global TypeScript types: `TransactionType`, `Service`, `Product`, `Package`, `Reward`, `Staff`, `Client`, `Appointment`, `CartItem`, `Transaction`, `OutletSettings`, `Outlet`, `RoleCommission`, `DashboardStats`, etc. |
-| **metadata.json** | App metadata: name "ZenFlow Spa Manager", short description, requestFramePermissions. |
+| **metadata.json** | App metadata: name "Bookglow", short description, requestFramePermissions. |
 
 ---
 
@@ -166,7 +166,7 @@ Then deploy hosting as usual (`npm run build` then `firebase deploy --only hosti
 
 | Path | Purpose |
 |------|--------|
-| **Spa-system-2026/** | Separate smaller app (own package.json, Vite, App, types): likely an earlier or alternate build; not part of the main ZenFlow 2.0 app runtime. |
+| **Spa-system-2026/** | Separate smaller app (own package.json, Vite, App, types): likely an earlier or alternate build; not part of the main Bookglow app runtime. |
 
 ---
 

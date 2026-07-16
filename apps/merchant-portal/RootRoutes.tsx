@@ -1,13 +1,12 @@
 /**
- * Root routes: public /book/:id (Booking Portal, no auth), /login, then protected dashboard.
- * /book/:id is the very first route and is strictly outside ProtectedRoute / auth checks.
- * Path "/" only matches exactly "/", so it never triggers for /book/... .
+ * Root routes: legacy /book/:id redirects to the customer-site booking host;
+ * public voucher routes; /login; then protected dashboard.
  */
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import Login from './pages/Login';
-import PublicBookingPage from './pages/Book';
+import LegacyBookingRedirect from './components/LegacyBookingRedirect';
 import BuyVoucher from './pages/BuyVoucher';
 import RedeemVoucher from './pages/RedeemVoucher';
 
@@ -27,8 +26,8 @@ const RootRoutes: React.FC = () => {
 
   return (
     <Routes>
-      {/* Public booking first — matches before *; never behind auth */}
-      <Route path="/book/:id" element={<PublicBookingPage />} />
+      {/* Legacy public booking URL — redirects to customer site; never behind auth */}
+      <Route path="/book/:id" element={<LegacyBookingRedirect />} />
       <Route path="/buy-voucher/:slug" element={<BuyVoucher />} />
       <Route path="/redeem/:unique_id" element={<RedeemVoucher />} />
       <Route path="/" element={<Navigate to="/login" replace />} />

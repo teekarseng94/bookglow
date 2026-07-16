@@ -21,8 +21,8 @@ interface AppointmentsCalendarProps {
   services: Service[];
   roleCommissions: RoleCommission[];
   outletSettings: OutletSettings;
-  onAddAppointment: (appointment: Appointment) => void;
-  onUpdateAppointmentStatus: (id: string, status: Appointment['status']) => void;
+  onAddAppointment: (appointment: Appointment) => void | Promise<void | string | undefined>;
+  onUpdateAppointmentStatus: (id: string, status: Appointment['status']) => void | Promise<void>;
   onDeleteAppointment: (id: string) => Promise<void>;
   onStartPOSSale: (appointment: Appointment) => void;
   onMarkReminderSent: (id: string) => void;

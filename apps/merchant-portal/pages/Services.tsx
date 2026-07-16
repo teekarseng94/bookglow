@@ -1,13 +1,13 @@
 
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import * as LucideIcons from 'lucide-react';
-import { MoreVertical } from 'lucide-react';
+import { MoreVertical, Search, GripVertical } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { Service, Product, Package, PackageService } from '../types';
 import { Icons } from '../constants';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical } from 'lucide-react';
 import { getCurrentOutletID } from '../services/databaseService';
 import { uploadImage, deleteImage, getServiceImagePath } from '../services/storageService';
 import { SERVICE_ICON_CATEGORIES } from '../serviceIcons';
@@ -24,18 +24,25 @@ import {
   type InventorySortOption,
 } from '../components/inventory';
 
+function resolveLucideIcon(iconId: string): LucideIcon | undefined {
+  const candidate = (LucideIcons as Record<string, unknown>)[iconId];
+  if (typeof candidate === 'function') {
+    return candidate as LucideIcon;
+  }
+  return undefined;
+}
 interface ServicesProps {
   services: Service[];
   products: Product[];
   packages: Package[];
   onUpdateService: (service: Service) => void | Promise<void>;
-  onAddService: (service: Service) => void | Promise<void>;
+  onAddService: (service: Omit<Service, 'id'> | Service) => void | Promise<void | string | undefined>;
   onDeleteService: (id: string) => void | Promise<void>;
   onUpdateProduct: (product: Product) => void | Promise<void>;
-  onAddProduct: (product: Product) => void | Promise<void>;
+  onAddProduct: (product: Omit<Product, 'id'> | Product) => void | Promise<void | string | undefined>;
   onDeleteProduct: (id: string) => void | Promise<void>;
   onUpdatePackage: (pkg: Package) => void | Promise<void>;
-  onAddPackage: (pkg: Package) => void | Promise<void>;
+  onAddPackage: (pkg: Omit<Package, 'id'> | Package) => void | Promise<void | string | undefined>;
   onDeletePackage: (id: string) => void | Promise<void>;
   categories: string[];
   onAddCategory: (category: string) => void | Promise<void>;
@@ -154,7 +161,7 @@ const Services: React.FC<ServicesProps> = ({
       const src = iconId.startsWith('custom:') ? `/assets/icons/${iconId.replace('custom:', '')}` : iconId;
       return <img src={src} alt="" className={className} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />;
     }
-    const IconComponent = (LucideIcons as Record<string, React.ComponentType<{ className?: string }>>)[iconId];
+    const IconComponent = resolveLucideIcon(iconId);
     return IconComponent ? <IconComponent className={className} /> : null;
   };
 
@@ -472,16 +479,17 @@ const Services: React.FC<ServicesProps> = ({
           }
           
           // Handle image upload for update
+          const existingService = editingItem as Service;
           if (imageFile) {
             const imagePath = getServiceImagePath(outletID, editingItem.id, imageFile.name);
             imageUrl = await uploadImage(imageFile, imagePath);
             // Delete old image if it exists
-            if (editingItem.imageUrl) {
-              await deleteImage(editingItem.imageUrl);
+            if (existingService.imageUrl) {
+              await deleteImage(existingService.imageUrl);
             }
           } else {
             // Keep existing image if no new file selected
-            imageUrl = editingItem.imageUrl || '';
+            imageUrl = existingService.imageUrl || '';
           }
 
           const serviceData: Service = {
@@ -500,7 +508,7 @@ const Services: React.FC<ServicesProps> = ({
             description: formData.description,
             imageUrl: imageUrl || undefined,
             iconId: formData.iconId || undefined,
-            createdAt: editingItem.createdAt || new Date().toISOString()
+            createdAt: existingService.createdAt || new Date().toISOString()
           };
           await onUpdateService(serviceData);
         } else {
@@ -524,8 +532,8 @@ const Services: React.FC<ServicesProps> = ({
           };
           
           // Create service first to get the ID
-          const { id, ...serviceWithoutId } = serviceData;
-          const newServiceId = await onAddService(serviceWithoutId as Omit<Service, 'id'>);
+          const { id: _omitId, ...serviceWithoutId } = serviceData;
+          const newServiceId = await onAddService(serviceWithoutId);
           
           // Upload image with the correct service ID
           if (imageFile && newServiceId) {

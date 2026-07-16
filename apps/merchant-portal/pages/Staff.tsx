@@ -25,7 +25,7 @@ interface StaffProps {
   services: Service[];
   roleCommissions: RoleCommission[];
   onUpdateRoleCommissions: (updated: RoleCommission[]) => void;
-  onAddStaff: (member: Omit<Staff, 'id'>) => Promise<void>;
+  onAddStaff: (member: Omit<Staff, 'id' | 'outletID'> & { outletID?: string }) => Promise<void | string | undefined>;
   onUpdateStaff: (member: Staff) => Promise<void>;
   onDeleteStaff: (id: string) => Promise<void>;
   transactions: Transaction[];
@@ -754,7 +754,9 @@ const StaffPage: React.FC<StaffProps> = ({
                   {photoPreview ? (
                     <img src={photoPreview} alt="Profile preview" className="w-full h-full object-cover" />
                   ) : (
-                    <Icons.Staff className="w-12 h-12 text-slate-300" />
+                    <span className="w-12 h-12 text-slate-300 inline-flex items-center justify-center">
+                      <Icons.Staff />
+                    </span>
                   )}
                 </button>
                 <button

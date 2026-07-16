@@ -25,6 +25,7 @@ const ExternalIntegrations = React.lazy(() => import('./pages/ExternalIntegratio
 const AppointmentsCalendar = React.lazy(() => import('./pages/AppointmentsCalendar'));
 const SalesReports = React.lazy(() => import('./pages/SalesReports'));
 const Marketing = React.lazy(() => import('./pages/Marketing'));
+const ReportPage = React.lazy(() => import('./pages/ReportPage'));
 const SuperAdminLayout = React.lazy(() => import('./components/SuperAdminLayout'));
 const SuperAdminDashboard = React.lazy(() => import('./pages/SuperAdminDashboard'));
 const SuperAdminSubscribers = React.lazy(() => import('./pages/SuperAdminSubscribers'));
@@ -77,6 +78,7 @@ const App: React.FC = () => {
     handleDeleteStaff,
     handleAddAppointment,
     handleUpdateAppointmentStatus,
+    handleDeleteAppointment,
     handleAddTransaction,
     handleUpdateTransaction,
     handleDeleteTransaction,
@@ -103,7 +105,7 @@ const App: React.FC = () => {
   
   // Settings & Permissions State (can be moved to Firestore later)
   const [outletSettings, setOutletSettings] = useState<OutletSettings>({
-    shopName: 'ZenFlow Spa',
+    shopName: 'Bookglow',
     isOutletModeEnabled: false,
     isAdminAuthenticated: true,
     lockedFeatures: [],
@@ -178,6 +180,7 @@ const App: React.FC = () => {
               handleDeleteStaff={handleDeleteStaff}
               handleAddAppointment={handleAddAppointment}
               handleUpdateAppointmentStatus={handleUpdateAppointmentStatus}
+              handleDeleteAppointment={handleDeleteAppointment}
               handleAddTransaction={handleAddTransaction}
               handleUpdateTransaction={handleUpdateTransaction}
               handleDeleteTransaction={handleDeleteTransaction}
@@ -205,10 +208,10 @@ const App: React.FC = () => {
 };
 
 // Tab IDs that are admin-only; cashiers are redirected to POS if they try to access these
-const ADMIN_ONLY_TABS = ['dashboard', 'transactions', 'finance', 'staff', 'settings', 'marketing'] as const;
+const ADMIN_ONLY_TABS = ['dashboard', 'transactions', 'finance', 'staff', 'settings', 'marketing', 'report'] as const;
 
 // Valid top-level path segments (sidebar links use these as absolute paths, e.g. /dashboard, /pos)
-const VALID_TAB_IDS = ['dashboard', 'pos', 'schedule', 'appointments', 'member', 'menu', 'sales-reports', 'transactions', 'finance', 'staff', 'settings', 'marketing'] as const;
+const VALID_TAB_IDS = ['dashboard', 'pos', 'schedule', 'appointments', 'member', 'menu', 'sales-reports', 'transactions', 'finance', 'staff', 'settings', 'marketing', 'report'] as const;
 
 // Separate component for app content to keep App.tsx clean
 interface AppContentProps {
@@ -230,17 +233,18 @@ interface AppContentProps {
   serviceCategories: string[];
   user: any;
   logout: () => Promise<void>;
-  handleAddClient: (client: Omit<Client, 'id' | 'points'>) => Promise<string | undefined>;
+  handleAddClient: (client: Omit<Client, 'id' | 'points' | 'outletID'> & { points?: number; outletID?: string }) => Promise<string | undefined>;
   handleUpdateClient: (id: string, updatedData: Partial<Client>) => Promise<void>;
   handleUpdateClientPoints: (clientId: string, pointsChange: number) => Promise<void>;
   handleDeleteClient: (clientId: string) => Promise<void>;
   handleUpdateClientCredit: (clientId: string, amount: number, type: 'topup' | 'deduction', staffRemark: string, staffName: string, transactionId?: string) => Promise<number>;
   handleRedeemVoucher: (clientId: string) => Promise<void>;
-  handleAddStaff: (member: Omit<Staff, 'id'>) => Promise<string | undefined>;
+  handleAddStaff: (member: Omit<Staff, 'id' | 'outletID'> & { outletID?: string }) => Promise<string | undefined>;
   handleUpdateStaff: (updatedMember: Staff) => Promise<void>;
   handleDeleteStaff: (id: string) => Promise<void>;
   handleAddAppointment: (newApp: Appointment) => Promise<string | undefined>;
   handleUpdateAppointmentStatus: (id: string, status?: Appointment['status'], updates?: Partial<Appointment>) => Promise<void>;
+  handleDeleteAppointment: (id: string) => Promise<void>;
   handleAddTransaction: (txn: Transaction) => Promise<string | undefined>;
   handleUpdateTransaction: (id: string, updatedData: Partial<Transaction>) => Promise<void>;
   handleDeleteTransaction: (id: string) => Promise<void>;
@@ -262,7 +266,7 @@ interface AppContentProps {
 }
 
 const DEFAULT_OUTLET_SETTINGS: OutletSettings = {
-  shopName: 'ZenFlow Spa',
+  shopName: 'Bookglow',
   isOutletModeEnabled: false,
   isAdminAuthenticated: true,
   lockedFeatures: [],
@@ -271,7 +275,7 @@ const DEFAULT_OUTLET_SETTINGS: OutletSettings = {
   reminderTiming: 24,
   reminderChannel: 'Both',
   receiptHeaderTitle: 'Tax Invoice',
-  receiptCompanyName: 'ZenFlow Spa',
+  receiptCompanyName: 'Bookglow',
   receiptPhone: '',
   receiptAddress: '',
   receiptFooterNote: 'Thank you for your visit!'
@@ -307,6 +311,7 @@ const AppContent: React.FC<AppContentProps> = ({
   handleDeleteStaff,
   handleAddAppointment,
   handleUpdateAppointmentStatus,
+  handleDeleteAppointment,
   handleAddTransaction,
   handleUpdateTransaction,
   handleDeleteTransaction,
@@ -430,7 +435,7 @@ const AppContent: React.FC<AppContentProps> = ({
 
   // Staff handlers are now from useFirestoreData hook
   // Wrapper functions to add feature locking
-  const handleAddStaffWithLock = async (member: Omit<Staff, 'id'>) => {
+  const handleAddStaffWithLock = async (member: Omit<Staff, 'id' | 'outletID'> & { outletID?: string }) => {
     if (isFeatureLocked('manage-staff')) return;
     await handleAddStaff(member);
   };
@@ -682,18 +687,21 @@ const AppContent: React.FC<AppContentProps> = ({
           clients={clients}
           serviceCategories={serviceCategories}
           outletID={currentOutletID}
+          paymentMethods={outletSettings.paymentMethods}
           onVoidTransaction={handleVoidTransaction}
           onUpdateTransaction={handleUpdateTransaction}
         />;
       case 'schedule':
       case 'appointments':
-        return <AppointmentsCalendar appointments={appointments} staff={staff} clients={clients} services={services} roleCommissions={roleCommissions} onAddAppointment={handleAddAppointment} onUpdateAppointmentStatus={handleUpdateAppointmentStatusWithPOS} onStartPOSSale={handleStartPOSSale} onMarkReminderSent={handleMarkReminderSent} outletSettings={outletSettings} onSyncSetmore={handleSyncSetmoreOnOpen} />;
+        return <AppointmentsCalendar appointments={appointments} staff={staff} clients={clients} services={services} roleCommissions={roleCommissions} onAddAppointment={handleAddAppointment} onUpdateAppointmentStatus={handleUpdateAppointmentStatusWithPOS} onDeleteAppointment={handleDeleteAppointment} onStartPOSSale={handleStartPOSSale} onMarkReminderSent={handleMarkReminderSent} outletSettings={outletSettings} onSyncSetmore={handleSyncSetmoreOnOpen} />;
       case 'finance':
         return <Finance transactions={transactions} onAddTransaction={handleAddTransaction} onDeleteTransaction={handleDeleteTransaction} expenseCategories={expenseCategories} onAddCategory={handleAddExpenseCategory} onDeleteCategory={handleDeleteExpenseCategory} isLocked={isFeatureLocked('finance-view')} />;
       case 'settings':
         return <Settings settings={outletSettings} onUpdateSettings={handleUpdateOutletSettings} outletId={currentOutletID} />;
       case 'marketing':
         return <Marketing outletID={currentOutletID} services={services} role={role} />;
+      case 'report':
+        return <ReportPage transactions={transactions} outletID={currentOutletID} staff={staff} />;
       default:
         return <Dashboard transactions={transactions} clients={clients} appointments={appointments} services={services} outletSettings={outletSettings} outletID={currentOutletID} onMarkReminderSent={handleMarkReminderSent} />;
     }

@@ -8,8 +8,8 @@ import { Button } from '../components/ui/Button';
 
 interface FinanceProps {
   transactions: Transaction[];
-  onAddTransaction: (txn: Transaction) => void;
-  onDeleteTransaction: (id: string) => void;
+  onAddTransaction: (txn: Transaction) => void | Promise<void | string | undefined>;
+  onDeleteTransaction: (id: string) => void | Promise<void>;
   expenseCategories: string[];
   onAddCategory: (category: string) => void;
   onDeleteCategory: (category: string) => void;
@@ -82,7 +82,8 @@ const Finance: React.FC<FinanceProps> = ({
     if (!newExpense.description || !newExpense.amount) return;
     
     onAddTransaction({ 
-      id: `exp_${Date.now()}`, 
+      id: `exp_${Date.now()}`,
+      outletID: '',
       date: new Date(newExpense.date).toISOString(), 
       type: TransactionType.EXPENSE, 
       amount: parseFloat(newExpense.amount), 

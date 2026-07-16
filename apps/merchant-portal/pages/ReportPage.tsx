@@ -254,15 +254,23 @@ export interface ReportPageProps {
 
 /** Normalize transaction date to ISO string for range compare */
 function txnDateStr(t: Transaction): string {
-  const d = t.date;
+  const d: unknown = t.date;
   if (typeof d === 'string') return d;
   if (d instanceof Date) return d.toISOString();
-  return (d as { toDate?: () => Date })?.toDate?.()?.toISOString?.() ?? '';
+  if (
+    d &&
+    typeof d === 'object' &&
+    'toDate' in d &&
+    typeof (d as { toDate?: () => Date }).toDate === 'function'
+  ) {
+    return (d as { toDate: () => Date }).toDate().toISOString();
+  }
+  return '';
 }
 
 function isVoided(t: Transaction): boolean {
-  const status = (t as Transaction & { status?: string }).status ?? '';
-  return String(status).toLowerCase() === 'voided' || (t as any).voided === true;
+  const status = t.status ?? '';
+  return String(status).toLowerCase() === 'voided' || (t as Transaction & { voided?: boolean }).voided === true;
 }
 
 /** Receipt number from transaction id (e.g. #0000002179) */
@@ -676,14 +684,9 @@ const ReportPage: React.FC<ReportPageProps> = ({ transactions, outletID, staff }
 
     transactions.forEach((t) => {
       if (t.outletID !== outletID || t.type !== TransactionType.SALE) return;
-      const status = (t as Transaction & { status?: string }).status ?? '';
-      if (String(status).toLowerCase() === 'voided' || (t as any).voided === true) return;
-      const dateStr =
-        typeof t.date === 'string'
-          ? t.date
-          : t.date instanceof Date
-            ? t.date.toISOString()
-            : (t.date as { toDate?: () => Date })?.toDate?.()?.toISOString?.() ?? '';
+      const status = t.status ?? '';
+      if (String(status).toLowerCase() === 'voided' || (t as Transaction & { voided?: boolean }).voided === true) return;
+      const dateStr = txnDateStr(t);
       if (!dateStr || dateStr < startStr || dateStr > endStr) return;
 
       const bucket = paymentBucket(t.paymentMethod);

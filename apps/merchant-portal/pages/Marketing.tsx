@@ -199,7 +199,9 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
               multiple
               value={selectedServiceIds}
               onChange={(e) =>
-                setSelectedServiceIds(Array.from(e.target.selectedOptions).map((opt) => opt.value))
+                setSelectedServiceIds(
+                  Array.from(e.target.selectedOptions, (opt: HTMLOptionElement) => opt.value)
+                )
               }
               className="w-full p-3 min-h-[120px] bg-[var(--bg-soft)] border border-[var(--line)] rounded-ui-md outline-none focus-visible:shadow-ui-focus-strong"
               required

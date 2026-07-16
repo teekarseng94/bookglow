@@ -507,7 +507,7 @@ const Transactions: React.FC<TransactionsProps> = ({
         );
       })()}
 
-      <ReportFilterSheet
+      <ReportFilterSheet<FilterKey, SortField>
         open={showSortSheet}
         onClose={() => setShowSortSheet(false)}
         filterOptions={filterChips.map((c) => ({ value: c.key, label: c.label }))}

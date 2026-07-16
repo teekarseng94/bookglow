@@ -26,7 +26,7 @@ import {
  * Example Document:
  * {
  *   outletID: "outlet_001",
- *   name: "ZenFlow Spa - Downtown",
+ *   name: "Bookglow Spa - Downtown",
  *   address: {
  *     street: "123 Main St",
  *     city: "New York",
@@ -44,7 +44,7 @@ import {
  *     sunday: { open: "10:00", close: "16:00", isOpen: false }
  *   },
  *   phone: "+1-555-0100",
- *   email: "downtown@zenflow.spa",
+ *   email: "downtown@bookglow.example",
  *   timezone: "America/New_York",
  *   createdAt: "2024-01-15T10:00:00Z",
  *   updatedAt: "2024-01-15T10:00:00Z",
@@ -67,7 +67,7 @@ import {
  *   outletID: "outlet_001",
  *   name: "Emma Wilson",
  *   role: "Lead Therapist",
- *   email: "emma@zenflow.spa",
+ *   email: "emma@bookglow.example",
  *   phone: "555-2020",
  *   createdAt: "2024-01-15T10:00:00Z",
  *   profilePicture: "https://..."

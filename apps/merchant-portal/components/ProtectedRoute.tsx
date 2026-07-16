@@ -31,7 +31,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  // Public paths: /book/* must be accessible without a login token (guest booking).
+  // Public paths: /book/* redirects to customer booking without requiring login.
   const onBookingPath = typeof window !== 'undefined' && (
     window.location.pathname.startsWith('/book/') || window.location.hash.includes('/book/')
   );

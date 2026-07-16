@@ -133,8 +133,8 @@ export const INITIAL_PACKAGES: Package[] = [
 ];
 
 export const INITIAL_STAFF: Staff[] = [
-  { id: 'st1', outletID: DEFAULT_OUTLET_ID, name: 'Emma Wilson', role: 'Lead Therapist', email: 'emma@zenflow.spa', phone: '555-2020', createdAt: new Date().toISOString() },
-  { id: 'st2', outletID: DEFAULT_OUTLET_ID, name: 'David Jones', role: 'Therapist', email: 'david@zenflow.spa', phone: '555-2021', createdAt: new Date().toISOString() },
+  { id: 'st1', outletID: DEFAULT_OUTLET_ID, name: 'Emma Wilson', role: 'Lead Therapist', email: 'emma@bookglow.example', phone: '555-2020', createdAt: new Date().toISOString() },
+  { id: 'st2', outletID: DEFAULT_OUTLET_ID, name: 'David Jones', role: 'Therapist', email: 'david@bookglow.example', phone: '555-2021', createdAt: new Date().toISOString() },
 ];
 
 export const INITIAL_ROLE_COMMISSIONS: RoleCommission[] = [

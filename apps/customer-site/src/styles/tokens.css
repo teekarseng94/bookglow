@@ -1,0 +1,100 @@
+:root {
+  color-scheme: light;
+  --bg-page: #f7f4f6;
+  --bg-paper: #fffdfb;
+  --bg-surface: #ffffff;
+  --bg-soft: #fbf8fa;
+  --bg-selection: #f0ebff;
+  --bg-canvas: var(--bg-page);
+  --paper: var(--bg-paper);
+  --text-primary: #19161d;
+  --text-secondary: #625b67;
+  --text-muted: #8a828e;
+  --ink: var(--text-primary);
+  --ink-2: #332d37;
+  --muted: var(--text-secondary);
+  --muted-2: var(--text-muted);
+  --line: #e8e1e8;
+  --line-strong: #d8ced9;
+  --border: var(--line);
+  --border-strong: var(--line-strong);
+  --brand: #7656d6;
+  --brand-hover: #6244bd;
+  --brand-deep: #3e2b7d;
+  --brand-soft: #f0ebff;
+  --brand-border: #d8cdf9;
+  --rose: #c84d78;
+  --success: #16735d;
+  --success-soft: #e9f6f1;
+  --warning: #96620a;
+  --warning-soft: #fff6dd;
+  --danger: #a43b50;
+  --danger-soft: #fff0f3;
+  --info: #3d5a80;
+  --info-soft: #eef3f8;
+  --shadow-xs: 0 1px 2px rgba(39, 25, 42, 0.04);
+  --shadow-sm: 0 8px 24px rgba(39, 25, 42, 0.06);
+  --shadow-md: 0 18px 48px rgba(39, 25, 42, 0.10);
+  --shadow-lg: 0 28px 80px rgba(39, 25, 42, 0.13);
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 26px;
+  --radius-xl: 34px;
+
+  /* 4px spacing rhythm */
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Typography */
+  --font-sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --text-page: 2rem;
+  --text-page-lg: 2.125rem;
+  --text-section: 1.5rem;
+  --text-body: 0.9375rem;
+  --text-label: 0.6875rem;
+
+  /* Focus */
+  --focus-ring: 0 0 0 3px rgba(118, 86, 214, 0.16);
+  --focus-ring-strong: 0 0 0 3px rgba(118, 86, 214, 0.28);
+
+  /* Safe area */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
+  /* Breakpoints (reference) */
+  --bp-sm: 640px;
+  --bp-md: 768px;
+  --bp-lg: 1024px;
+  --bp-xl: 1280px;
+
+  /* Semantic aliases consumed by shared customer components. */
+  --color-surface-page: var(--bg-paper);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-border: var(--line-strong);
+  --color-border-subtle: var(--line);
+  --color-action-primary: var(--brand);
+  --color-action-primary-hover: var(--brand-hover);
+  --color-action-primary-text: #ffffff;
+  --color-selection-soft: var(--brand-soft);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --theme-border: var(--brand-border);
+  --content-max: 1180px;
+  --decision-max: 720px;
+}

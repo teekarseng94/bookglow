@@ -981,6 +981,64 @@ exports.getPublicOutletData = functions
   });
 
 /**
+ * Authenticated customer: append a review to outlets/{outletId}.reviews
+ * Body: { outletId, author, text, rating }
+ */
+exports.submitPublicReview = functions
+  .region("asia-southeast1")
+  .https.onCall(async (data, context) => {
+    if (!context?.auth?.uid) {
+      throw new functions.https.HttpsError(
+        "unauthenticated",
+        "Sign in to leave a review."
+      );
+    }
+    const outletId = data && data.outletId ? String(data.outletId).trim() : "";
+    const author = data && data.author ? String(data.author).trim() : "";
+    const text = data && data.text ? String(data.text).trim() : "";
+    let rating = data && data.rating != null ? Number(data.rating) : 5;
+    if (!outletId || !text || text.length < 3) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "outletId and a short review text are required."
+      );
+    }
+    if (!Number.isFinite(rating)) rating = 5;
+    rating = Math.max(1, Math.min(5, Math.round(rating)));
+    const displayAuthor =
+      author ||
+      (context.auth.token && context.auth.token.email
+        ? String(context.auth.token.email).split("@")[0]
+        : "Guest");
+
+    try {
+      const outletRef = db.collection("outlets").doc(outletId);
+      const outletSnap = await outletRef.get();
+      if (!outletSnap.exists) {
+        throw new functions.https.HttpsError("not-found", "Outlet not found.");
+      }
+      await outletRef.update({
+        reviews: admin.firestore.FieldValue.arrayUnion({
+          author: displayAuthor.slice(0, 80),
+          text: text.slice(0, 2000),
+          rating,
+          createdAt: new Date().toISOString(),
+          uid: context.auth.uid,
+        }),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      return { success: true };
+    } catch (err) {
+      if (err instanceof functions.https.HttpsError) throw err;
+      console.error("submitPublicReview error:", err);
+      throw new functions.https.HttpsError(
+        "internal",
+        err.message || "Failed to submit review"
+      );
+    }
+  });
+
+/**
  * Public (no auth): create a booking (client + appointment) for an outlet.
  * Body: { outletId, serviceId, date, time, customerName, phone, email }
  * date: YYYY-MM-DD, time: HH:mm

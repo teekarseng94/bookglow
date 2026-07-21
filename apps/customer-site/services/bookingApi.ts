@@ -89,3 +89,20 @@ export async function getAvailableSlots(payload: GetAvailableSlotsPayload): Prom
   const res = await fn(payload);
   return res.data;
 }
+
+export interface SubmitPublicReviewPayload {
+  outletId: string;
+  author: string;
+  text: string;
+  rating: number;
+}
+
+export interface SubmitPublicReviewResult {
+  success: boolean;
+}
+
+export async function submitPublicReview(payload: SubmitPublicReviewPayload): Promise<SubmitPublicReviewResult> {
+  const fn = httpsCallable<SubmitPublicReviewPayload, SubmitPublicReviewResult>(functions, "submitPublicReview");
+  const res = await fn(payload);
+  return res.data;
+}

@@ -3,12 +3,15 @@ import React from 'react';
 import { NavItem } from './types';
 
 export const NAV_ITEMS: NavItem[] = [
-  { label: 'Learn', href: '#learn' },
-  { label: 'Integrations', href: '#integrations' },
+  { label: 'Product', href: '#learn' },
   { label: 'Features', href: '#features' },
   { label: 'Industries', href: '#industries' },
   { label: 'Pricing', href: '#pricing' },
+  { label: 'Resources', href: '#integrations' },
 ];
+
+/** Nav labels that show a decorative chevron in the mock (no separate dropdown pages yet). */
+export const NAV_ITEMS_WITH_CHEVRON = new Set(['Product', 'Industries', 'Resources']);
 
 export const PRIMARY_GREEN = '#7656D6';
 

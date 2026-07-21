@@ -86,11 +86,23 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       setAddressDisplay(propOutlet.addressDisplay || '');
       setPhoneNumber(propOutlet.phoneNumber || '');
       setBusinessHours(propOutlet.businessHours || {});
-      setBookingSlug(
-        (propOutlet.bookingSlug && propOutlet.bookingSlug.trim()) ||
-          shopNameToBookingSlug(propOutlet.name || '')
-      );
+      const derived = shopNameToBookingSlug(propOutlet.name || '');
+      const existing = (propOutlet.bookingSlug && propOutlet.bookingSlug.trim()) || '';
+      setBookingSlug(existing || derived);
       setOutletLoading(false);
+
+      if (!existing && derived && isValidBookingSlug(derived) && effectiveOutletId) {
+        outletService
+          .getByBookingSlug(derived)
+          .then(async (taken) => {
+            if (!taken || taken.outletID === effectiveOutletId) {
+              await outletService.update(effectiveOutletId, { bookingSlug: derived });
+            }
+          })
+          .catch((persistErr) => {
+            console.warn('Could not auto-persist bookingSlug:', persistErr);
+          });
+      }
       return;
     }
 
@@ -101,16 +113,27 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
     const timeoutId = setTimeout(() => setOutletLoading(false), 10000);
 
     outletService.getById(effectiveOutletId)
-      .then((outletData) => {
+      .then(async (outletData) => {
         clearTimeout(timeoutId);
         if (outletData) {
           setAddressDisplay(outletData.addressDisplay || '');
           setPhoneNumber(outletData.phoneNumber || '');
           setBusinessHours(outletData.businessHours || {});
-          setBookingSlug(
-            (outletData.bookingSlug && outletData.bookingSlug.trim()) ||
-              shopNameToBookingSlug(outletData.name || '')
-          );
+          const derived = shopNameToBookingSlug(outletData.name || '');
+          const existing = (outletData.bookingSlug && outletData.bookingSlug.trim()) || '';
+          setBookingSlug(existing || derived);
+
+          // Persist derived slug when Settings showed a URL that was never saved to Firestore.
+          if (!existing && derived && isValidBookingSlug(derived)) {
+            try {
+              const taken = await outletService.getByBookingSlug(derived);
+              if (!taken || taken.outletID === effectiveOutletId) {
+                await outletService.update(effectiveOutletId, { bookingSlug: derived });
+              }
+            } catch (persistErr) {
+              console.warn('Could not auto-persist bookingSlug:', persistErr);
+            }
+          }
         } else {
           // Outlet doesn't exist yet - initialize with empty values
           setAddressDisplay('');

@@ -39,6 +39,7 @@ import {
   ApiIntegration,
   TransactionType
 } from '../types';
+import { shopNameToBookingSlug } from '../utils/bookingSlug';
 
 // Current outlet ID — set by useFirestoreData from the logged-in user's Firestore document (users/{uid}.outletId).
 // No default: multi-tenant isolation requires every user to have a users doc with outletId.
@@ -1050,15 +1051,31 @@ export const outletService = {
     return { outletID: outletDoc.id, ...outletDoc.data() } as Outlet;
   },
 
-  /** Find outlet by public booking slug (outlets.bookingSlug). */
+  /** Find outlet by public booking slug (exact, then case-insensitive / name-derived). */
   getByBookingSlug: async (slug: string): Promise<Outlet | null> => {
     const s = (slug || '').trim();
     if (!s) return null;
     const q = query(collection(db, 'outlets'), where('bookingSlug', '==', s), limit(1));
     const snap = await getDocs(q);
-    if (snap.empty) return null;
-    const d = snap.docs[0];
-    return { outletID: d.id, ...d.data() } as Outlet;
+    if (!snap.empty) {
+      const d = snap.docs[0];
+      return { outletID: d.id, ...d.data() } as Outlet;
+    }
+
+    const lower = s.toLowerCase();
+    const all = await getDocs(collection(db, 'outlets'));
+    for (const d of all.docs) {
+      const data = d.data() as { bookingSlug?: string; name?: string };
+      const stored = (data.bookingSlug || '').trim();
+      if (stored && stored.toLowerCase() === lower) {
+        return { outletID: d.id, ...data } as Outlet;
+      }
+      const derived = shopNameToBookingSlug(data.name || '');
+      if (derived && derived.toLowerCase() === lower) {
+        return { outletID: d.id, ...data } as Outlet;
+      }
+    }
+    return null;
   },
 
   // Get all outlets

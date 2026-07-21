@@ -6,7 +6,7 @@
  */
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { collection, doc, getDoc, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import { collection, doc, getDoc, onSnapshot, query, where } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { db, auth, FRONTEND_CUSTOMER_COLLECTION } from "../../services/firebase";
 import { resolveOutletIdFromBookingPath } from "../../services/bookingPathResolve";
@@ -14,6 +14,7 @@ import {
   getPublicOutletData,
   createPublicBooking,
   getAvailableSlots,
+  submitPublicReview,
   PublicService,
   PublicOutlet,
   PublicTeamMember,
@@ -179,6 +180,15 @@ export function BookingPage() {
   const [shareLoading, setShareLoading] = useState(false);
   const [shareToast, setShareToast] = useState<string | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+  /** Preferred therapist from “Meet the team”; applied when services are selected. */
+  const [preferredStaffId, setPreferredStaffId] = useState<string | null>(null);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewAuthor, setReviewAuthor] = useState("");
+  const [reviewText, setReviewText] = useState("");
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [reviewSuccess, setReviewSuccess] = useState<string | null>(null);
 
   // Map /book/:segment → real outlet document id (legacy id or bookingSlug)
   useEffect(() => {
@@ -401,7 +411,7 @@ export function BookingPage() {
     setSelectedServices((prev) => [...prev, { selectionId, service }]);
     setServiceTeamMembers((prev) => ({
       ...prev,
-      [selectionId]: null,
+      [selectionId]: preferredStaffId,
     }));
   };
 
@@ -416,16 +426,78 @@ export function BookingPage() {
 
   // Set therapist for a specific selected service row
   const setServiceTeamMember = (selectionId: string, teamMemberId: string | null) => {
-    
-    // Find team member name for logging
     const teamMember = teamMemberId ? team.find((t) => t.id === teamMemberId) : null;
     const sel = selectedServices.find((s) => s.selectionId === selectionId);
     console.log(`[Team Selection] Service: ${sel?.service?.name || selectionId}, Selected: ${teamMember?.name || teamMemberId || 'None'}`);
-    
-    setServiceTeamMembers({
-      ...serviceTeamMembers,
+
+    setServiceTeamMembers((prev) => ({
+      ...prev,
       [selectionId]: teamMemberId,
+    }));
+  };
+
+  /** Prefer a therapist from the People section; apply to all selected services. */
+  const handleTeamCardClick = (memberId: string) => {
+    const next = preferredStaffId === memberId ? null : memberId;
+    setPreferredStaffId(next);
+    if (selectedServices.length === 0) {
+      document.getElementById("services")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    setServiceTeamMembers((prev) => {
+      const updated = { ...prev };
+      for (const sel of selectedServices) {
+        updated[sel.selectionId] = next;
+      }
+      return updated;
     });
+  };
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!outletId) return;
+    setReviewError(null);
+    setReviewSuccess(null);
+    const author = reviewAuthor.trim() || currentUserEmail?.split("@")[0] || "Guest";
+    const text = reviewText.trim();
+    if (text.length < 3) {
+      setReviewError("Please write a short review.");
+      return;
+    }
+    if (!auth.currentUser) {
+      setReviewError("Sign in to leave a review.");
+      navigate(`/book/${pathSegment}/auth?return=${encodeURIComponent(`/book/${pathSegment}#reviews`)}`);
+      return;
+    }
+    setReviewSubmitting(true);
+    try {
+      await submitPublicReview({
+        outletId,
+        author,
+        text,
+        rating: reviewRating,
+      });
+      setOutlet((prev) =>
+        prev
+          ? {
+              ...prev,
+              reviews: [
+                ...(prev.reviews || []),
+                { author, text, rating: reviewRating },
+              ],
+            }
+          : prev
+      );
+      setReviewText("");
+      setReviewAuthor("");
+      setReviewRating(5);
+      setShowReviewForm(false);
+      setReviewSuccess("Thanks — your review was submitted.");
+    } catch (err) {
+      setReviewError(friendlyBookingError(err, "Could not submit review."));
+    } finally {
+      setReviewSubmitting(false);
+    }
   };
 
   // Real-time listener: PRIMARY source for outlet data (addressDisplay, businessHours, etc.)
@@ -514,15 +586,11 @@ export function BookingPage() {
   }, [pathResolveDone, resolvedOutletId]);
 
   // Real-time listener: services for this outlet (keeps booking list in sync with backend Services)
+  // Avoid composite orderBy(name) — missing index causes failed-precondition and an empty menu.
   useEffect(() => {
     if (!outletId) return;
 
-    const servicesRef = collection(db, "services");
-    const servicesQuery = query(
-      servicesRef,
-      where("outletID", "==", outletId),
-      orderBy("name", "asc")
-    );
+    const servicesQuery = query(collection(db, "services"), where("outletID", "==", outletId));
 
     const unsubscribe = onSnapshot(
       servicesQuery,
@@ -531,24 +599,33 @@ export function BookingPage() {
           .map((d) => {
             const data = d.data() as Record<string, unknown>;
             return {
-              doc: d,
-              data: {
-                id: d.id,
-                name: (data.name as string) || "",
-                price: (data.price as number) ?? 0,
-                duration: (data.duration as number) ?? 60,
-                category: (data.category as string) || "",
-                isPromotion: (data.isPromotion as boolean) ?? false,
-              },
-              isVisible: data.isVisible !== false,
+              id: d.id,
+              name: (data.name as string) || "",
+              price: (data.price as number) ?? 0,
+              duration: (data.duration as number) ?? 60,
+              category: (data.category as string) || "",
+              isPromotion: (data.isPromotion as boolean) ?? false,
+              _visible: data.isVisible !== false,
             };
           })
-          .filter((item) => item.isVisible)
-          .map((item) => item.data);
+          .filter((item) => item._visible)
+          .map(({ _visible: _, ...rest }) => rest)
+          .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
         setServices(nextServices);
       },
       (err) => {
         console.error("Firestore listener error for services:", err);
+        getPublicOutletData(outletId)
+          .then(({ services: svc }) => {
+            if (Array.isArray(svc) && svc.length > 0) {
+              setServices(
+                [...svc].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }))
+              );
+            }
+          })
+          .catch((fallbackErr) => {
+            console.error("getPublicOutletData services fallback failed:", fallbackErr);
+          });
       }
     );
 
@@ -939,25 +1016,49 @@ export function BookingPage() {
 
           {/* Team */}
           <section id="team" className="booking-section">
-            <div className="booking-section__header"><div><span className="booking-section__eyebrow">People</span><h2>Meet the team</h2></div></div>
+            <div className="booking-section__header">
+              <div>
+                <span className="booking-section__eyebrow">People</span>
+                <h2>Meet the team</h2>
+              </div>
+            </div>
             {team.length === 0 ? (
               <p className="text-slate-500 py-2">No team members listed.</p>
             ) : (
-              <div className="booking-team-grid">
-                {team.map((m) => (
-                  <div key={m.id} className="booking-team-card">
-                    <div className="booking-team-card__avatar">
-                      {m.profilePicture ? (
-                        <img src={m.profilePicture} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        m.name.charAt(0).toUpperCase()
-                      )}
-                    </div>
-                    <span className="font-medium text-slate-800">{m.name}</span>
-                    
-                  </div>
-                ))}
-              </div>
+              <>
+                <p className="text-sm text-slate-500 mb-3">
+                  Tap a therapist to prefer them for your booking
+                  {preferredStaffId
+                    ? ` · ${team.find((t) => t.id === preferredStaffId)?.name || "Selected"}`
+                    : ""}
+                  .
+                </p>
+                <div className="booking-team-grid">
+                  {team.map((m) => {
+                    const selected = preferredStaffId === m.id;
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => handleTeamCardClick(m.id)}
+                        className={`booking-team-card text-left w-full ${
+                          selected ? "booking-team-card--selected" : ""
+                        }`}
+                        aria-pressed={selected}
+                      >
+                        <div className="booking-team-card__avatar">
+                          {m.profilePicture ? (
+                            <img src={m.profilePicture} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            m.name.charAt(0).toUpperCase()
+                          )}
+                        </div>
+                        <span className="font-medium text-slate-800">{m.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </section>
 
@@ -972,11 +1073,106 @@ export function BookingPage() {
 
           {/* Reviews */}
           <section id="reviews" className="booking-section">
-            <div className="booking-section__header"><div><span className="booking-section__eyebrow">Customer feedback</span><h2>Reviews</h2></div></div>
-            <p className="text-slate-500 text-sm mb-4">Be the first to review us and share insights about your experience.</p>
-            <button type="button" className="px-4 py-2 rounded-lg border border-slate-300 text-slate-800 font-medium text-sm hover:bg-slate-50">
-              Write a review
-            </button>
+            <div className="booking-section__header">
+              <div>
+                <span className="booking-section__eyebrow">Customer feedback</span>
+                <h2>Reviews</h2>
+              </div>
+            </div>
+            {(outlet?.reviews?.length ?? 0) > 0 ? (
+              <ul className="space-y-3 mb-4">
+                {(outlet?.reviews || []).map((r, i) => (
+                  <li key={`${r.author || "r"}-${i}`} className="rounded-xl border border-slate-100 bg-slate-50/80 p-3">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <p className="text-sm font-bold text-slate-800">{r.author || "Guest"}</p>
+                      {typeof r.rating === "number" ? (
+                        <span className="text-xs font-semibold text-amber-600" aria-label={`${r.rating} of 5 stars`}>
+                          {"★".repeat(Math.max(1, Math.min(5, Math.round(r.rating))))}
+                          {"☆".repeat(Math.max(0, 5 - Math.min(5, Math.round(r.rating))))}
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="text-sm text-slate-600 leading-relaxed">{r.text}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-slate-500 text-sm mb-4">
+                Be the first to review us and share insights about your experience.
+              </p>
+            )}
+            {reviewSuccess ? <p className="text-sm text-emerald-700 mb-3">{reviewSuccess}</p> : null}
+            {!showReviewForm ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setShowReviewForm(true);
+                  setReviewError(null);
+                  setReviewSuccess(null);
+                  if (currentUserEmail && !reviewAuthor) {
+                    setReviewAuthor(currentUserEmail.split("@")[0] || "");
+                  }
+                }}
+                className="px-4 py-2 rounded-lg border border-slate-300 text-slate-800 font-medium text-sm hover:bg-slate-50"
+              >
+                Write a review
+              </button>
+            ) : (
+              <form onSubmit={handleSubmitReview} className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Your name</label>
+                  <input
+                    type="text"
+                    value={reviewAuthor}
+                    onChange={(e) => setReviewAuthor(e.target.value)}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    placeholder="Name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Rating</label>
+                  <select
+                    value={reviewRating}
+                    onChange={(e) => setReviewRating(Number(e.target.value))}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  >
+                    {[5, 4, 3, 2, 1].map((n) => (
+                      <option key={n} value={n}>
+                        {n} star{n === 1 ? "" : "s"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Review</label>
+                  <textarea
+                    value={reviewText}
+                    onChange={(e) => setReviewText(e.target.value)}
+                    rows={3}
+                    required
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    placeholder="Share your experience…"
+                  />
+                </div>
+                {reviewError ? <p className="text-sm text-red-600">{reviewError}</p> : null}
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="submit"
+                    disabled={reviewSubmitting}
+                    className="px-4 py-2 rounded-lg bg-[var(--brand)] text-white font-semibold text-sm disabled:opacity-60"
+                  >
+                    {reviewSubmitting ? "Submitting…" : "Submit review"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowReviewForm(false)}
+                    className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 text-sm font-medium"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
           </section>
 
           {/* Address + Map */}

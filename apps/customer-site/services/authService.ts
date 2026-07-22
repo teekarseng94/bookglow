@@ -3,6 +3,7 @@
  * - Booking (/book/...): Firestore `frontend_customer/{uid}` (see registerForBooking / upsertCustomerProfile).
  * - Legacy marketing signup (register → /login): still writes `users/{uid}` for that flow only.
  * - Dashboard staff: `users/{uid}` (admin/cashier) — managed in the backend app only.
+ * - When VITE_AUTH_PROVIDER=supabase, booking helpers use Supabase Auth instead.
  */
 import {
   createUserWithEmailAndPassword,
@@ -13,13 +14,28 @@ import {
   UserCredential,
 } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { resolveAuthProvider } from "@bookglow/shared-types";
 import { adminAuth, auth, customerDb, db, FRONTEND_CUSTOMER_COLLECTION } from "./firebase";
+import {
+  getSupabaseAuthErrorMessage,
+  registerForBookingWithSupabase,
+  registerWithFacebookForBookingSupabase,
+  registerWithGoogleForBookingSupabase,
+} from "./supabaseAuthService";
 
 export const DASHBOARD_URL = "/login";
 
 export interface SignUpCredentials {
   email: string;
   password: string;
+}
+
+function viteEnv(): Record<string, string | undefined> {
+  return import.meta.env as unknown as Record<string, string | undefined>;
+}
+
+function useSupabaseAuth(): boolean {
+  return resolveAuthProvider(viteEnv()) === "supabase";
 }
 
 interface CustomerProfileInput {
@@ -81,6 +97,7 @@ function getErrorMessage(code: string): string {
 }
 
 export function getAuthErrorMessage(error: unknown): string {
+  if (useSupabaseAuth()) return getSupabaseAuthErrorMessage(error);
   const authError = error as AuthError & { code?: string };
   if (authError?.code) return getErrorMessage(authError.code);
   if (error instanceof Error) {
@@ -125,6 +142,11 @@ export async function registerForBooking(
   credentials: SignUpCredentials,
   redirectUrl: string
 ): Promise<void> {
+  if (useSupabaseAuth()) {
+    await registerForBookingWithSupabase(credentials, redirectUrl);
+    return;
+  }
+
   const email = credentials.email?.trim().toLowerCase() || "";
   const password = credentials.password || "";
 
@@ -147,6 +169,10 @@ export async function registerForBooking(
 }
 
 export async function registerWithGoogleForBooking(redirectUrl: string): Promise<void> {
+  if (useSupabaseAuth()) {
+    await registerWithGoogleForBookingSupabase(redirectUrl);
+    return;
+  }
   const provider = new GoogleAuthProvider();
   const userCredential: UserCredential = await signInWithPopup(auth, provider);
   await upsertCustomerProfile({
@@ -157,6 +183,10 @@ export async function registerWithGoogleForBooking(redirectUrl: string): Promise
 }
 
 export async function registerWithFacebookForBooking(redirectUrl: string): Promise<void> {
+  if (useSupabaseAuth()) {
+    await registerWithFacebookForBookingSupabase(redirectUrl);
+    return;
+  }
   const provider = new FacebookAuthProvider();
   const userCredential: UserCredential = await signInWithPopup(auth, provider);
   await upsertCustomerProfile({

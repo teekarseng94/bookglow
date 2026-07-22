@@ -6,9 +6,10 @@
  */
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { collection, doc, getDoc, onSnapshot, query, where } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, onSnapshot, query, where } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { db, auth, FRONTEND_CUSTOMER_COLLECTION } from "../../services/firebase";
+import { resolveDataProvider, resolveAuthProvider } from "@bookglow/shared-types";
 import { resolveOutletIdFromBookingPath } from "../../services/bookingPathResolve";
 import {
   getPublicOutletData,
@@ -19,6 +20,16 @@ import {
   PublicOutlet,
   PublicTeamMember,
 } from "../../services/bookingApi";
+import {
+  getPublicOutletFromSupabase,
+  listVisibleServicesFromSupabase,
+  listStaffFromSupabase,
+  getAvailableSlotsFromSupabase,
+  createPublicBookingFromSupabase,
+  submitPublicReviewFromSupabase,
+  upsertFrontendCustomerProfileFromSupabase,
+} from "../../services/supabasePublicBooking";
+import { createBrowserSupabaseClient } from "@bookglow/supabase";
 import {
   ANY_AVAILABLE_STAFF,
   BookingEmptyState,
@@ -180,6 +191,7 @@ export function BookingPage() {
   const [shareLoading, setShareLoading] = useState(false);
   const [shareToast, setShareToast] = useState<string | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+  const [isSignedIn, setIsSignedIn] = useState(false);
   /** Preferred therapist from “Meet the team”; applied when services are selected. */
   const [preferredStaffId, setPreferredStaffId] = useState<string | null>(null);
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -293,11 +305,50 @@ export function BookingPage() {
     return final;
   }, [services, outlet?.serviceCategories]);
 
-  // Watch Firebase Auth state so we can show the signed-in email in the header
+  // Watch auth state (Firebase or Supabase) for header email + review gate
   useEffect(() => {
+    const env = import.meta.env as unknown as Record<string, string | undefined>;
+    if (resolveAuthProvider(env) === "supabase") {
+      const sb = createBrowserSupabaseClient(env);
+      let cancelled = false;
+
+      const applyUser = async (email: string | null, userId: string | null) => {
+        if (cancelled) return;
+        if (!userId) {
+          setCurrentUserEmail(null);
+          setIsSignedIn(false);
+          return;
+        }
+        try {
+          await upsertFrontendCustomerProfileFromSupabase({ email });
+        } catch (err) {
+          console.warn("upsertFrontendCustomerProfileFromSupabase:", err);
+        }
+        if (cancelled) return;
+        setCurrentUserEmail(email);
+        setIsSignedIn(true);
+      };
+
+      sb.auth.getSession().then(({ data }) => {
+        const user = data.session?.user;
+        void applyUser(user?.email ?? null, user?.id ?? null);
+      });
+
+      const { data: sub } = sb.auth.onAuthStateChange((_event, session) => {
+        const user = session?.user;
+        void applyUser(user?.email ?? null, user?.id ?? null);
+      });
+
+      return () => {
+        cancelled = true;
+        sub.subscription.unsubscribe();
+      };
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         setCurrentUserEmail(null);
+        setIsSignedIn(false);
         return;
       }
 
@@ -305,10 +356,13 @@ export function BookingPage() {
       const primary = await getDoc(doc(db, FRONTEND_CUSTOMER_COLLECTION, user.uid));
       if (primary.exists()) {
         setCurrentUserEmail(user.email ?? null);
+        setIsSignedIn(true);
         return;
       }
       const legacy = await getDoc(doc(db, "customers", user.uid));
-      setCurrentUserEmail(legacy.exists() ? user.email ?? null : null);
+      const ok = legacy.exists();
+      setCurrentUserEmail(ok ? user.email ?? null : null);
+      setIsSignedIn(ok);
     });
     return unsubscribe;
   }, []);
@@ -378,18 +432,23 @@ export function BookingPage() {
       }
       try {
         setSlotsLoading(true);
-        // If teamMemberId is provided and not empty, filter slots by that member's availability
-        // Otherwise, show all available slots
-        const payload: any = {
+        const payload = {
           outletId,
           serviceId: service.id,
           date: targetDate,
+          staffId:
+            teamMemberId && teamMemberId.trim().length > 0 ? teamMemberId.trim() : undefined,
         };
-        // Only include staffId if it's a non-empty string
-        if (teamMemberId && teamMemberId.trim().length > 0) {
-          payload.staffId = teamMemberId.trim();
+
+        if (
+          resolveDataProvider(import.meta.env as unknown as Record<string, string | undefined>) ===
+          "supabase"
+        ) {
+          const slots = await getAvailableSlotsFromSupabase(payload);
+          setAvailableSlots(Array.isArray(slots) ? slots : []);
+          return;
         }
-        
+
         const { slots } = await getAvailableSlots(payload);
         setAvailableSlots(Array.isArray(slots) ? slots : []);
       } catch (err) {
@@ -464,19 +523,35 @@ export function BookingPage() {
       setReviewError("Please write a short review.");
       return;
     }
-    if (!auth.currentUser) {
+    if (!isSignedIn) {
       setReviewError("Sign in to leave a review.");
       navigate(`/book/${pathSegment}/auth?return=${encodeURIComponent(`/book/${pathSegment}#reviews`)}`);
       return;
     }
     setReviewSubmitting(true);
     try {
-      await submitPublicReview({
-        outletId,
-        author,
-        text,
-        rating: reviewRating,
-      });
+      const useSupabase =
+        resolveDataProvider(import.meta.env as unknown as Record<string, string | undefined>) ===
+        "supabase";
+      if (useSupabase) {
+        // Reviews RPC requires a Supabase Auth JWT (set VITE_AUTH_PROVIDER=supabase).
+        if (resolveAuthProvider(import.meta.env as unknown as Record<string, string | undefined>) !== "supabase") {
+          throw new Error("Supabase reviews require VITE_AUTH_PROVIDER=supabase.");
+        }
+        await submitPublicReviewFromSupabase({
+          outletId,
+          author,
+          text,
+          rating: reviewRating,
+        });
+      } else {
+        await submitPublicReview({
+          outletId,
+          author,
+          text,
+          rating: reviewRating,
+        });
+      }
       setOutlet((prev) =>
         prev
           ? {
@@ -500,11 +575,34 @@ export function BookingPage() {
     }
   };
 
-  // Real-time listener: PRIMARY source for outlet data (addressDisplay, businessHours, etc.)
-  // This listener runs immediately on mount and keeps data in sync with Firestore
+  // Outlet load: Firestore realtime (default) or one-shot Supabase when VITE_DATA_PROVIDER=supabase
   useEffect(() => {
     if (!pathResolveDone || !resolvedOutletId) {
       return;
+    }
+
+    if (resolveDataProvider(import.meta.env as unknown as Record<string, string | undefined>) === "supabase") {
+      let cancelled = false;
+      getPublicOutletFromSupabase(resolvedOutletId)
+        .then((o) => {
+          if (cancelled) return;
+          if (o) {
+            setOutlet(o);
+            setLoading(false);
+            setError(null);
+          } else {
+            setError("Outlet not found");
+            setLoading(false);
+          }
+        })
+        .catch((e: unknown) => {
+          if (cancelled) return;
+          setError(friendlyBookingError(e, "Could not load this shop."));
+          setLoading(false);
+        });
+      return () => {
+        cancelled = true;
+      };
     }
 
     let hasReceivedData = false;
@@ -585,39 +683,58 @@ export function BookingPage() {
     return () => unsubscribe();
   }, [pathResolveDone, resolvedOutletId]);
 
-  // Real-time listener: services for this outlet (keeps booking list in sync with backend Services)
-  // Avoid composite orderBy(name) — missing index causes failed-precondition and an empty menu.
+  // Services load: Firestore (default) or Supabase when VITE_DATA_PROVIDER=supabase
   useEffect(() => {
     if (!outletId) return;
 
+    let cancelled = false;
+
+    if (resolveDataProvider(import.meta.env as unknown as Record<string, string | undefined>) === "supabase") {
+      listVisibleServicesFromSupabase(outletId)
+        .then((svc) => {
+          if (!cancelled) setServices(svc);
+        })
+        .catch((err) => {
+          console.error("Supabase services fetch error:", err);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const toServices = (
+      docs: Array<{ id: string; data: () => Record<string, unknown> }>
+    ): PublicService[] =>
+      docs
+        .map((d) => {
+          const data = d.data();
+          return {
+            id: d.id,
+            name: (data.name as string) || "",
+            price: (data.price as number) ?? 0,
+            duration: (data.duration as number) ?? 60,
+            category: (data.category as string) || "",
+            isPromotion: (data.isPromotion as boolean) ?? false,
+            visible: data.isVisible !== false,
+          };
+        })
+        .filter((item) => item.visible)
+        .map(({ visible: _v, ...rest }) => rest)
+        .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
+
+    const applyFromDocs = (docs: Array<{ id: string; data: () => Record<string, unknown> }>) => {
+      if (!cancelled) setServices(toServices(docs));
+    };
+
     const servicesQuery = query(collection(db, "services"), where("outletID", "==", outletId));
 
-    const unsubscribe = onSnapshot(
-      servicesQuery,
-      (snapshot) => {
-        const nextServices: PublicService[] = snapshot.docs
-          .map((d) => {
-            const data = d.data() as Record<string, unknown>;
-            return {
-              id: d.id,
-              name: (data.name as string) || "",
-              price: (data.price as number) ?? 0,
-              duration: (data.duration as number) ?? 60,
-              category: (data.category as string) || "",
-              isPromotion: (data.isPromotion as boolean) ?? false,
-              _visible: data.isVisible !== false,
-            };
-          })
-          .filter((item) => item._visible)
-          .map(({ _visible: _, ...rest }) => rest)
-          .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
-        setServices(nextServices);
-      },
-      (err) => {
-        console.error("Firestore listener error for services:", err);
+    getDocs(servicesQuery)
+      .then((snapshot) => applyFromDocs(snapshot.docs))
+      .catch((err) => {
+        console.error("Firestore getDocs error for services:", err);
         getPublicOutletData(outletId)
           .then(({ services: svc }) => {
-            if (Array.isArray(svc) && svc.length > 0) {
+            if (!cancelled && Array.isArray(svc) && svc.length > 0) {
               setServices(
                 [...svc].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }))
               );
@@ -626,15 +743,39 @@ export function BookingPage() {
           .catch((fallbackErr) => {
             console.error("getPublicOutletData services fallback failed:", fallbackErr);
           });
+      });
+
+    const unsubscribe = onSnapshot(
+      servicesQuery,
+      (snapshot) => applyFromDocs(snapshot.docs),
+      (err) => {
+        console.error("Firestore listener error for services:", err);
       }
     );
 
-    return () => unsubscribe();
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
   }, [outletId]);
 
-  // Real-time listener: team for this outlet
+  // Team load: Firestore realtime (default) or one-shot Supabase when VITE_DATA_PROVIDER=supabase
   useEffect(() => {
     if (!outletId) return;
+
+    if (resolveDataProvider(import.meta.env as unknown as Record<string, string | undefined>) === "supabase") {
+      let cancelled = false;
+      listStaffFromSupabase(outletId)
+        .then((nextTeam) => {
+          if (!cancelled) setTeam(nextTeam);
+        })
+        .catch((err) => {
+          console.error("Supabase staff fetch error:", err);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }
 
     const staffRef = collection(db, "staff");
     const staffQuery = query(staffRef, where("outletID", "==", outletId));
@@ -741,23 +882,30 @@ export function BookingPage() {
     setSubmitLoading(true);
     setSubmitError(null);
     try {
+      const useSupabase =
+        resolveDataProvider(import.meta.env as unknown as Record<string, string | undefined>) ===
+        "supabase";
       const bookingPromises = [];
       for (const sel of selectedServices) {
         const service = sel.service;
         const teamMemberId = serviceTeamMembers[sel.selectionId] || null;
         if (!teamMemberId) continue;
 
+        const basePayload = {
+          outletId,
+          serviceId: service.id,
+          date: selectedDate,
+          time: selectedTime,
+          customerName: customerName.trim(),
+          phone: phone.trim(),
+          email: email.trim() || undefined,
+        };
+
         if (teamMemberId === ANY_AVAILABLE_STAFF) {
           bookingPromises.push(
-            createPublicBooking({
-              outletId,
-              serviceId: service.id,
-              date: selectedDate,
-              time: selectedTime,
-              customerName: customerName.trim(),
-              phone: phone.trim(),
-              email: email.trim() || undefined,
-            })
+            useSupabase
+              ? createPublicBookingFromSupabase(basePayload)
+              : createPublicBooking(basePayload)
           );
           continue;
         }
@@ -770,16 +918,9 @@ export function BookingPage() {
         }
 
         bookingPromises.push(
-          createPublicBooking({
-            outletId,
-            serviceId: service.id,
-            date: selectedDate,
-            time: selectedTime,
-            customerName: customerName.trim(),
-            phone: phone.trim(),
-            email: email.trim() || undefined,
-            staffId: teamMemberId,
-          })
+          useSupabase
+            ? createPublicBookingFromSupabase({ ...basePayload, staffId: teamMemberId })
+            : createPublicBooking({ ...basePayload, staffId: teamMemberId })
         );
       }
       const results = await Promise.all(bookingPromises);

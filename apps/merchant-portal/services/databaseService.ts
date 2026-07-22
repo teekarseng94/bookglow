@@ -3,6 +3,10 @@
  *
  * The merchant portal uses Firestore as its sole database. Import from this
  * module instead of `firestoreService` directly so call sites stay stable.
+ *
+ * Supabase foundation lives in `@bookglow/supabase` + `@bookglow/shared-types`
+ * repository interfaces. Do not switch DB_PROVIDER until a domain cutover is
+ * approved (default: Firebase / firestore).
  */
 
 import * as firestoreServices from './firestoreService';

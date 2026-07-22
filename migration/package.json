@@ -6,10 +6,14 @@
   "scripts": {
     "export": "node firestore-export/export.js",
     "import": "node supabase-import/import.js",
+    "import:outlets-services": "node supabase-import/import-outlets-services-only.mjs",
+    "import:staff": "node supabase-import/import-staff-only.mjs",
+    "import:appointments": "node supabase-import/import-appointments-only.mjs",
     "validate": "node validate/validate.js"
   },
   "dependencies": {
-    "firebase-admin": "^12.0.0",
-    "@supabase/supabase-js": "^2.45.0"
+    "@supabase/supabase-js": "^2.45.0",
+    "firebase": "^12.8.0",
+    "firebase-admin": "^12.0.0"
   }
 }

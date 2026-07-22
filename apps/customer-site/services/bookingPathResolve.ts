@@ -1,21 +1,18 @@
 import { collection, doc, getDoc, getDocs, query, where, limit } from "firebase/firestore";
+import { resolveDataProvider } from "@bookglow/shared-types";
 import { db } from "./firebase";
 import { shopNameToBookingSlug } from "../utils/bookingSlug";
+import { resolveOutletIdFromBookingPathSupabase } from "./supabasePublicBooking";
 
 function normalizeSegment(segment: string): string {
   return (segment || "").trim();
 }
 
-/**
- * Map /book/:segment to the real Firestore outlet document id.
- *
- * Resolution order:
- * 1. Document id (legacy `/book/outlet_001`)
- * 2. Exact `outlets.bookingSlug`
- * 3. Case-insensitive `bookingSlug` match
- * 4. Slug derived from outlet `name` (Settings often displays this before it is saved)
- */
-export async function resolveOutletIdFromBookingPath(segment: string): Promise<string | null> {
+function viteEnv(): Record<string, string | undefined> {
+  return import.meta.env as unknown as Record<string, string | undefined>;
+}
+
+async function resolveOutletIdFromBookingPathFirestore(segment: string): Promise<string | null> {
   const s = normalizeSegment(segment);
   if (!s) return null;
 
@@ -38,4 +35,22 @@ export async function resolveOutletIdFromBookingPath(segment: string): Promise<s
   }
 
   return null;
+}
+
+/**
+ * Map /book/:segment to the real outlet document id.
+ *
+ * Resolution order (both providers):
+ * 1. Document id (legacy `/book/outlet_001`)
+ * 2. Exact `bookingSlug` / `booking_slug`
+ * 3. Case-insensitive slug match
+ * 4. Slug derived from outlet name
+ *
+ * Provider selected via VITE_DATA_PROVIDER (default: firebase).
+ */
+export async function resolveOutletIdFromBookingPath(segment: string): Promise<string | null> {
+  if (resolveDataProvider(viteEnv()) === "supabase") {
+    return resolveOutletIdFromBookingPathSupabase(segment);
+  }
+  return resolveOutletIdFromBookingPathFirestore(segment);
 }

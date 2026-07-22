@@ -110,3 +110,8 @@ temp/
 *.tar.gz
 *.sqlite
 *.db
+
+# Migration export/import artifacts (may contain production data)
+migration/firestore-export/data/
+migration/supabase-import/generated/
+migration/validate/validation_report.json

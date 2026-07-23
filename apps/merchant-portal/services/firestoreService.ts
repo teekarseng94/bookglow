@@ -424,16 +424,6 @@ export const appointmentService = {
     return docRef.id;
   },
 
-  /** Upsert appointment by custom ID (e.g. Setmore UID). Used for ICS sync deduplication. */
-  setWithId: async (appointmentId: string, appointment: Omit<Appointment, 'id'>, outletID: string = currentOutletID): Promise<void> => {
-    if (!hasValidOutlet(outletID)) throw new Error('outletID is required (user must be mapped to an outlet in users collection).');
-    const appointmentRef = doc(db, 'appointments', appointmentId);
-    await setDoc(appointmentRef, {
-      ...appointment,
-      outletID
-    }, { merge: true });
-  },
-
   // Update appointment
   update: async (appointmentId: string, updates: Partial<Appointment>, outletID: string = currentOutletID): Promise<void> => {
     if (!hasValidOutlet(outletID)) throw new Error('outletID is required (user must be mapped to an outlet in users collection).');

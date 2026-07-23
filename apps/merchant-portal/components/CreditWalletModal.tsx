@@ -43,6 +43,36 @@ const CreditWalletModal: React.FC<CreditWalletModalProps> = ({
       setLoading(false);
       return;
     }
+
+    const useSupabase =
+      (import.meta.env as unknown as Record<string, string | undefined>).VITE_DATA_PROVIDER ===
+      "supabase";
+
+    if (useSupabase) {
+      let cancelled = false;
+      const load = async () => {
+        try {
+          const { listCreditHistory } = await import("../services/supabaseMerchant");
+          const data = await listCreditHistory(clientId, outletID);
+          if (cancelled) return;
+          setHistory(data);
+          setLoading(false);
+        } catch (err) {
+          console.error("Error loading credit history:", err);
+          if (!cancelled) {
+            setError("Failed to load credit history");
+            setLoading(false);
+          }
+        }
+      };
+      void load();
+      const timer = window.setInterval(() => void load(), 10000);
+      return () => {
+        cancelled = true;
+        window.clearInterval(timer);
+      };
+    }
+
     const q = query(
       collection(db, 'clients', clientId, 'credit_history'),
       orderBy('timestamp', 'desc')

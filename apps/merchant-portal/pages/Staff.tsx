@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../firebase';
 import { Staff, Transaction, TransactionType, RoleCommission, Service } from '../types';
+import { uploadImage, getStaffProfileImagePath } from '../services/storageService';
 import { Icons } from '../constants';
 import { ConfirmationDialog } from '../components/ui/ConfirmationDialog';
 import {
@@ -228,17 +227,16 @@ const StaffPage: React.FC<StaffProps> = ({
         setUploadLoading(true);
         if (photoFile) {
           const staffId = editingMember.id;
-          const path = `staff_photos/${staffId}_${Date.now()}.jpg`;
-          const storageRef = ref(storage, path);
+          const outletId = editingMember.outletID || '';
+          const path = outletId
+            ? getStaffProfileImagePath(outletId, staffId)
+            : `outlets/unknown/staff/${staffId}/profile.jpg`;
           try {
-            const snapshot = await uploadBytes(storageRef, photoFile, {
-              contentType: 'image/jpeg',
-            });
-            profilePictureUrl = await getDownloadURL(snapshot.ref);
+            profilePictureUrl = await uploadImage(photoFile, path);
           } catch (storageErr: unknown) {
-            const code = storageErr && typeof (storageErr as { code?: string }).code === 'string' ? (storageErr as { code: string }).code : '';
-            const isPermissionDenied = code === 'storage/unauthorized' || code === 'storage/canceled' || (storageErr as Error).message?.toLowerCase().includes('permission');
-            setUploadError(isPermissionDenied ? 'Permission denied. Please check Firebase Storage Rules.' : (storageErr instanceof Error ? storageErr.message : 'Photo upload failed.'));
+            const msg = storageErr instanceof Error ? storageErr.message : 'Photo upload failed.';
+            const isPermissionDenied = msg.toLowerCase().includes('permission') || msg.toLowerCase().includes('policy');
+            setUploadError(isPermissionDenied ? 'Permission denied. Please check storage rules / outlet access.' : msg);
             setUploadLoading(false);
             return;
           }

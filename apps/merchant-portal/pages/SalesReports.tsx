@@ -2,7 +2,9 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Transaction, TransactionType, Staff, Client } from '../types';
 import TransactionDetailModal from '../components/TransactionDetailModal';
 import { collection, query, where, orderBy, Timestamp, onSnapshot } from 'firebase/firestore';
+import { resolveDataProvider } from '@bookglow/shared-types';
 import { db } from '../firebase';
+import { DB_PROVIDER, transactionService } from '../services/databaseService';
 import {
   ReportDateRangeBar,
   ReportEmptyState,
@@ -12,6 +14,15 @@ import {
   ReportTxnCard,
 } from '../components/reports';
 import { Button } from '../components/ui/Button';
+
+function useSupabaseData(): boolean {
+  return (
+    DB_PROVIDER === 'supabase' ||
+    resolveDataProvider(
+      import.meta.env as unknown as Record<string, string | undefined>
+    ) === 'supabase'
+  );
+}
 
 interface SalesReportsProps {
   transactions: Transaction[];
@@ -67,7 +78,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
   const [collectionError, setCollectionError] = useState<string | null>(null);
   const [collectionLoading, setCollectionLoading] = useState<boolean>(true);
 
-  // Real-time Firestore query: transactions filtered by outletID and date range (startDate to endDate)
+  // Sales for date range: Supabase poll or Firestore realtime
   useEffect(() => {
     if (!outletID || !startDate || !endDate) {
       setDailySales([]);
@@ -79,18 +90,54 @@ const SalesReports: React.FC<SalesReportsProps> = ({
     setCollectionLoading(true);
     setCollectionError(null);
 
+    const rangeStart = startDate <= endDate ? startDate : endDate;
+    const rangeEnd = startDate <= endDate ? endDate : startDate;
+    const startOfRange = new Date(rangeStart);
+    startOfRange.setHours(0, 0, 0, 0);
+    const endOfRange = new Date(rangeEnd);
+    endOfRange.setHours(23, 59, 59, 999);
+
+    const filterNonVoidedSales = (list: Transaction[]) =>
+      list.filter((t) => {
+        if (t.type !== TransactionType.SALE) return false;
+        const status = (t.status ?? '').toString().toLowerCase();
+        const isVoided = (t as any).voided === true;
+        return status !== 'void' && status !== 'voided' && !isVoided;
+      });
+
+    if (useSupabaseData()) {
+      let cancelled = false;
+      const load = async () => {
+        try {
+          const all = await transactionService.getAll(outletID);
+          if (cancelled) return;
+          const inRange = all.filter((t) => {
+            if (!t.date) return false;
+            const d = new Date(t.date);
+            return d >= startOfRange && d <= endOfRange;
+          });
+          setDailySales(filterNonVoidedSales(inRange));
+          setCollectionError(null);
+          setCollectionLoading(false);
+        } catch (error: any) {
+          if (!cancelled) {
+            console.error('Error loading Supabase sales report:', error);
+            setCollectionLoading(false);
+            setCollectionError(error?.message || 'Failed to load report data.');
+          }
+        }
+      };
+      void load();
+      const timer = window.setInterval(() => void load(), 15000);
+      return () => {
+        cancelled = true;
+        window.clearInterval(timer);
+      };
+    }
+
     let unsubscribe: (() => void) | undefined;
 
     try {
-      // Use startDate and endDate; ensure start <= end
-      const rangeStart = startDate <= endDate ? startDate : endDate;
-      const rangeEnd = startDate <= endDate ? endDate : startDate;
-
-      const startOfRange = new Date(rangeStart);
-      startOfRange.setHours(0, 0, 0, 0);
-      const endOfRange = new Date(rangeEnd);
-      endOfRange.setHours(23, 59, 59, 999);
-
       const transactionsRef = collection(db, 'transactions');
       const collectionQuery = query(
         transactionsRef,
@@ -112,13 +159,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
             return { id: doc.id, ...raw, date } as Transaction;
           });
 
-          const nonVoided = list.filter(t => {
-            const status = (t.status ?? '').toString().toLowerCase();
-            const isVoided = (t as any).voided === true;
-            return status !== 'void' && status !== 'voided' && !isVoided;
-          });
-
-          setDailySales(nonVoided);
+          setDailySales(filterNonVoidedSales(list));
           setCollectionError(null);
           setCollectionLoading(false);
         },

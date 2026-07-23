@@ -8,7 +8,6 @@ import {
   ScheduleBookingList,
   ScheduleDateStrip,
   ScheduleEmptyState,
-  ScheduleLoadingState,
   SchedulePageHeader,
   ScheduleToolbar,
   type ScheduleBookingDaySection,
@@ -26,8 +25,6 @@ interface AppointmentsCalendarProps {
   onDeleteAppointment: (id: string) => Promise<void>;
   onStartPOSSale: (appointment: Appointment) => void;
   onMarkReminderSent: (id: string) => void;
-  /** Called once when the page opens to sync Setmore appointments (Cloud Function). */
-  onSyncSetmore?: () => void | Promise<void>;
 }
 
 type ViewMode = 'day' | 'week' | 'month';
@@ -108,7 +105,6 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
   onDeleteAppointment,
   onStartPOSSale,
   onMarkReminderSent,
-  onSyncSetmore
 }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('day');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -118,8 +114,6 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isSendingReminder, setIsSendingReminder] = useState(false);
-  const [isSyncingSetmore, setIsSyncingSetmore] = useState(false);
-  const syncRunOnce = useRef(false);
   const agendaLoadMoreRef = useRef<HTMLDivElement | null>(null);
   const dateStripScrollRef = useRef<HTMLDivElement | null>(null);
   const dateStripLeftRef = useRef<HTMLDivElement | null>(null);
@@ -147,17 +141,6 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
     serviceId: '',
     date: ''
   });
-
-  // Auto-sync Setmore appointments once when the Appointment page is opened (run only on mount)
-  useEffect(() => {
-    if (!onSyncSetmore || syncRunOnce.current) return;
-    syncRunOnce.current = true;
-    setIsSyncingSetmore(true);
-    Promise.resolve(onSyncSetmore())
-      .catch((err) => console.warn('Setmore auto-sync on open:', err))
-      .finally(() => setIsSyncingSetmore(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- run only once on mount
-  }, []);
 
   // Active appointments: hide cancelled and any legacy On Duty (app_onduty_) — only render real bookings (yellow-circle style).
   const activeAppointments = useMemo(
@@ -642,8 +625,6 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
 
   return (
     <div className="animate-fadeIn md:space-y-4 md:pb-24">
-      {isSyncingSetmore && <ScheduleLoadingState />}
-
       <SchedulePageHeader
         dateLabel={desktopDateLabel}
         viewLabel={`${viewMode} view`}

@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { onSnapshot, query, where, orderBy, collection, Timestamp, getDocs, getDoc, doc, runTransaction, deleteDoc, increment } from 'firebase/firestore';
+import { createBrowserSupabaseClient } from '@bookglow/supabase';
 import { db } from '../firebase';
 import {
   clientService,
@@ -23,6 +24,7 @@ import {
   DB_PROVIDER
 } from '../services/databaseService';
 import { setCurrentOutletID as setPointTransactionOutletID } from '../services/pointTransactionService';
+import { pointTransactionService } from '../services/pointTransactionService';
 import { setCurrentOutletID as setOutstandingTransactionOutletID } from '../services/outstandingTransactionService';
 import {
   Client,
@@ -176,9 +178,117 @@ export const useFirestoreData = (outletID: string, role: FirestoreUserRole = nul
     loadData();
   }, [hasOutlet, outletID, loadData]);
 
-  // Set up real-time listeners for all collections (only when user has an assigned outlet)
+  // Set up real-time listeners (Firestore) OR poll Phase-1 collections (Supabase)
   useEffect(() => {
     if (!hasOutlet || !outletID) return;
+
+    if (DB_PROVIDER === "supabase") {
+      console.log("Supabase data mode: Realtime + refresh for outlet:", outletID);
+      let cancelled = false;
+      let debounceTimer: number | undefined;
+      const supabase = createBrowserSupabaseClient(
+        import.meta.env as unknown as Record<string, string | undefined>
+      );
+
+      const refreshAll = async () => {
+        try {
+          const [
+            staffData,
+            appointmentsData,
+            servicesData,
+            categoriesData,
+            clientsData,
+            transactionsData,
+            productsData,
+            packagesData,
+            rewardsData,
+          ] = await Promise.all([
+            staffService.getAll(outletID),
+            appointmentService.getAll(outletID),
+            serviceService.getAll(outletID),
+            outletService.getServiceCategories(outletID),
+            clientService.getAll(outletID),
+            transactionService.getAll(outletID),
+            productService.getAll(outletID),
+            packageService.getAll(outletID),
+            rewardService.getAll(outletID),
+          ]);
+          if (cancelled) return;
+          setStaff(staffData);
+          setAppointments(appointmentsData.filter((a) => !a.id.startsWith("app_onduty_")));
+          setServices(servicesData);
+          setClients(clientsData);
+          setTransactions(transactionsData);
+          setProducts(productsData);
+          setPackages(packagesData);
+          setRewards(rewardsData);
+          if (Array.isArray(categoriesData) && categoriesData.length > 0) {
+            setServiceCategories(categoriesData);
+          }
+          setLoading(false);
+        } catch (err: any) {
+          console.error("Supabase refresh error:", err);
+          if (!cancelled) {
+            setError(err?.message || "Failed to load Supabase data");
+            setLoading(false);
+          }
+        }
+      };
+
+      const scheduleRefresh = () => {
+        if (debounceTimer) window.clearTimeout(debounceTimer);
+        debounceTimer = window.setTimeout(() => {
+          void refreshAll();
+        }, 300);
+      };
+
+      void refreshAll();
+
+      const tables = [
+        "clients",
+        "staff",
+        "services",
+        "appointments",
+        "transactions",
+        "products",
+        "packages",
+        "rewards",
+        "vouchers",
+        "outlets",
+      ] as const;
+
+      let channel = supabase.channel(`merchant-outlet-${outletID}`);
+      for (const table of tables) {
+        const filter = `outlet_id=eq.${outletID}`;
+        channel = channel.on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table,
+            filter,
+          },
+          () => scheduleRefresh()
+        );
+      }
+      channel.subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          console.log("Supabase Realtime subscribed for outlet:", outletID);
+        }
+      });
+
+      // Safety net if a Realtime event is missed
+      const pollTimer = window.setInterval(() => {
+        void refreshAll();
+      }, 60000);
+
+      return () => {
+        cancelled = true;
+        if (debounceTimer) window.clearTimeout(debounceTimer);
+        window.clearInterval(pollTimer);
+        void supabase.removeChannel(channel);
+      };
+    }
 
     console.log('Setting up Firestore real-time listeners for outlet:', outletID);
     
@@ -518,6 +628,20 @@ export const useFirestoreData = (outletID: string, role: FirestoreUserRole = nul
       transactionId?: string
     ): Promise<number> => {
       if (!outletID?.trim()) throw new Error('No outlet assigned.');
+
+      if (DB_PROVIDER === 'supabase') {
+        const { adjustClientCredit } = await import('../services/supabaseMerchant');
+        return adjustClientCredit({
+          clientId,
+          outletID,
+          type,
+          amount: Math.abs(amount),
+          staffRemark,
+          staffName,
+          transactionId,
+        });
+      }
+
       const clientRef = doc(db, 'clients', clientId);
       const creditHistoryRef = doc(collection(db, 'clients', clientId, 'credit_history'));
       let newBalance = 0;
@@ -806,14 +930,26 @@ export const useFirestoreData = (outletID: string, role: FirestoreUserRole = nul
           console.log('Commission already created for this sale (in-memory guard), skipping.');
           return id;
         }
-        const existingCommissionsQuery = query(
-          collection(db, 'transactions'),
-          where('outletID', '==', outletID),
-          where('parentSaleId', '==', id),
-          where('category', '==', 'Commission')
-        );
-        const existingSnap = await getDocs(existingCommissionsQuery);
-        if (!existingSnap.empty) {
+
+        const listCommissionsForSale = async () => {
+          if (DB_PROVIDER === 'supabase') {
+            const all = await transactionService.getAll(outletID);
+            return all.filter(
+              (t) => t.parentSaleId === id && t.category === 'Commission'
+            );
+          }
+          const existingCommissionsQuery = query(
+            collection(db, 'transactions'),
+            where('outletID', '==', outletID),
+            where('parentSaleId', '==', id),
+            where('category', '==', 'Commission')
+          );
+          const existingSnap = await getDocs(existingCommissionsQuery);
+          return existingSnap.docs.map((d) => ({ id: d.id, ...(d.data() as object) })) as Transaction[];
+        };
+
+        const existing = await listCommissionsForSale();
+        if (existing.length > 0) {
           commissionCreatedForSaleIds.add(id);
           console.log('Commission already recorded for this sale, skipping duplicate.');
           return id;
@@ -826,11 +962,11 @@ export const useFirestoreData = (outletID: string, role: FirestoreUserRole = nul
         for (const item of transactionWithOutlet.items) {
           if (!item.staffId || !item.commissionEarned || item.commissionEarned <= 0) continue;
           const key = `${item.staffId}|${item.id}`;
-          const existing = commissionByKey.get(key);
-          const amount = (existing?.amount ?? 0) + item.commissionEarned;
+          const existingGroup = commissionByKey.get(key);
+          const amount = (existingGroup?.amount ?? 0) + item.commissionEarned;
           commissionByKey.set(key, {
             staffId: item.staffId,
-            name: existing?.name ?? item.name,
+            name: existingGroup?.name ?? item.name,
             amount
           });
         }
@@ -857,8 +993,8 @@ export const useFirestoreData = (outletID: string, role: FirestoreUserRole = nul
           parentSaleId: id
         };
         // Re-check right before write to avoid race where another tab/process created commission
-        const recheckSnap = await getDocs(existingCommissionsQuery);
-        if (!recheckSnap.empty) {
+        const recheck = await listCommissionsForSale();
+        if (recheck.length > 0) {
           console.log('Commission already recorded for this sale (re-check), skipping.');
           return id;
         }
@@ -867,12 +1003,12 @@ export const useFirestoreData = (outletID: string, role: FirestoreUserRole = nul
 
         // Cleanup duplicate commissions (admin and cashier can delete per Firestore rules)
         // Cleanup 1: remove duplicate commissions for THIS sale (same parentSaleId) that lack staff in description
-        const allForSale = await getDocs(existingCommissionsQuery);
-        if (allForSale.size > 1) {
+        const allForSale = await listCommissionsForSale();
+        if (allForSale.length > 1) {
           const toDelete: string[] = [];
-          allForSale.docs.forEach(d => {
-            const desc = (d.data().description as string) || '';
-            if (!desc.includes(' - ')) toDelete.push(d.id);
+          allForSale.forEach((t) => {
+            const desc = t.description || '';
+            if (!desc.includes(' - ')) toDelete.push(t.id);
           });
           for (const docId of toDelete) {
             try {
@@ -884,36 +1020,38 @@ export const useFirestoreData = (outletID: string, role: FirestoreUserRole = nul
           }
         }
 
-        // Cleanup 2: remove orphan commission docs (no parentSaleId or wrong format) created by old deployed code
-        const recentCommissionsQuery = query(
-          collection(db, 'transactions'),
-          where('outletID', '==', outletID),
-          where('category', '==', 'Commission'),
-          where('type', '==', TransactionType.EXPENSE)
-        );
-        const recentSnap = await getDocs(recentCommissionsQuery);
-        const saleTime = new Date(transactionWithOutlet.date).getTime();
-        const toDeleteOrphans: string[] = [];
-        recentSnap.docs.forEach(d => {
-          const data = d.data();
-          const desc = (data.description as string) || '';
-          if (!desc.includes(' - ')) {
-            const amount = Number(data.amount);
-            const rawDate = data.date;
-            const docDate = rawDate && typeof rawDate.toDate === 'function'
-              ? rawDate.toDate().getTime()
-              : new Date(rawDate).getTime();
-            if (amount === totalCommission && !isNaN(docDate) && Math.abs(docDate - saleTime) < 120000) {
-              toDeleteOrphans.push(d.id);
+        // Cleanup 2: remove orphan commission docs (Firestore only — Supabase uses parent_sale_id)
+        if (DB_PROVIDER !== 'supabase') {
+          const recentCommissionsQuery = query(
+            collection(db, 'transactions'),
+            where('outletID', '==', outletID),
+            where('category', '==', 'Commission'),
+            where('type', '==', TransactionType.EXPENSE)
+          );
+          const recentSnap = await getDocs(recentCommissionsQuery);
+          const saleTime = new Date(transactionWithOutlet.date).getTime();
+          const toDeleteOrphans: string[] = [];
+          recentSnap.docs.forEach(d => {
+            const data = d.data();
+            const desc = (data.description as string) || '';
+            if (!desc.includes(' - ')) {
+              const amount = Number(data.amount);
+              const rawDate = data.date;
+              const docDate = rawDate && typeof rawDate.toDate === 'function'
+                ? rawDate.toDate().getTime()
+                : new Date(rawDate).getTime();
+              if (amount === totalCommission && !isNaN(docDate) && Math.abs(docDate - saleTime) < 120000) {
+                toDeleteOrphans.push(d.id);
+              }
             }
-          }
-        });
-        for (const docId of toDeleteOrphans) {
-          try {
-            await transactionService.delete(docId, outletID);
-            console.log('Removed orphan duplicate commission (no staff, same time/amount):', docId);
-          } catch (e) {
-            console.warn('Could not remove orphan commission:', docId, e);
+          });
+          for (const docId of toDeleteOrphans) {
+            try {
+              await transactionService.delete(docId, outletID);
+              console.log('Removed orphan duplicate commission (no staff, same time/amount):', docId);
+            } catch (e) {
+              console.warn('Could not remove orphan commission:', docId, e);
+            }
           }
         }
       }
@@ -972,7 +1110,97 @@ export const useFirestoreData = (outletID: string, role: FirestoreUserRole = nul
 
   const handleDeleteTransaction = useCallback(async (id: string) => {
     try {
-      console.log('Deleting transaction from Firestore:', id);
+      console.log('Deleting transaction:', id);
+
+      if (DB_PROVIDER === 'supabase') {
+        const allTxns = await transactionService.getAll(outletID);
+        const txnData = allTxns.find((t) => t.id === id);
+        if (!txnData) throw new Error('Transaction not found');
+        if (txnData.outletID !== outletID) {
+          throw new Error('Transaction does not belong to this outlet');
+        }
+
+        const allAppts = await appointmentService.getAll(outletID);
+        const linkedAppts = allAppts.filter(
+          (a) => a.saleId === id || (a as any).sourceSaleId === id
+        );
+        for (const appt of linkedAppts) {
+          await appointmentService.delete(appt.id, outletID);
+        }
+        if (linkedAppts.length > 0) {
+          console.log('Deleted', linkedAppts.length, 'appointment(s) linked to sale', id);
+        }
+
+        const commissions = allTxns.filter(
+          (t) => t.parentSaleId === id && t.category === 'Commission'
+        );
+        for (const c of commissions) {
+          await transactionService.delete(c.id, outletID);
+        }
+        if (commissions.length > 0) {
+          console.log('Deleted', commissions.length, 'commission transaction(s) linked to sale', id);
+        }
+
+        let pointsDelta = 0;
+        let clientId: string | undefined;
+        let receiptNumber = id.replace(/\D/g, '').slice(-10) || id.slice(-8);
+        receiptNumber = '#' + receiptNumber.padStart(10, '0');
+        let vouchersToRemove = 0;
+        let vouchersToRefund = 0;
+
+        if (
+          txnData.type === TransactionType.SALE &&
+          txnData.clientId &&
+          txnData.clientId !== 'guest'
+        ) {
+          clientId = txnData.clientId;
+          if (txnData.paymentMethod === 'Voucher' || txnData.category === 'Voucher') {
+            vouchersToRefund = 1;
+          } else if (txnData.category === 'Redemption') {
+            if (txnData.items?.length) {
+              pointsDelta = txnData.items.reduce((sum, item: any) => {
+                if (!item.redeemedWithPoints || !item.redeemPoints) return sum;
+                return sum + item.redeemPoints * (item.quantity ?? 1);
+              }, 0);
+            }
+          } else if (txnData.items?.length) {
+            pointsDelta = -txnData.items.reduce((sum, item: any) => {
+              const itemPoints = item.points !== undefined ? item.points : Math.floor(item.price);
+              return sum + itemPoints * item.quantity;
+            }, 0);
+            for (const item of txnData.items) {
+              if (item.type !== 'package') continue;
+              const pkg = packages.find((p: Package) => p.id === item.id);
+              const totalServices = pkg?.services?.length
+                ? pkg.services.reduce((s: number, ps: any) => s + (ps.quantity ?? 0), 0)
+                : 1;
+              vouchersToRemove += (item.quantity ?? 1) * Math.max(1, totalServices);
+            }
+          } else {
+            pointsDelta = -Math.floor(txnData.amount);
+          }
+        }
+
+        if (clientId && pointsDelta < 0) {
+          await pointTransactionService.deductForSaleDeletion(
+            clientId,
+            Math.abs(pointsDelta),
+            receiptNumber.replace(/^#/, ''),
+            outletID
+          );
+        } else if (clientId && pointsDelta > 0) {
+          await pointTransactionService.add(clientId, 'Topup', pointsDelta, outletID);
+        }
+        if (clientId && vouchersToRemove > 0) {
+          await clientService.decrementVoucherCount(clientId, vouchersToRemove, outletID);
+        }
+        if (clientId && vouchersToRefund > 0) {
+          await clientService.incrementVoucherCount(clientId, vouchersToRefund, outletID);
+        }
+
+        await transactionService.delete(id, outletID);
+        return;
+      }
       
       // Get transaction before deletion to check if points need to be deducted
       const transactionRef = doc(db, 'transactions', id);
@@ -1124,6 +1352,99 @@ export const useFirestoreData = (outletID: string, role: FirestoreUserRole = nul
   const handleVoidTransaction = useCallback(async (id: string) => {
     try {
       console.log('Voiding transaction:', id);
+
+      if (DB_PROVIDER === 'supabase') {
+        const allTxns = await transactionService.getAll(outletID);
+        const txnData = allTxns.find((t) => t.id === id);
+        if (!txnData) throw new Error('Transaction not found');
+        if (txnData.outletID !== outletID) {
+          throw new Error('Transaction does not belong to this outlet');
+        }
+        if (txnData.status === 'voided') {
+          throw new Error('Transaction is already voided');
+        }
+
+        let pointsDelta = 0;
+        let clientId: string | undefined;
+        let vouchersToRemove = 0;
+        let vouchersToRefund = 0;
+        let receiptNumber = id.replace(/\D/g, '').slice(-10) || id.slice(-8);
+        receiptNumber = '#' + receiptNumber.padStart(10, '0');
+
+        if (
+          txnData.type === TransactionType.SALE &&
+          txnData.clientId &&
+          txnData.clientId !== 'guest'
+        ) {
+          clientId = txnData.clientId;
+          if (txnData.paymentMethod === 'Voucher' || txnData.category === 'Voucher') {
+            vouchersToRefund = 1;
+          } else if (txnData.category === 'Redemption') {
+            if (txnData.items?.length) {
+              pointsDelta = txnData.items.reduce((sum, item: any) => {
+                if (!item.redeemedWithPoints || !item.redeemPoints) return sum;
+                return sum + item.redeemPoints * (item.quantity ?? 1);
+              }, 0);
+            }
+          } else if (txnData.items?.length) {
+            pointsDelta = -txnData.items.reduce((sum, item: any) => {
+              const itemPoints = item.points !== undefined ? item.points : Math.floor(item.price);
+              return sum + itemPoints * item.quantity;
+            }, 0);
+            for (const item of txnData.items) {
+              if (item.type !== 'package') continue;
+              const pkg = packages.find((p: Package) => p.id === item.id);
+              const totalServices = pkg?.services?.length
+                ? pkg.services.reduce((s: number, ps: any) => s + (ps.quantity ?? 0), 0)
+                : 1;
+              vouchersToRemove += (item.quantity ?? 1) * Math.max(1, totalServices);
+            }
+          } else {
+            pointsDelta = -Math.floor(txnData.amount);
+          }
+        }
+
+        await transactionService.update(id, { status: 'voided' }, outletID);
+
+        if (clientId && pointsDelta < 0) {
+          await pointTransactionService.deductForSaleDeletion(
+            clientId,
+            Math.abs(pointsDelta),
+            receiptNumber.replace(/^#/, ''),
+            outletID
+          );
+        } else if (clientId && pointsDelta > 0) {
+          await pointTransactionService.add(clientId, 'Topup', pointsDelta, outletID);
+        }
+        if (clientId && vouchersToRemove > 0) {
+          await clientService.decrementVoucherCount(clientId, vouchersToRemove, outletID);
+        }
+        if (clientId && vouchersToRefund > 0) {
+          await clientService.incrementVoucherCount(clientId, vouchersToRefund, outletID);
+        }
+
+        const allAppts = await appointmentService.getAll(outletID);
+        const linkedAppts = allAppts.filter(
+          (a) => a.saleId === id || (a as any).sourceSaleId === id
+        );
+        for (const appt of linkedAppts) {
+          await appointmentService.delete(appt.id, outletID);
+        }
+        if (linkedAppts.length > 0) {
+          console.log('Deleted', linkedAppts.length, 'appointment(s) linked to voided sale', id);
+        }
+
+        const commissions = allTxns.filter(
+          (t) => t.parentSaleId === id && t.category === 'Commission'
+        );
+        for (const c of commissions) {
+          await transactionService.delete(c.id, outletID);
+        }
+        if (commissions.length > 0) {
+          console.log('Deleted', commissions.length, 'commission transaction(s) linked to voided sale', id);
+        }
+        return;
+      }
       
       // Get transaction before voiding to check if points need to be deducted
       const transactionRef = doc(db, 'transactions', id);

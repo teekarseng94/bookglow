@@ -267,6 +267,18 @@ export type Database = {
           phone: string | null;
           notes: string | null;
           points: number | null;
+          voucher_count: number | null;
+          credit: number | null;
+          outstanding: number | null;
+          birthday: string | null;
+          gender: string | null;
+          source: string | null;
+          ic: string | null;
+          marital: string | null;
+          tag: string | null;
+          ethnic: string | null;
+          member_tier: string | null;
+          last_import_id: string | null;
           created_at: string | null;
         };
         Insert: {
@@ -277,6 +289,18 @@ export type Database = {
           phone?: string | null;
           notes?: string | null;
           points?: number | null;
+          voucher_count?: number | null;
+          credit?: number | null;
+          outstanding?: number | null;
+          birthday?: string | null;
+          gender?: string | null;
+          source?: string | null;
+          ic?: string | null;
+          marital?: string | null;
+          tag?: string | null;
+          ethnic?: string | null;
+          member_tier?: string | null;
+          last_import_id?: string | null;
           created_at?: string | null;
         };
         Update: {
@@ -287,6 +311,18 @@ export type Database = {
           phone?: string | null;
           notes?: string | null;
           points?: number | null;
+          voucher_count?: number | null;
+          credit?: number | null;
+          outstanding?: number | null;
+          birthday?: string | null;
+          gender?: string | null;
+          source?: string | null;
+          ic?: string | null;
+          marital?: string | null;
+          tag?: string | null;
+          ethnic?: string | null;
+          member_tier?: string | null;
+          last_import_id?: string | null;
           created_at?: string | null;
         };
         Relationships: [
@@ -352,6 +388,401 @@ export type Database = {
           },
         ];
       };
+      points_credits: {
+        Row: {
+          client_id: string;
+          sale_id: string;
+          points: number;
+          credited_at: string | null;
+        };
+        Insert: {
+          client_id: string;
+          sale_id: string;
+          points: number;
+          credited_at?: string | null;
+        };
+        Update: {
+          client_id?: string;
+          sale_id?: string;
+          points?: number;
+          credited_at?: string | null;
+        };
+        Relationships: [];
+      };
+      point_transactions: {
+        Row: {
+          id: string;
+          client_id: string;
+          outlet_id: string;
+          type: string;
+          amount: number | null;
+          previous_balance: number | null;
+          new_balance: number | null;
+          timestamp: string | null;
+          is_manual: boolean | null;
+          description: string | null;
+        };
+        Insert: {
+          id: string;
+          client_id: string;
+          outlet_id: string;
+          type: string;
+          amount?: number | null;
+          previous_balance?: number | null;
+          new_balance?: number | null;
+          timestamp?: string | null;
+          is_manual?: boolean | null;
+          description?: string | null;
+        };
+        Update: {
+          id?: string;
+          client_id?: string;
+          outlet_id?: string;
+          type?: string;
+          amount?: number | null;
+          previous_balance?: number | null;
+          new_balance?: number | null;
+          timestamp?: string | null;
+          is_manual?: boolean | null;
+          description?: string | null;
+        };
+        Relationships: [];
+      };
+      outstanding_transactions: {
+        Row: {
+          id: string;
+          client_id: string;
+          outlet_id: string;
+          type: string;
+          amount: number | null;
+          previous_balance: number | null;
+          new_balance: number | null;
+          timestamp: string | null;
+          is_manual: boolean | null;
+          description: string | null;
+        };
+        Insert: {
+          id: string;
+          client_id: string;
+          outlet_id: string;
+          type: string;
+          amount?: number | null;
+          previous_balance?: number | null;
+          new_balance?: number | null;
+          timestamp?: string | null;
+          is_manual?: boolean | null;
+          description?: string | null;
+        };
+        Update: {
+          id?: string;
+          client_id?: string;
+          outlet_id?: string;
+          type?: string;
+          amount?: number | null;
+          previous_balance?: number | null;
+          new_balance?: number | null;
+          timestamp?: string | null;
+          is_manual?: boolean | null;
+          description?: string | null;
+        };
+        Relationships: [];
+      };
+      credit_history: {
+        Row: {
+          id: string;
+          client_id: string;
+          outlet_id: string | null;
+          type: string;
+          amount: number | null;
+          new_balance: number | null;
+          staff_remark: string | null;
+          staff_name: string | null;
+          timestamp: string | null;
+          transaction_id: string | null;
+        };
+        Insert: {
+          id?: string;
+          client_id: string;
+          outlet_id?: string | null;
+          type: string;
+          amount?: number | null;
+          new_balance?: number | null;
+          staff_remark?: string | null;
+          staff_name?: string | null;
+          timestamp?: string | null;
+          transaction_id?: string | null;
+        };
+        Update: {
+          id?: string;
+          client_id?: string;
+          outlet_id?: string | null;
+          type?: string;
+          amount?: number | null;
+          new_balance?: number | null;
+          staff_remark?: string | null;
+          staff_name?: string | null;
+          timestamp?: string | null;
+          transaction_id?: string | null;
+        };
+        Relationships: [];
+      };
+      transactions: {
+        Row: {
+          id: string;
+          outlet_id: string;
+          date: string;
+          type: string;
+          client_id: string | null;
+          items: Json | null;
+          amount: number | null;
+          category: string | null;
+          description: string | null;
+          payment_method: string | null;
+          parent_sale_id: string | null;
+          status: string | null;
+          voided: boolean | null;
+          remarks: string | null;
+          payment_status: string | null;
+          outstanding: number | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id: string;
+          outlet_id: string;
+          date?: string;
+          type: string;
+          client_id?: string | null;
+          items?: Json | null;
+          amount?: number | null;
+          category?: string | null;
+          description?: string | null;
+          payment_method?: string | null;
+          parent_sale_id?: string | null;
+          status?: string | null;
+          voided?: boolean | null;
+          remarks?: string | null;
+          payment_status?: string | null;
+          outstanding?: number | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          outlet_id?: string;
+          date?: string;
+          type?: string;
+          client_id?: string | null;
+          items?: Json | null;
+          amount?: number | null;
+          category?: string | null;
+          description?: string | null;
+          payment_method?: string | null;
+          parent_sale_id?: string | null;
+          status?: string | null;
+          voided?: boolean | null;
+          remarks?: string | null;
+          payment_status?: string | null;
+          outstanding?: number | null;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+      products: {
+        Row: {
+          id: string;
+          outlet_id: string;
+          name: string;
+          price: number | null;
+          stock: number | null;
+          category: string | null;
+          fixed_commission_amount: number | null;
+        };
+        Insert: {
+          id: string;
+          outlet_id: string;
+          name?: string;
+          price?: number | null;
+          stock?: number | null;
+          category?: string | null;
+          fixed_commission_amount?: number | null;
+        };
+        Update: {
+          id?: string;
+          outlet_id?: string;
+          name?: string;
+          price?: number | null;
+          stock?: number | null;
+          category?: string | null;
+          fixed_commission_amount?: number | null;
+        };
+        Relationships: [];
+      };
+      packages: {
+        Row: {
+          id: string;
+          outlet_id: string;
+          name: string;
+          price: number | null;
+          points: number | null;
+          category: string | null;
+          services: Json | null;
+          description: string | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id: string;
+          outlet_id: string;
+          name?: string;
+          price?: number | null;
+          points?: number | null;
+          category?: string | null;
+          services?: Json | null;
+          description?: string | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          outlet_id?: string;
+          name?: string;
+          price?: number | null;
+          points?: number | null;
+          category?: string | null;
+          services?: Json | null;
+          description?: string | null;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+      rewards: {
+        Row: {
+          id: string;
+          outlet_id: string;
+          name: string;
+          cost: number | null;
+          icon: string | null;
+        };
+        Insert: {
+          id: string;
+          outlet_id: string;
+          name?: string;
+          cost?: number | null;
+          icon?: string | null;
+        };
+        Update: {
+          id?: string;
+          outlet_id?: string;
+          name?: string;
+          cost?: number | null;
+          icon?: string | null;
+        };
+        Relationships: [];
+      };
+      vouchers: {
+        Row: {
+          id: string;
+          outlet_id: string;
+          name: string;
+          price: number | null;
+          service_ids: Json | null;
+          expiry_date: string | null;
+          status: string;
+          slug: string | null;
+          redemption_id: string | null;
+          secret_code: string | null;
+          purchased_at: string | null;
+          redeemed_at: string | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id: string;
+          outlet_id: string;
+          name?: string;
+          price?: number | null;
+          service_ids?: Json | null;
+          expiry_date?: string | null;
+          status?: string;
+          slug?: string | null;
+          redemption_id?: string | null;
+          secret_code?: string | null;
+          purchased_at?: string | null;
+          redeemed_at?: string | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          outlet_id?: string;
+          name?: string;
+          price?: number | null;
+          service_ids?: Json | null;
+          expiry_date?: string | null;
+          status?: string;
+          slug?: string | null;
+          redemption_id?: string | null;
+          secret_code?: string | null;
+          purchased_at?: string | null;
+          redeemed_at?: string | null;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+      api_integrations: {
+        Row: {
+          outlet_id: string;
+          api_key_hash: string | null;
+          key_prefix: string | null;
+          webhook_url: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          outlet_id: string;
+          api_key_hash?: string | null;
+          key_prefix?: string | null;
+          webhook_url?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          outlet_id?: string;
+          api_key_hash?: string | null;
+          key_prefix?: string | null;
+          webhook_url?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      users: {
+        Row: {
+          uid: string;
+          email: string | null;
+          outlet_id: string | null;
+          role: string | null;
+          display_name: string | null;
+          created_at: string | null;
+        };
+        Insert: {
+          uid: string;
+          email?: string | null;
+          outlet_id?: string | null;
+          role?: string | null;
+          display_name?: string | null;
+          created_at?: string | null;
+        };
+        Update: {
+          uid?: string;
+          email?: string | null;
+          outlet_id?: string | null;
+          role?: string | null;
+          display_name?: string | null;
+          created_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "users_outlet_id_fkey";
+            columns: ["outlet_id"];
+            isOneToOne: false;
+            referencedRelation: "outlets";
+            referencedColumns: ["outlet_id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -395,6 +826,56 @@ export type Database = {
           p_name?: string | null;
         };
         Returns: Json;
+      };
+      merchant_credit_points_for_sale: {
+        Args: {
+          p_client_id: string;
+          p_sale_id: string;
+          p_points: number;
+          p_outlet_id: string;
+        };
+        Returns: boolean;
+      };
+      merchant_adjust_client_points: {
+        Args: {
+          p_client_id: string;
+          p_outlet_id: string;
+          p_type: string;
+          p_amount: number;
+          p_is_manual?: boolean | null;
+          p_description?: string | null;
+        };
+        Returns: string;
+      };
+      merchant_adjust_client_outstanding: {
+        Args: {
+          p_client_id: string;
+          p_outlet_id: string;
+          p_type: string;
+          p_amount: number;
+          p_timestamp?: string | null;
+        };
+        Returns: string;
+      };
+      merchant_adjust_client_credit: {
+        Args: {
+          p_client_id: string;
+          p_outlet_id: string;
+          p_type: string;
+          p_amount: number;
+          p_staff_remark?: string | null;
+          p_staff_name?: string | null;
+          p_transaction_id?: string | null;
+        };
+        Returns: number;
+      };
+      public_voucher_purchase: {
+        Args: { p_voucher_id: string };
+        Returns: Json;
+      };
+      public_voucher_confirm_redemption: {
+        Args: { p_voucher_id: string };
+        Returns: undefined;
       };
       parse_time_to_minutes: {
         Args: { time_str: string };

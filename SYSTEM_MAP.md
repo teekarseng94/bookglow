@@ -70,9 +70,6 @@ Functions source: `zenspa backend/functions/index.js` (region: `asia-southeast1`
 - `uploadServiceImage`
 - `deleteStorageFile`
 - `verifyApiKeyForChatbot`
-- `fetchSetmoreFeed`
-- `getSetmoreFeed`
-- `syncSetmoreCalendar`
 - `getPublicAvailableSlots`
 - `getPublicOutletData`
 - `createPublicBooking`

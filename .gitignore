@@ -113,5 +113,6 @@ temp/
 
 # Migration export/import artifacts (may contain production data)
 migration/firestore-export/data/
+migration/firestore-export/serviceAccountKey.json
 migration/supabase-import/generated/
 migration/validate/validation_report.json

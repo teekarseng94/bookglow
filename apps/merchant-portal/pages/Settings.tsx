@@ -367,14 +367,6 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       <SettingsPageHeader
         actions={
           <div className="flex flex-wrap gap-2">
-            <Link
-              to="/settings/integrations"
-              className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-ui-sm border border-sky-200 bg-sky-50 text-sky-700 font-bold text-xs sm:text-sm hover:bg-sky-100 transition-colors"
-            >
-              <Icons.Calendar />
-              <span className="hidden sm:inline">External Integrations</span>
-              <span className="sm:hidden">Setmore</span>
-            </Link>
             <Button variant="secondary" size="sm" onClick={handleOpenApiModal}>
               API Integration
             </Button>
@@ -859,20 +851,10 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         id="settings-integrations"
         iconWrap="bg-sky-50 text-sky-600"
         title="Integrations"
-        description="External calendars and chatbot API access for this outlet."
+        description="Chatbot API access for this outlet."
         icon={<Icons.Calendar />}
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Link
-            to="/settings/integrations"
-            className="flex items-start gap-3 p-4 rounded-xl border border-sky-200 bg-sky-50 hover:bg-sky-100 transition-colors"
-          >
-            <Icons.Calendar />
-            <div>
-              <p className="text-sm font-bold text-slate-900">External Integrations</p>
-              <p className="text-xs text-slate-500 mt-0.5">Setmore and other calendar sync settings</p>
-            </div>
-          </Link>
           <button
             type="button"
             onClick={handleOpenApiModal}

@@ -1,16 +1,18 @@
 /**
  * User Context
- * 
- * Provides global access to authenticated user's outlet information
+ *
+ * Provides global access to authenticated user's outlet information.
+ * Loads from Firestore users/{uid} (Firebase auth) or public.users (Supabase auth).
  */
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User } from 'firebase/auth';
-import { doc, getDoc, getDocFromServer } from 'firebase/firestore';
-import { db } from '../firebase';
-import { logout } from '../services/authService';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { doc, getDoc, getDocFromServer } from "firebase/firestore";
+import { resolveAuthProvider } from "@bookglow/shared-types";
+import { db } from "../firebase";
+import type { PortalAuthUser } from "../services/authService";
+import { fetchPortalUserProfile } from "../services/supabaseMerchant";
 
-export type UserRole = 'admin' | 'cashier';
+export type UserRole = "admin" | "cashier";
 
 export interface UserData {
   uid: string;
@@ -22,11 +24,11 @@ export interface UserData {
 }
 
 interface UserContextType {
-  user: User | null;
+  user: PortalAuthUser | null;
   userData: UserData | null;
   outletId: string | null;
   outletName: string | null;
-  /** Role from users/{uid} document: admin (full access) or cashier (limited). */
+  /** Role from users profile: admin (full access) or cashier (limited). */
   role: UserRole | null;
   loading: boolean;
   error: string | null;
@@ -38,142 +40,155 @@ const UserContext = createContext<UserContextType | undefined>(undefined);
 export const useUserContext = () => {
   const context = useContext(UserContext);
   if (!context) {
-    throw new Error('useUserContext must be used within UserContextProvider');
+    throw new Error("useUserContext must be used within UserContextProvider");
   }
   return context;
 };
 
 interface UserContextProviderProps {
   children: ReactNode;
-  firebaseUser: User | null;
+  /** Renamed conceptually to authUser; kept prop name for AppBootstrap compatibility. */
+  firebaseUser: PortalAuthUser | null;
 }
 
-export const UserContextProvider: React.FC<UserContextProviderProps> = ({ 
-  children, 
-  firebaseUser 
+const OWNER_EMAIL = "teekarseng94@gmail.com";
+
+export const UserContextProvider: React.FC<UserContextProviderProps> = ({
+  children,
+  firebaseUser: authUser,
 }) => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchUserData = async (user: User) => {
+  const fetchUserData = async (user: PortalAuthUser) => {
     try {
       setLoading(true);
       setError(null);
-      const email = (user.email || '').toLowerCase();
-      const ownerEmail = 'teekarseng94@gmail.com';
-      // True outlet-less super admin: bypass outlet checks entirely
-      if (email === ownerEmail.toLowerCase()) {
-        const ownerData: UserData = {
+      const email = (user.email || "").toLowerCase();
+      if (email === OWNER_EMAIL.toLowerCase()) {
+        setUserData({
           uid: user.uid,
           email: user.email,
           outletId: null,
-          role: 'admin',
+          role: "admin",
           outletName: undefined,
-          displayName: user.displayName || null
-        };
-        setUserData(ownerData);
+          displayName: user.displayName || null,
+        });
         setLoading(false);
-        setError(null);
         return;
       }
 
-      console.log('Fetching user data for UID:', user.uid);
-      
-      // Fetch user document from Firestore (server read to avoid stale cache so role updates apply immediately)
-      const userDocRef = doc(db, 'users', user.uid);
+      const useSupabase =
+        resolveAuthProvider(
+          import.meta.env as unknown as Record<string, string | undefined>
+        ) === "supabase";
+
+      if (useSupabase) {
+        const profile = await fetchPortalUserProfile(user.uid);
+        if (!profile) {
+          throw new Error(
+            "Your account is not linked to an outlet. " +
+              "An administrator must insert a row in public.users with uid = your Supabase Auth user id, " +
+              "outlet_id, and role (admin|cashier)."
+          );
+        }
+        const outletId = profile.outletId?.trim() || "";
+        if (!outletId && profile.role !== "platform_admin" && profile.role !== "admin") {
+          throw new Error(
+            "Your user profile does not have an outlet assigned (public.users.outlet_id)."
+          );
+        }
+        const rawRole = (profile.role || "cashier").toLowerCase();
+        const role: UserRole =
+          rawRole === "admin" || rawRole === "platform_admin" ? "admin" : "cashier";
+        setUserData({
+          uid: profile.uid,
+          email: profile.email || user.email,
+          outletId: outletId || null,
+          role,
+          outletName: profile.outletName || undefined,
+          displayName: profile.displayName || user.displayName || null,
+        });
+        return;
+      }
+
+      console.log("Fetching user data for UID:", user.uid);
+      const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDocFromServer(userDocRef);
-      
+
       if (!userDoc.exists()) {
         throw new Error(
-          'Your account is not linked to an outlet. ' +
-          'An administrator must create a user profile in Firestore (collection: users, document id: your Firebase Auth UID) with field "outletId" set to your assigned outlet. ' +
-          'See USERS_AND_OUTLETS.md for setup.'
+          "Your account is not linked to an outlet. " +
+            "An administrator must create a user profile in Firestore (collection: users, document id: your Firebase Auth UID) with field \"outletId\" set to your assigned outlet. " +
+            "See USERS_AND_OUTLETS.md for setup."
         );
       }
-      
+
       const data = userDoc.data();
-      console.log('User document data:', data);
-      
-      // Validate required fields — each email/user must map to exactly one outlet for multi-tenant isolation
-      const outletId = data.outletId != null ? String(data.outletId).trim() : '';
+      const outletId = data.outletId != null ? String(data.outletId).trim() : "";
       if (!outletId) {
         throw new Error(
-          'Your user profile does not have an outlet assigned. ' +
-          'Each user must be mapped to one outlet in the users collection (field: outletId). ' +
-          'Contact your administrator to set outletId for your account.'
+          "Your user profile does not have an outlet assigned. " +
+            "Each user must be mapped to one outlet in the users collection (field: outletId)."
         );
       }
-      
-      // Fetch outlet information
+
       let outletName = null;
       try {
-        const outletDocRef = doc(db, 'outlets', outletId);
-        const outletDoc = await getDoc(outletDocRef);
+        const outletDoc = await getDoc(doc(db, "outlets", outletId));
         if (outletDoc.exists()) {
           outletName = outletDoc.data().name || null;
         }
       } catch (outletError) {
-        console.warn('Could not fetch outlet name:', outletError);
-        // Continue without outlet name
+        console.warn("Could not fetch outlet name:", outletError);
       }
-      
-      // Normalize role: accept 'admin' | 'cashier' | 'staff' (legacy) from Firestore; default to cashier
-      const rawRole = (data.role || 'cashier').toString().toLowerCase();
-      const role: UserRole = rawRole === 'admin' ? 'admin' : 'cashier';
 
-      const userData: UserData = {
+      const rawRole = (data.role || "cashier").toString().toLowerCase();
+      const role: UserRole = rawRole === "admin" ? "admin" : "cashier";
+
+      setUserData({
         uid: user.uid,
         email: user.email,
         outletId,
         role,
         outletName: outletName || undefined,
-        displayName: user.displayName || data.displayName || null
-      };
-      
-      console.log('✅ User data loaded:', userData);
-      setUserData(userData);
-      
+        displayName: user.displayName || data.displayName || null,
+      });
     } catch (err: any) {
-      console.error('❌ Error fetching user data:', err);
-      // Surface the message but do not auto-logout; ProtectedRoute will handle access control
-      setError(err.message || 'Failed to load user data');
+      console.error("❌ Error fetching user data:", err);
+      setError(err.message || "Failed to load user data");
     } finally {
       setLoading(false);
     }
   };
 
   const refreshUserData = async () => {
-    if (firebaseUser) {
-      await fetchUserData(firebaseUser);
+    if (authUser) {
+      await fetchUserData(authUser);
     }
   };
 
   useEffect(() => {
-    if (firebaseUser) {
-      fetchUserData(firebaseUser);
+    if (authUser) {
+      fetchUserData(authUser);
     } else {
-      // User logged out
       setUserData(null);
       setLoading(false);
       setError(null);
     }
-  }, [firebaseUser]);
+  }, [authUser]);
 
   const value: UserContextType = {
-    user: firebaseUser,
+    user: authUser,
     userData,
     outletId: userData?.outletId || null,
     outletName: userData?.outletName || null,
     role: userData?.role ?? null,
     loading,
     error,
-    refreshUserData
+    refreshUserData,
   };
 
-  return (
-    <UserContext.Provider value={value}>
-      {children}
-    </UserContext.Provider>
-  );
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };

@@ -50,7 +50,17 @@ npm run export
 
 ## Step 4: Import Data to Supabase
 
-1. Set environment variables:
+Controlled SQL generators (output under `supabase-import/generated/`):
+
+```bash
+npm run import:outlets-services
+npm run import:staff
+npm run import:appointments          # needs serviceAccountKey.json
+npm run import:merchant-phase5       # clients, txns, catalog, vouchers, users, ledgers
+```
+
+Or upsert exported JSON with the service role:
+
 ```bash
 # Windows
 set SUPABASE_URL=https://your-project.supabase.co
@@ -59,14 +69,11 @@ set SUPABASE_SERVICE_ROLE_KEY=eyJ...
 # macOS/Linux
 export SUPABASE_URL=https://your-project.supabase.co
 export SUPABASE_SERVICE_ROLE_KEY=eyJ...
-```
 
-2. Run the import:
-```bash
 npm run import
 ```
 
-3. Review the import summary. The script uses **upsert** — safe to re-run.
+The import uses **upsert** — safe to re-run.
 
 ## Step 5: Validate Data
 

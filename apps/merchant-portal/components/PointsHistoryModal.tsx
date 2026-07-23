@@ -32,11 +32,41 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Real-time listener for point transactions
+  // Real-time / polled listener for point transactions
   useEffect(() => {
     if (!clientId || !outletID) {
       setLoading(false);
       return;
+    }
+
+    const useSupabase =
+      (import.meta.env as unknown as Record<string, string | undefined>).VITE_DATA_PROVIDER ===
+      "supabase";
+
+    if (useSupabase) {
+      let cancelled = false;
+      const load = async () => {
+        try {
+          const { pointTransactionService } = await import("../services/pointTransactionService");
+          const data = await pointTransactionService.getAll(clientId, outletID);
+          if (cancelled) return;
+          setTransactions(data);
+          setLoading(false);
+          if (data.length > 0) onBalanceUpdate(data[0].newBalance);
+        } catch (err) {
+          console.error("Error loading point transactions:", err);
+          if (!cancelled) {
+            setError("Failed to load transaction history");
+            setLoading(false);
+          }
+        }
+      };
+      void load();
+      const timer = window.setInterval(() => void load(), 10000);
+      return () => {
+        cancelled = true;
+        window.clearInterval(timer);
+      };
     }
     
     const q = query(

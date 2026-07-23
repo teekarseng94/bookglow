@@ -129,7 +129,7 @@ export interface Appointment {
   sourceSaleId?: string;
   /** Optional: Same as sourceSaleId; stored in bookings collection for triggers and queries */
   saleId?: string;
-  /** Optional: origin marker (e.g. setmore sync writes "setmore") */
+  /** Optional: origin marker for imported/external appointments */
   source?: string;
 }
 
@@ -210,10 +210,6 @@ export interface OutletSettings {
   roleCommissions?: RoleCommission[];
   /** Optional staff PIN required to confirm voucher redemption on public redeem page. */
   voucherRedemptionPin?: string;
-  /** Setmore ICS/feed URL for external calendar sync */
-  setmoreFeedUrl?: string;
-  /** ISO timestamp of last successful Setmore sync */
-  setmoreLastSyncedAt?: string;
 }
 
 /** Daily operating hours for booking page (e.g. "8:00" - "17:00") */

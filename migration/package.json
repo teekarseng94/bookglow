@@ -9,7 +9,9 @@
     "import:outlets-services": "node supabase-import/import-outlets-services-only.mjs",
     "import:staff": "node supabase-import/import-staff-only.mjs",
     "import:appointments": "node supabase-import/import-appointments-only.mjs",
-    "validate": "node validate/validate.js"
+    "import:merchant-phase5": "node supabase-import/import-merchant-phase5.mjs",
+    "validate": "node validate/validate.js",
+    "map:merchant-auth": "node supabase-import/map-merchant-auth.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

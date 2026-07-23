@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { User } from 'firebase/auth';
 import { Icons } from '../constants';
 import type { UserRole } from '../contexts/UserContext';
+import type { PortalAuthUser } from '../services/authService';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -10,7 +10,7 @@ interface LayoutProps {
   setActiveTab: (tab: string) => void;
   isAdmin?: boolean;
   shopName: string;
-  user?: User | null;
+  user?: PortalAuthUser | null;
   onLogout?: () => void;
   outletId?: string | null;
   outletName?: string | null;

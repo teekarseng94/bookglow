@@ -9,7 +9,6 @@ import { useFirestoreData } from './hooks/useFirestoreData';
 import { useUserContext } from './contexts/UserContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { outletService } from './services/databaseService';
-import { syncSetmoreViaCallable } from './services/setmoreSyncService';
 
 // Lazy-load pages to reduce build memory (each page becomes a separate chunk)
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
@@ -21,7 +20,6 @@ const Transactions = React.lazy(() => import('./pages/Transactions'));
 const Services = React.lazy(() => import('./pages/Services'));
 const StaffPage = React.lazy(() => import('./pages/Staff'));
 const Settings = React.lazy(() => import('./pages/Settings'));
-const ExternalIntegrations = React.lazy(() => import('./pages/ExternalIntegrations'));
 const AppointmentsCalendar = React.lazy(() => import('./pages/AppointmentsCalendar'));
 const SalesReports = React.lazy(() => import('./pages/SalesReports'));
 const Marketing = React.lazy(() => import('./pages/Marketing'));
@@ -403,28 +401,6 @@ const AppContent: React.FC<AppContentProps> = ({
     }
   };
 
-  // Sync Setmore appointments via Cloud Function (called once when Appointment page opens)
-  const handleSyncSetmoreOnOpen = async () => {
-    if (!currentOutletID?.trim()) return;
-    try {
-      const result = await syncSetmoreViaCallable({
-        feedUrl: outletSettings.setmoreFeedUrl,
-        outletID: currentOutletID,
-        clients,
-        defaultStaffId: staff[0]?.id ?? '',
-        defaultServiceId: services[0]?.id ?? ''
-      });
-      if (result.success || result.synced > 0) {
-        await handleUpdateOutletSettings({
-          ...outletSettings,
-          setmoreLastSyncedAt: new Date().toISOString()
-        });
-      }
-    } catch (err) {
-      console.warn('Setmore sync on open:', err);
-    }
-  };
-
   const isFeatureLocked = (featureId: string) => {
     return outletSettings.isOutletModeEnabled && 
            outletSettings.lockedFeatures.includes(featureId) && 
@@ -693,7 +669,7 @@ const AppContent: React.FC<AppContentProps> = ({
         />;
       case 'schedule':
       case 'appointments':
-        return <AppointmentsCalendar appointments={appointments} staff={staff} clients={clients} services={services} roleCommissions={roleCommissions} onAddAppointment={handleAddAppointment} onUpdateAppointmentStatus={handleUpdateAppointmentStatusWithPOS} onDeleteAppointment={handleDeleteAppointment} onStartPOSSale={handleStartPOSSale} onMarkReminderSent={handleMarkReminderSent} outletSettings={outletSettings} onSyncSetmore={handleSyncSetmoreOnOpen} />;
+        return <AppointmentsCalendar appointments={appointments} staff={staff} clients={clients} services={services} roleCommissions={roleCommissions} onAddAppointment={handleAddAppointment} onUpdateAppointmentStatus={handleUpdateAppointmentStatusWithPOS} onDeleteAppointment={handleDeleteAppointment} onStartPOSSale={handleStartPOSSale} onMarkReminderSent={handleMarkReminderSent} outletSettings={outletSettings} />;
       case 'finance':
         return <Finance transactions={transactions} onAddTransaction={handleAddTransaction} onDeleteTransaction={handleDeleteTransaction} expenseCategories={expenseCategories} onAddCategory={handleAddExpenseCategory} onDeleteCategory={handleDeleteExpenseCategory} isLocked={isFeatureLocked('finance-view')} />;
       case 'settings':
@@ -755,7 +731,6 @@ const AppContent: React.FC<AppContentProps> = ({
                 />
               }
             />
-            <Route path="/settings/integrations" element={<ExternalIntegrations settings={outletSettings} onUpdateSettings={handleUpdateOutletSettings} currentOutletID={currentOutletID} clients={clients} staff={staff} services={services} />} />
             <Route path="*" element={renderContent()} />
           </Routes>
         </React.Suspense>

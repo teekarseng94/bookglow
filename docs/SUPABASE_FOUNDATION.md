@@ -1,7 +1,8 @@
 # Supabase foundation (Bookglow)
 
 This document describes how to connect a Supabase project to the Bookglow monorepo.
-**Firebase remains the default live backend** until a domain is explicitly cut over.
+**Local/dev cutover to Supabase is supported** via `VITE_DATA_PROVIDER` / `VITE_AUTH_PROVIDER`.
+Keep Firebase credentials until production cutover is verified and approved.
 
 ## Packages
 
@@ -113,6 +114,96 @@ Default remains `firebase`.
 - Email/password via Supabase Auth; Google/Facebook via `signInWithOAuth` (enable providers in Supabase Dashboard)
 - RPC: `upsert_frontend_customer_profile` after sign-in; customers may `SELECT` their own `frontend_customers` row
 - Local test tip: disable “Confirm email” in Auth settings if you need an immediate session after sign-up
+
+### Merchant portal Phase 1
+
+With `apps/merchant-portal/.env`:
+
+```env
+VITE_DATA_PROVIDER=supabase
+VITE_AUTH_PROVIDER=supabase
+```
+
+**Works on Supabase:** login, Schedule, Menu (services), Staff, Settings, CRM/members, POS / Sales History / Finance, products/packages/rewards, **vouchers (Marketing / buy / redeem)**, **API key settings**, **image uploads** (Supabase Storage `outlet-media`), **Realtime refresh** (plus 60s safety poll).  
+Cashiers: SALE rows plus Commission EXPENSE rows linked via `parent_sale_id`; admins see/write all transaction types.  
+**Still deferred:** production default flip (see Phase 5 cutover).
+
+**Setup each merchant login:**
+
+1. Create user in Supabase Auth (Dashboard → Authentication → Users)
+2. Insert portal mapping (SQL):
+
+```sql
+INSERT INTO public.users (uid, email, outlet_id, role, display_name)
+VALUES (
+  '<supabase-auth-user-uuid>',
+  'you@example.com',
+  'outlet_002',
+  'admin',
+  'You'
+);
+```
+
+`uid` must equal the Auth user id. Role: `admin` | `cashier` (or `platform_admin` / admin with `outlet_id` null for owner-style access).
+
+### Merchant portal Phase 3 (POS / catalog)
+
+Migration: `20260722070000_merchant_portal_phase3_transactions.sql`
+
+- Tables: `transactions`, `products`, `packages`, `rewards` with outlet-scoped merchant RLS
+- Cashiers: SELECT/INSERT/UPDATE only rows with `type = 'SALE'`; admins: all transaction types
+- App poll (15s) loads transactions + catalog; Sales Reports / Member Details sales use Supabase when `VITE_DATA_PROVIDER=supabase`
+- POS create/void/delete (including commission expenses + points undo) dual-pathed off Firestore
+
+Empty tables until you create catalog items / sales in-app or import from Firestore.
+
+### Merchant portal Phase 4 (vouchers / API / Storage)
+
+Migration: `20260722080000_merchant_portal_phase4_vouchers_storage.sql`
+
+- Tables: `vouchers`, `api_integrations` with merchant RLS
+- Public RPCs: `public_voucher_purchase`, `public_voucher_confirm_redemption` (Buy / Redeem pages)
+- Storage bucket `outlet-media` (public read; merchant write under `outlets/{outlet_id}/…`)
+
+### Merchant portal Phase 5 (data + reliability + cutover)
+
+**Reliability:** migration `20260722090000_merchant_portal_phase5_realtime.sql` adds merchant tables to `supabase_realtime` (REPLICA IDENTITY FULL). Portal refreshes on change (debounced) with a 60s safety poll.
+
+**Data import (controlled):**
+
+```bash
+# Requires migration/firestore-export/serviceAccountKey.json
+cd migration
+npm run import:merchant-phase5
+# → supabase-import/generated/merchant_phase5.sql (+ summary JSON)
+# Apply SQL in Dashboard, or:
+#   set SUPABASE_URL=...
+#   set SUPABASE_SERVICE_ROLE_KEY=...
+#   npm run import
+```
+
+Also: `npm run import:appointments` for busy-slot history.
+
+**Local cutover (already working):**
+
+```env
+VITE_DATA_PROVIDER=supabase
+VITE_AUTH_PROVIDER=supabase
+```
+
+**Production cutover checklist**
+
+1. Import remaining Firestore data; run `npm run validate`
+2. Smoke-test POS, CRM, vouchers, schedule, uploads on a staging build
+3. Map merchants: Firebase Auth emails → Supabase Auth + `public.users`  
+   (`cd migration && npm run map:merchant-auth` with service role, or one-time SQL seed)
+4. Ensure every merchant can sign in; change temp passwords
+5. Set production env to `supabase` for data + auth
+6. Keep Firestore read-only backup 24–48h; do not delete Firebase project yet
+7. Rollback: flip providers back to `firebase`
+
+**Merchant Auth mapping (done for local cutover project):**  
+Firebase staff UIDs were replaced with Supabase Auth UUIDs in `public.users` for outlet admins/cashiers recovered from Firebase Auth emails. Owner `teekarseng94@gmail.com` is `platform_admin`. New accounts used a temporary password — change it after first login.
 
 ### Seed data
 

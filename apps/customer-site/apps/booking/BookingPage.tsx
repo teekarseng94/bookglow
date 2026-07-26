@@ -1,25 +1,13 @@
 /**
  * Public Booking Portal: /book/:bookingPath
- * bookingPath is either the Firestore outlet id (e.g. outlet_001) or outlets.bookingSlug (e.g. baliWellness).
- * Two-column layout: left = Services, Team, Good to know, Reviews, Address + map; right = sticky sidebar with name, Book, Open/Closed, hours, address.
- * Real-time Firestore listener for outlets/{resolvedOutletId} to sync addressDisplay, phoneNumber, businessHours.
+ * bookingPath is either the outlet id (e.g. outlet_001) or outlets.booking_slug (e.g. baliWellness).
+ * Two-column layout: left = Services, Team, Good to know, Reviews, Address + map; right = sticky sidebar.
+ * Data and auth via Supabase (outlets, services, staff, slots, bookings, frontend_customers).
  */
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { collection, doc, getDoc, getDocs, onSnapshot, query, where } from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
-import { db, auth, FRONTEND_CUSTOMER_COLLECTION } from "../../services/firebase";
-import { resolveDataProvider, resolveAuthProvider } from "@bookglow/shared-types";
 import { resolveOutletIdFromBookingPath } from "../../services/bookingPathResolve";
-import {
-  getPublicOutletData,
-  createPublicBooking,
-  getAvailableSlots,
-  submitPublicReview,
-  PublicService,
-  PublicOutlet,
-  PublicTeamMember,
-} from "../../services/bookingApi";
+import type { PublicService, PublicOutlet, PublicTeamMember } from "../../services/bookingApi";
 import {
   getPublicOutletFromSupabase,
   listVisibleServicesFromSupabase,
@@ -305,66 +293,43 @@ export function BookingPage() {
     return final;
   }, [services, outlet?.serviceCategories]);
 
-  // Watch auth state (Firebase or Supabase) for header email + review gate
+  // Watch Supabase auth session for header email + review gate
   useEffect(() => {
     const env = import.meta.env as unknown as Record<string, string | undefined>;
-    if (resolveAuthProvider(env) === "supabase") {
-      const sb = createBrowserSupabaseClient(env);
-      let cancelled = false;
+    const sb = createBrowserSupabaseClient(env);
+    let cancelled = false;
 
-      const applyUser = async (email: string | null, userId: string | null) => {
-        if (cancelled) return;
-        if (!userId) {
-          setCurrentUserEmail(null);
-          setIsSignedIn(false);
-          return;
-        }
-        try {
-          await upsertFrontendCustomerProfileFromSupabase({ email });
-        } catch (err) {
-          console.warn("upsertFrontendCustomerProfileFromSupabase:", err);
-        }
-        if (cancelled) return;
-        setCurrentUserEmail(email);
-        setIsSignedIn(true);
-      };
-
-      sb.auth.getSession().then(({ data }) => {
-        const user = data.session?.user;
-        void applyUser(user?.email ?? null, user?.id ?? null);
-      });
-
-      const { data: sub } = sb.auth.onAuthStateChange((_event, session) => {
-        const user = session?.user;
-        void applyUser(user?.email ?? null, user?.id ?? null);
-      });
-
-      return () => {
-        cancelled = true;
-        sub.subscription.unsubscribe();
-      };
-    }
-
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
+    const applyUser = async (email: string | null, userId: string | null) => {
+      if (cancelled) return;
+      if (!userId) {
         setCurrentUserEmail(null);
         setIsSignedIn(false);
         return;
       }
-
-      // Booking-site profiles live in frontend_customer/{uid}; staff accounts only have users/{uid}.
-      const primary = await getDoc(doc(db, FRONTEND_CUSTOMER_COLLECTION, user.uid));
-      if (primary.exists()) {
-        setCurrentUserEmail(user.email ?? null);
-        setIsSignedIn(true);
-        return;
+      try {
+        await upsertFrontendCustomerProfileFromSupabase({ email });
+      } catch (err) {
+        console.warn("upsertFrontendCustomerProfileFromSupabase:", err);
       }
-      const legacy = await getDoc(doc(db, "customers", user.uid));
-      const ok = legacy.exists();
-      setCurrentUserEmail(ok ? user.email ?? null : null);
-      setIsSignedIn(ok);
+      if (cancelled) return;
+      setCurrentUserEmail(email);
+      setIsSignedIn(true);
+    };
+
+    sb.auth.getSession().then(({ data }) => {
+      const user = data.session?.user;
+      void applyUser(user?.email ?? null, user?.id ?? null);
     });
-    return unsubscribe;
+
+    const { data: sub } = sb.auth.onAuthStateChange((_event, session) => {
+      const user = session?.user;
+      void applyUser(user?.email ?? null, user?.id ?? null);
+    });
+
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   // Filter services by selected category and search by name
@@ -440,16 +405,7 @@ export function BookingPage() {
             teamMemberId && teamMemberId.trim().length > 0 ? teamMemberId.trim() : undefined,
         };
 
-        if (
-          resolveDataProvider(import.meta.env as unknown as Record<string, string | undefined>) ===
-          "supabase"
-        ) {
-          const slots = await getAvailableSlotsFromSupabase(payload);
-          setAvailableSlots(Array.isArray(slots) ? slots : []);
-          return;
-        }
-
-        const { slots } = await getAvailableSlots(payload);
+        const slots = await getAvailableSlotsFromSupabase(payload);
         setAvailableSlots(Array.isArray(slots) ? slots : []);
       } catch (err) {
         console.error("fetchAvailableSlots error:", err);
@@ -530,28 +486,12 @@ export function BookingPage() {
     }
     setReviewSubmitting(true);
     try {
-      const useSupabase =
-        resolveDataProvider(import.meta.env as unknown as Record<string, string | undefined>) ===
-        "supabase";
-      if (useSupabase) {
-        // Reviews RPC requires a Supabase Auth JWT (set VITE_AUTH_PROVIDER=supabase).
-        if (resolveAuthProvider(import.meta.env as unknown as Record<string, string | undefined>) !== "supabase") {
-          throw new Error("Supabase reviews require VITE_AUTH_PROVIDER=supabase.");
-        }
-        await submitPublicReviewFromSupabase({
-          outletId,
-          author,
-          text,
-          rating: reviewRating,
-        });
-      } else {
-        await submitPublicReview({
-          outletId,
-          author,
-          text,
-          rating: reviewRating,
-        });
-      }
+      await submitPublicReviewFromSupabase({
+        outletId,
+        author,
+        text,
+        rating: reviewRating,
+      });
       setOutlet((prev) =>
         prev
           ? {
@@ -575,233 +515,67 @@ export function BookingPage() {
     }
   };
 
-  // Outlet load: Firestore realtime (default) or one-shot Supabase when VITE_DATA_PROVIDER=supabase
+  // Outlet load from Supabase
   useEffect(() => {
     if (!pathResolveDone || !resolvedOutletId) {
       return;
     }
 
-    if (resolveDataProvider(import.meta.env as unknown as Record<string, string | undefined>) === "supabase") {
-      let cancelled = false;
-      getPublicOutletFromSupabase(resolvedOutletId)
-        .then((o) => {
-          if (cancelled) return;
-          if (o) {
-            setOutlet(o);
-            setLoading(false);
-            setError(null);
-          } else {
-            setError("Outlet not found");
-            setLoading(false);
-          }
-        })
-        .catch((e: unknown) => {
-          if (cancelled) return;
-          setError(friendlyBookingError(e, "Could not load this shop."));
+    let cancelled = false;
+    getPublicOutletFromSupabase(resolvedOutletId)
+      .then((o) => {
+        if (cancelled) return;
+        if (o) {
+          setOutlet(o);
           setLoading(false);
-        });
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    let hasReceivedData = false;
-    const outletRef = doc(db, "outlets", resolvedOutletId);
-    const unsubscribe = onSnapshot(
-      outletRef,
-      (snapshot) => {
-        if (!snapshot.exists()) {
-          // Fallback to Cloud Function if document doesn't exist or listener fails
-          if (!hasReceivedData) {
-            getPublicOutletData(resolvedOutletId)
-              .then(({ outlet: o }) => {
-                if (o) {
-                  setOutlet(o);
-                  setLoading(false);
-                  setError(null);
-                } else {
-                  setError("Outlet not found");
-                  setLoading(false);
-                }
-              })
-              .catch((e: unknown) => {
-                setError(friendlyBookingError(e, "Could not load this shop."));
-                setLoading(false);
-              });
-          }
-          return;
+          setError(null);
+        } else {
+          setError("Outlet not found");
+          setLoading(false);
         }
-
-        hasReceivedData = true;
-        const data = snapshot.data();
-        const businessHours = (data.businessHours && typeof data.businessHours === "object" && Object.keys(data.businessHours).length > 0) 
-          ? data.businessHours 
-          : {};
-        
-        setOutlet({
-          id: snapshot.id,
-          name: data.name || "Spa",
-          addressDisplay: data.addressDisplay || "",
-          phoneNumber: data.phoneNumber || data.phone || "",
-          businessHours,
-          timezone: data.timezone || "Asia/Kuala_Lumpur",
-          reviews: data.reviews || [],
-          serviceCategories: Array.isArray(data.serviceCategories)
-            ? data.serviceCategories
-            : [],
-          bookingSlug:
-            typeof data.bookingSlug === "string" && data.bookingSlug.trim() !== ""
-              ? data.bookingSlug.trim()
-              : undefined,
-        });
+      })
+      .catch((e: unknown) => {
+        if (cancelled) return;
+        setError(friendlyBookingError(e, "Could not load this shop."));
         setLoading(false);
-        setError(null);
-      },
-      (err) => {
-        console.error("Firestore listener error for outlet:", err);
-        // Fallback to Cloud Function if listener fails (e.g., permission denied)
-        if (!hasReceivedData) {
-          getPublicOutletData(resolvedOutletId)
-            .then(({ outlet: o }) => {
-              if (o) {
-                setOutlet(o);
-                setLoading(false);
-                setError(null);
-              } else {
-                setError(friendlyBookingError(err, "Could not load this shop."));
-                setLoading(false);
-              }
-            })
-            .catch((e: unknown) => {
-              setError(friendlyBookingError(e, "Could not load this shop."));
-              setLoading(false);
-            });
-        }
-      }
-    );
-
-    return () => unsubscribe();
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [pathResolveDone, resolvedOutletId]);
 
-  // Services load: Firestore (default) or Supabase when VITE_DATA_PROVIDER=supabase
+  // Services load from Supabase
   useEffect(() => {
     if (!outletId) return;
 
     let cancelled = false;
-
-    if (resolveDataProvider(import.meta.env as unknown as Record<string, string | undefined>) === "supabase") {
-      listVisibleServicesFromSupabase(outletId)
-        .then((svc) => {
-          if (!cancelled) setServices(svc);
-        })
-        .catch((err) => {
-          console.error("Supabase services fetch error:", err);
-        });
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    const toServices = (
-      docs: Array<{ id: string; data: () => Record<string, unknown> }>
-    ): PublicService[] =>
-      docs
-        .map((d) => {
-          const data = d.data();
-          return {
-            id: d.id,
-            name: (data.name as string) || "",
-            price: (data.price as number) ?? 0,
-            duration: (data.duration as number) ?? 60,
-            category: (data.category as string) || "",
-            isPromotion: (data.isPromotion as boolean) ?? false,
-            visible: data.isVisible !== false,
-          };
-        })
-        .filter((item) => item.visible)
-        .map(({ visible: _v, ...rest }) => rest)
-        .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
-
-    const applyFromDocs = (docs: Array<{ id: string; data: () => Record<string, unknown> }>) => {
-      if (!cancelled) setServices(toServices(docs));
-    };
-
-    const servicesQuery = query(collection(db, "services"), where("outletID", "==", outletId));
-
-    getDocs(servicesQuery)
-      .then((snapshot) => applyFromDocs(snapshot.docs))
+    listVisibleServicesFromSupabase(outletId)
+      .then((svc) => {
+        if (!cancelled) setServices(svc);
+      })
       .catch((err) => {
-        console.error("Firestore getDocs error for services:", err);
-        getPublicOutletData(outletId)
-          .then(({ services: svc }) => {
-            if (!cancelled && Array.isArray(svc) && svc.length > 0) {
-              setServices(
-                [...svc].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }))
-              );
-            }
-          })
-          .catch((fallbackErr) => {
-            console.error("getPublicOutletData services fallback failed:", fallbackErr);
-          });
+        console.error("Supabase services fetch error:", err);
       });
-
-    const unsubscribe = onSnapshot(
-      servicesQuery,
-      (snapshot) => applyFromDocs(snapshot.docs),
-      (err) => {
-        console.error("Firestore listener error for services:", err);
-      }
-    );
-
     return () => {
       cancelled = true;
-      unsubscribe();
     };
   }, [outletId]);
 
-  // Team load: Firestore realtime (default) or one-shot Supabase when VITE_DATA_PROVIDER=supabase
+  // Team load from Supabase
   useEffect(() => {
     if (!outletId) return;
 
-    if (resolveDataProvider(import.meta.env as unknown as Record<string, string | undefined>) === "supabase") {
-      let cancelled = false;
-      listStaffFromSupabase(outletId)
-        .then((nextTeam) => {
-          if (!cancelled) setTeam(nextTeam);
-        })
-        .catch((err) => {
-          console.error("Supabase staff fetch error:", err);
-        });
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    const staffRef = collection(db, "staff");
-    const staffQuery = query(staffRef, where("outletID", "==", outletId));
-
-    const unsubscribe = onSnapshot(
-      staffQuery,
-      (snapshot) => {
-        const nextTeam: PublicTeamMember[] = snapshot.docs.map((d) => {
-          const data = d.data() as any;
-          return {
-            id: d.id,
-            name: data.name || "",
-            profilePicture: data.profilePicture || data.photoURL || "",
-            qualifiedServices: Array.isArray(data.qualifiedServices)
-              ? data.qualifiedServices
-              : undefined,
-          };
-        });
-        setTeam(nextTeam);
-      },
-      (err) => {
-        console.error("Firestore listener error for team:", err);
-      }
-    );
-
-    return () => unsubscribe();
+    let cancelled = false;
+    listStaffFromSupabase(outletId)
+      .then((nextTeam) => {
+        if (!cancelled) setTeam(nextTeam);
+      })
+      .catch((err) => {
+        console.error("Supabase staff fetch error:", err);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [outletId]);
 
   // Date/time constraints: prevent booking in the past (local time)
@@ -882,9 +656,6 @@ export function BookingPage() {
     setSubmitLoading(true);
     setSubmitError(null);
     try {
-      const useSupabase =
-        resolveDataProvider(import.meta.env as unknown as Record<string, string | undefined>) ===
-        "supabase";
       const bookingPromises = [];
       for (const sel of selectedServices) {
         const service = sel.service;
@@ -902,11 +673,7 @@ export function BookingPage() {
         };
 
         if (teamMemberId === ANY_AVAILABLE_STAFF) {
-          bookingPromises.push(
-            useSupabase
-              ? createPublicBookingFromSupabase(basePayload)
-              : createPublicBooking(basePayload)
-          );
+          bookingPromises.push(createPublicBookingFromSupabase(basePayload));
           continue;
         }
 
@@ -918,9 +685,7 @@ export function BookingPage() {
         }
 
         bookingPromises.push(
-          useSupabase
-            ? createPublicBookingFromSupabase({ ...basePayload, staffId: teamMemberId })
-            : createPublicBooking({ ...basePayload, staffId: teamMemberId })
+          createPublicBookingFromSupabase({ ...basePayload, staffId: teamMemberId })
         );
       }
       const results = await Promise.all(bookingPromises);

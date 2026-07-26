@@ -9,9 +9,12 @@
     "import:outlets-services": "node supabase-import/import-outlets-services-only.mjs",
     "import:staff": "node supabase-import/import-staff-only.mjs",
     "import:appointments": "node supabase-import/import-appointments-only.mjs",
+    "import:appointments:json": "node supabase-import/import-appointments-only.mjs --from-json --full-history",
     "import:merchant-phase5": "node supabase-import/import-merchant-phase5.mjs",
     "validate": "node validate/validate.js",
-    "map:merchant-auth": "node supabase-import/map-merchant-auth.mjs"
+    "map:merchant-auth": "node supabase-import/map-merchant-auth.mjs",
+    "smoke:phase-b": "node supabase-import/phase-b-smoke.mjs",
+    "smoke:phase-c": "node supabase-import/phase-c-prod-smoke.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",

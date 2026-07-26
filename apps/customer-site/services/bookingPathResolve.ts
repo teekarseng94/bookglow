@@ -1,56 +1,14 @@
-import { collection, doc, getDoc, getDocs, query, where, limit } from "firebase/firestore";
-import { resolveDataProvider } from "@bookglow/shared-types";
-import { db } from "./firebase";
-import { shopNameToBookingSlug } from "../utils/bookingSlug";
 import { resolveOutletIdFromBookingPathSupabase } from "./supabasePublicBooking";
-
-function normalizeSegment(segment: string): string {
-  return (segment || "").trim();
-}
-
-function viteEnv(): Record<string, string | undefined> {
-  return import.meta.env as unknown as Record<string, string | undefined>;
-}
-
-async function resolveOutletIdFromBookingPathFirestore(segment: string): Promise<string | null> {
-  const s = normalizeSegment(segment);
-  if (!s) return null;
-
-  const directSnap = await getDoc(doc(db, "outlets", s));
-  if (directSnap.exists()) return s;
-
-  const exact = query(collection(db, "outlets"), where("bookingSlug", "==", s), limit(1));
-  const exactSnap = await getDocs(exact);
-  if (!exactSnap.empty) return exactSnap.docs[0].id;
-
-  const lower = s.toLowerCase();
-  const allSnap = await getDocs(collection(db, "outlets"));
-  for (const d of allSnap.docs) {
-    const data = d.data() as { bookingSlug?: string; name?: string };
-    const stored = (data.bookingSlug || "").trim();
-    if (stored && stored.toLowerCase() === lower) return d.id;
-
-    const derived = shopNameToBookingSlug(data.name || "");
-    if (derived && derived.toLowerCase() === lower) return d.id;
-  }
-
-  return null;
-}
 
 /**
  * Map /book/:segment to the real outlet document id.
  *
- * Resolution order (both providers):
+ * Resolution order:
  * 1. Document id (legacy `/book/outlet_001`)
  * 2. Exact `bookingSlug` / `booking_slug`
  * 3. Case-insensitive slug match
  * 4. Slug derived from outlet name
- *
- * Provider selected via VITE_DATA_PROVIDER (default: firebase).
  */
 export async function resolveOutletIdFromBookingPath(segment: string): Promise<string | null> {
-  if (resolveDataProvider(viteEnv()) === "supabase") {
-    return resolveOutletIdFromBookingPathSupabase(segment);
-  }
-  return resolveOutletIdFromBookingPathFirestore(segment);
+  return resolveOutletIdFromBookingPathSupabase(segment);
 }

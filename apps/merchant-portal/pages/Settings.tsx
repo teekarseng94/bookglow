@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import { doc, updateDoc, deleteField, serverTimestamp } from 'firebase/firestore';
 import { OutletSettings, Outlet, ApiIntegration } from '../types';
 import { Icons } from '../constants';
 import { useUserContext } from '../contexts/UserContext';
 import { outletService, apiIntegrationService } from '../services/databaseService';
 import { generateApiKey, sha256Hex } from '../utils/apiKeyHash';
 import { shopNameToBookingSlug, isValidBookingSlug } from '../utils/bookingSlug';
-import { db } from '../firebase';
 import { Button } from '../components/ui/Button';
 import {
   OperatingHoursRow,
@@ -20,9 +18,9 @@ import {
 } from '../components/settings';
 
 const BOOKING_BASE_URL = 'https://bookglow-83fb3.web.app/book';
-// Cloud Function endpoint used by MyChatBot to verify API key for this outlet
+// Supabase Edge Function (Firestore retired). Old Firebase CF URL still proxies here.
 const CHATBOT_WEBHOOK_URL =
-  'https://asia-southeast1-bookglow-83fb3.cloudfunctions.net/chatbotWebhook';
+  'https://uecphpjymbgtttrizhgy.supabase.co/functions/v1/chatbot-webhook';
 
 const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
 
@@ -74,7 +72,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
   const [copyField, setCopyField] = useState<'outlet' | 'key' | 'webhook' | null>(null);
   const [activeSection, setActiveSection] = useState<SettingsSectionId>('business-profile');
 
-  // Load outlet data from Firestore using outletId
+  // Load outlet data using outletId
   useEffect(() => {
     if (!effectiveOutletId) {
       setOutletLoading(false);
@@ -198,11 +196,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       if (slugRaw) {
         await outletService.update(effectiveOutletId, { ...payload, bookingSlug: slugRaw });
       } else {
-        await outletService.update(effectiveOutletId, payload);
-        await updateDoc(doc(db, 'outlets', effectiveOutletId), {
-          bookingSlug: deleteField(),
-          updatedAt: serverTimestamp(),
-        });
+        await outletService.update(effectiveOutletId, { ...payload, bookingSlug: '' });
       }
 
       if (onUpdateOutlet) {

@@ -24,12 +24,15 @@ npm install
 
 ## Step 2: Create Supabase Tables
 
-1. Open Supabase Dashboard → **SQL Editor**
-2. Run the SQL files **in order**:
+1. Open Supabase Dashboard → **SQL Editor** (or apply via Supabase MCP / CLI)
+2. Run baseline SQL **in order** (greenfield only):
    - `sql/001_create_tables.sql` — Creates all 17 tables
    - `sql/002_create_indexes.sql` — Creates performance indexes
    - `sql/003_rls_policies.sql` — Row Level Security policies
    - `sql/004_triggers.sql` — Auto-update triggers
+3. Apply incremental migrations under `supabase/migrations/` (public booking + merchant phases 1–5). See `supabase/migrations/README.md`.
+
+> Phase A (2026-07-26): schema + data are applied on project `bookglow`. See `docs/PHASE_A_SUPABASE_DATA.md`.
 
 ## Step 3: Export Firestore Data
 
@@ -55,9 +58,13 @@ Controlled SQL generators (output under `supabase-import/generated/`):
 ```bash
 npm run import:outlets-services
 npm run import:staff
-npm run import:appointments          # needs serviceAccountKey.json
+npm run import:appointments          # live Admin export (full history by default)
+npm run import:appointments:json     # regenerate SQL from existing appointments.json
 npm run import:merchant-phase5       # clients, txns, catalog, vouchers, users, ledgers
+npm run map:merchant-auth            # Firebase merchants → Supabase Auth + public.users
 ```
+
+Appointments: use `--full-history` (default) for Phase A; `--recent-only` keeps the last 14 days only.
 
 Or upsert exported JSON with the service role:
 
@@ -90,51 +97,50 @@ The validation script checks:
 
 A `validation_report.json` is saved with results.
 
-## Step 6: Configure the App for Supabase
+## Step 6–7: Local Supabase cutover (Phase B)
 
-Add to your `.env` file (in `zenspa backend/`):
+> Phase B (2026-07-26): local `.env` for both apps points at Supabase. See `docs/PHASE_B_LOCAL_CUTOVER.md`.
 
 ```env
-# Supabase (get from Supabase Dashboard → Settings → API)
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJ...
+VITE_SUPABASE_URL=https://uecphpjymbgtttrizhgy.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_…
+# optional legacy alias:
+# VITE_SUPABASE_ANON_KEY=eyJ…
 
-# Database provider: "firestore" (default) or "supabase"
-VITE_DB_PROVIDER=firestore
+VITE_DATA_PROVIDER=supabase
+VITE_AUTH_PROVIDER=supabase
 ```
 
-## Step 7: Test with Supabase
+Never put the service role key in any `VITE_*` variable.
 
-1. Change provider:
-```env
-VITE_DB_PROVIDER=supabase
-```
-
-2. Restart dev server:
 ```bash
-npm run dev
+cd migration && npm run smoke:phase-b
 ```
 
-3. Test all features:
-   - [ ] Dashboard loads with correct totals
-   - [ ] Sales Reports show correct data
-   - [ ] POS can complete a sale
-   - [ ] Client points update correctly
-   - [ ] Voucher purchase and redemption work
-   - [ ] Appointment calendar works
-   - [ ] Staff commission reports work
-   - [ ] Settings page works
-   - [ ] Super admin subscriber list works
-   - [ ] API integration key management works
+Then restart each app (`npm run dev`) for UI smoke:
 
-## Step 8: Switch to Supabase (Production)
+- [ ] Merchant login (mapped Auth users)
+- [ ] Dashboard / reports totals
+- [ ] POS sale + client points
+- [ ] Appointment calendar (full history)
+- [ ] Customer public booking
+- [ ] Settings / staff / members
 
-Once all tests pass:
+## Step 8: Production cutover (Phase C)
 
-1. Set `VITE_DB_PROVIDER=supabase` in production environment
-2. Deploy
-3. Monitor for 24-48 hours
-4. Keep Firestore data intact as backup
+> Phase C (2026-07-26): production hosting deployed with Supabase providers. See `docs/PHASE_C_PRODUCTION_CUTOVER.md`.
+
+```bash
+# bake production env (apps/*/.env.production), then:
+npm run build:merchant
+npm run build:customer
+npx firebase deploy --only hosting --project bookglow-83fb3
+cd migration && npm run smoke:phase-c
+```
+
+1. Monitor 24–48 hours
+2. Keep Firestore intact for rollback
+3. Remove Firebase only in Phase D after C is solid
 
 ---
 
@@ -142,7 +148,7 @@ Once all tests pass:
 
 If Supabase has issues at any point:
 
-1. Set `VITE_DB_PROVIDER=firestore` in `.env`
+1. Set `VITE_DATA_PROVIDER=firebase` and `VITE_AUTH_PROVIDER=firebase` in `.env`
 2. Restart the app
 3. The app immediately uses Firestore again
 4. **No data is lost** — Firestore data is never deleted
@@ -169,19 +175,16 @@ migration/
 └── validate/
     └── validate.js                 # Validation script
 
-zenspa backend/
-├── lib/
-│   └── supabase.ts                 # Supabase client
-├── services/
-│   ├── firestoreService.ts         # (existing, unchanged)
-│   ├── supabaseService.ts          # NEW: Supabase CRUD layer
-│   └── databaseService.ts          # NEW: Provider switch
+apps/
+├── merchant-portal/                 # VITE_DATA_PROVIDER / VITE_AUTH_PROVIDER switch
+└── customer-site/
+packages/
+└── @bookglow/supabase               # shared Supabase client helpers
 ```
 
 ## Important Notes
 
-- **Firebase Auth** is NOT migrated — it continues working as-is
-- **Firebase Storage** is NOT migrated — image URLs remain valid
-- **Cloud Functions** are NOT changed — they continue using Firebase Admin SDK
-- **No UI changes** — the app looks and behaves identically
-- **No Firestore data is deleted** at any point
+- Merchant Auth mapping is available via `npm run map:merchant-auth` (Phase A done for portal users)
+- **Firebase Storage** image URLs remain valid until a later storage migration
+- **No Firestore data is deleted** at any point during Phases A–C
+- Dual-provider remains until Phase D

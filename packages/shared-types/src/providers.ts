@@ -1,20 +1,20 @@
 /**
- * Data / auth provider flags for the Firebase → Supabase migration.
- * Default remains Firebase until a domain is explicitly cut over.
+ * Data / auth providers after Phase D (Supabase-only client runtime).
+ * Firebase Hosting may still serve the apps; Firestore/Auth clients are retired.
  */
 export type DataProvider = "firebase" | "supabase";
 export type AuthProvider = "firebase" | "supabase";
 
+/** Always Supabase after Phase D cutover. Env flags are ignored at runtime. */
 export function resolveDataProvider(
-  env: Record<string, string | undefined>
+  _env?: Record<string, string | undefined>
 ): DataProvider {
-  const raw = (env.VITE_DATA_PROVIDER || "firebase").trim().toLowerCase();
-  return raw === "supabase" ? "supabase" : "firebase";
+  return "supabase";
 }
 
+/** Always Supabase Auth after Phase D cutover. Env flags are ignored at runtime. */
 export function resolveAuthProvider(
-  env: Record<string, string | undefined>
+  _env?: Record<string, string | undefined>
 ): AuthProvider {
-  const raw = (env.VITE_AUTH_PROVIDER || "firebase").trim().toLowerCase();
-  return raw === "supabase" ? "supabase" : "firebase";
+  return "supabase";
 }

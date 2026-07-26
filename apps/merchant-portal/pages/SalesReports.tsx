@@ -1,10 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Transaction, TransactionType, Staff, Client } from '../types';
 import TransactionDetailModal from '../components/TransactionDetailModal';
-import { collection, query, where, orderBy, Timestamp, onSnapshot } from 'firebase/firestore';
-import { resolveDataProvider } from '@bookglow/shared-types';
-import { db } from '../firebase';
-import { DB_PROVIDER, transactionService } from '../services/databaseService';
+import { transactionService } from '../services/databaseService';
 import {
   ReportDateRangeBar,
   ReportEmptyState,
@@ -14,15 +11,6 @@ import {
   ReportTxnCard,
 } from '../components/reports';
 import { Button } from '../components/ui/Button';
-
-function useSupabaseData(): boolean {
-  return (
-    DB_PROVIDER === 'supabase' ||
-    resolveDataProvider(
-      import.meta.env as unknown as Record<string, string | undefined>
-    ) === 'supabase'
-  );
-}
 
 interface SalesReportsProps {
   transactions: Transaction[];
@@ -105,87 +93,32 @@ const SalesReports: React.FC<SalesReportsProps> = ({
         return status !== 'void' && status !== 'voided' && !isVoided;
       });
 
-    if (useSupabaseData()) {
-      let cancelled = false;
-      const load = async () => {
-        try {
-          const all = await transactionService.getAll(outletID);
-          if (cancelled) return;
-          const inRange = all.filter((t) => {
-            if (!t.date) return false;
-            const d = new Date(t.date);
-            return d >= startOfRange && d <= endOfRange;
-          });
-          setDailySales(filterNonVoidedSales(inRange));
-          setCollectionError(null);
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const all = await transactionService.getAll(outletID);
+        if (cancelled) return;
+        const inRange = all.filter((t) => {
+          if (!t.date) return false;
+          const d = new Date(t.date);
+          return d >= startOfRange && d <= endOfRange;
+        });
+        setDailySales(filterNonVoidedSales(inRange));
+        setCollectionError(null);
+        setCollectionLoading(false);
+      } catch (error: any) {
+        if (!cancelled) {
+          console.error('Error loading Supabase sales report:', error);
           setCollectionLoading(false);
-        } catch (error: any) {
-          if (!cancelled) {
-            console.error('Error loading Supabase sales report:', error);
-            setCollectionLoading(false);
-            setCollectionError(error?.message || 'Failed to load report data.');
-          }
+          setCollectionError(error?.message || 'Failed to load report data.');
         }
-      };
-      void load();
-      const timer = window.setInterval(() => void load(), 15000);
-      return () => {
-        cancelled = true;
-        window.clearInterval(timer);
-      };
-    }
-
-    let unsubscribe: (() => void) | undefined;
-
-    try {
-      const transactionsRef = collection(db, 'transactions');
-      const collectionQuery = query(
-        transactionsRef,
-        where('outletID', '==', outletID),
-        where('type', '==', TransactionType.SALE),
-        where('date', '>=', Timestamp.fromDate(startOfRange)),
-        where('date', '<=', Timestamp.fromDate(endOfRange)),
-        orderBy('date', 'desc')
-      );
-
-      unsubscribe = onSnapshot(
-        collectionQuery,
-        (snapshot) => {
-          const list = snapshot.docs.map(doc => {
-            const raw = doc.data();
-            const date = raw.date instanceof Timestamp
-              ? raw.date.toDate().toISOString()
-              : (typeof raw.date === 'string' ? raw.date : raw.date?.toDate?.()?.toISOString?.() ?? '');
-            return { id: doc.id, ...raw, date } as Transaction;
-          });
-
-          setDailySales(filterNonVoidedSales(list));
-          setCollectionError(null);
-          setCollectionLoading(false);
-        },
-        (error: any) => {
-          console.error('Error in collection query:', error);
-          setCollectionLoading(false);
-
-          if (error?.code === 'failed-precondition' && error?.message?.includes('index')) {
-            setCollectionError('System is initializing reports. Please wait a moment...');
-            if (error.message.includes('https://console.firebase.google.com')) {
-              const linkMatch = error.message.match(/https:\/\/console\.firebase\.google\.com[^\s]+/);
-              if (linkMatch) console.log('🔗 Create composite index:', linkMatch[0]);
-            }
-          } else {
-            setCollectionError(error?.message || 'Failed to load report data.');
-          }
-        }
-      );
-    } catch (error: any) {
-      console.error('Error setting up collection query:', error);
-      setCollectionLoading(false);
-      setCollectionError(error?.message || 'Failed to set up report query.');
-    }
-
+      }
+    };
+    void load();
+    const timer = window.setInterval(() => void load(), 15000);
     return () => {
-      if (typeof unsubscribe === 'function') unsubscribe();
+      cancelled = true;
+      window.clearInterval(timer);
     };
   }, [outletID, startDate, endDate]);
 

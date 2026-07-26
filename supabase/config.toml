@@ -28,3 +28,7 @@ additional_redirect_urls = ["http://127.0.0.1:5174", "http://localhost:5173", "h
 
 [storage]
 enabled = true
+
+# Custom API-key auth (X-API-Key / X-Outlet-Id); do not require JWT.
+[functions.chatbot-webhook]
+verify_jwt = false

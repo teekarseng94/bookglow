@@ -1,10 +1,7 @@
 /**
- * Public booking API (no auth). Calls Cloud Functions for outlet data and creating bookings.
- * Used by the Booking Portal at /book/:bookingPath (outlet id or booking slug).
- * createPublicBooking sends outletId; the Cloud Function writes outletID to the appointment document for backend filtering.
+ * Shared public booking TypeScript types.
+ * Live reads/writes use supabasePublicBooking (Supabase RPC + tables).
  */
-import { httpsCallable } from "firebase/functions";
-import { functions } from "./firebase";
 
 export interface PublicOutlet {
   id: string;
@@ -16,7 +13,7 @@ export interface PublicOutlet {
   reviews?: { author?: string; text?: string; rating?: number }[];
   /** Optional: menu/booking category order synced from backend Menu page */
   serviceCategories?: string[];
-  /** Pretty URL segment for /book/:slug when set (Firestore id stays on `id`). */
+  /** Pretty URL segment for /book/:slug when set (outlet id stays on `id`). */
   bookingSlug?: string;
 }
 
@@ -46,14 +43,14 @@ export interface PublicOutletData {
 }
 
 export interface CreateBookingPayload {
-  outletId: string; // Sent to Cloud Function; stored as outletID in Firestore for backend useFirestoreData filter
+  outletId: string;
   serviceId: string;
   date: string;
   time: string;
   customerName: string;
   phone: string;
   email?: string;
-  staffId?: string; // Optional: specific team member for this booking
+  staffId?: string;
 }
 
 export interface CreateBookingResult {
@@ -65,29 +62,11 @@ export interface GetAvailableSlotsPayload {
   outletId: string;
   serviceId: string;
   date: string; // YYYY-MM-DD
-  staffId?: string; // Optional: filter slots by specific team member availability
+  staffId?: string;
 }
 
 export interface GetAvailableSlotsResult {
   slots: string[];
-}
-
-export async function getPublicOutletData(outletId: string): Promise<PublicOutletData> {
-  const fn = httpsCallable<{ outletId: string }, PublicOutletData>(functions, "getPublicOutletData");
-  const res = await fn({ outletId });
-  return res.data;
-}
-
-export async function createPublicBooking(payload: CreateBookingPayload): Promise<CreateBookingResult> {
-  const fn = httpsCallable<CreateBookingPayload, CreateBookingResult>(functions, "createPublicBooking");
-  const res = await fn(payload);
-  return res.data;
-}
-
-export async function getAvailableSlots(payload: GetAvailableSlotsPayload): Promise<GetAvailableSlotsResult> {
-  const fn = httpsCallable<GetAvailableSlotsPayload, GetAvailableSlotsResult>(functions, "getPublicAvailableSlots");
-  const res = await fn(payload);
-  return res.data;
 }
 
 export interface SubmitPublicReviewPayload {
@@ -101,8 +80,20 @@ export interface SubmitPublicReviewResult {
   success: boolean;
 }
 
-export async function submitPublicReview(payload: SubmitPublicReviewPayload): Promise<SubmitPublicReviewResult> {
-  const fn = httpsCallable<SubmitPublicReviewPayload, SubmitPublicReviewResult>(functions, "submitPublicReview");
-  const res = await fn(payload);
-  return res.data;
+const LEGACY_MSG = "Firebase Cloud Functions removed. Use Supabase public booking helpers.";
+
+export async function getPublicOutletData(_outletId: string): Promise<PublicOutletData> {
+  throw new Error(LEGACY_MSG);
+}
+
+export async function createPublicBooking(_payload: CreateBookingPayload): Promise<CreateBookingResult> {
+  throw new Error(LEGACY_MSG);
+}
+
+export async function getAvailableSlots(_payload: GetAvailableSlotsPayload): Promise<GetAvailableSlotsResult> {
+  throw new Error(LEGACY_MSG);
+}
+
+export async function submitPublicReview(_payload: SubmitPublicReviewPayload): Promise<SubmitPublicReviewResult> {
+  throw new Error(LEGACY_MSG);
 }

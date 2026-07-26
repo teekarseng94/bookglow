@@ -50,7 +50,7 @@ export default defineConfig(({ mode }) => {
       },
       // Prevents Vite from getting stuck in a dependency loop
       optimizeDeps: {
-        include: ['react', 'react-dom', 'react-router-dom', 'firebase/app', 'firebase/storage'],
+        include: ['react', 'react-dom', 'react-router-dom'],
         esbuildOptions: {
           target: 'es2020',
         },

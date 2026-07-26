@@ -1,21 +1,7 @@
 /**
- * Registration and auth for Booking site vs dashboard.
- * - Booking (/book/...): Firestore `frontend_customer/{uid}` (see registerForBooking / upsertCustomerProfile).
- * - Legacy marketing signup (register → /login): still writes `users/{uid}` for that flow only.
- * - Dashboard staff: `users/{uid}` (admin/cashier) — managed in the backend app only.
- * - When VITE_AUTH_PROVIDER=supabase, booking helpers use Supabase Auth instead.
+ * Booking-site auth via Supabase Auth + frontend_customers profile.
+ * Legacy marketing signup (/signup) is disabled — use booking auth or merchant login.
  */
-import {
-  createUserWithEmailAndPassword,
-  signInWithPopup,
-  GoogleAuthProvider,
-  FacebookAuthProvider,
-  AuthError,
-  UserCredential,
-} from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { resolveAuthProvider } from "@bookglow/shared-types";
-import { adminAuth, auth, customerDb, db, FRONTEND_CUSTOMER_COLLECTION } from "./firebase";
 import {
   getSupabaseAuthErrorMessage,
   registerForBookingWithSupabase,
@@ -30,183 +16,39 @@ export interface SignUpCredentials {
   password: string;
 }
 
-function viteEnv(): Record<string, string | undefined> {
-  return import.meta.env as unknown as Record<string, string | undefined>;
-}
-
-function useSupabaseAuth(): boolean {
-  return resolveAuthProvider(viteEnv()) === "supabase";
-}
-
-interface CustomerProfileInput {
-  uid: string;
-  email: string;
-}
+const LEGACY_SIGNUP_MSG =
+  "This signup flow is no longer available. Create a customer profile from your merchant's booking page (/book/.../auth), or use merchant login for staff access.";
 
 /**
- * Register a new user with email/password, create their Firestore user doc, then redirect to Dashboard.
+ * Legacy marketing signup — disabled after Firebase removal.
  */
-export async function register(credentials: SignUpCredentials): Promise<void> {
-  const email = credentials.email?.trim().toLowerCase() || "";
-  const password = credentials.password || "";
-
-  if (!email || !email.includes("@")) {
-    throw new Error("Please enter a valid email address.");
-  }
-  if (password.length < 6) {
-    throw new Error("Password must be at least 6 characters.");
-  }
-
-  const userCredential = await createUserWithEmailAndPassword(adminAuth, email, password);
-  const { uid } = userCredential.user;
-
-  await setDoc(doc(db, "users", uid), {
-    uid,
-    email: userCredential.user.email || email,
-    role: "client",
-  });
-
-  window.location.href = DASHBOARD_URL;
+export async function register(_credentials: SignUpCredentials): Promise<void> {
+  throw new Error(LEGACY_SIGNUP_MSG);
 }
 
-/**
- * Create Firestore users/{uid} doc and redirect to Dashboard.
- */
-export async function createUserDocAndRedirect(uid: string, email: string | null): Promise<void> {
-  await setDoc(doc(db, "users", uid), {
-    uid,
-    email: email || "",
-    role: "client",
-  });
-  window.location.href = DASHBOARD_URL;
+export async function registerWithGoogle(): Promise<void> {
+  throw new Error(LEGACY_SIGNUP_MSG);
 }
 
-function getErrorMessage(code: string): string {
-  switch (code) {
-    case "auth/email-already-in-use":
-      return "This email is already registered. Try signing in.";
-    case "auth/invalid-email":
-      return "Invalid email address format.";
-    case "auth/weak-password":
-      return "Password should be at least 6 characters.";
-    case "auth/operation-not-allowed":
-      return "Email/Password sign-up is not enabled for this app.";
-    default:
-      return "Sign-up failed. Please try again.";
-  }
+export async function registerWithFacebook(): Promise<void> {
+  throw new Error(LEGACY_SIGNUP_MSG);
 }
 
 export function getAuthErrorMessage(error: unknown): string {
-  if (useSupabaseAuth()) return getSupabaseAuthErrorMessage(error);
-  const authError = error as AuthError & { code?: string };
-  if (authError?.code) return getErrorMessage(authError.code);
-  if (error instanceof Error) {
-    const msg = error.message || "";
-    if (/firebase|firestore|auth\/|permission|INTERNAL|https?:\/\//i.test(msg)) {
-      return "Registration failed. Please try again.";
-    }
-    return msg;
-  }
-  return "Registration failed. Please try again.";
+  return getSupabaseAuthErrorMessage(error);
 }
 
-/**
- * Sign up with Google: create/update user doc and redirect to Dashboard.
- */
-export async function registerWithGoogle(): Promise<void> {
-  const provider = new GoogleAuthProvider();
-  const userCredential: UserCredential = await signInWithPopup(adminAuth, provider);
-  await createUserDocAndRedirect(
-    userCredential.user.uid,
-    userCredential.user.email ?? null
-  );
-}
-
-/**
- * Sign up with Facebook: create/update user doc and redirect to Dashboard.
- */
-export async function registerWithFacebook(): Promise<void> {
-  const provider = new FacebookAuthProvider();
-  const userCredential: UserCredential = await signInWithPopup(adminAuth, provider);
-  await createUserDocAndRedirect(
-    userCredential.user.uid,
-    userCredential.user.email ?? null
-  );
-}
-
-/**
- * Booking-site specific helpers: create user + Firestore doc, then redirect back to booking URL
- * instead of the backend dashboard.
- */
 export async function registerForBooking(
   credentials: SignUpCredentials,
   redirectUrl: string
 ): Promise<void> {
-  if (useSupabaseAuth()) {
-    await registerForBookingWithSupabase(credentials, redirectUrl);
-    return;
-  }
-
-  const email = credentials.email?.trim().toLowerCase() || "";
-  const password = credentials.password || "";
-
-  if (!email || !email.includes("@")) {
-    throw new Error("Please enter a valid email address.");
-  }
-  if (password.length < 6) {
-    throw new Error("Password must be at least 6 characters.");
-  }
-
-  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-  const { uid } = userCredential.user;
-
-  await upsertCustomerProfile({
-    uid,
-    email: userCredential.user.email || email,
-  });
-
-  window.location.href = redirectUrl;
+  await registerForBookingWithSupabase(credentials, redirectUrl);
 }
 
 export async function registerWithGoogleForBooking(redirectUrl: string): Promise<void> {
-  if (useSupabaseAuth()) {
-    await registerWithGoogleForBookingSupabase(redirectUrl);
-    return;
-  }
-  const provider = new GoogleAuthProvider();
-  const userCredential: UserCredential = await signInWithPopup(auth, provider);
-  await upsertCustomerProfile({
-    uid: userCredential.user.uid,
-    email: userCredential.user.email ?? "",
-  });
-  window.location.href = redirectUrl;
+  await registerWithGoogleForBookingSupabase(redirectUrl);
 }
 
 export async function registerWithFacebookForBooking(redirectUrl: string): Promise<void> {
-  if (useSupabaseAuth()) {
-    await registerWithFacebookForBookingSupabase(redirectUrl);
-    return;
-  }
-  const provider = new FacebookAuthProvider();
-  const userCredential: UserCredential = await signInWithPopup(auth, provider);
-  await upsertCustomerProfile({
-    uid: userCredential.user.uid,
-    email: userCredential.user.email ?? "",
-  });
-  window.location.href = redirectUrl;
-}
-
-async function upsertCustomerProfile(input: CustomerProfileInput): Promise<void> {
-  await setDoc(
-    doc(customerDb, FRONTEND_CUSTOMER_COLLECTION, input.uid),
-    {
-      uid: input.uid,
-      email: input.email,
-      role: "customer",
-      bookingHistoryRefs: [],
-      updatedAt: serverTimestamp(),
-      createdAt: serverTimestamp(),
-    },
-    { merge: true }
-  );
+  await registerWithFacebookForBookingSupabase(redirectUrl);
 }

@@ -1,0 +1,24 @@
+{
+  "counts": {
+    "outlets": 3,
+    "users": 14,
+    "clients": 758,
+    "staff": 14,
+    "services": 95,
+    "products": 4,
+    "packages": 4,
+    "appointments": 1391,
+    "transactions": 1934,
+    "rewards": 5,
+    "vouchers": 2,
+    "api_integrations": 3,
+    "point_transactions": 103,
+    "outstanding_transactions": 2,
+    "credit_history": 1,
+    "points_credits": 824
+  },
+  "saleRevenue": 102958,
+  "clientPoints": 300112,
+  "activeVouchers": 1,
+  "soldVouchers": 1
+}

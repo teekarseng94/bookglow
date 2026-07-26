@@ -5,8 +5,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { PointTransaction } from '../types';
-import { onSnapshot, collection, query, orderBy } from 'firebase/firestore';
-import { db } from '../firebase';
 
 interface PointsHistoryModalProps {
   clientId: string;
@@ -39,63 +37,29 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
       return;
     }
 
-    const useSupabase =
-      (import.meta.env as unknown as Record<string, string | undefined>).VITE_DATA_PROVIDER ===
-      "supabase";
-
-    if (useSupabase) {
-      let cancelled = false;
-      const load = async () => {
-        try {
-          const { pointTransactionService } = await import("../services/pointTransactionService");
-          const data = await pointTransactionService.getAll(clientId, outletID);
-          if (cancelled) return;
-          setTransactions(data);
-          setLoading(false);
-          if (data.length > 0) onBalanceUpdate(data[0].newBalance);
-        } catch (err) {
-          console.error("Error loading point transactions:", err);
-          if (!cancelled) {
-            setError("Failed to load transaction history");
-            setLoading(false);
-          }
-        }
-      };
-      void load();
-      const timer = window.setInterval(() => void load(), 10000);
-      return () => {
-        cancelled = true;
-        window.clearInterval(timer);
-      };
-    }
-    
-    const q = query(
-      collection(db, 'clients', clientId, 'pointTransactions'),
-      orderBy('timestamp', 'desc')
-    );
-    
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const data = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        } as PointTransaction));
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const { pointTransactionService } = await import("../services/pointTransactionService");
+        const data = await pointTransactionService.getAll(clientId, outletID);
+        if (cancelled) return;
         setTransactions(data);
         setLoading(false);
-        // Update balance from latest transaction if available
-        if (data.length > 0) {
-          onBalanceUpdate(data[0].newBalance);
+        if (data.length > 0) onBalanceUpdate(data[0].newBalance);
+      } catch (err) {
+        console.error("Error loading point transactions:", err);
+        if (!cancelled) {
+          setError("Failed to load transaction history");
+          setLoading(false);
         }
-      },
-      (err) => {
-        console.error('Error loading point transactions:', err);
-        setError('Failed to load transaction history');
-        setLoading(false);
       }
-    );
-
-    return () => unsubscribe();
+    };
+    void load();
+    const timer = window.setInterval(() => void load(), 10000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientId, outletID]); // Removed onBalanceUpdate and currentBalance from deps to avoid re-subscription
 

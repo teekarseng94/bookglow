@@ -21,7 +21,6 @@
     "typecheck": "npm run typecheck:packages && npm --prefix apps/merchant-portal run typecheck && npm --prefix apps/customer-site run typecheck",
     "deploy": "deploy-all.bat",
     "deploy:hosting": "firebase deploy --only hosting",
-    "deploy:firestore": "firebase deploy --only firestore",
     "supabase:status": "npx supabase status",
     "supabase:start": "npx supabase start",
     "supabase:stop": "npx supabase stop",

@@ -5,7 +5,6 @@ import App from './App';
 import BookingAuth from './apps/booking/BookingAuth';
 import BookingPage from './apps/booking/BookingPage';
 import SignUp from './apps/booking/SignUp';
-import './services/firebase';
 import './src/styles/global.css';
 
 const MERCHANT_LOGIN_URL = 'https://bookglow-83fb3-dashboard.web.app/login';

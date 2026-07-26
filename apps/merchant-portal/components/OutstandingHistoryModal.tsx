@@ -5,8 +5,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { OutstandingTransaction } from '../types';
-import { onSnapshot, collection, query, orderBy } from 'firebase/firestore';
-import { db } from '../firebase';
 
 const OUTSTANDING_RED = '#f44336';
 const OUTSTANDING_BG = '#ffedeb';
@@ -43,64 +41,31 @@ const OutstandingHistoryModal: React.FC<OutstandingHistoryModalProps> = ({
       return;
     }
 
-    const useSupabase =
-      (import.meta.env as unknown as Record<string, string | undefined>).VITE_DATA_PROVIDER ===
-      "supabase";
-
-    if (useSupabase) {
-      let cancelled = false;
-      const load = async () => {
-        try {
-          const { outstandingTransactionService } = await import(
-            "../services/outstandingTransactionService"
-          );
-          const data = await outstandingTransactionService.getAll(clientId, outletID);
-          if (cancelled) return;
-          setTransactions(data);
-          setLoading(false);
-          if (data.length > 0) onBalanceUpdate(data[0].newBalance);
-        } catch (err) {
-          console.error("Error loading outstanding transactions:", err);
-          if (!cancelled) {
-            setError("Failed to load transaction history");
-            setLoading(false);
-          }
-        }
-      };
-      void load();
-      const timer = window.setInterval(() => void load(), 10000);
-      return () => {
-        cancelled = true;
-        window.clearInterval(timer);
-      };
-    }
-
-    const q = query(
-      collection(db, 'clients', clientId, 'outstandingTransactions'),
-      orderBy('timestamp', 'desc')
-    );
-
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const data = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        } as OutstandingTransaction));
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const { outstandingTransactionService } = await import(
+          "../services/outstandingTransactionService"
+        );
+        const data = await outstandingTransactionService.getAll(clientId, outletID);
+        if (cancelled) return;
         setTransactions(data);
         setLoading(false);
-        if (data.length > 0) {
-          onBalanceUpdate(data[0].newBalance);
+        if (data.length > 0) onBalanceUpdate(data[0].newBalance);
+      } catch (err) {
+        console.error("Error loading outstanding transactions:", err);
+        if (!cancelled) {
+          setError("Failed to load transaction history");
+          setLoading(false);
         }
-      },
-      (err) => {
-        console.error('Error loading outstanding transactions:', err);
-        setError('Failed to load transaction history');
-        setLoading(false);
       }
-    );
-
-    return () => unsubscribe();
+    };
+    void load();
+    const timer = window.setInterval(() => void load(), 10000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
   }, [clientId, outletID]);
 
   const handleAdd = async () => {

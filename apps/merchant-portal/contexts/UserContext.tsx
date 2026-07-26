@@ -2,13 +2,10 @@
  * User Context
  *
  * Provides global access to authenticated user's outlet information.
- * Loads from Firestore users/{uid} (Firebase auth) or public.users (Supabase auth).
+ * Loads from public.users (Supabase auth).
  */
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { doc, getDoc, getDocFromServer } from "firebase/firestore";
-import { resolveAuthProvider } from "@bookglow/shared-types";
-import { db } from "../firebase";
 import type { PortalAuthUser } from "../services/authService";
 import { fetchPortalUserProfile } from "../services/supabaseMerchant";
 
@@ -79,81 +76,30 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = ({
         return;
       }
 
-      const useSupabase =
-        resolveAuthProvider(
-          import.meta.env as unknown as Record<string, string | undefined>
-        ) === "supabase";
-
-      if (useSupabase) {
-        const profile = await fetchPortalUserProfile(user.uid);
-        if (!profile) {
-          throw new Error(
-            "Your account is not linked to an outlet. " +
-              "An administrator must insert a row in public.users with uid = your Supabase Auth user id, " +
-              "outlet_id, and role (admin|cashier)."
-          );
-        }
-        const outletId = profile.outletId?.trim() || "";
-        if (!outletId && profile.role !== "platform_admin" && profile.role !== "admin") {
-          throw new Error(
-            "Your user profile does not have an outlet assigned (public.users.outlet_id)."
-          );
-        }
-        const rawRole = (profile.role || "cashier").toLowerCase();
-        const role: UserRole =
-          rawRole === "admin" || rawRole === "platform_admin" ? "admin" : "cashier";
-        setUserData({
-          uid: profile.uid,
-          email: profile.email || user.email,
-          outletId: outletId || null,
-          role,
-          outletName: profile.outletName || undefined,
-          displayName: profile.displayName || user.displayName || null,
-        });
-        return;
-      }
-
-      console.log("Fetching user data for UID:", user.uid);
-      const userDocRef = doc(db, "users", user.uid);
-      const userDoc = await getDocFromServer(userDocRef);
-
-      if (!userDoc.exists()) {
+      const profile = await fetchPortalUserProfile(user.uid);
+      if (!profile) {
         throw new Error(
           "Your account is not linked to an outlet. " +
-            "An administrator must create a user profile in Firestore (collection: users, document id: your Firebase Auth UID) with field \"outletId\" set to your assigned outlet. " +
-            "See USERS_AND_OUTLETS.md for setup."
+            "An administrator must insert a row in public.users with uid = your Supabase Auth user id, " +
+            "outlet_id, and role (admin|cashier)."
         );
       }
-
-      const data = userDoc.data();
-      const outletId = data.outletId != null ? String(data.outletId).trim() : "";
-      if (!outletId) {
+      const outletId = profile.outletId?.trim() || "";
+      if (!outletId && profile.role !== "platform_admin" && profile.role !== "admin") {
         throw new Error(
-          "Your user profile does not have an outlet assigned. " +
-            "Each user must be mapped to one outlet in the users collection (field: outletId)."
+          "Your user profile does not have an outlet assigned (public.users.outlet_id)."
         );
       }
-
-      let outletName = null;
-      try {
-        const outletDoc = await getDoc(doc(db, "outlets", outletId));
-        if (outletDoc.exists()) {
-          outletName = outletDoc.data().name || null;
-        }
-      } catch (outletError) {
-        console.warn("Could not fetch outlet name:", outletError);
-      }
-
-      const rawRole = (data.role || "cashier").toString().toLowerCase();
-      const role: UserRole = rawRole === "admin" ? "admin" : "cashier";
-
+      const rawRole = (profile.role || "cashier").toLowerCase();
+      const role: UserRole =
+        rawRole === "admin" || rawRole === "platform_admin" ? "admin" : "cashier";
       setUserData({
-        uid: user.uid,
-        email: user.email,
-        outletId,
+        uid: profile.uid,
+        email: profile.email || user.email,
+        outletId: outletId || null,
         role,
-        outletName: outletName || undefined,
-        displayName: user.displayName || data.displayName || null,
+        outletName: profile.outletName || undefined,
+        displayName: profile.displayName || user.displayName || null,
       });
     } catch (err: any) {
       console.error("❌ Error fetching user data:", err);

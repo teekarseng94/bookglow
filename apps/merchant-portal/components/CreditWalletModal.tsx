@@ -6,8 +6,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Plus, Minus } from 'lucide-react';
 import { CreditHistoryEntry } from '../types';
-import { onSnapshot, collection, query, orderBy } from 'firebase/firestore';
-import { db } from '../firebase';
 
 interface CreditWalletModalProps {
   clientId: string;
@@ -44,56 +42,28 @@ const CreditWalletModal: React.FC<CreditWalletModalProps> = ({
       return;
     }
 
-    const useSupabase =
-      (import.meta.env as unknown as Record<string, string | undefined>).VITE_DATA_PROVIDER ===
-      "supabase";
-
-    if (useSupabase) {
-      let cancelled = false;
-      const load = async () => {
-        try {
-          const { listCreditHistory } = await import("../services/supabaseMerchant");
-          const data = await listCreditHistory(clientId, outletID);
-          if (cancelled) return;
-          setHistory(data);
-          setLoading(false);
-        } catch (err) {
-          console.error("Error loading credit history:", err);
-          if (!cancelled) {
-            setError("Failed to load credit history");
-            setLoading(false);
-          }
-        }
-      };
-      void load();
-      const timer = window.setInterval(() => void load(), 10000);
-      return () => {
-        cancelled = true;
-        window.clearInterval(timer);
-      };
-    }
-
-    const q = query(
-      collection(db, 'clients', clientId, 'credit_history'),
-      orderBy('timestamp', 'desc')
-    );
-    const unsubscribe = onSnapshot(
-      q,
-      (snapshot) => {
-        const data = snapshot.docs.map((d) => ({
-          id: d.id,
-          ...d.data()
-        } as CreditHistoryEntry));
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const { listCreditHistory } = await import("../services/supabaseMerchant");
+        const data = await listCreditHistory(clientId, outletID);
+        if (cancelled) return;
         setHistory(data);
         setLoading(false);
-      },
-      (err) => {
-        console.error('Error loading credit history:', err);
-        setError('Failed to load credit history');
-        setLoading(false);
+      } catch (err) {
+        console.error("Error loading credit history:", err);
+        if (!cancelled) {
+          setError("Failed to load credit history");
+          setLoading(false);
+        }
       }
-    );
-    return () => unsubscribe();
+    };
+    void load();
+    const timer = window.setInterval(() => void load(), 10000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
   }, [clientId, outletID]);
 
   const historyByMonth = useMemo(() => {

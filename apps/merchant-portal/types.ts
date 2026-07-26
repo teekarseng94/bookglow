@@ -1,3 +1,6 @@
+import type { StaffPermissions, StaffWeeklyHours } from './utils/staffExtras';
+
+export type { StaffPermissions, StaffWeeklyHours, StaffDayHours, StaffWeekday } from './utils/staffExtras';
 
 export enum TransactionType {
   SALE = 'SALE',
@@ -83,6 +86,10 @@ export interface Staff {
   photoURL?: string; // Download URL (same as profilePicture; stored for compatibility)
   /** List of service IDs this staff member is qualified to perform. If omitted/empty, treated as qualified for all services. */
   qualifiedServices?: string[];
+  /** Per-day working hours. Omitted/null = not configured. */
+  weeklyHours?: StaffWeeklyHours;
+  /** Capability flags for this staff profile (intent; portal locks still apply until user↔staff link). */
+  permissions?: StaffPermissions;
 }
 
 export interface Client {

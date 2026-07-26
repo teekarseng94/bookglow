@@ -158,6 +158,8 @@ export type Database = {
           profile_picture: string | null;
           qualified_services: Json | null;
           role: string | null;
+          weekly_hours: Json | null;
+          permissions: Json | null;
         };
         Insert: {
           created_at?: string | null;
@@ -170,6 +172,8 @@ export type Database = {
           profile_picture?: string | null;
           qualified_services?: Json | null;
           role?: string | null;
+          weekly_hours?: Json | null;
+          permissions?: Json | null;
         };
         Update: {
           created_at?: string | null;
@@ -182,6 +186,8 @@ export type Database = {
           profile_picture?: string | null;
           qualified_services?: Json | null;
           role?: string | null;
+          weekly_hours?: Json | null;
+          permissions?: Json | null;
         };
         Relationships: [
           {

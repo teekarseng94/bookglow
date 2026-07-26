@@ -11,7 +11,13 @@ import { CSS } from '@dnd-kit/utilities';
 import { getCurrentOutletID } from '../services/databaseService';
 import { uploadImage, deleteImage, getServiceImagePath } from '../services/storageService';
 import { SERVICE_ICON_CATEGORIES } from '../serviceIcons';
-import { Button } from '../components/ui/Button';
+import {
+  AppModal,
+  Button,
+  fieldControlClassName,
+  ModalFooterActions,
+  ConfirmationDialog,
+} from '../components/ui';
 import {
   InventoryEmptyState,
   InventoryEntityCard,
@@ -1464,236 +1470,295 @@ const Services: React.FC<ServicesProps> = ({
             </form>
       </InventoryEditPanel>
 
-      {/* Service Selector Modal (Add service to package) */}
-      {showServiceSelectorModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[55] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md max-h-[85vh] shadow-2xl flex flex-col overflow-hidden border border-slate-200">
-            <div className="p-5 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
-              <h3 className="text-app-section font-bold text-slate-900">Services</h3>
-              <button
-                type="button"
-                onClick={() => setShowServiceSelectorModal(false)}
-                className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
-                aria-label="Close"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            <div className="p-4 border-b border-slate-100 flex-shrink-0">
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                  <Search className="w-5 h-5" />
-                </span>
-                <input
-                  type="text"
-                  placeholder="Search by name"
-                  value={serviceSelectorSearch}
-                  onChange={(e) => setServiceSelectorSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
-                />
+      <AppModal
+        open={showServiceSelectorModal}
+        onClose={() => setShowServiceSelectorModal(false)}
+        title="Services"
+        description="Add a service to this package."
+        size="md"
+        zIndexClass="z-[95]"
+        footer={
+          <ModalFooterActions>
+            <Button variant="secondary" onClick={() => setShowServiceSelectorModal(false)}>
+              Cancel
+            </Button>
+          </ModalFooterActions>
+        }
+      >
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none">
+            <Search className="w-5 h-5" />
+          </span>
+          <input
+            type="text"
+            placeholder="Search by name"
+            value={serviceSelectorSearch}
+            onChange={(e) => setServiceSelectorSearch(e.target.value)}
+            className={`${fieldControlClassName} pl-10`}
+          />
+        </div>
+        <div className="space-y-4">
+          {serviceSelectorGrouped.length === 0 ? (
+            <p className="text-sm text-[var(--text-secondary)] text-center py-8">
+              No services match your search.
+            </p>
+          ) : (
+            serviceSelectorGrouped.map(([categoryName, categoryServices]) => (
+              <div key={categoryName}>
+                <h4 className="text-sm font-bold text-[var(--text-primary)] mb-2">{categoryName}</h4>
+                <div className="overflow-hidden rounded-ui-md border border-[var(--line)]">
+                  {categoryServices.map((s) => {
+                    const durationMins = s.duration ?? 60;
+                    const durationStr =
+                      durationMins >= 60
+                        ? `${Math.floor(durationMins / 60)}h${durationMins % 60 ? ` ${durationMins % 60}m` : ''}`
+                        : `${durationMins}m`;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => {
+                          handleAddServiceToPackage(s.id);
+                          setShowServiceSelectorModal(false);
+                        }}
+                        className="w-full flex items-center justify-between gap-4 px-4 py-3 text-left border-b border-[var(--line)] last:border-b-0 bg-[var(--bg-surface)] hover:bg-[var(--bg-selection)] transition-colors border-l-4 border-l-transparent hover:border-l-[var(--brand)]"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-[var(--text-primary)] truncate">
+                            {s.name}
+                          </p>
+                          <p className="text-xs text-[var(--text-muted)] mt-0.5">{durationStr}</p>
+                        </div>
+                        <span className="text-sm font-bold text-[var(--text-primary)] flex-shrink-0">
+                          MYR {Number(s.price ?? 0).toFixed(0)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-            <div className="flex-1 overflow-y-auto min-h-0 p-4 scrollbar-thin">
-              {serviceSelectorGrouped.length === 0 ? (
-                <p className="text-sm text-slate-500 text-center py-8">No services match your search.</p>
-              ) : (
-                serviceSelectorGrouped.map(([categoryName, categoryServices]) => (
-                  <div key={categoryName} className="mb-6">
-                    <h4 className="text-sm font-bold text-slate-800 mb-2">{categoryName}</h4>
-                    <div className="space-y-0 overflow-hidden rounded-lg border border-slate-100">
-                      {categoryServices.map((s) => {
-                        const durationMins = s.duration ?? 60;
-                        const durationStr = durationMins >= 60
-                          ? `${Math.floor(durationMins / 60)}h${durationMins % 60 ? ` ${durationMins % 60}m` : ''}`
-                          : `${durationMins}m`;
-                        return (
-                          <button
-                            key={s.id}
-                            type="button"
-                            onClick={() => {
-                              handleAddServiceToPackage(s.id);
-                              setShowServiceSelectorModal(false);
-                            }}
-                            className="w-full flex items-center justify-between gap-4 px-4 py-3 text-left border-b border-slate-100 last:border-b-0 bg-white hover:bg-blue-50/50 transition-colors border-l-4 border-l-transparent hover:border-l-blue-500"
-                          >
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-semibold text-slate-800 truncate">{s.name}</p>
-                              <p className="text-xs text-slate-500 mt-0.5">{durationStr}</p>
-                            </div>
-                            <span className="text-sm font-bold text-slate-700 flex-shrink-0">MYR {Number(s.price ?? 0).toFixed(0)}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+            ))
+          )}
+        </div>
+      </AppModal>
+
+      <AppModal
+        open={showIconPickerModal}
+        onClose={() => setShowIconPickerModal(false)}
+        title="Select Image"
+        description="Upload a photo or pick an icon."
+        size="lg"
+        zIndexClass="z-[95]"
+        footer={
+          <ModalFooterActions>
+            <Button variant="secondary" onClick={() => setShowIconPickerModal(false)}>
+              Cancel
+            </Button>
+          </ModalFooterActions>
+        }
+      >
+        <div>
+          <p className="text-app-label font-bold uppercase text-[var(--text-secondary)] mb-2">
+            Photo Library
+          </p>
+          <div className="flex items-center gap-2">
+            <label
+              htmlFor="service-image-upload-picker"
+              className="w-14 h-14 rounded-ui-md bg-[var(--brand-soft)] border-2 border-dashed border-[var(--brand)]/40 flex items-center justify-center text-[var(--brand)] cursor-pointer hover:bg-[var(--bg-selection)] transition-colors shrink-0"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </label>
+            <input
+              id="service-image-upload-picker"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                handleImageChange(e);
+                setShowIconPickerModal(false);
+              }}
+            />
+            <span className="text-xs text-[var(--text-secondary)]">Upload your own image</span>
           </div>
         </div>
-      )}
-
-      {/* Select Image / Icon Picker Modal */}
-      {showIconPickerModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[55] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl animate-scaleIn overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-white shrink-0">
-              <h3 className="text-app-section font-bold text-slate-900">Select Image</h3>
-              <button type="button" onClick={() => setShowIconPickerModal(false)} className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors" aria-label="Close">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
+        {SERVICE_ICON_CATEGORIES.map((cat) => (
+          <div key={cat.title}>
+            <p className="text-app-label font-bold uppercase text-[var(--text-secondary)] mb-3">
+              {cat.title}
+            </p>
+            <div className="grid grid-cols-5 sm:grid-cols-6 gap-2">
+              {cat.iconIds.map((iconId) => {
+                const isSelected = formData.iconId === iconId;
+                return (
+                  <button
+                    key={iconId}
+                    type="button"
+                    onClick={() => handleSelectIcon(iconId)}
+                    className={`relative w-12 h-12 rounded-ui-md flex items-center justify-center border-2 transition-all shrink-0 ${
+                      isSelected
+                        ? 'bg-[var(--brand-soft)] border-[var(--brand)] text-[var(--brand-deep)] ring-2 ring-[var(--brand)]/40'
+                        : 'bg-[var(--bg-soft)] border-[var(--line)] text-[var(--text-secondary)] hover:bg-[var(--bg-selection)]'
+                    }`}
+                    title={iconId}
+                  >
+                    {renderServiceIcon(iconId, 'w-6 h-6')}
+                    {isSelected && (
+                      <span className="absolute bottom-0.5 right-0.5 w-4 h-4 bg-[var(--brand)] rounded-full flex items-center justify-center text-white text-[10px] leading-none">
+                        ✓
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
-            <div className="p-4 overflow-y-auto space-y-6">
-              <div>
-                <p className="text-[10px] font-black uppercase text-slate-500 mb-2">Photo Library</p>
-                <div className="flex items-center gap-2">
-                  <label htmlFor="service-image-upload-picker" className="w-14 h-14 rounded-xl bg-teal-50 border-2 border-dashed border-teal-200 flex items-center justify-center text-teal-600 cursor-pointer hover:bg-teal-100 transition-colors shrink-0">
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                  </label>
-                  <input id="service-image-upload-picker" type="file" accept="image/*" className="hidden" onChange={(e) => { handleImageChange(e); setShowIconPickerModal(false); }} />
-                  <span className="text-xs text-slate-500">Upload your own image</span>
-                </div>
-              </div>
-              {SERVICE_ICON_CATEGORIES.map((cat) => (
-                <div key={cat.title}>
-                  <p className="text-[10px] font-black uppercase text-slate-500 mb-3">{cat.title}</p>
-                  <div className="grid grid-cols-5 sm:grid-cols-6 gap-2">
-                    {cat.iconIds.map((iconId) => {
-                      const isSelected = formData.iconId === iconId;
-                      return (
-                        <button
-                          key={iconId}
-                          type="button"
-                          onClick={() => handleSelectIcon(iconId)}
-                          className={`relative w-12 h-12 rounded-xl flex items-center justify-center border-2 transition-all shrink-0 ${
-                            isSelected ? 'bg-teal-100 border-teal-500 text-teal-700 ring-2 ring-teal-400' : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100 hover:border-slate-300'
-                          }`}
-                          title={iconId}
-                        >
-                          {renderServiceIcon(iconId, 'w-6 h-6')}
-                          {isSelected && (
-                            <span className="absolute bottom-0.5 right-0.5 w-4 h-4 bg-teal-600 rounded-full flex items-center justify-center text-white text-[10px] leading-none">✓</span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+          </div>
+        ))}
+      </AppModal>
+
+      <ConfirmationDialog
+        open={!!itemToDelete}
+        onClose={() => setItemToDelete(null)}
+        onConfirm={() => {
+          if (isLocked) return;
+          void confirmDelete();
+        }}
+        title="Confirm Removal"
+        description={
+          itemToDelete
+            ? isLocked
+              ? `Inventory is locked. "${itemToDelete.name}" cannot be deleted right now.`
+              : `Are you sure you want to delete "${itemToDelete.name}"?`
+            : undefined
+        }
+        confirmLabel={itemToDelete ? `Yes, Delete ${itemToDelete.type}` : 'Delete'}
+        tone="danger"
+      />
+
+      <AppModal
+        open={showRearrangeCategoriesModal}
+        onClose={() => setShowRearrangeCategoriesModal(false)}
+        title="Rearrange Categories"
+        description='Drag to reorder. "All" always stays first on the menu.'
+        size="md"
+        footer={
+          <ModalFooterActions>
+            <Button variant="secondary" onClick={() => setShowRearrangeCategoriesModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveReorderCategories}>Save Order</Button>
+          </ModalFooterActions>
+        }
+      >
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleReorderCategoriesDragEnd}
+        >
+          <SortableContext items={reorderCategoriesList} strategy={verticalListSortingStrategy}>
+            <div className="space-y-2">
+              {reorderCategoriesList.map((cat) => (
+                <SortableCategoryItem key={cat} id={cat} name={cat} />
               ))}
             </div>
-          </div>
-        </div>
-      )}
+          </SortableContext>
+        </DndContext>
+      </AppModal>
 
-      {/* Delete Confirmation */}
-      {itemToDelete && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl animate-scaleIn p-8 text-center">
-            <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-6"><Icons.Trash /></div>
-            <h3 className="text-xl font-bold text-slate-800 mb-2">Confirm Removal</h3>
-            <p className="text-slate-500 text-sm mb-8">Are you sure you want to delete <span className="font-black text-slate-900 italic">"{itemToDelete.name}"</span>?</p>
-            <div className="flex flex-col gap-3">
-              <button 
-                onClick={confirmDelete} 
-                disabled={isLocked}
-                className={`w-full py-4 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 ${
-                  isLocked 
-                    ? 'bg-slate-400 cursor-not-allowed' 
-                    : 'bg-rose-600 hover:bg-rose-700'
-                }`}
-              >
-                Yes, Delete {itemToDelete.type}
-              </button>
-              <button 
-                onClick={() => setItemToDelete(null)} 
-                className="w-full py-3 bg-slate-100 text-slate-500 font-bold rounded-xl hover:bg-slate-200 transition-colors"
-              >
-                Cancel
-              </button>
+      <AppModal
+        open={showCategoryModal}
+        onClose={() => setShowCategoryModal(false)}
+        title="Manage Categories"
+        description="Add, rename, or remove inventory categories."
+        size="md"
+        footer={
+          <ModalFooterActions>
+            <Button variant="secondary" onClick={() => setShowCategoryModal(false)}>
+              Close
+            </Button>
+          </ModalFooterActions>
+        }
+      >
+        <form onSubmit={handleAddCategory} className="flex gap-2">
+          <input
+            required
+            type="text"
+            placeholder="New category..."
+            className={`${fieldControlClassName} flex-1`}
+            value={newCategoryName}
+            onChange={(e) => setNewCategoryName(e.target.value)}
+          />
+          <Button type="submit" size="md" aria-label="Add category">
+            <Icons.Add />
+          </Button>
+        </form>
+        <div className="space-y-2 max-h-64 overflow-y-auto">
+          {categories.map((cat) => (
+            <div
+              key={editingCategory === cat ? `editing-${cat}` : cat}
+              className="flex items-center justify-between gap-2 p-3 bg-[var(--bg-soft)] rounded-ui-md border border-[var(--line)]"
+            >
+              {editingCategory === cat ? (
+                <>
+                  <input
+                    type="text"
+                    className={`${fieldControlClassName} flex-1 h-9`}
+                    value={editingCategoryValue}
+                    onChange={(e) => setEditingCategoryValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSaveEditCategory();
+                      if (e.key === 'Escape') {
+                        setEditingCategory(null);
+                        setEditingCategoryValue('');
+                      }
+                    }}
+                  />
+                  <Button size="sm" variant="ghost" onClick={handleSaveEditCategory}>
+                    Save
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setEditingCategory(null);
+                      setEditingCategoryValue('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <span className="text-sm font-bold text-[var(--text-primary)] flex-1 truncate">
+                    {cat}
+                  </span>
+                  {onEditCategory && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingCategory(cat);
+                        setEditingCategoryValue(cat);
+                      }}
+                      className="p-2 text-[var(--text-muted)] hover:text-[var(--brand)]"
+                      title="Edit name"
+                    >
+                      <Icons.Edit />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => Promise.resolve(onDeleteCategory(cat))}
+                    className="p-2 text-[var(--text-muted)] hover:text-[var(--danger)]"
+                  >
+                    <Icons.Trash />
+                  </button>
+                </>
+              )}
             </div>
-          </div>
+          ))}
         </div>
-      )}
-
-      {/* Rearrange Categories Modal */}
-      {showRearrangeCategoriesModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl animate-scaleIn overflow-hidden flex flex-col max-h-[85vh]">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-800 text-white flex-shrink-0">
-              <h3 className="text-app-section font-bold text-slate-900">Rearrange Categories</h3>
-              <button type="button" onClick={() => setShowRearrangeCategoriesModal(false)} className="p-2 rounded-lg hover:bg-slate-700" aria-label="Close">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            <p className="px-6 py-2 text-sm text-slate-500 flex-shrink-0">Drag to reorder. &quot;All&quot; always stays first on the menu.</p>
-            <div className="flex-1 overflow-y-auto p-6 min-h-0">
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleReorderCategoriesDragEnd}>
-                <SortableContext items={reorderCategoriesList} strategy={verticalListSortingStrategy}>
-                  <div className="space-y-2">
-                    {reorderCategoriesList.map((cat) => (
-                      <SortableCategoryItem key={cat} id={cat} name={cat} />
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
-            </div>
-            <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 flex-shrink-0">
-              <button type="button" onClick={() => setShowRearrangeCategoriesModal(false)} className="px-4 py-2.5 font-semibold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors">
-                Cancel
-              </button>
-              <button type="button" onClick={handleSaveReorderCategories} className="px-4 py-2.5 font-semibold bg-teal-600 text-white rounded-xl hover:bg-teal-700 transition-colors">
-                Save Order
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Category Modal */}
-      {showCategoryModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl animate-scaleIn overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-800 text-white">
-              <h3 className="text-app-section font-bold text-slate-900">Manage Categories</h3>
-              <button onClick={() => setShowCategoryModal(false)}><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
-            </div>
-            <div className="p-6 space-y-6">
-              <form onSubmit={handleAddCategory} className="flex gap-2">
-                <input required type="text" placeholder="New category..." className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm" value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} />
-                <button type="submit" className="p-3 bg-teal-600 text-white rounded-xl"><Icons.Add /></button>
-              </form>
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {categories.map(cat => (
-                  <div key={editingCategory === cat ? `editing-${cat}` : cat} className="flex items-center justify-between gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
-                    {editingCategory === cat ? (
-                      <>
-                        <input
-                          type="text"
-                          className="flex-1 p-2 border border-slate-200 rounded-lg text-sm font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500"
-                          value={editingCategoryValue}
-                          onChange={e => setEditingCategoryValue(e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter') handleSaveEditCategory(); if (e.key === 'Escape') { setEditingCategory(null); setEditingCategoryValue(''); } }}
-                        />
-                        <button type="button" onClick={handleSaveEditCategory} className="px-3 py-1.5 text-xs font-bold text-teal-600 hover:bg-teal-50 rounded-lg">Save</button>
-                        <button type="button" onClick={() => { setEditingCategory(null); setEditingCategoryValue(''); }} className="p-2 text-slate-400 hover:bg-slate-200 rounded-lg">Cancel</button>
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-sm font-bold text-slate-700 flex-1 truncate">{cat}</span>
-                        {onEditCategory && <button type="button" onClick={() => { setEditingCategory(cat); setEditingCategoryValue(cat); }} className="p-2 text-slate-300 hover:text-teal-600" title="Edit name"><Icons.Edit /></button>}
-                        <button type="button" onClick={() => Promise.resolve(onDeleteCategory(cat))} className="p-2 text-slate-300 hover:text-rose-500"><Icons.Trash /></button>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="p-6 bg-slate-50 flex justify-end">
-               <button onClick={() => setShowCategoryModal(false)} className="px-6 py-2 bg-slate-900 text-white font-bold rounded-xl">Close</button>
-            </div>
-          </div>
-        </div>
-      )}
+      </AppModal>
     </div>
   );
 };

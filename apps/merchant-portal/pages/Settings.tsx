@@ -7,7 +7,14 @@ import { useUserContext } from '../contexts/UserContext';
 import { outletService, apiIntegrationService } from '../services/databaseService';
 import { generateApiKey, sha256Hex } from '../utils/apiKeyHash';
 import { shopNameToBookingSlug, isValidBookingSlug } from '../utils/bookingSlug';
-import { Button } from '../components/ui/Button';
+import {
+  AppModal,
+  Button,
+  Field,
+  fieldControlClassName,
+  FormSection,
+  ModalFooterActions,
+} from '../components/ui';
 import {
   OperatingHoursRow,
   SettingsNavigation,
@@ -368,7 +375,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         }
       />
 
-      <div className="mt-4 lg:mt-6 flex gap-6 items-start max-w-6xl mx-auto">
+      <div className="mt-4 lg:mt-6 flex gap-6 items-start">
         <SettingsNavigation activeId={activeSection} onSelect={scrollToSection} />
 
         <div className="min-w-0 flex-1 max-w-3xl space-y-4 sm:space-y-5">
@@ -895,162 +902,150 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         </div>
       </div>
 
-      {showApiModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50">
-          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border-b border-slate-100">
-              <div>
-                <h3 className="text-app-section font-bold text-slate-900">Chatbot API Integration</h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  Use these details to connect MyChatBot (or other bots) to this outlet.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowApiModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200"
-                aria-label="Close"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="p-5 space-y-5">
-              {apiError && (
-                <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-                  {apiError}
-                </div>
-              )}
-
-              {/* Outlet ID */}
-              <div>
-                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
-                  Outlet ID
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={effectiveOutletId}
-                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono text-slate-700"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleCopyField(effectiveOutletId, 'outlet')}
-                    className="px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800"
-                  >
-                    {copyField === 'outlet' ? 'Copied' : 'Copy'}
-                  </button>
-                </div>
-              </div>
-
-              {/* API Access Key */}
-              <div>
-                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
-                  API Access Key
-                </label>
-                <p className="text-[11px] text-slate-500 mb-2">
-                  Use this in the <code className="bg-slate-100 px-1 rounded">X-API-Key</code> header. We never store the raw key,
-                  only its hash. You can generate a new key below.
-                </p>
-                <div className="flex flex-col gap-2">
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      readOnly
-                      value={
-                        apiRevealedKey ||
-                        apiIntegration?.keyPrefix ||
-                        (apiLoading ? 'Loading…' : 'No key generated yet.')
-                      }
-                      className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono text-slate-700"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => apiRevealedKey && handleCopyField(apiRevealedKey, 'key')}
-                      disabled={!apiRevealedKey}
-                      className="px-3 py-2 rounded-xl bg-teal-600 text-white text-xs font-semibold hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      {copyField === 'key' ? 'Copied' : 'Copy'}
-                    </button>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={handleGenerateOrRegenerateKey}
-                      disabled={apiLoading}
-                      className="px-4 py-2 rounded-xl bg-teal-600 text-white text-xs font-semibold hover:bg-teal-700 disabled:opacity-50"
-                    >
-                      {apiIntegration?.apiKeyHash
-                        ? apiLoading
-                          ? 'Regenerating…'
-                          : 'Regenerate Key'
-                        : apiLoading
-                        ? 'Generating…'
-                        : 'Generate API Key'}
-                    </button>
-                    {apiIntegration?.keyPrefix && !apiRevealedKey && (
-                      <p className="text-[11px] text-slate-500 flex-1">
-                        Current key prefix: <span className="font-mono">{apiIntegration.keyPrefix}</span>. The full key is only
-                        shown right after generation.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Webhook URL */}
-              <div>
-                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
-                  Webhook URL
-                </label>
-                <p className="text-[11px] text-slate-500 mb-2">
-                  MyChatBot can call this Cloud Function to verify the key and talk to your POS.
-                </p>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={CHATBOT_WEBHOOK_URL}
-                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-700"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleCopyField(CHATBOT_WEBHOOK_URL, 'webhook')}
-                    className="px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800"
-                  >
-                    {copyField === 'webhook' ? 'Copied' : 'Copy'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Setup guide */}
-              <div className="mt-2 rounded-xl bg-slate-50 border border-slate-200 p-3 text-[11px] text-slate-600 space-y-1">
-                <p className="font-semibold text-slate-700">Setup Guide (MyChatBot)</p>
-                <ul className="list-disc list-inside space-y-0.5">
-                  <li>Paste the <span className="font-mono">Outlet ID</span> into the bot&apos;s outlet / location field.</li>
-                  <li>
-                    Paste the <span className="font-mono">API Access Key</span> into the bot&apos;s API key field. This is used as
-                    the <span className="font-mono">X-API-Key</span> header.
-                  </li>
-                  <li>
-                    Use the <span className="font-mono">Webhook URL</span> where MyChatBot should send verification or booking
-                    requests.
-                  </li>
-                  <li>
-                    For advanced options or to change the outbound webhook URL, open the full{' '}
-                    <Link to="/settings/api-integration" className="text-teal-600 underline">
-                      API Integration Management
-                    </Link>{' '}
-                    page.
-                  </li>
-                </ul>
-              </div>
-            </div>
+      <AppModal
+        open={showApiModal}
+        onClose={() => setShowApiModal(false)}
+        title="Chatbot API Integration"
+        description="Use these details to connect MyChatBot (or other bots) to this outlet."
+        size="md"
+        busy={apiLoading}
+        footer={
+          <ModalFooterActions>
+            <Button variant="secondary" onClick={() => setShowApiModal(false)}>
+              Close
+            </Button>
+            <Button onClick={handleGenerateOrRegenerateKey} disabled={apiLoading}>
+              {apiIntegration?.apiKeyHash
+                ? apiLoading
+                  ? 'Regenerating…'
+                  : 'Regenerate Key'
+                : apiLoading
+                  ? 'Generating…'
+                  : 'Generate API Key'}
+            </Button>
+          </ModalFooterActions>
+        }
+      >
+        {apiError && (
+          <div className="rounded-ui-md border border-[var(--danger)]/30 bg-red-50 px-3 py-2 text-xs text-[var(--danger)]">
+            {apiError}
           </div>
+        )}
+
+        <FormSection>
+          <Field id="chatbot-outlet-id" label="Outlet ID">
+            <div className="flex gap-2">
+              <input
+                id="chatbot-outlet-id"
+                type="text"
+                readOnly
+                value={effectiveOutletId}
+                className={`${fieldControlClassName} flex-1 font-mono`}
+              />
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleCopyField(effectiveOutletId, 'outlet')}
+              >
+                {copyField === 'outlet' ? 'Copied' : 'Copy'}
+              </Button>
+            </div>
+          </Field>
+
+          <Field
+            id="chatbot-api-key"
+            label="API Access Key"
+            hint={
+              <>
+                Use this in the <code className="bg-[var(--bg-soft)] px-1 rounded">X-API-Key</code>{' '}
+                header. We never store the raw key, only its hash.
+              </>
+            }
+          >
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <input
+                  id="chatbot-api-key"
+                  type="text"
+                  readOnly
+                  value={
+                    apiRevealedKey ||
+                    apiIntegration?.keyPrefix ||
+                    (apiLoading ? 'Loading…' : 'No key generated yet.')
+                  }
+                  className={`${fieldControlClassName} flex-1 font-mono`}
+                />
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => apiRevealedKey && handleCopyField(apiRevealedKey, 'key')}
+                  disabled={!apiRevealedKey}
+                >
+                  {copyField === 'key' ? 'Copied' : 'Copy'}
+                </Button>
+              </div>
+              {apiIntegration?.keyPrefix && !apiRevealedKey && (
+                <p className="text-xs text-[var(--text-muted)]">
+                  Current key prefix:{' '}
+                  <span className="font-mono">{apiIntegration.keyPrefix}</span>. The full key is
+                  only shown right after generation.
+                </p>
+              )}
+            </div>
+          </Field>
+
+          <Field
+            id="chatbot-webhook-url"
+            label="Webhook URL"
+            hint="MyChatBot can call this endpoint to verify the key and talk to your POS."
+          >
+            <div className="flex gap-2">
+              <input
+                id="chatbot-webhook-url"
+                type="text"
+                readOnly
+                value={CHATBOT_WEBHOOK_URL}
+                className={`${fieldControlClassName} flex-1 font-mono text-xs`}
+              />
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleCopyField(CHATBOT_WEBHOOK_URL, 'webhook')}
+              >
+                {copyField === 'webhook' ? 'Copied' : 'Copy'}
+              </Button>
+            </div>
+          </Field>
+        </FormSection>
+
+        <div className="rounded-ui-md bg-[var(--bg-soft)] border border-[var(--line)] p-3 text-xs text-[var(--text-secondary)] space-y-1">
+          <p className="font-semibold text-[var(--text-primary)]">Setup Guide (MyChatBot)</p>
+          <ul className="list-disc list-inside space-y-0.5">
+            <li>
+              Paste the <span className="font-mono">Outlet ID</span> into the bot&apos;s outlet /
+              location field.
+            </li>
+            <li>
+              Paste the <span className="font-mono">API Access Key</span> into the bot&apos;s API
+              key field. This is used as the <span className="font-mono">X-API-Key</span> header.
+            </li>
+            <li>
+              Use the <span className="font-mono">Webhook URL</span> where MyChatBot should send
+              verification or booking requests.
+            </li>
+            <li>
+              For advanced options or to change the outbound webhook URL, open the full{' '}
+              <Link
+                to="/settings/api-integration"
+                className="text-[var(--brand)] underline"
+              >
+                API Integration Management
+              </Link>{' '}
+              page.
+            </li>
+          </ul>
         </div>
-      )}
+      </AppModal>
     </div>
   );
 };

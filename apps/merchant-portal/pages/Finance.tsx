@@ -4,7 +4,14 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Transaction, TransactionType } from '../types';
 import { Icons } from '../constants';
 import { ReportEmptyState, ReportPageHeader, ReportTxnCard } from '../components/reports';
-import { Button } from '../components/ui/Button';
+import {
+  AppModal,
+  Button,
+  Field,
+  fieldControlClassName,
+  FormSection,
+  ModalFooterActions,
+} from '../components/ui';
 
 interface FinanceProps {
   transactions: Transaction[];
@@ -257,143 +264,126 @@ const Finance: React.FC<FinanceProps> = ({
         </div>
       </div>
 
-      {/* Record Expense Modal */}
-      {showExpenseModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl animate-scaleIn overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-rose-600 text-white">
-              <h3 className="text-lg font-bold">Record New Expense</h3>
-              <button onClick={() => setShowExpenseModal(false)} className="hover:rotate-90 transition-transform" aria-label="Close">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            <form onSubmit={handleSubmitExpense} className="p-8 space-y-5">
-              <div>
-                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Description</label>
-                <input 
-                  required
-                  type="text" 
-                  placeholder="e.g. Monthly Rent, Cleaning Supplies..."
-                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-rose-500 font-medium"
-                  value={newExpense.description}
-                  onChange={e => setNewExpense({ ...newExpense, description: e.target.value })}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Category</label>
-                  <select 
-                    required
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-rose-500 font-medium"
-                    value={newExpense.category}
-                    onChange={e => setNewExpense({ ...newExpense, category: e.target.value })}
-                  >
-                    {expenseCategories.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Amount ($)</label>
-                  <input 
-                    required
-                    type="number" 
-                    min="0.01"
-                    step="0.01"
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-rose-500 font-black text-rose-600 text-lg tabular-nums"
-                    value={newExpense.amount}
-                    onChange={e => setNewExpense({ ...newExpense, amount: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Transaction Date</label>
-                <input 
-                  required
-                  type="date" 
-                  className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-rose-500 font-medium"
-                  value={newExpense.date}
-                  onChange={e => setNewExpense({ ...newExpense, date: e.target.value })}
-                />
-              </div>
-
-              <div className="pt-4 flex gap-4">
-                 <button 
-                  type="button"
-                  onClick={() => setShowExpenseModal(false)}
-                  className="flex-1 py-4 bg-slate-100 text-slate-500 font-bold rounded-xl hover:bg-slate-200 transition-all"
-                >
-                  Cancel
-                </button>
-                 <button 
-                  type="submit" 
-                  className="flex-[2] py-4 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-lg transition-all"
-                >
-                  Confirm & Deduct
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Category Management Modal */}
-      {showCategoryModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl animate-scaleIn overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-800 text-white">
-              <h3 className="text-lg font-bold">Manage Expense Categories</h3>
-              <button onClick={() => setShowCategoryModal(false)} className="hover:rotate-90 transition-transform" aria-label="Close">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            <div className="p-6 space-y-6">
-              <form onSubmit={handleAddCategory} className="flex gap-2">
-                <input 
-                  required
-                  type="text" 
-                  placeholder="New category name..."
-                  className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium"
-                  value={newCategoryName}
-                  onChange={e => setNewCategoryName(e.target.value)}
-                />
-                <button 
-                  type="submit"
-                  className="p-3 bg-teal-600 text-white rounded-xl hover:bg-teal-700 transition-colors shadow-sm"
-                  aria-label="Add category"
-                >
-                  <Icons.Add />
-                </button>
-              </form>
-
-              <div className="space-y-2 max-h-64 overflow-y-auto pr-2">
-                {expenseCategories.map(cat => (
-                  <div key={cat} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 group">
-                    <span className="text-sm font-bold text-slate-700">{cat}</span>
-                    <button 
-                      onClick={() => onDeleteCategory(cat)}
-                      className="p-1.5 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"
-                      aria-label={`Delete ${cat}`}
-                    >
-                      <Icons.Trash />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end">
-               <button 
-                onClick={() => setShowCategoryModal(false)}
-                className="px-6 py-2.5 bg-slate-900 text-white font-bold rounded-xl"
+      <AppModal
+        open={showExpenseModal}
+        onClose={() => setShowExpenseModal(false)}
+        title="Record New Expense"
+        description="Add an expense to the ledger."
+        size="md"
+        asForm
+        formId="record-expense-form"
+        onSubmit={handleSubmitExpense}
+        footer={
+          <ModalFooterActions>
+            <Button variant="secondary" onClick={() => setShowExpenseModal(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="record-expense-form">
+              Confirm & Deduct
+            </Button>
+          </ModalFooterActions>
+        }
+      >
+        <FormSection>
+          <Field id="expense-description" label="Description" required>
+            <input
+              id="expense-description"
+              required
+              type="text"
+              placeholder="e.g. Monthly Rent, Cleaning Supplies..."
+              className={fieldControlClassName}
+              value={newExpense.description}
+              onChange={(e) => setNewExpense({ ...newExpense, description: e.target.value })}
+            />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field id="expense-category" label="Category" required>
+              <select
+                id="expense-category"
+                required
+                className={fieldControlClassName}
+                value={newExpense.category}
+                onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value })}
               >
-                Close
+                {expenseCategories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field id="expense-amount" label="Amount ($)" required>
+              <input
+                id="expense-amount"
+                required
+                type="number"
+                min="0.01"
+                step="0.01"
+                className={`${fieldControlClassName} font-bold tabular-nums text-[var(--danger)]`}
+                value={newExpense.amount}
+                onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
+              />
+            </Field>
+          </div>
+          <Field id="expense-date" label="Transaction Date" required>
+            <input
+              id="expense-date"
+              required
+              type="date"
+              className={fieldControlClassName}
+              value={newExpense.date}
+              onChange={(e) => setNewExpense({ ...newExpense, date: e.target.value })}
+            />
+          </Field>
+        </FormSection>
+      </AppModal>
+
+      <AppModal
+        open={showCategoryModal}
+        onClose={() => setShowCategoryModal(false)}
+        title="Manage Expense Categories"
+        description="Add or remove categories used when recording expenses."
+        size="md"
+        footer={
+          <ModalFooterActions>
+            <Button variant="secondary" onClick={() => setShowCategoryModal(false)}>
+              Close
+            </Button>
+          </ModalFooterActions>
+        }
+      >
+        <form onSubmit={handleAddCategory} className="flex gap-2">
+          <input
+            required
+            type="text"
+            placeholder="New category name..."
+            className={`${fieldControlClassName} flex-1`}
+            value={newCategoryName}
+            onChange={(e) => setNewCategoryName(e.target.value)}
+          />
+          <Button type="submit" aria-label="Add category">
+            <Icons.Add />
+          </Button>
+        </form>
+        <div className="space-y-2 mt-4">
+          {expenseCategories.map((cat) => (
+            <div
+              key={cat}
+              className="flex items-center justify-between px-3 py-2.5 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-soft)] group"
+            >
+              <span className="text-sm font-semibold text-[var(--text-primary)]">{cat}</span>
+              <button
+                type="button"
+                onClick={() => onDeleteCategory(cat)}
+                className="p-1.5 text-[var(--text-muted)] hover:text-[var(--danger)] opacity-0 group-hover:opacity-100 transition-all"
+                aria-label={`Delete ${cat}`}
+              >
+                <Icons.Trash />
               </button>
             </div>
-          </div>
+          ))}
         </div>
-      )}
+      </AppModal>
     </div>
   );
 };

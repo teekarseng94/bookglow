@@ -57,6 +57,8 @@ export function getCurrentOutletID() {
 
 function mapStaff(row: Record<string, unknown>): Staff {
   const qs = row.qualified_services;
+  const weeklyHours = row.weekly_hours;
+  const permissions = row.permissions;
   return {
     id: String(row.id),
     outletID: String(row.outlet_id || ""),
@@ -71,6 +73,14 @@ function mapStaff(row: Record<string, unknown>): Staff {
       ? (qs as string[])
       : qs
         ? (qs as string[])
+        : undefined,
+    weeklyHours:
+      weeklyHours && typeof weeklyHours === "object"
+        ? (weeklyHours as Staff["weeklyHours"])
+        : undefined,
+    permissions:
+      permissions && typeof permissions === "object"
+        ? (permissions as Staff["permissions"])
         : undefined,
   };
 }
@@ -165,6 +175,8 @@ export const staffService = {
       profile_picture: staff.profilePicture || null,
       photo_url: staff.photoURL || staff.profilePicture || null,
       qualified_services: staff.qualifiedServices || null,
+      weekly_hours: (staff.weeklyHours || null) as never,
+      permissions: (staff.permissions || null) as never,
     });
     if (error) throw error;
     return id;
@@ -185,6 +197,12 @@ export const staffService = {
     if (updates.photoURL !== undefined) patch.photo_url = updates.photoURL;
     if (updates.qualifiedServices !== undefined) {
       patch.qualified_services = updates.qualifiedServices;
+    }
+    if (updates.weeklyHours !== undefined) {
+      patch.weekly_hours = updates.weeklyHours || null;
+    }
+    if (updates.permissions !== undefined) {
+      patch.permissions = updates.permissions || null;
     }
     const { error } = await client()
       .from("staff")

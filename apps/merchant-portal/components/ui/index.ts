@@ -31,7 +31,23 @@ export { Sheet } from './Sheet';
 export type { SheetProps } from './Sheet';
 export { Modal } from './Modal';
 export type { ModalProps } from './Modal';
+export { AppModal } from './AppModal';
+export type { AppModalProps, AppModalSize } from './AppModal';
+export { AppSheet } from './AppSheet';
+export type { AppSheetProps } from './AppSheet';
+export { AppDrawer } from './AppDrawer';
+export type { AppDrawerProps } from './AppDrawer';
+export { ModalHeader, ModalBody, ModalFooter, ModalFooterActions } from './ModalParts';
+export type {
+  ModalHeaderProps,
+  ModalBodyProps,
+  ModalFooterProps,
+  ModalFooterActionsProps,
+} from './ModalParts';
+export { FormSection } from './FormSection';
+export type { FormSectionProps } from './FormSection';
 export { ConfirmationDialog } from './ConfirmationDialog';
 export type { ConfirmationDialogProps } from './ConfirmationDialog';
 export { StickyActionBar } from './StickyActionBar';
 export type { StickyActionBarProps } from './StickyActionBar';
+export { ModalLoadingFallback } from './ModalLoadingFallback';

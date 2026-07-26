@@ -137,7 +137,7 @@ const ApiIntegrationManagement: React.FC = () => {
 
   if (!effectiveOutletId) {
     return (
-      <div className="max-w-4xl mx-auto p-8 space-y-4">
+      <div className="p-8 space-y-4">
         <Alert tone="warning" title="No outlet selected">
           Please sign in with an account linked to an outlet.
         </Alert>
@@ -150,7 +150,7 @@ const ApiIntegrationManagement: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto p-8">
+      <div className="p-8">
         <LoadingSkeleton rows={5} />
       </div>
     );
@@ -167,7 +167,7 @@ const ApiIntegrationManagement: React.FC = () => {
         : 'disconnected';
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-fadeIn pb-20">
+    <div className="space-y-8 animate-fadeIn pb-20">
       <PageHeader
         title="API Integration Management"
         description="Connect your chatbot to this POS. Manage API key and webhook. Key generation and hashing behavior is unchanged."

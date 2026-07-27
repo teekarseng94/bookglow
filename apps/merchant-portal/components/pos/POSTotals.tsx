@@ -30,7 +30,7 @@ export const POSTotals: React.FC<POSTotalsProps> = ({
     {subtotalLabel ? (
       <div className="flex justify-between text-sm text-[var(--text-secondary)]">
         <span>Subtotal</span>
-        <span className="tabular-nums font-semibold">{subtotalLabel}</span>
+        <span className="tabular-nums font-semibold text-emerald-600">{subtotalLabel}</span>
       </div>
     ) : null}
     <div className="flex justify-between items-baseline text-[var(--text-primary)]">

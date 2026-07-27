@@ -33,7 +33,7 @@ export const POSCatalogueSection: React.FC<POSCatalogueSectionProps> = ({
     {empty ? (
       <div className="py-10 text-center text-[var(--text-muted)] text-sm">{emptyMessage}</div>
     ) : (
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2.5 md:gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
         {children}
       </div>
     )}

@@ -15,7 +15,7 @@ export interface POSItemCardProps {
 }
 
 /**
- * Compact catalogue card: thumbnail + name/meta/price + add control.
+ * Compact catalogue card: thumbnail + name/meta, footer row with price | +.
  */
 export const POSItemCard: React.FC<POSItemCardProps> = ({
   name,
@@ -34,19 +34,19 @@ export const POSItemCard: React.FC<POSItemCardProps> = ({
     <div
       className={cx(
         'relative bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)]',
-        'p-3 hover:border-[var(--brand)] hover:shadow-ui-sm transition-all',
-        'flex flex-col gap-2 min-h-[108px]',
+        'p-3.5 hover:border-[var(--brand)] hover:shadow-ui-sm transition-all',
+        'flex flex-col gap-3 h-full min-h-[132px]',
         className,
       )}
     >
       {badge ? <div className="absolute top-2 right-2 z-[1]">{badge}</div> : null}
 
-      <div className="flex gap-3 min-w-0">
-        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-ui-sm overflow-hidden shrink-0 bg-[var(--brand-soft)] flex items-center justify-center">
+      <div className="flex gap-3 min-w-0 flex-1">
+        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-ui-sm overflow-hidden shrink-0 bg-[var(--brand-soft)] flex items-center justify-center">
           {imageUrl ? (
             <img src={imageUrl} alt="" className="w-full h-full object-cover" />
           ) : (
-            <span className="text-base font-bold text-[var(--brand)]">{initial}</span>
+            <span className="text-lg font-bold text-[var(--brand)]">{initial}</span>
           )}
         </div>
         <div className="min-w-0 flex-1">
@@ -54,7 +54,6 @@ export const POSItemCard: React.FC<POSItemCardProps> = ({
           {metaLeft ? (
             <p className="text-xs text-[var(--text-muted)] mt-0.5 truncate">{metaLeft}</p>
           ) : null}
-          <p className="text-sm font-bold text-emerald-600 tabular-nums mt-1">{priceLabel}</p>
           {metaRight ? (
             <p className="text-[10px] font-semibold text-amber-600 mt-0.5">{metaRight}</p>
           ) : null}
@@ -62,13 +61,14 @@ export const POSItemCard: React.FC<POSItemCardProps> = ({
         </div>
       </div>
 
-      <div className="mt-auto flex justify-end">
+      <div className="mt-auto flex items-center justify-between gap-2 pt-1">
+        <span className="text-base font-bold text-emerald-600 tabular-nums">{priceLabel}</span>
         <button
           type="button"
           onClick={onAdd}
           aria-label={`Add ${name}`}
           className={cx(
-            'inline-flex items-center justify-center w-8 h-8 rounded-full',
+            'inline-flex items-center justify-center w-10 h-10 min-w-[40px] min-h-[40px] rounded-full',
             'bg-[var(--brand)] text-white shadow-ui-xs',
             'hover:opacity-90 active:scale-95 transition-all',
             'focus-visible:shadow-ui-focus-strong',

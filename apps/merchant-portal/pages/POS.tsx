@@ -225,6 +225,60 @@ const POS: React.FC<POSProps> = ({
     [clients, selectedClient]
   );
 
+  /** Points already reserved by other redeemed lines (excludes `excludeLineId`). */
+  const pointsUsedByOtherRedemptions = (excludeLineId: string) =>
+    cart.reduce((sum, item) => {
+      const id = item.cartItemId ?? item.id;
+      if (id === excludeLineId) return sum;
+      if (!item.redeemedWithPoints || !item.redeemPoints) return sum;
+      return sum + item.redeemPoints * item.quantity;
+    }, 0);
+
+  /** Show redeem UI only when a member can afford this line (or it is already applied). */
+  const canShowRedeemControl = (item: CartItem, lineId: string): boolean => {
+    if (item.type !== 'service') return false;
+    if (!item.redeemPointsEnabled || !item.redeemPoints) return false;
+    if (!selectedClientData) return false;
+    if (item.redeemedWithPoints) return true;
+    const balance = selectedClientData.points ?? 0;
+    const needed = item.redeemPoints * item.quantity;
+    const usedElsewhere = pointsUsedByOtherRedemptions(lineId);
+    return balance - usedElsewhere >= needed;
+  };
+
+  // Clear stale redemptions when customer is cleared or no longer has enough points.
+  useEffect(() => {
+    setCart((prev) => {
+      let changed = false;
+      const next = prev.map((item) => {
+        if (!item.redeemedWithPoints) return item;
+        if (!selectedClientData) {
+          changed = true;
+          return { ...item, redeemedWithPoints: false };
+        }
+        return item;
+      });
+
+      if (!selectedClientData) {
+        return changed ? next : prev;
+      }
+
+      const balance = selectedClientData.points ?? 0;
+      let running = 0;
+      const validated = next.map((item) => {
+        if (!item.redeemedWithPoints || !item.redeemPoints) return item;
+        const cost = item.redeemPoints * item.quantity;
+        if (running + cost > balance) {
+          changed = true;
+          return { ...item, redeemedWithPoints: false };
+        }
+        running += cost;
+        return item;
+      });
+      return changed ? validated : prev;
+    });
+  }, [selectedClientData, cart]);
+
   // Customer autocomplete: filter by name (starts with or contains) or phone, limit for performance
   const customerSuggestions = useMemo(() => {
     const q = customerSearchQuery.trim().toLowerCase();
@@ -857,12 +911,28 @@ const POS: React.FC<POSProps> = ({
                   isVoucherRedemptionMode && idx === 0
                     ? `Voucher Redemption - ${item.quantity} ${item.name}`
                     : item.name;
-                const lineTotal = item.voucherRedemption ? 0 : item.price * item.quantity;
+                const lineTotal =
+                  item.voucherRedemption || item.redeemedWithPoints
+                    ? 0
+                    : item.price * item.quantity;
                 const showOriginalPrice = item.voucherRedemption && (item.originalPrice ?? 0) > 0;
+                const serviceMeta = item.type === 'service' ? services.find((s) => s.id === item.id) : undefined;
+                const qualifiedStaff = staff.filter((s) => {
+                  const qs = s.qualifiedServices;
+                  if (!qs || qs.length === 0) return true;
+                  return qs.includes(item.id);
+                });
+                const showRedeem = canShowRedeemControl(item, lineId);
                 return (
                   <POSCartItem
                     key={lineId}
                     displayName={displayName}
+                    imageUrl={serviceMeta?.imageUrl}
+                    meta={
+                      serviceMeta?.duration != null ? (
+                        <span>{serviceMeta.duration} mins</span>
+                      ) : undefined
+                    }
                     quantity={item.quantity}
                     onQuantityChange={(next) => updateCartQuantity(lineId, next)}
                     qtyPriceLabel={
@@ -873,20 +943,31 @@ const POS: React.FC<POSProps> = ({
                           </span>
                           <span className="ml-2 text-emerald-600">100% discount · $0</span>
                         </p>
+                      ) : item.redeemedWithPoints ? (
+                        <p className="text-emerald-600">Redeemed with points · $0</p>
                       ) : (
                         <p>${item.price.toFixed(2)} each</p>
                       )
                     }
                     lineTotalLabel={`$${lineTotal.toFixed(2)}`}
-                    lineTotalEmphasized={!!item.voucherRedemption}
+                    lineTotalEmphasized={!!item.voucherRedemption || !!item.redeemedWithPoints}
                     onRemove={() => removeFromCart(lineId)}
+                    showStaffSelector={item.type === 'service'}
+                    staffId={item.staffId}
+                    staffOptions={qualifiedStaff.map((s) => ({
+                      id: s.id,
+                      name: s.name,
+                      photoURL: s.photoURL,
+                      profilePicture: s.profilePicture,
+                    }))}
+                    onStaffChange={(nextStaffId) => updateStaffAssignment(lineId, nextStaffId)}
                     redeemControl={
-                      item.type === 'service' && item.redeemPointsEnabled && item.redeemPoints ? (
-                        <div className="mt-2 flex items-center justify-between gap-2">
+                      showRedeem ? (
+                        <div className="mt-2 flex items-center justify-between gap-2 pl-[2.75rem]">
                           <button
                             type="button"
                             onClick={() => toggleRedeemWithPoints(lineId)}
-                            className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border transition-colors ${
+                            className={`min-h-[36px] px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wide border transition-colors focus-visible:shadow-ui-focus-strong ${
                               item.redeemedWithPoints
                                 ? 'bg-amber-500 border-amber-500 text-white'
                                 : 'bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100'
@@ -899,37 +980,6 @@ const POS: React.FC<POSProps> = ({
                               Balance: {selectedClientData.points.toLocaleString()} pts
                             </span>
                           ) : null}
-                        </div>
-                      ) : null
-                    }
-                    staffControl={
-                      item.type === 'service' ? (
-                        <div className="mt-2 min-w-0">
-                          <label className="block text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1">
-                            Staff
-                          </label>
-                          <select
-                            className={`w-full min-h-[36px] py-1.5 px-2 text-sm rounded-ui-sm border outline-none font-semibold box-border ${
-                              item.staffId
-                                ? 'bg-[var(--bg-surface)] border-[var(--line)] text-[var(--text-primary)]'
-                                : 'bg-rose-50 border-rose-200 text-rose-600'
-                            }`}
-                            value={item.staffId || ''}
-                            onChange={(e) => updateStaffAssignment(lineId, e.target.value)}
-                          >
-                            <option value="">Assign staff…</option>
-                            {staff
-                              .filter((s) => {
-                                const qs = s.qualifiedServices;
-                                if (!qs || qs.length === 0) return true;
-                                return qs.includes(item.id);
-                              })
-                              .map((s) => (
-                                <option key={s.id} value={s.id}>
-                                  {s.name}
-                                </option>
-                              ))}
-                          </select>
                         </div>
                       ) : null
                     }

@@ -16,7 +16,7 @@ export const ReportPageHeader: React.FC<ReportPageHeaderProps> = ({
   actions,
   className,
 }) => (
-  <PageHeader className={cx(className)} title={title} description={description} actions={actions} />
+  <PageHeader className={cx('m-page-header--compact', className)} title={title} description={description} actions={actions} />
 );
 
 export default ReportPageHeader;

@@ -26,7 +26,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   <span
     className={cx(
       'm-status-badge inline-flex items-center gap-1 px-2 py-0.5 rounded-full border',
-      'text-app-label font-bold uppercase tracking-wide whitespace-nowrap',
+      'text-[11px] font-semibold capitalize tracking-normal whitespace-nowrap',
       toneClass[tone],
       className,
     )}

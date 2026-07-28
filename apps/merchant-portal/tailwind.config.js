@@ -73,13 +73,13 @@ export default {
       },
       fontSize: {
         /** ~32px — primary screen title (mobile-first reference) */
-        'app-page': ['2rem', { lineHeight: '2.25rem', letterSpacing: '-0.02em' }],
+        'app-page': ['1.5rem', { lineHeight: '2rem', letterSpacing: '-0.02em' }],
         /** ~34px — large title on sm+ */
-        'app-page-lg': ['2.125rem', { lineHeight: '2.5rem', letterSpacing: '-0.02em' }],
+        'app-page-lg': ['1.5rem', { lineHeight: '2rem', letterSpacing: '-0.02em' }],
         /** ~24px — section / card titles */
-        'app-section': ['1.5rem', { lineHeight: '2rem', letterSpacing: '-0.015em' }],
+        'app-section': ['1rem', { lineHeight: '1.5rem', letterSpacing: '-0.01em' }],
         /** ~15px — default body (between 14–16px reference) */
-        'app-body': ['0.9375rem', { lineHeight: '1.5rem' }],
+        'app-body': ['0.875rem', { lineHeight: '1.375rem' }],
         /** ~11px — small caps labels */
         'app-label': ['0.6875rem', { lineHeight: '1rem', letterSpacing: '0.06em' }],
       },

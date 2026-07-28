@@ -20,6 +20,8 @@
   --text-primary: #19161d;
   --text-secondary: #615a66;
   --text-muted: #89818c;
+  --text: var(--text-primary);
+  --text-subtle: var(--text-muted);
   --ink: var(--text-primary);
   --ink-2: #332d37;
   --muted: var(--text-secondary);
@@ -28,6 +30,7 @@
   /* Borders */
   --line: #e9e2e8;
   --line-strong: #d9cfd9;
+  --line-soft: var(--line);
   --border: var(--line);
   --border-strong: var(--line-strong);
 
@@ -41,12 +44,16 @@
   /* Status */
   --success: #16735d;
   --success-soft: #e9f6f1;
+  --success-border: #bfe5d8;
   --warning: #96620a;
   --warning-soft: #fff6dd;
+  --warning-border: #f0d894;
   --danger: #a43b50;
   --danger-soft: #fff0f3;
+  --danger-border: #efc6cf;
   --info: #3d5a80;
   --info-soft: #eef3f8;
+  --info-border: #cad8e7;
 
   /* Elevation */
   --shadow-xs: 0 1px 2px rgba(39, 25, 42, 0.04);
@@ -56,10 +63,10 @@
 
   /* Radius */
   --radius-xs: 8px;
-  --radius-sm: 12px;
-  --radius-md: 18px;
-  --radius-lg: 26px;
-  --radius-xl: 34px;
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
 
   /* 4px spacing rhythm */
   --space-0: 0;
@@ -77,15 +84,15 @@
 
   /* Typography */
   --font-sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --text-page: 2rem;
-  --text-page-lg: 2.125rem;
-  --text-section: 1.5rem;
-  --text-body: 0.9375rem;
+  --text-page: 1.5rem;
+  --text-page-lg: 1.5rem;
+  --text-section: 1rem;
+  --text-body: 0.875rem;
   --text-label: 0.6875rem;
-  --leading-page: 2.25rem;
-  --leading-page-lg: 2.5rem;
-  --leading-section: 2rem;
-  --leading-body: 1.5rem;
+  --leading-page: 2rem;
+  --leading-page-lg: 2rem;
+  --leading-section: 1.5rem;
+  --leading-body: 1.375rem;
   --leading-label: 1rem;
 
   /* Focus */
@@ -224,6 +231,15 @@
   .ui-page-title {
     @apply text-app-page sm:text-app-page-lg font-bold tracking-tight;
     color: var(--text-primary);
+  }
+
+  /* Compact page title variant (all breakpoints) — for consoles like Menu & Inventory that pair
+     the title with an inline status badge rather than a full-size hero heading. Matches both the
+     shared PageHeader (classes on ancestor + h1) and a hand-built header row (classes on one h1). */
+  .m-page-header--compact .ui-page-title,
+  .ui-page-title.m-page-header--compact {
+    font-size: 1.375rem;
+    line-height: 1.75rem;
   }
 
   .ui-section-title {

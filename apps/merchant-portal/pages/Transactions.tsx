@@ -5,6 +5,7 @@ import { Transaction, TransactionType, Client } from '../types';
 import { Icons } from '../constants';
 import {
   ReportDetailSheet,
+  ReportDesktopDetailPanel,
   ReportEmptyState,
   ReportFilterSheet,
   ReportFilterToolbar,
@@ -50,9 +51,9 @@ const getTxnMeta = (t: Transaction) => {
     return {
       label: 'Sale',
       sign: '+',
-      dot: 'bg-green-500',
-      amount: 'text-green-600',
-      badge: 'bg-green-50 text-green-700',
+      dot: 'bg-[var(--success)]',
+      amount: 'text-[var(--success)]',
+      badge: 'bg-[var(--success-soft)] text-[var(--success)]',
       amountTone: 'in' as const,
       statusTone: 'success' as StatusTone,
     };
@@ -61,9 +62,9 @@ const getTxnMeta = (t: Transaction) => {
     return {
       label: 'Commission',
       sign: '-',
-      dot: 'bg-amber-500',
-      amount: 'text-amber-600',
-      badge: 'bg-amber-50 text-amber-700',
+      dot: 'bg-[var(--warning)]',
+      amount: 'text-[var(--warning)]',
+      badge: 'bg-[var(--warning-soft)] text-[var(--warning)]',
       amountTone: 'out' as const,
       statusTone: 'warning' as StatusTone,
     };
@@ -71,9 +72,9 @@ const getTxnMeta = (t: Transaction) => {
   return {
     label: 'Expense',
     sign: '-',
-    dot: 'bg-rose-500',
-    amount: 'text-rose-600',
-    badge: 'bg-rose-50 text-rose-700',
+    dot: 'bg-[var(--danger)]',
+    amount: 'text-[var(--danger)]',
+    badge: 'bg-[var(--danger-soft)] text-[var(--danger)]',
     amountTone: 'out' as const,
     statusTone: 'danger' as StatusTone,
   };
@@ -93,7 +94,6 @@ const Transactions: React.FC<TransactionsProps> = ({
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [editingTxn, setEditingTxn] = useState<Transaction | null>(null);
   const [deletingTxn, setDeletingTxn] = useState<Transaction | null>(null);
-  const [expandedTxn, setExpandedTxn] = useState<string | null>(null);
   const [detailTxn, setDetailTxn] = useState<Transaction | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showSortSheet, setShowSortSheet] = useState(false); // mobile sort/filter bottom sheet
@@ -203,21 +203,15 @@ const Transactions: React.FC<TransactionsProps> = ({
     }
   };
 
-  const toggleExpand = (id: string) => {
-    setExpandedTxn(expandedTxn === id ? null : id);
-  };
-
   return (
-    <div className="space-y-4 sm:space-y-6 animate-fadeIn">
+    <div className="space-y-4 animate-fadeIn">
       <ReportPageHeader
         title="Sales History"
         description="Review, edit, or filter past transactions."
       />
 
-      <div className="hidden md:flex bg-[var(--brand-soft)] border border-[var(--brand)]/20 rounded-xl p-4 items-center gap-3">
-        <div className="bg-[var(--brand)] text-white p-2 rounded-lg">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-        </div>
+      <div className="hidden md:flex items-center gap-2 rounded-ui-md border border-[var(--brand-border)] bg-[var(--brand-soft)] px-3 py-2.5">
+        <svg className="h-4 w-4 flex-shrink-0 text-[var(--brand)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
         <p className="text-[var(--brand-deep)] text-xs font-medium">
           Management Console: Review, edit, or remove historical records to maintain data accuracy.
         </p>
@@ -252,7 +246,7 @@ const Transactions: React.FC<TransactionsProps> = ({
             <span className="m-settings-label uppercase tracking-widest">Sort</span>
             <select
               aria-label="Sort by"
-              className="bg-white border border-slate-200 m-settings-control text-xs outline-none shadow-sm transition-all"
+              className="m-settings-control border border-[var(--line)] bg-[var(--bg-surface)] text-xs outline-none transition-all"
               value={sortField}
               onChange={(e) => setSortField(e.target.value as SortField)}
             >
@@ -262,7 +256,7 @@ const Transactions: React.FC<TransactionsProps> = ({
             </select>
             <select
               aria-label="Sort order"
-              className="bg-white border border-slate-200 m-settings-control text-xs outline-none shadow-sm transition-all"
+              className="m-settings-control border border-[var(--line)] bg-[var(--bg-surface)] text-xs outline-none transition-all"
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value as SortOrder)}
             >
@@ -322,45 +316,48 @@ const Transactions: React.FC<TransactionsProps> = ({
           </div>
 
           {/* iPad / desktop: table (compact padding on iPad, roomier on desktop) */}
-          <div className="hidden md:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
+          <div className="hidden min-w-0 gap-4 md:flex">
+          <div className="min-w-0 flex-1 overflow-hidden rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)]">
+            <div className="max-h-[calc(100vh-15rem)] overflow-auto">
               <table className="w-full text-left">
-                <thead>
-                  <tr className="m-settings-label uppercase tracking-widest bg-slate-50 border-b border-slate-100">
-                    <th className="px-3 lg:px-6 py-4">Status</th>
-                    <th className="px-3 lg:px-6 py-4">Date &amp; Description</th>
-                    <th className="px-3 lg:px-6 py-4">Client</th>
-                    <th className="px-3 lg:px-6 py-4">Category</th>
-                    <th className="px-3 lg:px-6 py-4">Method</th>
-                    <th className="px-3 lg:px-6 py-4 text-right">Amount</th>
-                    <th className="px-3 lg:px-6 py-4 text-right">Actions</th>
+                <thead className="sticky top-0 z-10">
+                  <tr className="border-b border-[var(--line)] bg-[var(--bg-soft)] text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+                    <th className="px-3 py-3">Status</th>
+                    <th className="px-3 py-3">Date &amp; Description</th>
+                    <th className="px-3 py-3">Client</th>
+                    <th className="px-3 py-3">Category</th>
+                    <th className="px-3 py-3">Method</th>
+                    <th className="px-3 py-3 text-right">Amount</th>
+                    <th className="px-3 py-3 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-[var(--line)]">
                   {sortedAndFilteredTransactions.map(txn => {
                     const client = clients.find(c => c.id === txn.clientId);
-                    const isExpanded = expandedTxn === txn.id;
                     const txnDate = new Date(txn.date);
                     const meta = getTxnMeta(txn);
 
                     return (
                       <React.Fragment key={txn.id}>
                         <tr
-                          className={`hover:bg-slate-50 transition-colors cursor-pointer ${isExpanded ? 'bg-slate-50' : ''}`}
-                          onClick={() => toggleExpand(txn.id)}
+                          className={`cursor-pointer transition-colors hover:bg-[var(--bg-soft)] ${detailTxn?.id === txn.id ? 'bg-[var(--brand-soft)]' : ''}`}
+                          onClick={() => setDetailTxn(txn)}
                         >
-                          <td className="px-3 lg:px-6 py-4">
-                            <span className={`inline-flex items-center w-2 h-2 rounded-full ${meta.dot}`}></span>
+                          <td className="px-3 py-3">
+                            <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-semibold ${meta.badge}`}>
+                              <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
+                              {meta.label}
+                            </span>
                           </td>
-                          <td className="px-3 lg:px-6 py-4">
+                          <td className="px-3 py-3">
                             <div className="flex flex-col">
-                              <span className="text-xs text-slate-500 font-bold">
+                              <span className="text-[11px] font-medium text-[var(--text-muted)]">
                                 {txnDate.toLocaleDateString()} {txnDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </span>
-                              <span className="text-sm font-bold text-slate-800 max-w-xs truncate">{txn.description}</span>
+                              <span className="max-w-xs truncate text-[13px] font-semibold text-[var(--text-primary)]">{txn.description}</span>
                             </div>
                           </td>
-                          <td className="px-3 lg:px-6 py-4 text-sm text-slate-600">
+                          <td className="px-3 py-3 text-xs text-[var(--text-secondary)]">
                             {client ? (
                               <div className="flex items-center gap-2">
                                 <div className="w-6 h-6 bg-[var(--brand-soft)] rounded-full flex items-center justify-center m-caption font-bold text-[var(--brand)] flex-shrink-0">
@@ -368,26 +365,26 @@ const Transactions: React.FC<TransactionsProps> = ({
                                 </div>
                                 <span className="truncate">{client.name}</span>
                               </div>
-                            ) : (txn.type === TransactionType.SALE ? <span className="text-slate-300">Guest</span> : <span className="text-slate-300">—</span>)}
+                            ) : (txn.type === TransactionType.SALE ? <span className="text-[var(--text-muted)]">Guest</span> : <span className="text-[var(--text-muted)]">—</span>)}
                           </td>
-                          <td className="px-3 lg:px-6 py-4">
-                            <span className="px-2 py-1 bg-slate-100 text-slate-500 m-inventory-badge">{txn.category}</span>
+                          <td className="px-3 py-3">
+                            <span className="m-inventory-badge rounded-full bg-[var(--brand-soft)] px-2 py-1 text-[var(--brand-deep)]">{txn.category}</span>
                           </td>
-                          <td className="px-3 lg:px-6 py-4 text-xs font-bold text-slate-500">
+                          <td className="px-3 py-3 text-xs font-medium text-[var(--text-secondary)]">
                             {txn.paymentMethod || '—'}
                           </td>
-                          <td className={`px-3 lg:px-6 py-4 text-sm font-bold text-right tabular-nums ${meta.amount}`}>
+                          <td className={`px-3 py-3 text-right text-[13px] font-bold tabular-nums ${meta.amount}`}>
                             {meta.sign}{formatRM(txn.amount)}
                           </td>
-                          <td className="px-3 lg:px-6 py-4 text-right">
+                          <td className="px-3 py-3 text-right">
                             <div className="flex justify-end gap-2 lg:gap-3" onClick={e => e.stopPropagation()}>
                               <button
                                 disabled={isDeleteLocked}
                                 onClick={() => setEditingTxn(txn)}
                                 className={`p-2 rounded-lg transition-all ${
                                   isDeleteLocked
-                                    ? 'text-slate-200 cursor-not-allowed'
-                                    : 'text-slate-400 hover:text-[var(--brand)] hover:bg-[var(--brand-soft)]'
+                                    ? 'cursor-not-allowed text-[var(--line-strong)]'
+                                    : 'text-[var(--text-muted)] hover:text-[var(--brand)] hover:bg-[var(--brand-soft)]'
                                 }`}
                               >
                                 {isDeleteLocked ? <Icons.Lock /> : <Icons.Edit />}
@@ -397,8 +394,8 @@ const Transactions: React.FC<TransactionsProps> = ({
                                 onClick={() => setDeletingTxn(txn)}
                                 className={`p-2 rounded-lg transition-all ${
                                   isDeleteLocked
-                                    ? 'text-slate-200 cursor-not-allowed'
-                                    : 'text-slate-400 hover:text-rose-500 hover:bg-rose-50'
+                                    ? 'cursor-not-allowed text-[var(--line-strong)]'
+                                    : 'text-[var(--text-muted)] hover:text-[var(--danger)] hover:bg-[var(--danger-soft)]'
                                 }`}
                               >
                                 {isDeleteLocked ? <Icons.Lock /> : <Icons.Trash />}
@@ -407,45 +404,61 @@ const Transactions: React.FC<TransactionsProps> = ({
                           </td>
                         </tr>
 
-                        {isExpanded && txn.items && txn.items.length > 0 && (
-                          <tr className="bg-slate-50">
-                            <td colSpan={7} className="px-6 lg:px-12 py-6 border-y border-slate-100">
-                              <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm max-w-2xl animate-fadeIn">
-                                 <h4 className="m-settings-label uppercase tracking-widest mb-4">Sale Breakdown</h4>
-                                 <div className="space-y-3">
-                                   {txn.items.map((item, idx) => (
-                                     <div key={idx} className="flex justify-between items-center text-sm border-b border-slate-50 pb-2">
-                                       <div className="flex flex-col">
-                                         <span className="font-semibold text-slate-700">{item.name}</span>
-                                         <span className="m-caption uppercase font-semibold text-[var(--text-muted)]">{item.type}</span>
-                                       </div>
-                                       <div className="text-right">
-                                         <span className="text-slate-500 font-medium">Qty: {item.quantity}</span>
-                                         <span className="ml-6 font-bold text-slate-800">{formatRM(item.price * item.quantity)}</span>
-                                       </div>
-                                     </div>
-                                   ))}
-                                 </div>
-                                 <div className="mt-4 pt-4 border-t-2 border-dashed border-slate-100">
-                                   <div className="flex justify-between mb-1">
-                                     <span className="text-xs font-bold text-slate-400 uppercase">Payment Method</span>
-                                     <span className="text-sm font-bold text-[var(--text-secondary)]">{txn.paymentMethod || 'Not specified'}</span>
-                                   </div>
-                                   <div className="flex justify-between">
-                                     <span className="text-xs font-bold text-slate-400 uppercase">Total Transaction Amount</span>
-                                     <span className="m-txn-amount text-[var(--brand)]">{formatRM(txn.amount)}</span>
-                                   </div>
-                                 </div>
-                              </div>
-                            </td>
-                          </tr>
-                        )}
                       </React.Fragment>
                     );
                   })}
                 </tbody>
               </table>
             </div>
+          </div>
+          {detailTxn ? (() => {
+            const meta = getTxnMeta(detailTxn);
+            const client = clients.find((c) => c.id === detailTxn.clientId);
+            const clientName = client?.name || (detailTxn.type === TransactionType.SALE ? 'Guest' : '—');
+            const date = new Date(detailTxn.date);
+            return (
+              <ReportDesktopDetailPanel
+                transactionId={detailTxn.id}
+                amountLabel={`${meta.sign}${formatRM(detailTxn.amount)}`}
+                amountClassName={meta.amount}
+                statusLabel={meta.label}
+                statusTone={meta.statusTone}
+                onClose={() => setDetailTxn(null)}
+                rows={[
+                  { label: 'Date & Time', value: `${date.toLocaleDateString()} · ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` },
+                  { label: 'Description', value: detailTxn.description },
+                  { label: 'Client', value: clientName },
+                  { label: 'Category', value: detailTxn.category || '—' },
+                  { label: 'Payment Method', value: detailTxn.paymentMethod || '—' },
+                ]}
+                breakdown={detailTxn.items?.length ? (
+                  <div>
+                    <h3 className="mb-3 text-xs font-bold text-[var(--text-primary)]">Financial Summary</h3>
+                    <div className="space-y-2">
+                      {detailTxn.items.map((item, index) => (
+                        <div key={`${item.id}-${index}`} className="flex justify-between gap-3 text-xs">
+                          <span className="min-w-0 truncate text-[var(--text-secondary)]">{item.quantity}× {item.name}</span>
+                          <span className="shrink-0 font-semibold tabular-nums text-[var(--text-primary)]">{formatRM(item.price * item.quantity)}</span>
+                        </div>
+                      ))}
+                      <div className="mt-3 flex justify-between border-t border-[var(--line)] pt-3 text-sm font-bold">
+                        <span>Total</span><span className="tabular-nums">{formatRM(detailTxn.amount)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : undefined}
+                primaryAction={{
+                  label: isDeleteLocked ? 'Locked' : 'Edit Transaction',
+                  disabled: isDeleteLocked,
+                  onClick: () => setEditingTxn(detailTxn),
+                }}
+                dangerAction={isDeleteLocked ? undefined : {
+                  label: 'Delete Transaction',
+                  onClick: () => setDeletingTxn(detailTxn),
+                }}
+              />
+            );
+          })() : null}
           </div>
         </>
       )}
@@ -477,16 +490,16 @@ const Transactions: React.FC<TransactionsProps> = ({
             ]}
             breakdown={
               detailTxn.items && detailTxn.items.length > 0 ? (
-                <div className="mt-2 pt-3 border-t border-slate-100">
+                <div className="mt-2 border-t border-[var(--line)] pt-3">
                   <h4 className="m-settings-label uppercase tracking-widest mb-2">Breakdown</h4>
                   <div className="space-y-2">
                     {detailTxn.items.map((item, idx) => (
                       <div key={idx} className="flex justify-between items-center gap-3 text-sm">
                         <div className="min-w-0">
-                          <p className="font-semibold text-slate-700 truncate">{item.name}</p>
+                          <p className="truncate font-semibold text-[var(--text-primary)]">{item.name}</p>
                           <p className="m-caption uppercase font-semibold text-[var(--text-muted)]">{item.type} · Qty {item.quantity}</p>
                         </div>
-                        <span className="font-bold text-slate-800 tabular-nums flex-shrink-0">{formatRM(item.price * item.quantity)}</span>
+                        <span className="flex-shrink-0 font-bold tabular-nums text-[var(--text-primary)]">{formatRM(item.price * item.quantity)}</span>
                       </div>
                     ))}
                   </div>
@@ -658,11 +671,11 @@ const Transactions: React.FC<TransactionsProps> = ({
             </span>
             ?
             {pointsToDeduct > 0 ? (
-              <span className="mt-3 block rounded-ui-md border border-amber-200 bg-amber-50 p-3 text-left text-xs text-amber-800">
+              <span className="mt-3 block rounded-ui-md border border-[var(--warning)]/20 bg-[var(--warning-soft)] p-3 text-left text-xs text-[var(--warning)]">
                 Deleting this sale will also deduct{' '}
                 <span className="font-bold">{pointsToDeduct.toLocaleString()}</span> points from{' '}
                 <span className="font-semibold">{clientName}</span>.
-                <span className="mt-1 block font-mono m-caption text-amber-600">
+                <span className="mt-1 block font-mono m-caption text-[var(--warning)]">
                   Receipt: {formattedReceipt}
                 </span>
               </span>
@@ -686,7 +699,7 @@ const Transactions: React.FC<TransactionsProps> = ({
 
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 bg-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl z-[100] animate-fadeIn flex items-center gap-3 max-w-md">
+        <div className="fixed bottom-6 right-6 z-[100] flex max-w-md animate-fadeIn items-center gap-3 rounded-ui-md bg-[var(--success)] px-5 py-3 text-white shadow-ui-lg">
           <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
           </svg>

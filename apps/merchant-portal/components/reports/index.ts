@@ -5,5 +5,6 @@ export { ReportFilterToolbar } from './ReportFilterToolbar';
 export { ReportFilterSheet } from './ReportFilterSheet';
 export { ReportTxnCard } from './ReportTxnCard';
 export { ReportDetailSheet } from './ReportDetailSheet';
+export { ReportDesktopDetailPanel } from './ReportDesktopDetailPanel';
 export { ReportEmptyState } from './ReportEmptyState';
 export { ReportDateRangeBar, ReportFiltersSheet } from './ReportDateRangeBar';

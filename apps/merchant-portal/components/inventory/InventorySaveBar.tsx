@@ -6,6 +6,8 @@ import { cx } from '../ui/cx';
 export interface InventorySaveBarProps {
   saveLabel?: string;
   onSave?: () => void;
+  onCancel?: () => void;
+  cancelLabel?: string;
   saving?: boolean;
   disabled?: boolean;
   status?: SaveStatusValue;
@@ -13,10 +15,12 @@ export interface InventorySaveBarProps {
   className?: string;
 }
 
-/** Explicit Save Changes control — parent owns submit handler via form id or onSave. */
+/** Explicit Cancel + Save Changes control — parent owns submit handler via form id or onSave. */
 export const InventorySaveBar: React.FC<InventorySaveBarProps> = ({
   saveLabel = 'Save Changes',
   onSave,
+  onCancel,
+  cancelLabel = 'Cancel',
   saving,
   disabled,
   status = 'idle',
@@ -25,15 +29,22 @@ export const InventorySaveBar: React.FC<InventorySaveBarProps> = ({
 }) => (
   <div className={cx('flex items-center justify-between gap-3 w-full', className)}>
     <SaveStatus status={saving ? 'saving' : status} />
-    <Button
-      type={formId ? 'submit' : 'button'}
-      form={formId}
-      variant="primary"
-      disabled={disabled || saving}
-      onClick={formId ? undefined : onSave}
-    >
-      {saving ? 'Saving…' : saveLabel}
-    </Button>
+    <div className="flex items-center gap-2">
+      {onCancel ? (
+        <Button type="button" variant="secondary" onClick={onCancel} disabled={saving}>
+          {cancelLabel}
+        </Button>
+      ) : null}
+      <Button
+        type={formId ? 'submit' : 'button'}
+        form={formId}
+        variant="primary"
+        disabled={disabled || saving}
+        onClick={formId ? undefined : onSave}
+      >
+        {saving ? 'Saving…' : saveLabel}
+      </Button>
+    </div>
   </div>
 );
 

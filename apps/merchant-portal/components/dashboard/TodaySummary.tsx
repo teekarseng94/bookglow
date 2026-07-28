@@ -46,7 +46,7 @@ export const TodaySummary: React.FC<TodaySummaryProps> = ({
           <p
             className={cx(
               'm-dash-metric-value font-bold tabular-nums',
-              m.emphasize ? 'text-xl lg:text-2xl' : 'text-base lg:text-lg',
+              m.emphasize ? 'text-xl' : 'text-base',
               m.toneClass || 'text-[var(--text-primary)]',
             )}
           >

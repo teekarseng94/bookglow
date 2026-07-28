@@ -22,7 +22,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   <header
     className={cx(
       'm-page-header flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between',
-      'pb-4 border-b border-[var(--line)]',
+      'pb-3 border-b border-[var(--line)]',
       titleSize === 'compact' && 'm-page-header--compact',
       className,
     )}

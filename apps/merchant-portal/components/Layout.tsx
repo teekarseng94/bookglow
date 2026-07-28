@@ -212,8 +212,8 @@ const Layout: React.FC<LayoutProps> = ({
       <div className="bookglow-profile-menu__header">
         <div className="bookglow-profile-menu__avatar">{getUserInitials()}</div>
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-slate-900">{getUserDisplayName()}</p>
-          <p className="truncate text-xs text-slate-500">{roleTitle}</p>
+          <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{getUserDisplayName()}</p>
+          <p className="truncate text-xs text-[var(--text-muted)]">{roleTitle}</p>
         </div>
       </div>
       {role === 'admin' && (
@@ -250,14 +250,14 @@ const Layout: React.FC<LayoutProps> = ({
           <div className="bookglow-brand-mark" aria-hidden>✦</div>
           <div className="min-w-0">
             <p className="bookglow-wordmark">Bookglow</p>
-            <p className="truncate text-xs text-slate-500">{resolvedOutletName}</p>
+            <p className="truncate text-xs text-[var(--text-muted)]">{resolvedOutletName}</p>
           </div>
         </div>
 
         <div className="bookglow-sidebar__context">
           <span className="bookglow-status-dot" aria-hidden />
           <div className="min-w-0">
-            <p className="truncate text-xs font-semibold text-slate-700">{roleTitle} workspace</p>
+            <p className="truncate text-xs font-semibold text-[var(--text-secondary)]">{roleTitle} workspace</p>
             <p className="truncate m-shell-meta">{todayLabel}</p>
           </div>
         </div>
@@ -291,10 +291,10 @@ const Layout: React.FC<LayoutProps> = ({
           >
             <span className="bookglow-sidebar-profile__avatar">{getUserInitials()}</span>
             <span className="min-w-0 flex-1 text-left">
-              <span className="block truncate text-sm font-semibold text-slate-800">{getUserDisplayName()}</span>
+              <span className="block truncate text-sm font-semibold text-[var(--text-primary)]">{getUserDisplayName()}</span>
               <span className="block truncate m-shell-meta">{roleTitle}</span>
             </span>
-            <svg className={`h-4 w-4 text-slate-400 transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+            <svg className={`h-4 w-4 text-[var(--text-muted)] transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
@@ -323,7 +323,7 @@ const Layout: React.FC<LayoutProps> = ({
 
           <div className="min-w-0 flex-1 text-center">
             <p className="truncate m-shell-meta font-medium">{resolvedOutletName}</p>
-            <h1 className="truncate text-sm font-semibold text-slate-900">{currentPageTitle}</h1>
+            <h1 className="truncate text-sm font-semibold text-[var(--text-primary)]">{currentPageTitle}</h1>
           </div>
 
           <div className="relative" ref={mobileProfileMenuRef}>
@@ -344,7 +344,7 @@ const Layout: React.FC<LayoutProps> = ({
           <div className="min-w-0">
             <p className="bookglow-eyebrow">{resolvedOutletName}</p>
             <div className="flex items-center gap-2">
-              <h2 className="truncate text-lg font-semibold tracking-tight text-slate-900">{currentPageTitle}</h2>
+              <h2 className="truncate text-base font-semibold tracking-tight text-[var(--text-primary)]">{currentPageTitle}</h2>
               {outletId && (
                 <span className="bookglow-outlet-pill" title={`Data is loaded and saved for ${outletId}`}>
                   Live outlet
@@ -354,7 +354,7 @@ const Layout: React.FC<LayoutProps> = ({
           </div>
           <div className="flex items-center gap-3 text-right">
             <div>
-              <p className="text-sm font-semibold text-slate-700">{roleTitle}</p>
+              <p className="text-sm font-semibold text-[var(--text-secondary)]">{roleTitle}</p>
               <p className="m-shell-meta">{user?.email || 'Secure session'}</p>
             </div>
             <span className={`bookglow-utility-avatar ${isAdmin ? 'bookglow-utility-avatar--admin' : ''}`}>{getUserInitials()}</span>
@@ -370,9 +370,9 @@ const Layout: React.FC<LayoutProps> = ({
                 const hasOverride = typeof window !== 'undefined' && !!window.localStorage.getItem('adminOverrideOutletId');
                 if (isSuperAdmin && hasOverride) {
                   return (
-                    <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 shadow-sm flex items-center justify-between gap-4">
+                    <div className="mb-4 flex items-center justify-between gap-4 rounded-ui-md border border-[var(--brand-border)] bg-[var(--warning-soft)] p-3 text-sm text-[var(--warning)]">
                       <div className="flex items-center gap-2">
-                        <span className="flex h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse" />
+                        <span className="flex h-2.5 w-2.5 animate-pulse rounded-full bg-[var(--warning)]" />
                         <p className="font-medium">
                           Remote Control: Viewing workspace as admin for <strong>{resolvedOutletName || outletId}</strong>.
                         </p>
@@ -385,7 +385,7 @@ const Layout: React.FC<LayoutProps> = ({
                             window.location.reload();
                           }
                         }}
-                        className="px-3 py-1.5 rounded-lg bg-amber-600 text-white font-semibold text-xs hover:bg-amber-700 transition-colors shadow-sm"
+                        className="rounded-ui-xs bg-[var(--warning)] px-3 py-1.5 text-xs font-semibold text-white transition-opacity hover:opacity-90"
                       >
                         Exit Remote Control
                       </button>
@@ -438,7 +438,7 @@ const Layout: React.FC<LayoutProps> = ({
               <div className="bookglow-more-sheet__header">
                 <div>
                   <p className="bookglow-eyebrow">Bookglow workspace</p>
-                  <h2 className="text-lg font-semibold text-slate-900">More pages</h2>
+                  <h2 className="text-base font-semibold text-[var(--text-primary)]">More pages</h2>
                 </div>
                 <button type="button" onClick={() => setIsMoreMenuOpen(false)} className="bookglow-icon-button" aria-label="Close navigation">
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>

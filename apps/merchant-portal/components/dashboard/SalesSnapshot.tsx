@@ -1,13 +1,7 @@
 import React from 'react';
+import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { cx } from '../ui/cx';
 import { DashboardEmptyState } from './DashboardEmptyState';
-
-export interface SalesSnapshotRow {
-  id: string;
-  title: string;
-  meta?: string;
-  amountLabel: string;
-}
 
 export interface SalesSnapshotCategory {
   id: string;
@@ -16,65 +10,121 @@ export interface SalesSnapshotCategory {
   icon?: React.ReactNode;
 }
 
+export interface SalesSnapshotPeriodOption {
+  id: string;
+  label: string;
+}
+
+export interface SalesSnapshotChartPoint {
+  label: string;
+  value: number;
+}
+
 export interface SalesSnapshotProps {
   title?: string;
+  periodOptions: SalesSnapshotPeriodOption[];
+  selectedPeriod: string;
+  onPeriodChange: (id: string) => void;
+  totalLabel: string;
+  /** Only rendered when a real previous-period comparison exists — never fabricated. */
+  trendLabel?: string;
+  trendPositive?: boolean;
+  chartData: SalesSnapshotChartPoint[];
   categories: SalesSnapshotCategory[];
-  recentTitle?: string;
-  recentRows: SalesSnapshotRow[];
+  onViewHistory?: () => void;
   className?: string;
 }
 
 export const SalesSnapshot: React.FC<SalesSnapshotProps> = ({
-  title = 'Sales snapshot',
+  title = 'Sales Snapshot',
+  periodOptions,
+  selectedPeriod,
+  onPeriodChange,
+  totalLabel,
+  trendLabel,
+  trendPositive,
+  chartData,
   categories,
-  recentTitle = 'Recent sales',
-  recentRows,
+  onViewHistory,
   className,
-}) => (
-  <section className={cx('space-y-3', className)}>
-    <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">{title}</h3>
-    <div className="bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs p-4">
-      <div className="space-y-2">
-        {categories.map((cat) => (
-          <div
-            key={cat.id}
-            className="flex items-center justify-between py-2 px-3 rounded-ui-sm bg-[var(--bg-soft)] border border-[var(--line)]"
-          >
-            <div className="flex items-center gap-2 min-w-0">
-              {cat.icon}
-              <span className="text-sm font-medium text-[var(--text-secondary)] truncate">{cat.label}</span>
-            </div>
-            <span className="text-sm font-bold text-[var(--text-primary)] tabular-nums shrink-0 ml-2">
-              {cat.valueLabel}
-            </span>
-          </div>
-        ))}
+}) => {
+  const hasChartData = chartData.some((p) => p.value > 0);
+  return (
+    <section className={cx('space-y-3', className)}>
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">{title}</h3>
+        <label className="sr-only" htmlFor="sales-snapshot-period">
+          Period
+        </label>
+        <select
+          id="sales-snapshot-period"
+          value={selectedPeriod}
+          onChange={(e) => onPeriodChange(e.target.value)}
+          className="h-8 px-2 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)] text-xs font-semibold text-[var(--text-secondary)]"
+        >
+          {periodOptions.map((opt) => (
+            <option key={opt.id} value={opt.id}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
       </div>
-    </div>
 
-    <div className="bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs overflow-hidden">
-      <div className="px-4 py-3 border-b border-[var(--line)]">
-        <h4 className="text-sm font-bold uppercase tracking-widest text-[var(--text-muted)]">{recentTitle}</h4>
-      </div>
-      {recentRows.length === 0 ? (
-        <DashboardEmptyState title="No sales recorded yet." compact />
-      ) : (
-        <div className="divide-y divide-[var(--line)]">
-          {recentRows.map((row) => (
-            <div key={row.id} className="p-4 flex justify-between items-center gap-2">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{row.title}</p>
-                {row.meta ? (
-                  <p className="m-dash-metric-label">{row.meta}</p>
-                ) : null}
+      <div className="bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs p-4 space-y-4">
+        <div>
+          <p className="text-xl font-bold text-[var(--text-primary)] tabular-nums leading-tight">{totalLabel}</p>
+          {trendLabel ? (
+            <p className={cx('text-xs font-semibold mt-0.5', trendPositive ? 'text-[var(--success)]' : 'text-[var(--danger)]')}>
+              {trendLabel}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="h-16">
+          {hasChartData ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
+                <defs>
+                  <linearGradient id="salesSnapshotFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--brand)" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="var(--brand)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <Area type="monotone" dataKey="value" stroke="var(--brand)" strokeWidth={2} fill="url(#salesSnapshotFill)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-full flex items-center justify-center text-xs text-[var(--text-muted)]">
+              No sales data for this period yet.
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-2 pt-1 border-t border-[var(--line)]">
+          {categories.map((cat) => (
+            <div key={cat.id} className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                {cat.icon}
+                <span className="text-sm text-[var(--text-secondary)] truncate">{cat.label}</span>
               </div>
-              <span className="text-sm font-bold text-emerald-600 tabular-nums shrink-0">{row.amountLabel}</span>
+              <span className="text-sm font-bold text-[var(--text-primary)] tabular-nums shrink-0">{cat.valueLabel}</span>
             </div>
           ))}
+          {categories.length === 0 && <DashboardEmptyState title="No sales recorded yet." compact />}
         </div>
-      )}
-    </div>
-  </section>
-);
+
+        {onViewHistory ? (
+          <button
+            type="button"
+            onClick={onViewHistory}
+            className="w-full py-2 rounded-ui-sm bg-[var(--bg-soft)] border border-[var(--line)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-selection)] transition-colors"
+          >
+            View sales history
+          </button>
+        ) : null}
+      </div>
+    </section>
+  );
+};
 
 export default SalesSnapshot;

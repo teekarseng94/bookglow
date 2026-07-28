@@ -23,7 +23,7 @@ export const MemberPageHeader: React.FC<MemberPageHeaderProps> = ({
   className,
 }) => (
   <PageHeader
-    className={cx(className)}
+    className={cx('m-page-header--compact', className)}
     title={title}
     description={description}
     meta={

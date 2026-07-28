@@ -8,3 +8,6 @@ export { CustomerActivity } from './CustomerActivity';
 export { DashboardChartSection } from './DashboardChartSection';
 export { DashboardEmptyState } from './DashboardEmptyState';
 export { OperationalStatus } from './OperationalStatus';
+export { DashboardKpiCards } from './DashboardKpiCards';
+export type { DashboardKpiCard } from './DashboardKpiCards';
+export { BookingLinkCard } from './BookingLinkCard';

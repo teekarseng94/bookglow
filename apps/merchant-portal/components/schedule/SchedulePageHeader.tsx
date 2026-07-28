@@ -5,7 +5,7 @@ import { cx } from '../ui/cx';
 
 export interface SchedulePageHeaderProps {
   title?: string;
-  dateLabel: string;
+  dateLabel?: string;
   viewLabel?: string;
   onNewBooking: () => void;
   className?: string;
@@ -13,15 +13,17 @@ export interface SchedulePageHeaderProps {
 
 export const SchedulePageHeader: React.FC<SchedulePageHeaderProps> = ({
   title = 'Schedule',
-  dateLabel,
-  viewLabel,
   onNewBooking,
   className,
 }) => (
   <PageHeader
     className={cx('hidden md:flex border-[var(--line)]', className)}
     title={title}
-    description={viewLabel ? `${dateLabel} · ${viewLabel}` : dateLabel}
+    description={
+      <span className="inline-flex items-center rounded-full bg-[var(--success-soft)] px-2 py-1 text-xs font-semibold text-[var(--success)]">
+        Live outlet
+      </span>
+    }
     actions={
       <Button variant="primary" size="md" onClick={onNewBooking}>
         New Booking

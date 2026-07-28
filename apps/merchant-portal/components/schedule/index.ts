@@ -9,3 +9,5 @@ export { ScheduleEmptyState } from './ScheduleEmptyState';
 export { ScheduleLoadingState } from './ScheduleLoadingState';
 export { ScheduleBookingDetailPanel } from './ScheduleBookingDetailPanel';
 export type { ScheduleDetailTab } from './ScheduleBookingDetailPanel';
+export { ScheduleDesktopDetailPanel } from './ScheduleDesktopDetailPanel';
+export type { ScheduleDesktopTab } from './ScheduleDesktopDetailPanel';

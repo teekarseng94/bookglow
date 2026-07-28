@@ -5,12 +5,14 @@ import { Icons } from '../constants';
 import { generateReminderMessage } from '../services/geminiService';
 import {
   ScheduleBookingDetailPanel,
+  ScheduleDesktopDetailPanel,
   ScheduleBookingList,
   ScheduleDateStrip,
   ScheduleEmptyState,
   SchedulePageHeader,
   ScheduleToolbar,
   type ScheduleBookingDaySection,
+  type ScheduleDesktopTab,
 } from '../components/schedule';
 import {
   AppModal,
@@ -88,13 +90,11 @@ const dayHeadingLabel = (iso: string): string =>
 
 // Stable pastel colour per booking (keyed by staff so a therapist keeps one colour).
 const CARD_PALETTE = [
-  { bg: 'bg-orange-50', border: 'border-orange-400' },
-  { bg: 'bg-emerald-50', border: 'border-emerald-400' },
-  { bg: 'bg-sky-50', border: 'border-sky-400' },
-  { bg: 'bg-rose-50', border: 'border-rose-400' },
-  { bg: 'bg-violet-50', border: 'border-violet-400' },
-  { bg: 'bg-amber-50', border: 'border-amber-400' },
-  { bg: 'bg-teal-50', border: 'border-teal-400' },
+  { bg: 'bg-[var(--warning-soft)]', border: 'border-[var(--warning)]' },
+  { bg: 'bg-[var(--success-soft)]', border: 'border-[var(--success)]' },
+  { bg: 'bg-[var(--info-soft)]', border: 'border-[var(--info)]' },
+  { bg: 'bg-[var(--danger-soft)]', border: 'border-[var(--danger)]' },
+  { bg: 'bg-[var(--brand-soft)]', border: 'border-[var(--brand)]' },
 ];
 const colorFor = (key: string) => {
   let h = 0;
@@ -140,8 +140,15 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
   const [detailTab, setDetailTab] = useState<'details' | 'payments' | 'history'>('details');
   const [detailActionsOpen, setDetailActionsOpen] = useState(false);
+  const [desktopDetailTab, setDesktopDetailTab] = useState<ScheduleDesktopTab>('details');
+  const [now, setNow] = useState(() => new Date());
   const agendaContainerRef = useRef<HTMLDivElement | null>(null);
   const todayIso = new Date().toISOString().split('T')[0];
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const [bookingData, setBookingData] = useState({
     staffId: '',
@@ -210,12 +217,12 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
 
   const getCategoryColor = (category: string) => {
     const cat = category?.toLowerCase();
-    if (cat.includes('massage')) return 'bg-teal-50 border-teal-500 text-teal-700 hover:bg-teal-100';
-    if (cat.includes('facial') || cat.includes('skin')) return 'bg-rose-50 border-rose-500 text-rose-700 hover:bg-rose-100';
-    if (cat.includes('nail') || cat.includes('mani') || cat.includes('pedi')) return 'bg-amber-50 border-amber-500 text-amber-700 hover:bg-amber-100';
-    if (cat.includes('aroma') || cat.includes('oil')) return 'bg-indigo-50 border-indigo-500 text-indigo-700 hover:bg-indigo-100';
-    if (cat.includes('package') || cat.includes('special')) return 'bg-emerald-50 border-emerald-500 text-emerald-700 hover:bg-emerald-100';
-    return 'bg-slate-50 border-slate-400 text-slate-700 hover:bg-slate-100';
+    if (cat.includes('massage')) return 'bg-[var(--success-soft)] border-[var(--success)] text-[var(--success)]';
+    if (cat.includes('facial') || cat.includes('skin')) return 'bg-[var(--danger-soft)] border-[var(--danger)] text-[var(--danger)]';
+    if (cat.includes('nail') || cat.includes('mani') || cat.includes('pedi')) return 'bg-[var(--warning-soft)] border-[var(--warning)] text-[var(--warning)]';
+    if (cat.includes('aroma') || cat.includes('oil')) return 'bg-[var(--brand-soft)] border-[var(--brand)] text-[var(--brand)]';
+    if (cat.includes('package') || cat.includes('special')) return 'bg-[var(--success-soft)] border-[var(--success)] text-[var(--success)]';
+    return 'bg-[var(--bg-soft)] border-[var(--line-strong)] text-[var(--text-secondary)]';
   };
 
   // Helper: show each appointment in exactly one 30-min slot (the slot that contains its start time).
@@ -502,7 +509,7 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
 
   const handleAppointmentClick = (appointment: Appointment) => {
     setSelectedAppointment(appointment);
-    setIsStatusModalOpen(true);
+    setDesktopDetailTab('details');
   };
 
   const handleQuickAddBooking = () => {
@@ -671,82 +678,67 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
             />
           </div>
 
-          <div className="hidden md:block overflow-x-auto flex-1 schedule-desktop-workspace">
-            <table className="w-full border-collapse min-w-[720px]">
-              <thead>
-                <tr className="bg-[var(--bg-soft)] border-b border-[var(--line)]">
-                  <th className="p-3 w-20 sticky left-0 bg-[var(--bg-soft)] z-20 border-r border-[var(--line)]"></th>
-                  {staff.map(member => (
-                    <th key={member.id} className="p-3 min-w-[200px] border-r border-[var(--line)] text-left">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-ui-sm bg-[var(--brand)] text-white flex items-center justify-center font-bold text-sm shadow-ui-xs">{member.name.charAt(0)}</div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-bold text-[var(--text-primary)] leading-tight truncate">{member.name}</p>
-                          <p className="m-staff-card__role text-[var(--text-muted)]">{member.role}</p>
-                        </div>
-                      </div>
-                    </th>
+          <div className="hidden min-h-0 flex-1 md:flex">
+            <div className="schedule-desktop-workspace min-w-0 flex-1 overflow-auto">
+              <div className="relative min-w-[720px]" style={{ width: `${72 + Math.max(staff.length, 1) * 190}px` }}>
+                <div className="sticky top-0 z-30 grid h-[58px] border-b border-[var(--line)] bg-[var(--bg-surface)]" style={{ gridTemplateColumns: `72px repeat(${staff.length}, minmax(190px, 1fr))` }}>
+                  <div className="sticky left-0 z-40 border-r border-[var(--line)] bg-[var(--bg-surface)]" />
+                  {staff.map((member) => (
+                    <div key={member.id} className="flex min-w-0 items-center gap-2.5 border-r border-[var(--line)] px-3">
+                      {member.photoURL || member.profilePicture ? <img src={member.photoURL || member.profilePicture} alt="" className="h-9 w-9 rounded-full object-cover" /> :
+                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--brand-soft)] text-xs font-bold text-[var(--brand)]">{member.name.charAt(0)}</span>}
+                      <div className="min-w-0"><p className="truncate text-[13px] font-semibold">{member.name}</p><p className="truncate text-[11px] text-[var(--text-muted)]">{member.role}</p></div>
+                    </div>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
-                {hours.map(hour => (
-                  <tr key={hour} className="border-b border-[var(--line)] group hover:bg-[var(--bg-soft)]/40 transition-colors">
-                    <td className="p-3 m-calendar-slot-meta text-center text-[var(--text-muted)] sticky left-0 bg-[var(--bg-surface)] group-hover:bg-[var(--bg-soft)]/50 z-10 border-r border-[var(--line)]">
-                      {hour.replace(':', '')}
-                    </td>
-                    {staff.map(member => {
-                      const app = activeAppointments.find(a =>
-                        a.date === selectedDate &&
-                        a.staffId === member.id &&
-                        isAppointmentInTimeSlot(a, hour)
-                      );
-                      const service = app ? services.find(s => s.id === app.serviceId) : null;
-                      const client = app ? clients.find(c => c.id === app.clientId) : null;
-
-                      return (
-                        <td key={member.id} className="p-1.5 border-r border-[var(--line)] min-h-[88px] cursor-pointer" onClick={() => app ? handleAppointmentClick(app) : handleEmptySlotClick(member.id, hour, selectedDate)}>
-                          {app ? (
-                            <div className={`p-2.5 rounded-ui-sm border-l-4 h-full shadow-ui-xs animate-fadeIn transition-all hover:scale-[1.01] flex flex-col justify-between ${getCategoryColor(service?.category || '')}`}>
-                              <div>
-                                <div className="flex items-start justify-between gap-1">
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-bold truncate">{client?.name || 'Guest'}</p>
-                                    {app.endTime && (
-                                      <p className="m-calendar-slot-meta text-[var(--text-secondary)] mt-0.5">
-                                        {app.time.replace(':', '')} - {app.endTime.replace(':', '')}
-                                      </p>
-                                    )}
-                                  </div>
-                                  {app.reminderSent && (
-                                    <span className="text-amber-600 animate-pulse" title="Reminder Sent">
-                                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" /></svg>
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="m-calendar-slot-meta opacity-80 truncate uppercase tracking-tighter">
-                                  {service?.name || '—'}
-                                </p>
-                              </div>
-                              <div className="mt-2 flex items-center justify-between">
-                                <span className={`m-calendar-status ${
-                                  app.status === 'completed' ? 'bg-teal-600 text-white' : 'bg-white/40'
-                                }`}>
-                                  {app.status}
-                                </span>
-                                {app.status === 'scheduled' && <Icons.POS />}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="h-12 w-full flex items-center justify-center opacity-0 group-hover:opacity-100 text-[var(--line-strong)] transition-opacity"><Icons.Add /></div>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                </div>
+                <div className="relative" style={{ height: `${hours.length * 52}px` }}>
+                  {hours.map((hour, index) => (
+                    <div key={hour} className="absolute left-0 right-0 grid border-b border-[var(--line)]" style={{ top: `${index * 52}px`, height: '52px', gridTemplateColumns: `72px repeat(${staff.length}, minmax(190px, 1fr))` }}>
+                      <div className="sticky left-0 z-20 border-r border-[var(--line)] bg-[var(--bg-surface)] px-2 pt-2 text-right text-[11px] text-[var(--text-muted)]">{hour}</div>
+                      {staff.map((member) => <button key={member.id} type="button" onClick={() => handleEmptySlotClick(member.id, hour, selectedDate)} className="border-r border-[var(--line)] hover:bg-[var(--bg-soft)]/50" aria-label={`Book ${member.name} at ${hour}`} />)}
+                    </div>
+                  ))}
+                  {staff.flatMap((member, staffIndex) => activeAppointments.filter((app) => app.date === selectedDate && app.staffId === member.id).map((app) => {
+                    const service = services.find((item) => item.id === app.serviceId);
+                    const client = clients.find((item) => item.id === app.clientId);
+                    const [startH, startM] = app.time.split(':').map(Number);
+                    const startOffset = startH * 60 + startM - 10 * 60;
+                    const duration = service?.duration || (app.endTime ? (() => { const [h, m] = app.endTime!.split(':').map(Number); return h * 60 + m - (startH * 60 + startM); })() : 30);
+                    const tones = {
+                      scheduled: 'border-[var(--brand-border)] bg-[var(--brand-soft)] text-[var(--brand)]',
+                      completed: 'border-[var(--success)]/20 bg-[var(--success-soft)] text-[var(--success)]',
+                      'no-show': 'border-[var(--danger)]/20 bg-[var(--danger-soft)] text-[var(--danger)]',
+                      cancelled: 'border-[var(--line)] bg-[var(--bg-soft)] text-[var(--text-muted)]',
+                    };
+                    return (
+                      <button key={app.id} type="button" onClick={() => handleAppointmentClick(app)}
+                        className={`absolute z-10 overflow-hidden rounded-md border p-2 text-left transition-shadow hover:shadow-ui-sm ${tones[app.status]} ${selectedAppointment?.id === app.id ? 'ring-2 ring-[var(--brand)] ring-offset-1' : ''}`}
+                        style={{ left: `${72 + staffIndex * 190 + 5}px`, width: '180px', top: `${Math.max(0, startOffset / 30 * 52) + 4}px`, height: `${Math.max(44, duration / 30 * 52 - 8)}px` }}>
+                        <p className="truncate text-[10px] font-medium opacity-80">{app.time} – {app.endTime || app.time}</p>
+                        <p className="truncate text-[12px] font-semibold text-[var(--text-primary)]">{client?.name || 'Guest'}</p>
+                        <p className="truncate text-[11px] text-[var(--text-secondary)]">{service?.name || 'Service'}</p>
+                        <p className="mt-1 truncate text-[10px] font-semibold capitalize">● {app.status}</p>
+                      </button>
+                    );
+                  }))}
+                  {selectedDate === todayIso && now.getHours() * 60 + now.getMinutes() >= 10 * 60 ? (
+                    <div className="pointer-events-none absolute z-20 h-px bg-[var(--danger)]" style={{ left: '72px', right: 0, top: `${(now.getHours() * 60 + now.getMinutes() - 10 * 60) / 30 * 52}px` }}>
+                      <span className="absolute -left-1 -top-1 h-2 w-2 rounded-full bg-[var(--danger)]" />
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+            {selectedAppointment ? (
+              <ScheduleDesktopDetailPanel appointment={selectedAppointment}
+                client={clients.find((item) => item.id === selectedAppointment.clientId)}
+                service={services.find((item) => item.id === selectedAppointment.serviceId)}
+                staff={staff.find((item) => item.id === selectedAppointment.staffId)}
+                tab={desktopDetailTab} onTabChange={setDesktopDetailTab}
+                onClose={() => setSelectedAppointment(null)}
+                onStatusChange={onUpdateStatus}
+                onCollectPayment={handleCollectPayment} />
+            ) : null}
           </div>
           </>
         )}
@@ -882,7 +874,7 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
                   className={`m-calendar-status inline-flex ${
                     selectedAppointment.status === 'completed'
                       ? 'bg-[var(--brand-soft)] text-[var(--brand-deep)]'
-                      : 'bg-amber-50 text-amber-700'
+                      : 'bg-[var(--warning-soft)] text-[var(--warning)]'
                   }`}
                 >
                   {selectedAppointment.status}

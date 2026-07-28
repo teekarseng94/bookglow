@@ -647,7 +647,7 @@ const AppContent: React.FC<AppContentProps> = ({
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard transactions={transactions} clients={clients} appointments={appointments} services={services} outletSettings={outletSettings} outletID={currentOutletID} onMarkReminderSent={handleMarkReminderSent} />;
+        return <Dashboard transactions={transactions} clients={clients} appointments={appointments} services={services} products={products} outletSettings={outletSettings} outletID={currentOutletID} onMarkReminderSent={handleMarkReminderSent} />;
       case 'pos':
         return <POS services={services} products={products} packages={packages} clients={clients} staff={staff} roleCommissions={roleCommissions} onCompleteSale={handleAddTransactionWithLogic} activeAppointmentForSale={activeAppointmentForSale} onClearActiveAppointment={() => setActiveAppointmentForSale(null)} paymentMethods={outletSettings.paymentMethods} outletSettings={outletSettings} />;
       case 'member':
@@ -681,7 +681,7 @@ const AppContent: React.FC<AppContentProps> = ({
       case 'report':
         return <ReportPage transactions={transactions} outletID={currentOutletID} staff={staff} />;
       default:
-        return <Dashboard transactions={transactions} clients={clients} appointments={appointments} services={services} outletSettings={outletSettings} outletID={currentOutletID} onMarkReminderSent={handleMarkReminderSent} />;
+        return <Dashboard transactions={transactions} clients={clients} appointments={appointments} services={services} products={products} outletSettings={outletSettings} outletID={currentOutletID} onMarkReminderSent={handleMarkReminderSent} />;
     }
   };
 

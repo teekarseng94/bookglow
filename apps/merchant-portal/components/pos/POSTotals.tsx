@@ -30,9 +30,10 @@ export const POSTotals: React.FC<POSTotalsProps> = ({
     {subtotalLabel ? (
       <div className="flex justify-between text-sm text-[var(--text-secondary)]">
         <span>Subtotal</span>
-        <span className="tabular-nums font-semibold text-emerald-600">{subtotalLabel}</span>
+        <span className="tabular-nums font-medium text-[var(--text-primary)]">{subtotalLabel}</span>
       </div>
     ) : null}
+    <div className="border-t border-[var(--line)]" />
     <div className="flex justify-between items-baseline text-[var(--text-primary)]">
       <span className="text-base font-bold">Total</span>
         <span className="m-pos-totals-total text-xl font-bold tabular-nums text-[var(--brand)]">
@@ -52,7 +53,7 @@ export const POSTotals: React.FC<POSTotalsProps> = ({
           : isProcessing
             ? 'bg-[var(--brand)]/70 text-white cursor-wait'
             : hasRedemptions
-              ? 'bg-amber-400 text-slate-900 hover:bg-amber-500 active:scale-[0.99]'
+              ? 'bg-[var(--warning)] text-white hover:opacity-90 active:scale-[0.99]'
               : 'bg-[var(--brand)] text-white hover:opacity-90 active:scale-[0.99]',
       )}
     >

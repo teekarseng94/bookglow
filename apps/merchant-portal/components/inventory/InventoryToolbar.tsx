@@ -6,6 +6,8 @@ import { cx } from '../ui/cx';
 import type { InventoryCatalogTab } from './InventoryTypeTabs';
 
 export type InventorySortOption = 'a-z' | 'z-a' | 'price-low' | 'price-high';
+export type InventoryStatusFilter = 'all' | 'active' | 'low-stock' | 'out-of-stock';
+export type InventoryVisibilityFilter = 'all' | 'visible' | 'hidden';
 
 export interface InventoryToolbarProps {
   categories: string[];
@@ -15,6 +17,10 @@ export interface InventoryToolbarProps {
   onSearchChange: (value: string) => void;
   sortBy: InventorySortOption;
   onSortChange: (value: InventorySortOption) => void;
+  statusFilter?: InventoryStatusFilter;
+  onStatusFilterChange?: (value: InventoryStatusFilter) => void;
+  visibilityFilter?: InventoryVisibilityFilter;
+  onVisibilityFilterChange?: (value: InventoryVisibilityFilter) => void;
   onOpenFiltersSheet?: () => void;
   onOpenSortSheet?: () => void;
   activeTab?: InventoryCatalogTab;
@@ -35,6 +41,10 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
   onSearchChange,
   sortBy,
   onSortChange,
+  statusFilter = 'all',
+  onStatusFilterChange,
+  visibilityFilter = 'all',
+  onVisibilityFilterChange,
   onOpenFiltersSheet,
   onOpenSortSheet,
   activeTab = 'services',
@@ -87,63 +97,68 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
         ) : null}
       </div>
 
-      {/* Desktop / tablet: category chips + existing FilterToolbar */}
-      <div className="hidden md:block space-y-3">
-        <div className="overflow-x-auto">
-          <div className="flex gap-2 pb-1 min-w-0">
-            <button
-              type="button"
-              onClick={() => onCategoryChange('All')}
-              className={cx(
-                'm-inventory-chip flex-shrink-0 whitespace-nowrap border transition-colors',
-                selectedCategory === 'All'
-                  ? 'bg-[var(--brand)] text-white border-[var(--brand)]'
-                  : 'bg-[var(--bg-surface)] border-[var(--line)] text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]',
-              )}
-            >
-              All
-            </button>
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => onCategoryChange(cat)}
-                className={cx(
-                  'm-inventory-chip flex-shrink-0 whitespace-nowrap border transition-colors',
-                  selectedCategory === cat
-                    ? 'bg-[var(--brand)] text-white border-[var(--brand)]'
-                    : 'bg-[var(--bg-surface)] border-[var(--line)] text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]',
-                )}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </div>
-
+      {/* Desktop / tablet: dedicated filter row — category / status / visibility (left), sort (right) */}
+      <div className="hidden md:block">
         <FilterToolbar
-          search={
-            <div className="relative">
-              <label className="sr-only" htmlFor="inventory-search">
-                Search catalog
+          filters={
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="sr-only" htmlFor="inventory-category">
+                Category
               </label>
-              <input
-                id="inventory-search"
-                type="search"
-                placeholder={placeholder}
-                value={searchQuery}
-                onChange={(e) => onSearchChange(e.target.value)}
-                className="m-inventory-search w-full h-10 pl-3 pr-3 rounded-ui-sm border border-[var(--line-strong)] bg-[var(--bg-surface)] text-sm text-[var(--text-primary)] focus-visible:shadow-ui-focus-strong"
-              />
+              <select
+                id="inventory-category"
+                value={selectedCategory}
+                onChange={(e) => onCategoryChange(e.target.value)}
+                className="m-inventory-search h-10 px-3 rounded-ui-sm border border-[var(--line-strong)] bg-[var(--bg-surface)] text-sm font-medium text-[var(--text-primary)]"
+              >
+                <option value="All">All Categories</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+
+              {onStatusFilterChange ? (
+                <>
+                  <label className="sr-only" htmlFor="inventory-status">
+                    Status
+                  </label>
+                  <select
+                    id="inventory-status"
+                    value={statusFilter}
+                    onChange={(e) => onStatusFilterChange(e.target.value as InventoryStatusFilter)}
+                    className="m-inventory-search h-10 px-3 rounded-ui-sm border border-[var(--line-strong)] bg-[var(--bg-surface)] text-sm font-medium text-[var(--text-primary)]"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="low-stock">Low Stock</option>
+                    <option value="out-of-stock">Out of Stock</option>
+                  </select>
+                </>
+              ) : null}
+
+              {onVisibilityFilterChange ? (
+                <>
+                  <label className="sr-only" htmlFor="inventory-visibility">
+                    Visibility
+                  </label>
+                  <select
+                    id="inventory-visibility"
+                    value={visibilityFilter}
+                    onChange={(e) => onVisibilityFilterChange(e.target.value as InventoryVisibilityFilter)}
+                    className="m-inventory-search h-10 px-3 rounded-ui-sm border border-[var(--line-strong)] bg-[var(--bg-surface)] text-sm font-medium text-[var(--text-primary)]"
+                  >
+                    <option value="all">All Visibility</option>
+                    <option value="visible">Visible</option>
+                    <option value="hidden">Hidden</option>
+                  </select>
+                </>
+              ) : null}
             </div>
           }
-          filters={
-            <div className="flex items-center gap-2">
-              {onOpenFiltersSheet ? (
-                <Button variant="secondary" size="sm" className="lg:hidden" onClick={onOpenFiltersSheet}>
-                  Filters
-                </Button>
-              ) : null}
+          actions={
+            <>
               <label className="sr-only" htmlFor="inventory-sort">
                 Sort by
               </label>
@@ -153,12 +168,12 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
                 onChange={(e) => onSortChange(e.target.value as InventorySortOption)}
                 className="m-inventory-search h-10 px-3 rounded-ui-sm border border-[var(--line-strong)] bg-[var(--bg-surface)] text-sm font-medium text-[var(--text-primary)]"
               >
-                <option value="a-z">A–Z</option>
-                <option value="z-a">Z–A</option>
+                <option value="a-z">Name A–Z</option>
+                <option value="z-a">Name Z–A</option>
                 <option value="price-low">Price: Low to High</option>
                 <option value="price-high">Price: High to Low</option>
               </select>
-            </div>
+            </>
           }
         />
       </div>

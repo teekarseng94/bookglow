@@ -607,12 +607,12 @@ const POS: React.FC<POSProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-4 md:gap-5 h-full min-h-0 pb-[calc(72px+56px+16px+env(safe-area-inset-bottom,0px))] md:pb-0">
+    <div className="flex h-full min-h-0 flex-col gap-4 pb-[calc(72px+56px+16px+env(safe-area-inset-bottom,0px))] md:gap-4 md:pb-0">
       <POSPageHeader
         shopName={outletSettings.shopName}
         banner={
           isVoucherRedemptionMode ? (
-            <div className="rounded-ui-md bg-sky-100 border border-sky-300 px-4 py-3 flex items-center gap-2 text-sky-800 text-sm font-medium">
+            <div className="rounded-ui-md bg-[var(--info-soft)] border border-[var(--info)]/20 px-4 py-3 flex items-center gap-2 text-[var(--info)] text-sm font-medium">
               <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
               </svg>
@@ -625,8 +625,8 @@ const POS: React.FC<POSProps> = ({
         }
       />
 
-      <div className="flex-1 min-h-0 flex flex-col md:flex-row md:items-start gap-4 lg:gap-5">
-        <div className="flex-1 min-w-0 space-y-4 md:overflow-y-auto md:max-h-[calc(100vh-8rem)] md:pr-1">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 md:flex-row md:items-start lg:gap-5">
+        <div className="min-w-0 flex-1 space-y-4 md:max-h-[calc(100vh-7.5rem)] md:overflow-y-auto md:pr-1">
         <POSCatalogueToolbar
           search={globalSearch}
           onSearchChange={setGlobalSearch}
@@ -650,7 +650,7 @@ const POS: React.FC<POSProps> = ({
                 <POSItemCard
                   key={service.id}
                   name={service.name}
-                  priceLabel={`$${service.price}`}
+                  priceLabel={`RM ${service.price}`}
                   metaLeft={`${service.duration} mins`}
                   metaRight={service.points ? `+${service.points} pts` : undefined}
                   imageUrl={service.imageUrl}
@@ -671,7 +671,7 @@ const POS: React.FC<POSProps> = ({
                 <POSItemCard
                   key={product.id}
                   name={product.name}
-                  priceLabel={`$${product.price}`}
+                  priceLabel={`RM ${product.price}`}
                   metaLeft={`Stock: ${product.stock}`}
                   onAdd={() => addToCart(product, 'product')}
                 />
@@ -690,7 +690,7 @@ const POS: React.FC<POSProps> = ({
                 <POSItemCard
                   key={pkg.id}
                   name={pkg.name}
-                  priceLabel={`$${pkg.price}`}
+                  priceLabel={`RM ${pkg.price}`}
                   metaRight={pkg.points ? `+${pkg.points} pts` : undefined}
                   onAdd={() => addToCart(pkg, 'package')}
                   chips={
@@ -783,11 +783,11 @@ const POS: React.FC<POSProps> = ({
                 }
               />
               <POSTotals
-                totalLabel={`$${total.toFixed(2)}`}
-                subtotalLabel={`$${total.toFixed(2)}`}
+                totalLabel={`RM ${total.toFixed(2)}`}
+                subtotalLabel={`RM ${total.toFixed(2)}`}
                 warning={
                   cart.some((i) => i.type === 'package') && !selectedClient ? (
-                    <p className="text-xs text-amber-600 font-medium">
+                    <p className="text-xs text-[var(--warning)] font-medium">
                       Select a member to purchase bundle packages.
                     </p>
                   ) : null
@@ -890,15 +890,15 @@ const POS: React.FC<POSProps> = ({
         <div className="space-y-2">
           {saleComplete ? (
             <div className="flex flex-col items-center justify-center py-6 animate-fadeIn">
-              <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mb-4">
-                <svg className="w-10 h-10 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-16 h-16 rounded-full bg-[var(--success-soft)] flex items-center justify-center mb-4">
+                <svg className="w-10 h-10 text-[var(--success)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <p className="text-xl font-bold text-emerald-800">Sale Complete!</p>
+              <p className="text-lg font-bold text-[var(--success)]">Sale Complete!</p>
               {lastSaleData ? (
-                <p className="m-pos-success-total text-2xl font-bold text-[var(--text-primary)] mt-3 tabular-nums">
-                  Order Total: ${lastSaleData.total.toFixed(2)}
+                <p className="m-pos-success-total text-xl font-bold text-[var(--text-primary)] mt-3 tabular-nums">
+                  Order Total: RM {lastSaleData.total.toFixed(2)}
                 </p>
               ) : null}
               <p className="text-sm text-[var(--text-muted)] mt-2">Print receipt or start next sale</p>
@@ -939,17 +939,17 @@ const POS: React.FC<POSProps> = ({
                       showOriginalPrice ? (
                         <p>
                           <span className="line-through">
-                            ${(item.originalPrice ?? 0).toFixed(2)} each
+                            RM {(item.originalPrice ?? 0).toFixed(2)} each
                           </span>
-                          <span className="ml-2 text-emerald-600">100% discount · $0</span>
+                          <span className="ml-2 text-[var(--success)]">100% discount · RM 0</span>
                         </p>
                       ) : item.redeemedWithPoints ? (
-                        <p className="text-emerald-600">Redeemed with points · $0</p>
+                        <p className="text-[var(--success)]">Redeemed with points · RM 0</p>
                       ) : (
-                        <p>${item.price.toFixed(2)} each</p>
+                        <p>RM {item.price.toFixed(2)} each</p>
                       )
                     }
-                    lineTotalLabel={`$${lineTotal.toFixed(2)}`}
+                    lineTotalLabel={`RM ${lineTotal.toFixed(2)}`}
                     lineTotalEmphasized={!!item.voucherRedemption || !!item.redeemedWithPoints}
                     onRemove={() => removeFromCart(lineId)}
                     showStaffSelector={item.type === 'service'}
@@ -969,8 +969,8 @@ const POS: React.FC<POSProps> = ({
                             onClick={() => toggleRedeemWithPoints(lineId)}
                             className={`m-pos-redeem-chip border transition-colors focus-visible:shadow-ui-focus-strong ${
                               item.redeemedWithPoints
-                                ? 'bg-amber-500 border-amber-500 text-white'
-                                : 'bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100'
+                                ? 'bg-[var(--warning)] border-[var(--warning)] text-white'
+                                : 'bg-[var(--warning-soft)] border-[var(--warning)]/20 text-[var(--warning)] hover:opacity-90'
                             }`}
                           >
                             {item.redeemedWithPoints ? 'Redeeming' : 'Redeem'} · {item.redeemPoints} pts
@@ -1010,7 +1010,7 @@ const POS: React.FC<POSProps> = ({
 
       <POSStickyCartAction
         itemCount={cart.length}
-        totalLabel={`$${total.toFixed(2)}`}
+        totalLabel={`RM ${total.toFixed(2)}`}
         onOpen={() => setIsCartOpen(true)}
       />
 

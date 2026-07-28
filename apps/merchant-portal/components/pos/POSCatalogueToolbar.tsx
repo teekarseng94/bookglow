@@ -36,7 +36,7 @@ export const POSCatalogueToolbar: React.FC<POSCatalogueToolbarProps> = ({
   onCategoryChange,
   className,
 }) => (
-  <div className={cx('m-pos-toolbar space-y-3', className)}>
+  <div className={cx('m-pos-toolbar space-y-3 rounded-ui-md bg-[var(--bg-surface)]', className)}>
     <div className="flex flex-col xl:flex-row xl:items-center gap-2.5 xl:gap-3">
       <div className="relative flex-1 min-w-0">
         <input
@@ -62,7 +62,7 @@ export const POSCatalogueToolbar: React.FC<POSCatalogueToolbarProps> = ({
             className={cx(
               'm-pos-chip shrink-0 px-3 py-2 rounded-ui-sm text-sm font-semibold transition-colors whitespace-nowrap',
               activeCatalog === cat
-                ? 'text-[var(--brand)] bg-[var(--brand-soft)]'
+                ? 'text-[var(--brand)] bg-[var(--bg-surface)] border border-[var(--brand-soft)] shadow-ui-xs'
                 : 'text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]',
             )}
           >
@@ -95,7 +95,7 @@ export const POSCatalogueToolbar: React.FC<POSCatalogueToolbarProps> = ({
               'm-pos-category-chip shrink-0 px-3.5 py-1.5 rounded-full text-sm font-semibold transition-all whitespace-nowrap',
               selectedCategory === cat
                 ? 'bg-[var(--brand)] text-white shadow-ui-xs'
-                : 'bg-[var(--bg-soft)] text-[var(--text-secondary)] hover:bg-[var(--bg-selection)]',
+                : 'bg-[var(--bg-surface)] border border-[var(--line)] text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]',
             )}
           >
             {cat}

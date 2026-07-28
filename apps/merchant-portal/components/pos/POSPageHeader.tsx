@@ -24,8 +24,8 @@ export const POSPageHeader: React.FC<POSPageHeaderProps> = ({
       ) : null}
       <div className="flex flex-wrap items-center gap-2.5">
         <h1 className="ui-page-title">{title}</h1>
-        <span className="m-pos-live-badge inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden />
+        <span className="m-pos-live-badge inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[var(--success-soft)] text-[var(--success)] border border-[var(--success)]/20">
+          <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)]" aria-hidden />
           Live outlet
         </span>
       </div>

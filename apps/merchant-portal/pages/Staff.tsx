@@ -668,8 +668,8 @@ const StaffPage: React.FC<StaffProps> = ({
     if (!active) {
       return 'bg-[var(--bg-surface)] border-[var(--line)] text-[var(--text-secondary)]';
     }
-    if (tone === 'success') return 'bg-emerald-50 border-emerald-200 text-emerald-700';
-    if (tone === 'neutral') return 'bg-slate-100 border-slate-200 text-slate-600';
+    if (tone === 'success') return 'bg-[var(--success-soft)] border-[var(--success-border)] text-[var(--success)]';
+    if (tone === 'neutral') return 'bg-[var(--bg-soft)] border-[var(--line)] text-[var(--text-secondary)]';
     return 'bg-[var(--brand)] border-[var(--brand)] text-white';
   };
 

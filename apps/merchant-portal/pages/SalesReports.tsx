@@ -39,8 +39,8 @@ function paymentMethodMatches(methodFromTxn: string, methodFromSettings: string)
   return false;
 }
 
-const COLLECTION_ICON_COLORS = ['bg-purple-500', 'bg-green-500', 'bg-blue-500', 'bg-amber-500', 'bg-teal-500', 'bg-rose-500', 'bg-indigo-500'];
-const COLLECTION_TEXT_COLORS = ['text-purple-700', 'text-green-700', 'text-blue-700', 'text-amber-700', 'text-[var(--brand)]', 'text-rose-700', 'text-indigo-700'];
+const COLLECTION_ICON_COLORS = ['bg-[var(--brand)]', 'bg-[var(--success)]', 'bg-[var(--info)]', 'bg-[var(--warning)]'];
+const COLLECTION_TEXT_COLORS = ['text-[var(--brand)]', 'text-[var(--success)]', 'text-[var(--info)]', 'text-[var(--warning)]'];
 
 const SalesReports: React.FC<SalesReportsProps> = ({ 
   transactions, 
@@ -233,7 +233,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
       {/* Collection Summary Sidebar - included in print */}
       <div className="w-full lg:w-80 flex-shrink-0 space-y-4 print:block">
         {/* Collection Card */}
-        <div className="bg-gradient-to-br from-[var(--brand-soft)] to-[var(--bg-soft)] rounded-2xl border border-[var(--brand)]/30 shadow-sm p-6">
+        <div className="bg-gradient-to-br from-[var(--brand-soft)] to-[var(--bg-soft)] rounded-ui-md border border-[var(--brand-border)] shadow-ui-xs p-6">
           <h3 className="m-settings-subhead text-[var(--text-primary)] mb-4">Collection</h3>
           {collectionLoading ? (
             <div className="mb-6 flex items-center gap-3 text-[var(--brand)]">
@@ -244,8 +244,8 @@ const SalesReports: React.FC<SalesReportsProps> = ({
               <span className="text-sm font-medium">Loading report...</span>
             </div>
           ) : collectionError ? (
-            <div className={`mb-6 p-3 rounded-lg border ${collectionError.includes('initializing') ? 'bg-blue-50 border-[var(--brand)]/30' : 'bg-red-50 border-red-200'}`}>
-              <p className={collectionError.includes('initializing') ? 'text-xs text-blue-700 font-medium' : 'text-xs text-red-600 font-medium'}>
+            <div className={`mb-6 p-3 rounded-ui-sm border ${collectionError.includes('initializing') ? 'bg-[var(--info-soft)] border-[var(--info-border)]' : 'bg-[var(--danger-soft)] border-[var(--danger-border)]'}`}>
+              <p className={collectionError.includes('initializing') ? 'text-xs text-[var(--info)] font-medium' : 'text-xs text-[var(--danger)] font-medium'}>
                 {collectionError}
               </p>
             </div>
@@ -270,7 +270,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
                         <path fillRule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clipRule="evenodd" />
                       </svg>
                     </div>
-                    <span className="text-sm font-semibold text-slate-700">{label}</span>
+                    <span className="text-sm font-semibold text-[var(--text-secondary)]">{label}</span>
                   </div>
                   <span className={`text-lg font-bold tabular-nums ${textColor}`}>
                     RM {amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -312,7 +312,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
         />
 
         {/* Desktop filter bar */}
-        <div className="hidden sm:grid bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="hidden sm:grid bg-[var(--bg-surface)] p-4 sm:p-6 rounded-ui-md border border-[var(--line)] shadow-ui-xs grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className="m-settings-label block uppercase tracking-widest">Date From</label>
             <input 
@@ -360,13 +360,13 @@ const SalesReports: React.FC<SalesReportsProps> = ({
         </div>
 
         {/* Transaction List */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+        <div className="bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs overflow-hidden">
+          <div className="p-4 border-b border-[var(--line-soft)] flex justify-between items-center bg-[var(--bg-soft)]">
             <h3 className="m-settings-subhead">
               Total - {filteredData.length}
             </h3>
           </div>
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-[var(--line-soft)]">
             {/* Mobile structured cards */}
             <div className="sm:hidden space-y-2 p-3">
               {filteredData.map((txn) => {
@@ -403,30 +403,30 @@ const SalesReports: React.FC<SalesReportsProps> = ({
                 <div
                   key={txn.id}
                   onClick={() => setSelectedTransaction(txn)}
-                  className="p-4 hover:bg-slate-50 transition-colors cursor-pointer"
+                  className="p-4 hover:bg-[var(--bg-soft)] transition-colors cursor-pointer"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <svg className="w-4 h-4 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 text-[var(--text-muted)] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        <span className="text-sm font-bold text-slate-800">{formattedReceipt}</span>
+                        <span className="text-sm font-bold text-[var(--text-primary)]">{formattedReceipt}</span>
                       </div>
-                      <p className="text-xs text-slate-500 mb-2">{timeStr}, {dateStr}</p>
+                      <p className="text-xs text-[var(--text-muted)] mb-2">{timeStr}, {dateStr}</p>
                       {client && (
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-semibold text-slate-700">{client.name}</span>
-                          <span className="text-xs text-slate-400">{maskPhone(client.phone)}</span>
+                          <span className="text-sm font-semibold text-[var(--text-secondary)]">{client.name}</span>
+                          <span className="text-xs text-[var(--text-muted)]">{maskPhone(client.phone)}</span>
                         </div>
                       )}
-                      <p className="text-sm font-medium text-slate-600">
+                      <p className="text-sm font-medium text-[var(--text-secondary)]">
                         {txn.paymentMethod || 'Not specified'}: {txn.amount.toFixed(2)}
                       </p>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <p className="text-lg font-bold text-blue-600 mb-1 tabular-nums">{txn.amount.toFixed(2)}</p>
-                      <p className="text-xs text-slate-400">{txn.items?.length || 0} Items</p>
+                      <p className="text-lg font-bold text-[var(--brand)] mb-1 tabular-nums">{txn.amount.toFixed(2)}</p>
+                      <p className="text-xs text-[var(--text-muted)]">{txn.items?.length || 0} Items</p>
                     </div>
                   </div>
                 </div>
@@ -434,7 +434,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
             })}
             </div>
             {collectionLoading ? (
-              <div className="p-12 flex flex-col items-center justify-center gap-3 text-slate-500">
+              <div className="p-12 flex flex-col items-center justify-center gap-3 text-[var(--text-muted)]">
                 <svg className="animate-spin h-10 w-10 text-[var(--brand)]" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -464,15 +464,15 @@ const SalesReports: React.FC<SalesReportsProps> = ({
         <div className="space-y-4">
           <label className="block">
             <span className="m-settings-label block uppercase tracking-widest">Date From</span>
-            <input type="date" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            <input type="date" className="m-settings-control w-full" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
           </label>
           <label className="block">
             <span className="m-settings-label block uppercase tracking-widest">Date To</span>
-            <input type="date" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            <input type="date" className="m-settings-control w-full" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
           </label>
           <label className="block">
             <span className="m-settings-label block uppercase tracking-widest">Category</span>
-            <select className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
+            <select className="m-settings-control w-full" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
               <option value="ALL">All Categories</option>
               {serviceCategories.map((cat) => (
                 <option key={cat} value={cat}>{cat}</option>
@@ -481,7 +481,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
           </label>
           <label className="block">
             <span className="m-settings-label block uppercase tracking-widest">Staff Member</span>
-            <select className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold" value={selectedStaffId} onChange={(e) => setSelectedStaffId(e.target.value)}>
+            <select className="m-settings-control w-full" value={selectedStaffId} onChange={(e) => setSelectedStaffId(e.target.value)}>
               <option value="ALL">All Staff</option>
               {staff.map((s) => (
                 <option key={s.id} value={s.id}>{s.name}</option>

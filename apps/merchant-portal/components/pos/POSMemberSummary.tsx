@@ -26,8 +26,8 @@ export const POSMemberSummary: React.FC<POSMemberSummaryProps> = ({
       </div>
     ) : null}
     {creditLabel ? (
-      <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-ui-sm bg-blue-50 border border-blue-200">
-        <span className="m-secondary text-xs font-semibold text-blue-700">{creditLabel}</span>
+      <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-ui-sm bg-[var(--info-soft)] border border-[var(--info)]/20">
+        <span className="m-secondary text-xs font-semibold text-[var(--info)]">{creditLabel}</span>
       </div>
     ) : null}
     <div className="flex items-center justify-between gap-2">

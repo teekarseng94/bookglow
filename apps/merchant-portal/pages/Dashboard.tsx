@@ -15,17 +15,22 @@ import {
   Package,
   Tag,
   CreditCard,
+  Download,
+  Plus,
 } from 'lucide-react';
-import { Transaction, TransactionType, Client, Appointment, Service, OutletSettings } from '../types';
+import { Transaction, TransactionType, Client, Appointment, Service, Product, OutletSettings } from '../types';
+import { useUserContext } from '../contexts/UserContext';
+import { Button } from '../components/ui';
 import {
   AttentionList,
+  BookingLinkCard,
   CustomerActivity,
   DashboardChartSection,
   DashboardEmptyState,
+  DashboardKpiCards,
   OperationalStatus,
   SalesSnapshot,
   TodayHeader,
-  TodaySummary,
   UpcomingAppointments,
 } from '../components/dashboard';
 import type { AttentionItem } from '../components/dashboard';
@@ -35,6 +40,7 @@ interface DashboardProps {
   clients: Client[];
   appointments: Appointment[];
   services: Service[];
+  products?: Product[];
   outletSettings: OutletSettings;
   outletID?: string;
   onMarkReminderSent: (id: string) => void;
@@ -65,13 +71,23 @@ const Dashboard: React.FC<DashboardProps> = ({
   clients,
   appointments,
   services,
+  products = [],
   outletSettings,
   outletID = '',
   onMarkReminderSent,
 }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [topSellingTab, setTopSellingTab] = useState<TopSellingTab>('service');
+  const [salesPeriod, setSalesPeriod] = useState<'today' | 'week' | 'month'>('week');
   const navigate = useNavigate();
+  const { user, userData } = useUserContext();
+
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    const prefix = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+    const firstName = (user?.displayName || userData?.displayName || '').trim().split(' ')[0];
+    return firstName ? `${prefix}, ${firstName}` : prefix;
+  }, [user?.displayName, userData?.displayName]);
 
   // Single dashboard data object: recalculates when transactions (or outletID) change so POS updates show instantly.
   const dashboardData = useMemo(() => {
@@ -99,20 +115,20 @@ const Dashboard: React.FC<DashboardProps> = ({
       (t) => t.category !== 'Voucher' && t.category !== 'Redemption'
     );
     const revenue = revenueSales.reduce((sum, t) => sum + t.amount, 0);
-    const monthExpenses = transactions
-      .filter((t) => {
-        if (t.type !== TransactionType.EXPENSE) return false;
-        if (outletID && t.outletID !== outletID) return false;
-        const status = (t as Transaction & { status?: string }).status;
-        const statusStr = (status ?? '').toString().toLowerCase();
-        if (statusStr === 'voided' || statusStr === 'void') return false;
-        const d = (t.date || '').slice(0, 10);
-        return d >= currentMonthStart && d <= currentMonthEnd;
-      })
-      .reduce((sum, t) => sum + t.amount, 0);
+    const monthExpenseTxns = transactions.filter((t) => {
+      if (t.type !== TransactionType.EXPENSE) return false;
+      if (outletID && t.outletID !== outletID) return false;
+      const status = (t as Transaction & { status?: string }).status;
+      const statusStr = (status ?? '').toString().toLowerCase();
+      if (statusStr === 'voided' || statusStr === 'void') return false;
+      const d = (t.date || '').slice(0, 10);
+      return d >= currentMonthStart && d <= currentMonthEnd;
+    });
+    const monthExpenses = monthExpenseTxns.reduce((sum, t) => sum + t.amount, 0);
     const stats = {
       revenue,
       expenses: monthExpenses,
+      expenseTxnCount: monthExpenseTxns.length,
       profit: revenue - monthExpenses,
       clientCount: clients.length,
     };
@@ -154,10 +170,12 @@ const Dashboard: React.FC<DashboardProps> = ({
       productTotal = 0,
       packageTotal = 0,
       discountTotal = 0,
-      outstandingTotal = 0;
+      outstandingTotal = 0,
+      outstandingCount = 0;
     monthSales.forEach((t) => {
       if (t.paymentStatus === 'partial' || (t.outstanding ?? 0) > 0) {
         outstandingTotal += t.outstanding ?? t.amount;
+        outstandingCount += 1;
         return;
       }
       if (t.category === 'Redemption' || (t.description || '').toLowerCase().includes('discount')) {
@@ -176,11 +194,11 @@ const Dashboard: React.FC<DashboardProps> = ({
       }
     });
     const categorySummary = [
-      { label: 'Service', value: serviceTotal, icon: TrendingUp, color: 'text-blue-600' },
-      { label: 'Product', value: productTotal, icon: ShoppingCart, color: 'text-blue-600' },
-      { label: 'Package', value: packageTotal, icon: Package, color: 'text-blue-600' },
-      { label: 'Discount', value: discountTotal, icon: Tag, color: 'text-blue-600' },
-      { label: 'Outstanding', value: outstandingTotal, icon: CreditCard, color: 'text-blue-600' },
+      { label: 'Service', value: serviceTotal, icon: TrendingUp, color: 'text-[var(--brand)]' },
+      { label: 'Product', value: productTotal, icon: ShoppingCart, color: 'text-[var(--brand)]' },
+      { label: 'Package', value: packageTotal, icon: Package, color: 'text-[var(--brand)]' },
+      { label: 'Discount', value: discountTotal, icon: Tag, color: 'text-[var(--brand)]' },
+      { label: 'Outstanding', value: outstandingTotal, icon: CreditCard, color: 'text-[var(--brand)]' },
     ];
 
     // 5. Top Selling: reduce by unique SKU, frequency + total revenue; sort by quantity (highest first), top 5
@@ -251,8 +269,81 @@ const Dashboard: React.FC<DashboardProps> = ({
       visitors,
       visitorTotalCount,
       paymentBreakdown,
+      outstandingCount,
     };
   }, [transactions, clients, outletID]);
+
+  // Sales Snapshot period totals — additive; reuses the exact same "real sale" predicate as
+  // dashboardData's salesOnly filter above, just applied over Today/This week/This month ranges
+  // plus each range's immediately-prior period, so the trend line is always a genuine comparison.
+  const periodSalesData = useMemo(() => {
+    const isRevenueSale = (t: Transaction) => {
+      if (t.type !== TransactionType.SALE) return false;
+      if (t.category === 'Voucher' || t.category === 'Redemption') return false;
+      const status = (t.status || '').toLowerCase();
+      if (status === 'voided' || status === 'void') return false;
+      if (outletID && t.outletID !== outletID) return false;
+      return true;
+    };
+    const sumInRange = (startIso: string, endIso: string) =>
+      transactions
+        .filter((t) => isRevenueSale(t) && (t.date || '').slice(0, 10) >= startIso && (t.date || '').slice(0, 10) <= endIso)
+        .reduce((sum, t) => sum + t.amount, 0);
+    const pctChange = (curr: number, prev: number): number | null => (prev > 0 ? ((curr - prev) / prev) * 100 : null);
+
+    const now = new Date();
+    const todayIso = formatLocalDate(now);
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const yesterdayIso = formatLocalDate(yesterday);
+
+    const dow = now.getDay();
+    const monOffset = dow === 0 ? -6 : 1 - dow;
+    const weekMon = new Date(now);
+    weekMon.setDate(now.getDate() + monOffset);
+    const weekSun = new Date(weekMon);
+    weekSun.setDate(weekMon.getDate() + 6);
+    const lastWeekMon = new Date(weekMon);
+    lastWeekMon.setDate(weekMon.getDate() - 7);
+    const lastWeekSun = new Date(weekMon);
+    lastWeekSun.setDate(weekMon.getDate() - 1);
+
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    const chartByDay = (startIso: string, endIso: string): { label: string; value: number }[] => {
+      const start = new Date(`${startIso}T00:00:00`);
+      const end = new Date(`${endIso}T00:00:00`);
+      const days: { label: string; value: number }[] = [];
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const iso = formatLocalDate(d);
+        days.push({ label: DAY_LABELS[(d.getDay() + 6) % 7], value: sumInRange(iso, iso) });
+      }
+      return days;
+    };
+
+    return {
+      today: { total: sumInRange(todayIso, todayIso), trendPct: pctChange(sumInRange(todayIso, todayIso), sumInRange(yesterdayIso, yesterdayIso)), chart: chartByDay(yesterdayIso, todayIso) },
+      week: {
+        total: sumInRange(formatLocalDate(weekMon), formatLocalDate(weekSun)),
+        trendPct: pctChange(
+          sumInRange(formatLocalDate(weekMon), formatLocalDate(weekSun)),
+          sumInRange(formatLocalDate(lastWeekMon), formatLocalDate(lastWeekSun)),
+        ),
+        chart: chartByDay(formatLocalDate(weekMon), formatLocalDate(weekSun)),
+      },
+      month: {
+        total: sumInRange(formatLocalDate(monthStart), formatLocalDate(monthEnd)),
+        trendPct: pctChange(
+          sumInRange(formatLocalDate(monthStart), formatLocalDate(monthEnd)),
+          sumInRange(formatLocalDate(lastMonthStart), formatLocalDate(lastMonthEnd)),
+        ),
+        chart: chartByDay(formatLocalDate(monthStart), formatLocalDate(monthEnd)),
+      },
+    };
+  }, [transactions, outletID]);
 
   // Top Selling per tab: filter by type, sort by quantity, top 5
   const topSellingByType = useMemo(() => {
@@ -262,18 +353,62 @@ const Dashboard: React.FC<DashboardProps> = ({
       .slice(0, 5);
   }, [dashboardData.topSellingAll, topSellingTab]);
 
-  // Recent sales only (no expenses/commissions): exclude voided/deleted so Sales Report delete/void is reflected here
-  const recentSales = useMemo(() => {
-    const nonVoidedSales = transactions.filter((t) => {
-      if (t.type !== TransactionType.SALE) return false;
-      const status = (t.status ?? '').toString().toLowerCase();
-      const isVoided = (t as any).voided === true;
-      return status !== 'voided' && status !== 'void' && !isVoided;
+
+  // Customer activity metrics — additive derived data, does not touch dashboardData above.
+  const clientActivity = useMemo(() => {
+    const now = new Date();
+    const todayIso = formatLocalDate(now);
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const yesterdayIso = formatLocalDate(yesterday);
+    const monthStartIso = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    const monthEndIso = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+
+    const newClientsToday = clients.filter((c) => (c.createdAt || '').slice(0, 10) === todayIso).length;
+    const newClientsYesterday = clients.filter((c) => (c.createdAt || '').slice(0, 10) === yesterdayIso).length;
+
+    // Returning this month = paid this month (already computed in dashboardData.monthSales) AND the
+    // account existed before this month started — i.e. not a brand-new signup.
+    const payingClientIdsThisMonth = new Set(
+      dashboardData.monthSales.map((t) => t.clientId).filter((id): id is string => !!id && id !== 'guest'),
+    );
+    let returningClientsThisMonth = 0;
+    payingClientIdsThisMonth.forEach((id) => {
+      const client = clients.find((c) => c.id === id);
+      if (client && (client.createdAt || '').slice(0, 10) < monthStartIso) returningClientsThisMonth += 1;
     });
-    return [...nonVoidedSales]
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 6);
-  }, [transactions]);
+
+    const bookingsThisMonth = appointments.filter((a) => {
+      if (a.status === 'cancelled') return false;
+      if (typeof a.id === 'string' && a.id.startsWith('app_onduty_')) return false;
+      return a.date >= monthStartIso && a.date <= monthEndIso;
+    }).length;
+
+    return { newClientsToday, newClientsYesterday, returningClientsThisMonth, bookingsThisMonth };
+  }, [clients, appointments, dashboardData.monthSales]);
+
+  // Needs Attention inputs that require data Dashboard didn't previously receive (products) — additive only.
+  const stockAlerts = useMemo(() => {
+    const lowStockCount = products.filter((p) => p.stock > 0 && p.stock <= 5).length;
+    const outOfStockCount = products.filter((p) => p.stock <= 0).length;
+    return { lowStockCount, outOfStockCount };
+  }, [products]);
+
+  const pendingConfirmationCount = useMemo(() => {
+    const todayIso = formatLocalDate(new Date());
+    return appointments.filter(
+      (a) =>
+        a.date === todayIso &&
+        a.status === 'scheduled' &&
+        typeof a.id === 'string' &&
+        !a.id.startsWith('app_onduty_'),
+    ).length;
+  }, [appointments]);
+
+  const profileIncomplete =
+    !(outletSettings.shopName || '').trim() ||
+    !(outletSettings.receiptPhone || '').trim() ||
+    !(outletSettings.receiptAddress || '').trim();
 
   // Quick Calendar: same timetable idea as Appointments page, but combined across ALL therapists (single stream).
   const quickSlots = useMemo(() => {
@@ -337,15 +472,61 @@ const Dashboard: React.FC<DashboardProps> = ({
   const outstandingCat = dashboardData.categorySummary.find((c) => c.label === 'Outstanding');
   const outstandingValue = outstandingCat?.value ?? 0;
 
+  // Priority order: overdue money first, then stock, then confirmations, then setup/profit/schedule
+  // nudges. Capped to 4 below so the most actionable items always win a slot.
   const attentionItems: AttentionItem[] = [];
   if (outstandingValue > 0) {
     attentionItems.push({
       id: 'outstanding',
-      title: `Outstanding ${formatRM(outstandingValue)}`,
-      description: 'Partial or unpaid balances this month.',
-      actionLabel: 'Sales',
+      title: `${dashboardData.outstandingCount} payment${dashboardData.outstandingCount === 1 ? '' : 's'} overdue`,
+      description: `Total amount ${formatRM(outstandingValue)}`,
+      actionLabel: 'View',
       onAction: () => navigate('/sales-reports'),
+      tone: 'danger',
+      icon: <CreditCard className="w-4 h-4" />,
+    });
+  }
+  if (stockAlerts.outOfStockCount > 0) {
+    attentionItems.push({
+      id: 'out-of-stock',
+      title: `${stockAlerts.outOfStockCount} item${stockAlerts.outOfStockCount === 1 ? '' : 's'} out of stock`,
+      description: 'Unavailable to sell right now.',
+      actionLabel: 'View',
+      onAction: () => navigate('/menu'),
+      tone: 'danger',
+      icon: <Package className="w-4 h-4" />,
+    });
+  } else if (stockAlerts.lowStockCount > 0) {
+    attentionItems.push({
+      id: 'low-stock',
+      title: 'Low stock alert',
+      description: `${stockAlerts.lowStockCount} item${stockAlerts.lowStockCount === 1 ? '' : 's'} running low`,
+      actionLabel: 'View',
+      onAction: () => navigate('/menu'),
       tone: 'warning',
+      icon: <Package className="w-4 h-4" />,
+    });
+  }
+  if (pendingConfirmationCount > 0) {
+    attentionItems.push({
+      id: 'pending-confirmation',
+      title: `${pendingConfirmationCount} appointment${pendingConfirmationCount === 1 ? '' : 's'} require confirmation`,
+      description: 'For today',
+      actionLabel: 'Review',
+      onAction: () => navigate('/schedule'),
+      tone: 'info',
+      icon: <Calendar className="w-4 h-4" />,
+    });
+  }
+  if (profileIncomplete) {
+    attentionItems.push({
+      id: 'profile-incomplete',
+      title: 'Complete your business profile',
+      description: 'Get discovered by more clients.',
+      actionLabel: 'Complete',
+      onAction: () => navigate('/settings'),
+      tone: 'purple',
+      icon: <Star className="w-4 h-4" />,
     });
   }
   if (dashboardData.stats.profit < 0) {
@@ -368,6 +549,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       tone: 'info',
     });
   }
+  const visibleAttentionItems = attentionItems.slice(0, 4);
 
   const dateLabel = new Date().toLocaleDateString('en-GB', {
     weekday: 'long',
@@ -380,91 +562,154 @@ const Dashboard: React.FC<DashboardProps> = ({
   const todayIdx = (new Date().getDay() + 6) % 7;
   const weekEmpty = dashboardData.totalSalesThisWeek <= 0;
 
-  return (
-    <div className="space-y-6 lg:space-y-8 animate-fadeIn">
-      {/* 1. Today */}
-      <TodayHeader dateLabel={dateLabel} />
+  const activePeriod = periodSalesData[salesPeriod];
+  const periodTrendLabel =
+    activePeriod.trendPct == null
+      ? undefined
+      : `${activePeriod.trendPct >= 0 ? '↑' : '↓'} ${Math.abs(activePeriod.trendPct).toFixed(1)}% vs last ${salesPeriod === 'today' ? 'day' : salesPeriod === 'week' ? 'week' : 'month'}`;
+  const marginPct = dashboardData.stats.revenue > 0 ? (dashboardData.stats.profit / dashboardData.stats.revenue) * 100 : null;
 
-      {/* 1b. Today summary — hero revenue, secondary metrics compact */}
-      <TodaySummary
-        heroLabel="This Month Revenue"
-        heroValue={formatRM(dashboardData.stats.revenue)}
-        heroHint={`${dashboardData.monthSales.length} transaction${dashboardData.monthSales.length !== 1 ? 's' : ''} this month`}
-        metrics={[
+  return (
+    <div className="space-y-5 animate-fadeIn">
+      {/* 1. Greeting + top actions */}
+      <TodayHeader
+        title={<>{greeting} <span aria-hidden>👋</span></>}
+        dateLabel="Here's what's happening with your business today."
+        titleClassName="text-app-page sm:text-app-page-lg"
+        actions={
+          <>
+            <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-ui-sm bg-[var(--bg-surface)] border border-[var(--line)] text-sm font-semibold text-[var(--text-secondary)]">
+              <Calendar className="w-4 h-4" />
+              {dateLabel}
+            </span>
+            <Button type="button" variant="secondary" size="sm" onClick={() => navigate('/sales-reports')}>
+              <Download className="w-4 h-4" /> Export
+            </Button>
+            <Button type="button" variant="primary" size="sm" onClick={() => navigate('/schedule')}>
+              <Plus className="w-4 h-4" /> New Booking
+            </Button>
+          </>
+        }
+      />
+
+      {/* 2. Four KPI cards — replaces the old full-width revenue banner */}
+      <DashboardKpiCards
+        cards={[
           {
-            id: 'expenses',
-            label: 'Expenses',
-            value: formatRM(dashboardData.stats.expenses),
-            toneClass: 'text-rose-600',
+            id: 'revenue',
+            label: 'Revenue',
+            value: formatRM(dashboardData.stats.revenue),
+            secondary: `${dashboardData.monthSales.length} transaction${dashboardData.monthSales.length !== 1 ? 's' : ''} this month`,
+            valueToneClass: 'text-[var(--brand)]',
+            sparkline: dashboardData.chartData.map((d) => d.sales),
           },
           {
             id: 'profit',
             label: 'Net Profit',
             value: formatRM(dashboardData.stats.profit),
-            toneClass: 'text-amber-600',
-            emphasize: true,
+            secondary: marginPct != null ? `${marginPct.toFixed(1)}% margin` : 'This month',
+            valueToneClass: dashboardData.stats.profit >= 0 ? 'text-[var(--success)]' : 'text-[var(--danger)]',
           },
           {
             id: 'clients',
             label: 'Clients',
             value: dashboardData.stats.clientCount.toString(),
-            toneClass: 'text-[var(--text-primary)]',
+            secondary:
+              clientActivity.newClientsToday > 0
+                ? `+${clientActivity.newClientsToday} new today`
+                : `${dashboardData.stats.clientCount} on file`,
+            valueToneClass: 'text-[var(--text-primary)]',
           },
           {
-            id: 'revenue-desktop',
-            label: 'Revenue',
-            value: formatRM(dashboardData.stats.revenue),
-            toneClass: 'text-emerald-600',
+            id: 'expenses',
+            label: 'Expenses',
+            value: formatRM(dashboardData.stats.expenses),
+            secondary: `${dashboardData.stats.expenseTxnCount} transaction${dashboardData.stats.expenseTxnCount !== 1 ? 's' : ''} this month`,
+            valueToneClass: 'text-[var(--danger)]',
           },
         ]}
       />
 
-      {/* 2. Needs attention */}
-      <AttentionList items={attentionItems} />
+      {/* 3. Main row: Today's Appointments | Needs Attention | Sales Snapshot */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1.1fr_1fr] gap-6 lg:gap-8 items-start">
+        <UpcomingAppointments
+          rows={todayApps.map((app) => {
+            const clientName = clients.find((c) => c.id === app.clientId)?.name || 'Guest';
+            const serviceName = services.find((s) => s.id === app.serviceId)?.name || '—';
+            return {
+              id: app.id,
+              timeLabel: formatCompactTime(app.time),
+              timeRangeLabel: app.endTime ? `${formatCompactTime(app.time)} – ${formatCompactTime(app.endTime)}` : undefined,
+              title: serviceName,
+              metaLabel: `${services.find((s) => s.id === app.serviceId)?.duration ?? '—'} mins · ${outletSettings.shopName || 'Outlet'}`,
+              customerName: clientName,
+              statusLabel: app.status || 'pending',
+              statusClassName:
+                app.status === 'completed'
+                  ? 'bg-[var(--success-soft)] text-[var(--success)]'
+                  : app.status === 'scheduled'
+                    ? 'bg-[var(--brand-soft)] text-[var(--brand)]'
+                    : 'bg-[var(--bg-soft)] text-[var(--text-muted)]',
+            };
+          })}
+          onAddBooking={() => navigate('/schedule')}
+          onViewSchedule={() => navigate('/schedule')}
+          onRowAction={() => navigate('/schedule')}
+        />
 
-      {/* 3. Next appointments */}
-      <UpcomingAppointments
-        rows={todayApps.map((app) => {
-          const clientName = clients.find((c) => c.id === app.clientId)?.name || 'Guest';
-          const serviceName = services.find((s) => s.id === app.serviceId)?.name || '—';
-          return {
-            id: app.id,
-            timeLabel: formatCompactTime(app.time),
-            title: serviceName,
-            subtitle: clientName,
-            statusLabel: app.status || 'pending',
-            statusClassName:
-              app.status === 'completed'
-                ? 'bg-emerald-100 text-emerald-700'
-                : app.status === 'scheduled'
-                  ? 'bg-blue-50 text-blue-600'
-                  : 'bg-[var(--bg-soft)] text-[var(--text-muted)]',
-          };
-        })}
-        onAddBooking={() => navigate('/schedule')}
-      />
+        <AttentionList items={visibleAttentionItems} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-        <div className="lg:col-span-2 space-y-6 lg:space-y-8">
-          {/* 4. Sales snapshot */}
-          <SalesSnapshot
-            categories={dashboardData.categorySummary.map((cat) => {
+        <SalesSnapshot
+          periodOptions={[
+            { id: 'today', label: 'Today' },
+            { id: 'week', label: 'This week' },
+            { id: 'month', label: 'This month' },
+          ]}
+          selectedPeriod={salesPeriod}
+          onPeriodChange={(id) => setSalesPeriod(id as 'today' | 'week' | 'month')}
+          totalLabel={formatRM(activePeriod.total)}
+          trendLabel={periodTrendLabel}
+          trendPositive={(activePeriod.trendPct ?? 0) >= 0}
+          chartData={activePeriod.chart}
+          onViewHistory={() => navigate('/transactions')}
+          categories={dashboardData.categorySummary
+            .filter((cat) => cat.label === 'Service' || cat.label === 'Product' || cat.label === 'Package')
+            .map((cat) => {
               const Icon = cat.icon;
               return {
                 id: cat.label,
-                label: cat.label,
-                valueLabel: cat.value.toLocaleString(undefined, { minimumFractionDigits: 2 }),
+                label: cat.label === 'Product' ? 'Products' : `${cat.label}s`,
+                valueLabel: formatRM(cat.value),
                 icon: <Icon className={`w-4 h-4 ${cat.color}`} />,
               };
             })}
-            recentRows={recentSales.map((txn) => ({
-              id: txn.id,
-              title: txn.description,
-              meta: new Date(txn.date).toLocaleDateString(),
-              amountLabel: `$${txn.amount.toFixed(2)}`,
-            }))}
-          />
+        />
+      </div>
 
+      {/* 4. Bottom row: Customer Activity | Booking link promo */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1.85fr_1fr] gap-6 lg:gap-8 items-start">
+        <CustomerActivity
+          metrics={[
+            {
+              id: 'new-clients',
+              label: 'New Clients',
+              value: clientActivity.newClientsToday.toString(),
+              trendLabel:
+                clientActivity.newClientsToday !== clientActivity.newClientsYesterday
+                  ? `${clientActivity.newClientsToday >= clientActivity.newClientsYesterday ? '↑' : '↓'} ${Math.abs(clientActivity.newClientsToday - clientActivity.newClientsYesterday)} vs yesterday`
+                  : undefined,
+              trendPositive: clientActivity.newClientsToday >= clientActivity.newClientsYesterday,
+            },
+            { id: 'returning-clients', label: 'Returning Clients', value: clientActivity.returningClientsThisMonth.toString() },
+            { id: 'total-clients', label: 'Total Clients', value: dashboardData.stats.clientCount.toString() },
+            { id: 'bookings', label: 'No. of Bookings', value: clientActivity.bookingsThisMonth.toString() },
+          ]}
+        />
+        <BookingLinkCard outletId={outletID} />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+        <div className="lg:col-span-2 space-y-6 lg:space-y-8">
           {/* 6. Staff / operational status */}
           <OperationalStatus
             title="Operational status"
@@ -668,17 +913,41 @@ const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
 
-        {/* 5. Customer activity + payment */}
+        {/* 5. Top customers (by spend this month) + payment */}
         <div className="space-y-6 lg:space-y-8">
-          <CustomerActivity
-            totalCount={dashboardData.visitorTotalCount}
-            rows={dashboardData.visitors.map((v) => ({
-              id: v.clientId,
-              name: v.name,
-              tier: v.tier,
-              spentLabel: v.spent.toFixed(2),
-            }))}
-          />
+          <section className="space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Top Customers</h3>
+              <span className="text-sm font-bold text-[var(--brand)] tabular-nums">{dashboardData.visitorTotalCount}</span>
+            </div>
+            <div className="bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs p-4">
+              {dashboardData.visitors.length === 0 ? (
+                <DashboardEmptyState title="No visitors this month." compact />
+              ) : (
+                <div className="space-y-2">
+                  {dashboardData.visitors.map((v) => (
+                    <div
+                      key={v.clientId}
+                      className="flex items-center justify-between py-2 px-3 rounded-ui-sm bg-[var(--bg-soft)] border border-[var(--line)]"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-8 h-8 rounded-full bg-[var(--brand-soft)] text-[var(--brand-deep)] flex items-center justify-center text-xs font-bold shrink-0">
+                          {v.name.charAt(0)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-[var(--text-primary)] truncate">{v.name}</p>
+                          <p className="m-caption text-[var(--text-muted)]">{v.tier}</p>
+                        </div>
+                      </div>
+                      <span className="text-sm font-bold text-[var(--brand)] tabular-nums shrink-0 ml-2">
+                        {v.spent.toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
 
           <div className="bg-[var(--bg-surface)] p-6 rounded-ui-lg border border-[var(--line)] shadow-ui-xs">
             <h3 className="text-xl font-bold tracking-tight text-[var(--text-primary)] mb-4">Payment</h3>
@@ -689,7 +958,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                   className="flex items-center justify-between py-2 px-3 rounded-ui-sm bg-[var(--bg-soft)] border border-[var(--line)]"
                 >
                   <div className="flex items-center gap-2">
-                    <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                    <Star className="w-4 h-4 text-[var(--warning)] fill-[var(--warning)]" />
                     <span className="text-sm font-medium text-[var(--text-secondary)]">{p.method}</span>
                   </div>
                   <span className="text-sm font-bold text-[var(--text-primary)] tabular-nums">

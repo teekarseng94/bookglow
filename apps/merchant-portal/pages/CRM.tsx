@@ -671,19 +671,19 @@ const CRM: React.FC<CRMProps> = ({
         <MemberPageHeader clientCount={clients.length} />
       </div>
       <div className="sm:hidden -mt-1 flex items-baseline justify-between gap-2">
-        <h1 className="text-xl font-bold tracking-tight text-slate-900">Members</h1>
-        <span className="flex-shrink-0 text-xs font-medium text-slate-500 tabular-nums">
+        <h1 className="text-app-page font-bold tracking-tight text-[var(--text-primary)]">Members</h1>
+        <span className="flex-shrink-0 text-xs font-medium text-[var(--text-muted)] tabular-nums">
           {clients.length.toLocaleString()} clients
         </span>
       </div>
       {/* Recent import toast: show last import count + Undo button */}
       {lastImportToast && (
         <div className="fixed bottom-6 right-6 z-[70] max-w-sm animate-fadeIn">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xl p-4 flex flex-col gap-3">
-            <p className="text-sm font-semibold text-slate-800">
+          <div className="bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-md p-4 flex flex-col gap-3">
+            <p className="text-sm font-semibold text-[var(--text-primary)]">
               Recent activity
             </p>
-            <p className="text-slate-600 text-sm">
+            <p className="text-[var(--text-secondary)] text-sm">
               Imported <span className="font-bold text-teal-600">{lastImportToast.count}</span> member{lastImportToast.count !== 1 ? 's' : ''}.
             </p>
             <div className="flex gap-2">
@@ -691,14 +691,14 @@ const CRM: React.FC<CRMProps> = ({
                 type="button"
                 onClick={handleUndoImport}
                 disabled={undoImportInProgress}
-                className="flex-1 py-2.5 rounded-xl bg-rose-100 text-rose-700 font-semibold text-sm hover:bg-rose-200 disabled:opacity-50 transition-colors"
+                className="flex-1 py-2.5 rounded-ui-sm bg-[var(--danger-soft)] text-[var(--danger)] font-semibold text-sm hover:brightness-95 disabled:opacity-50 transition-colors"
               >
                 {undoImportInProgress ? 'Undoing...' : 'Undo Import'}
               </button>
               <button
                 type="button"
                 onClick={() => setLastImportToast(null)}
-                className="py-2.5 px-4 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50"
+                className="py-2.5 px-4 rounded-ui-sm border border-[var(--line)] text-[var(--text-secondary)] text-sm font-medium hover:bg-[var(--bg-soft)]"
               >
                 Dismiss
               </button>
@@ -723,10 +723,10 @@ const CRM: React.FC<CRMProps> = ({
         onOpenFilters={() => setShowMobileActions(true)}
         desktopActions={
           <>
-            <div className="flex rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+            <div className="flex rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)] shadow-ui-xs overflow-hidden">
               <button 
                 onClick={() => isExportLocked ? alert("Action locked. Admin permission required.") : setShowExportConfirm(true)}
-                className={`px-3 md:px-4 py-2.5 md:py-3 border-r border-slate-100 transition-colors flex items-center gap-2 ${isExportLocked ? 'text-slate-300' : 'text-slate-600 hover:bg-slate-50'}`}
+                className={`px-3 md:px-4 py-2.5 md:py-3 border-r border-[var(--line-soft)] transition-colors flex items-center gap-2 ${isExportLocked ? 'text-[var(--text-muted)] opacity-50' : 'text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]'}`}
               >
                 {isExportLocked ? <Icons.Lock /> : <Icons.Export />}
                 <span className="hidden lg:inline text-sm font-semibold">Export</span>
@@ -734,7 +734,7 @@ const CRM: React.FC<CRMProps> = ({
               <button 
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isImporting}
-                className="px-3 md:px-4 py-2.5 md:py-3 text-slate-600 hover:bg-slate-50 transition-colors flex items-center gap-2 disabled:opacity-50"
+                className="px-3 md:px-4 py-2.5 md:py-3 text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] transition-colors flex items-center gap-2 disabled:opacity-50"
               >
                 {isImporting ? <div className="w-4 h-4 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div> : <Icons.Import />}
                 <span className="hidden lg:inline text-sm font-semibold">Import</span>
@@ -742,7 +742,7 @@ const CRM: React.FC<CRMProps> = ({
             </div>
             <button 
               onClick={() => setShowRewardsModal(true)}
-              className="bg-white border border-slate-200 text-slate-600 px-3 md:px-4 py-2.5 md:py-3 rounded-xl font-semibold text-sm md:text-base flex items-center gap-2 hover:bg-slate-50 transition-colors shadow-sm"
+              className="bg-[var(--bg-surface)] border border-[var(--line)] text-[var(--text-secondary)] px-3 md:px-4 py-2.5 md:py-3 rounded-ui-sm font-semibold text-sm flex items-center gap-2 hover:bg-[var(--bg-soft)] transition-colors shadow-ui-xs"
             >
               <Icons.Settings /> <span className="hidden sm:inline">Loyalty Program</span>
             </button>
@@ -761,7 +761,7 @@ const CRM: React.FC<CRMProps> = ({
                 key={tab}
                 onClick={() => setSortFilter(tab)}
                 className={`flex-1 sm:flex-none whitespace-nowrap px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors ${
-                  sortFilter === tab ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                  sortFilter === tab ? 'bg-[var(--bg-surface)] text-[var(--brand)] shadow-ui-xs' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
                 }`}
               >
                 {tab}
@@ -819,7 +819,7 @@ const CRM: React.FC<CRMProps> = ({
             type="button"
             onClick={handleDeleteAllClients}
             disabled={deleteAllInProgress || sortedClients.length === 0}
-            className="m-btn m-btn--md py-2.5 px-4 rounded-xl text-sm font-semibold text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+            className="m-btn m-btn--md py-2.5 px-4 rounded-ui-sm text-sm font-semibold text-[var(--danger)] bg-[var(--danger-soft)] border border-[var(--danger-border)] hover:brightness-95 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
             title="Delete all members"
           >
             {deleteAllInProgress ? (
@@ -850,7 +850,7 @@ const CRM: React.FC<CRMProps> = ({
             type="button"
             disabled={isImporting}
             onClick={() => { setShowMobileActions(false); fileInputRef.current?.click(); }}
-            className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold text-sm transition-colors disabled:opacity-50"
+            className="w-full flex items-center gap-3 p-3.5 rounded-ui-md bg-[var(--bg-soft)] hover:bg-[var(--bg-selection)] text-[var(--text-secondary)] font-semibold text-sm transition-colors disabled:opacity-50"
           >
             <span className="text-teal-600"><Icons.Import /></span> Import Members
           </button>
@@ -860,14 +860,14 @@ const CRM: React.FC<CRMProps> = ({
               setShowMobileActions(false);
               if (isExportLocked) { alert('Action locked. Admin permission required.'); } else { setShowExportConfirm(true); }
             }}
-            className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold text-sm transition-colors"
+            className="w-full flex items-center gap-3 p-3.5 rounded-ui-md bg-[var(--bg-soft)] hover:bg-[var(--bg-selection)] text-[var(--text-secondary)] font-semibold text-sm transition-colors"
           >
             <span className="text-teal-600">{isExportLocked ? <Icons.Lock /> : <Icons.Export />}</span> Export Members
           </button>
           <button
             type="button"
             onClick={() => { setShowMobileActions(false); setShowRewardsModal(true); }}
-            className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold text-sm transition-colors"
+            className="w-full flex items-center gap-3 p-3.5 rounded-ui-md bg-[var(--bg-soft)] hover:bg-[var(--bg-selection)] text-[var(--text-secondary)] font-semibold text-sm transition-colors"
           >
             <span className="text-teal-600"><Icons.Settings /></span> Loyalty Program
           </button>
@@ -1084,7 +1084,7 @@ const CRM: React.FC<CRMProps> = ({
               required
               type="number"
               min="0"
-              className={`${fieldControlClassName} text-center text-3xl font-bold tabular-nums h-16`}
+              className={`${fieldControlClassName} text-center text-app-page font-bold tabular-nums h-16`}
               value={editingPointsValue}
               onChange={(e) => setEditingPointsValue(parseInt(e.target.value) || 0)}
             />

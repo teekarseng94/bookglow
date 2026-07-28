@@ -28,13 +28,13 @@ export const StaffPageHeader: React.FC<StaffPageHeaderProps> = ({
 }) => (
   <div className={cx(className)}>
     <PageHeader
-      className="!pb-3 sm:!pb-4"
+      className="m-page-header--compact !pb-3 sm:!pb-4"
       title={
         <span className="inline-flex flex-wrap items-center gap-2">
           <span>{title}</span>
           {liveBadge ? (
-            <span className="m-staff-card__role inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-100">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden />
+            <span className="m-staff-card__role inline-flex items-center gap-1.5 bg-[var(--success-soft)] text-[var(--success)] border border-[var(--success-border)]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)]" aria-hidden />
               <span className="sm:hidden">Live</span>
               <span className="hidden sm:inline">Live outlet</span>
             </span>

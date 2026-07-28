@@ -722,10 +722,10 @@ const ReportPage: React.FC<ReportPageProps> = ({ transactions, outletID, staff }
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-5rem)] bg-slate-50 -mt-4 lg:-mt-8 -ml-4 lg:-ml-8 -mr-4 lg:-mr-8 pr-4 lg:pr-8">
+    <div className="m-report-page flex min-h-[calc(100vh-5rem)] bg-[var(--bg-canvas)] -mt-4 lg:-mt-8 -ml-4 lg:-ml-8 -mr-4 lg:-mr-8 pr-4 lg:pr-8">
       {/* Left sidebar - desktop only */}
-      <aside className="hidden md:flex w-64 flex-shrink-0 bg-slate-100 border-r border-slate-200 flex-col">
-        <div className="p-3 border-b border-slate-200">
+      <aside className="hidden md:flex w-64 flex-shrink-0 bg-[var(--bg-soft)] border-r border-[var(--line)] flex-col">
+        <div className="p-3 border-b border-[var(--line)]">
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2">
               <ReportIcons.Search />
@@ -735,7 +735,7 @@ const ReportPage: React.FC<ReportPageProps> = ({ transactions, outletID, staff }
               placeholder="Search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-800 placeholder-slate-400 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="m-settings-control w-full pl-9 pr-3"
             />
           </div>
         </div>
@@ -747,10 +747,10 @@ const ReportPage: React.FC<ReportPageProps> = ({ transactions, outletID, staff }
                 key={item.id}
                 type="button"
                 onClick={() => setReportNav(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-sm font-medium transition-all min-h-[44px] ${
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-ui-sm text-left text-sm font-medium transition-all min-h-[44px] ${
                   isActive
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-200 hover:text-slate-800'
+                    ? 'bg-[var(--brand)] text-white shadow-ui-xs'
+                    : 'text-[var(--text-secondary)] hover:bg-[var(--bg-selection)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 {item.icon}
@@ -764,7 +764,7 @@ const ReportPage: React.FC<ReportPageProps> = ({ transactions, outletID, staff }
 
       {/* Main content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-auto">
-        <div className="flex-shrink-0 px-4 sm:px-6 py-4 bg-white border-b border-slate-200">
+        <div className="flex-shrink-0 px-4 sm:px-6 py-4 bg-[var(--bg-surface)] border-b border-[var(--line)]">
           <ReportPageHeader
             title="Monthly Summary"
             description="Outlet collection and monthly performance."
@@ -777,17 +777,17 @@ const ReportPage: React.FC<ReportPageProps> = ({ transactions, outletID, staff }
         </div>
 
         {/* Date controls */}
-        <div className="flex-shrink-0 flex flex-wrap items-center gap-3 sm:gap-4 px-4 sm:px-6 py-4 bg-white border-b border-slate-100">
-          <button type="button" onClick={() => goReportMonth(-1)} className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 text-slate-600" aria-label="Previous month">
+        <div className="flex-shrink-0 flex flex-wrap items-center gap-3 sm:gap-4 px-4 sm:px-6 py-4 bg-[var(--bg-surface)] border-b border-[var(--line-soft)]">
+          <button type="button" onClick={() => goReportMonth(-1)} className="w-10 h-10 rounded-full border border-[var(--line)] flex items-center justify-center hover:bg-[var(--bg-soft)] text-[var(--text-secondary)]" aria-label="Previous month">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <div className="flex items-center gap-2 text-slate-700 font-medium">
+          <div className="flex items-center gap-2 text-[var(--text-secondary)] font-medium">
             <ReportIcons.Calendar />
             <span>{reportMonthLabel}</span>
           </div>
-          <button type="button" onClick={() => goReportMonth(1)} className="w-10 h-10 rounded-full border border-slate-200 flex items-center justify-center hover:bg-slate-50 text-slate-600" aria-label="Next month">
+          <button type="button" onClick={() => goReportMonth(1)} className="w-10 h-10 rounded-full border border-[var(--line)] flex items-center justify-center hover:bg-[var(--bg-soft)] text-[var(--text-secondary)]" aria-label="Next month">
             <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
@@ -795,8 +795,8 @@ const ReportPage: React.FC<ReportPageProps> = ({ transactions, outletID, staff }
         </div>
 
         {/* Summary Report */}
-        <div className="flex-shrink-0 px-4 sm:px-6 py-4 bg-slate-50 border-b border-slate-100">
-          <h2 className="text-sm font-semibold text-slate-700 mb-3">Summary Report</h2>
+        <div className="flex-shrink-0 px-4 sm:px-6 py-4 bg-[var(--bg-soft)] border-b border-[var(--line-soft)]">
+          <h2 className="text-app-section font-semibold text-[var(--text-primary)] mb-3">Summary Report</h2>
           <ReportSummaryStrip
             items={[
               { label: 'TnG', value: `RM ${formatMoney(summaryReport.tng)}`, tone: 'neutral' },
@@ -826,8 +826,8 @@ const ReportPage: React.FC<ReportPageProps> = ({ transactions, outletID, staff }
                 setReportNav(item.id);
                 setShowNavSheet(false);
               }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-sm font-medium min-h-[44px] ${
-                reportNav === item.id ? 'bg-blue-600 text-white' : 'bg-slate-50 text-slate-700'
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-ui-sm text-left text-sm font-medium min-h-[44px] ${
+                reportNav === item.id ? 'bg-[var(--brand)] text-white' : 'bg-[var(--bg-soft)] text-[var(--text-secondary)]'
               }`}
             >
               {item.icon}

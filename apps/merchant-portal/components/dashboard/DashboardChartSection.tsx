@@ -52,7 +52,7 @@ export const DashboardChartSection: React.FC<DashboardChartSectionProps> = ({
         <span className="text-xs font-semibold text-[var(--text-muted)] tabular-nums">{txnCountLabel}</span>
       ) : null}
     </div>
-    <p className="m-dash-hero-value sm:text-3xl tracking-tight text-[var(--text-primary)] tabular-nums">
+    <p className="m-dash-hero-value text-xl tracking-tight text-[var(--text-primary)] tabular-nums">
       {totalLabel}
     </p>
     <p className="m-dash-metric-label sm:text-xs mt-0.5">
@@ -72,7 +72,7 @@ export const DashboardChartSection: React.FC<DashboardChartSectionProps> = ({
                 <div
                   className={cx(
                     'w-full rounded-t-md transition-all',
-                    d.isToday ? 'bg-[var(--brand)]' : 'bg-sky-300',
+                    d.isToday ? 'bg-[var(--brand)]' : 'bg-[var(--info)]/40',
                   )}
                   style={{ height: `${d.heightPct}%` }}
                   title={d.title}

@@ -52,13 +52,13 @@ export const POSCartItem: React.FC<POSCartItemProps> = ({
   return (
     <div
       className={cx(
-        'm-pos-cart-item bg-[var(--bg-surface)] px-2.5 py-2.5 rounded-ui-md border border-[var(--line)] animate-fadeIn',
+        'm-pos-cart-item bg-[var(--bg-surface)] py-3 border-b border-[var(--line)] animate-fadeIn last:border-b-0',
         className,
       )}
     >
       {/* Row 1: thumb | name/meta | price | remove */}
       <div className="flex items-start gap-2.5">
-        <div className="m-pos-cart-item__thumb w-10 h-10 rounded-ui-sm overflow-hidden shrink-0 bg-[var(--brand-soft)] flex items-center justify-center">
+        <div className="m-pos-cart-item__thumb w-11 h-11 rounded-ui-sm overflow-hidden shrink-0 bg-[var(--brand-soft)] flex items-center justify-center">
           {imageUrl ? (
             <img src={imageUrl} alt="" className="w-full h-full object-cover" />
           ) : (
@@ -79,7 +79,7 @@ export const POSCartItem: React.FC<POSCartItemProps> = ({
         <div className="flex items-start gap-0.5 shrink-0">
           <span
             className={cx(
-              'm-pos-cart-item__price font-bold text-sm tabular-nums pt-0.5 text-emerald-600',
+              'm-pos-cart-item__price font-bold text-sm tabular-nums pt-0.5 text-[var(--success)]',
               lineTotalEmphasized && 'opacity-90',
             )}
           >
@@ -151,7 +151,7 @@ export const POSCartItem: React.FC<POSCartItemProps> = ({
                   'bg-[var(--bg-soft)] focus-visible:shadow-ui-focus-strong truncate',
                   selectedStaff
                     ? 'border-[var(--line)] text-[var(--text-primary)]'
-                    : 'border-rose-200 text-rose-600 bg-rose-50',
+                    : 'border-[var(--danger)]/20 text-[var(--danger)] bg-[var(--danger-soft)]',
                 )}
                 value={staffId || ''}
                 onChange={(e) => onStaffChange(e.target.value)}

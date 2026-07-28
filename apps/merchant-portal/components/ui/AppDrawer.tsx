@@ -54,7 +54,7 @@ export const AppDrawer: React.FC<AppDrawerProps> = ({
 
   const panelClass =
     variant === 'right'
-      ? 'fixed inset-y-0 right-0 w-full max-w-lg border-l'
+      ? 'fixed inset-y-0 lg:top-[4.5rem] right-0 w-full max-w-lg border-l'
       : 'fixed inset-0 w-full';
 
   return createPortal(

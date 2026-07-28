@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import * as LucideIcons from 'lucide-react';
-import { MoreVertical, Plus, Search, GripVertical } from 'lucide-react';
+import { MoreVertical, Plus, Search, GripVertical, Eye, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Service, Product, Package, PackageService } from '../types';
 import { Icons } from '../constants';
@@ -18,6 +18,8 @@ import {
   fieldControlClassName,
   ModalFooterActions,
   ConfirmationDialog,
+  StatusBadge,
+  type StatusTone,
 } from '../components/ui';
 import {
   InventoryEmptyState,
@@ -25,12 +27,15 @@ import {
   InventoryFiltersSheet,
   InventorySortSheet,
   InventoryOutletCard,
-  InventoryPageHeader,
   InventoryToolbar,
   InventoryTypeTabs,
   InventoryEditPanel,
+  InventoryKpiCards,
+  InventoryStatusBadge,
   type InventoryCatalogTab,
   type InventorySortOption,
+  type InventoryStatusFilter,
+  type InventoryVisibilityFilter,
 } from '../components/inventory';
 
 function resolveLucideIcon(iconId: string): LucideIcon | undefined {
@@ -86,6 +91,7 @@ const Services: React.FC<ServicesProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<CatalogTab>('services');
   const [showItemModal, setShowItemModal] = useState(false);
+  const [editPanelTab, setEditPanelTab] = useState<'details' | 'pricing' | 'availability' | 'media'>('details');
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showRearrangeCategoriesModal, setShowRearrangeCategoriesModal] = useState(false);
   const [reorderCategoriesList, setReorderCategoriesList] = useState<string[]>([]);
@@ -108,9 +114,17 @@ const Services: React.FC<ServicesProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [menuSearchQuery, setMenuSearchQuery] = useState('');
   const [menuSortBy, setMenuSortBy] = useState<SortOption>('a-z');
+  const [statusFilter, setStatusFilter] = useState<InventoryStatusFilter>('all');
+  const [visibilityFilter, setVisibilityFilter] = useState<InventoryVisibilityFilter>('all');
   const [filtersSheetOpen, setFiltersSheetOpen] = useState(false);
   const [sortSheetOpen, setSortSheetOpen] = useState(false);
+  const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
+  const [catalogPage, setCatalogPage] = useState(1);
+  const [catalogPageSize, setCatalogPageSize] = useState(8);
   const { outletId } = useUserContext();
+
+  // Existing low-stock convention already used for product coloring (kept as single source of truth).
+  const LOW_STOCK_THRESHOLD = 5;
 
   const categoriesForTab = useMemo(() => {
     if (activeTab === 'services') return categories;
@@ -127,6 +141,28 @@ const Services: React.FC<ServicesProps> = ({
     return sorted;
   };
 
+  // Services/packages have no stock concept, so status filters other than "active" never match them —
+  // that is the honest result (no fake low/out-of-stock states invented for non-stocked catalog types).
+  const matchesStatusFilter = (kind: 'service' | 'product' | 'package', stock?: number): boolean => {
+    if (statusFilter === 'all') return true;
+    if (kind === 'product') {
+      const level = stock ?? 0;
+      if (statusFilter === 'active') return level > LOW_STOCK_THRESHOLD;
+      if (statusFilter === 'low-stock') return level > 0 && level <= LOW_STOCK_THRESHOLD;
+      if (statusFilter === 'out-of-stock') return level <= 0;
+    }
+    return statusFilter === 'active';
+  };
+
+  // Only services carry an isVisible field; products/packages have no hidden concept, so they only ever match "Visible".
+  const matchesVisibilityFilter = (kind: 'service' | 'product' | 'package', isVisible?: boolean): boolean => {
+    if (visibilityFilter === 'all') return true;
+    if (kind === 'service') {
+      return visibilityFilter === 'visible' ? isVisible !== false : isVisible === false;
+    }
+    return visibilityFilter === 'visible';
+  };
+
   const filteredServices = useMemo(() => {
     let list = services.filter((s) => {
       const cat = s.category || s.categoryId || '';
@@ -136,29 +172,73 @@ const Services: React.FC<ServicesProps> = ({
       const matchSearch =
         !menuSearchQuery.trim() ||
         s.name.toLowerCase().includes(menuSearchQuery.toLowerCase());
-      return matchCategory && matchSearch;
+      return (
+        matchCategory &&
+        matchSearch &&
+        matchesStatusFilter('service') &&
+        matchesVisibilityFilter('service', s.isVisible)
+      );
     });
     // Preserve backend ordering (displayOrder) for manual drag-and-drop.
     return list;
-  }, [services, selectedCategory, menuSearchQuery]);
+  }, [services, selectedCategory, menuSearchQuery, statusFilter, visibilityFilter]);
 
   const filteredProducts = useMemo(() => {
     let list = products.filter((p) => {
       const matchCategory = selectedCategory === 'All' || p.category === selectedCategory;
       const matchSearch = !menuSearchQuery.trim() || p.name.toLowerCase().includes(menuSearchQuery.toLowerCase());
-      return matchCategory && matchSearch;
+      return matchCategory && matchSearch && matchesStatusFilter('product', p.stock) && matchesVisibilityFilter('product');
     });
     return sortItems(list, menuSortBy);
-  }, [products, selectedCategory, menuSearchQuery, menuSortBy]);
+  }, [products, selectedCategory, menuSearchQuery, menuSortBy, statusFilter, visibilityFilter]);
 
   const filteredPackages = useMemo(() => {
     let list = packages.filter((p) => {
       const matchCategory = selectedCategory === 'All' || p.category === selectedCategory;
       const matchSearch = !menuSearchQuery.trim() || p.name.toLowerCase().includes(menuSearchQuery.toLowerCase());
-      return matchCategory && matchSearch;
+      return matchCategory && matchSearch && matchesStatusFilter('package') && matchesVisibilityFilter('package');
     });
     return sortItems(list, menuSortBy);
-  }, [packages, selectedCategory, menuSearchQuery, menuSortBy]);
+  }, [packages, selectedCategory, menuSearchQuery, menuSortBy, statusFilter, visibilityFilter]);
+
+  // KPI cards reflect the whole catalog (not the current tab/filter), matching the reference's
+  // "All services, products & packages" framing.
+  const kpiTotals = useMemo(() => {
+    const totalItems = services.length + products.length + packages.length;
+    const hiddenServices = services.filter((s) => s.isVisible === false).length;
+    const lowStockProducts = products.filter((p) => p.stock > 0 && p.stock <= LOW_STOCK_THRESHOLD).length;
+    const outOfStockProducts = products.filter((p) => p.stock <= 0).length;
+    // Products/packages have no hidden concept, so only hidden services reduce the active count.
+    const activeItems = totalItems - hiddenServices;
+    return {
+      totalItems,
+      activeItems,
+      lowStockItems: lowStockProducts,
+      outOfStockItems: outOfStockProducts,
+      hiddenItems: hiddenServices,
+    };
+  }, [services, products, packages]);
+
+  // Reset to page 1 whenever the visible result set could change shape.
+  useEffect(() => {
+    setCatalogPage(1);
+  }, [activeTab, selectedCategory, menuSearchQuery, menuSortBy, statusFilter, visibilityFilter]);
+
+  const paginatedProducts = useMemo(() => {
+    const start = (catalogPage - 1) * catalogPageSize;
+    return filteredProducts.slice(start, start + catalogPageSize);
+  }, [filteredProducts, catalogPage, catalogPageSize]);
+
+  const paginatedPackages = useMemo(() => {
+    const start = (catalogPage - 1) * catalogPageSize;
+    return filteredPackages.slice(start, start + catalogPageSize);
+  }, [filteredPackages, catalogPage, catalogPageSize]);
+
+  // Services keep the existing unpaginated, fully drag-reorderable list — paginating it would require
+  // restructuring the reorder feature (mapping page-local drag positions back to the full order), which
+  // risks the one thing this task explicitly protects. Products/packages have no reorder, so they paginate safely.
+  const totalForPagination = activeTab === 'products' ? filteredProducts.length : activeTab === 'packages' ? filteredPackages.length : 0;
+  const totalPages = Math.max(1, Math.ceil(totalForPagination / catalogPageSize));
 
   useEffect(() => {
     if (selectedCategory !== 'All' && !categoriesForTab.includes(selectedCategory)) {
@@ -201,6 +281,7 @@ const Services: React.FC<ServicesProps> = ({
     setEditingItem(null);
     setImagePreview(null);
     setImageFile(null);
+    setEditPanelTab('details');
     setFormData({
       type: activeTab === 'services' ? 'service' : activeTab === 'products' ? 'product' : 'package',
       name: '',
@@ -228,6 +309,7 @@ const Services: React.FC<ServicesProps> = ({
     setEditingItem(item);
     setImagePreview(item.imageUrl || null);
     setImageFile(null);
+    setEditPanelTab('details');
     setFormData({
       ...item,
       type: type === 'services' ? 'service' : type === 'products' ? 'product' : 'package',
@@ -235,6 +317,13 @@ const Services: React.FC<ServicesProps> = ({
       iconId: item.iconId ?? ''
     });
     setShowItemModal(true);
+  };
+
+  // Quick visibility toggle from the table row — reuses the exact same field/handler as the
+  // "Show on Booking Page" switch inside the edit drawer; no new business logic introduced.
+  const handleToggleServiceVisibility = (service: Service) => {
+    if (isLocked) return;
+    onUpdateService({ ...service, isVisible: service.isVisible === false });
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -409,6 +498,30 @@ const Services: React.FC<ServicesProps> = ({
         </td>
         <td className="px-6 py-4 text-xs font-bold text-slate-500">{service.duration} MINS</td>
         <td className="px-6 py-4">
+          {/* Services have no stock concept, so they are always "Active" in the status sense. */}
+          <StatusBadge tone="success">Active</StatusBadge>
+        </td>
+        <td className="px-6 py-4">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleToggleServiceVisibility(service);
+            }}
+            disabled={Boolean(isLocked)}
+            title={isLocked ? 'Feature is locked' : service.isVisible === false ? 'Hidden — click to show' : 'Visible — click to hide'}
+            className={`inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
+              isLocked
+                ? 'text-slate-200 cursor-not-allowed'
+                : service.isVisible === false
+                  ? 'text-slate-400 hover:bg-slate-100'
+                  : 'text-[var(--brand)] hover:bg-[var(--brand-soft)]'
+            }`}
+          >
+            {service.isVisible === false ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        </td>
+        <td className="px-6 py-4">
           <span
             className={`m-inventory-badge ${
               service.isCommissionable ? 'text-[var(--brand)]' : 'text-slate-300'
@@ -424,42 +537,85 @@ const Services: React.FC<ServicesProps> = ({
           ${service.price.toLocaleString()}
         </td>
         <td className="px-6 py-4 text-right">
-          <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (!isLocked) {
-                  handleOpenEditModal(service, 'services');
-                }
-              }}
-              disabled={isLocked}
-              className={`p-2 transition-colors ${
-                isLocked ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-[var(--brand)]'
-              }`}
-              title={isLocked ? 'Feature is locked' : 'Edit service'}
-            >
-              <Icons.Edit />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (!isLocked) {
-                  setItemToDelete({ id: service.id, name: service.name, type: 'services' });
-                }
-              }}
-              disabled={isLocked}
-              className={`p-2 transition-colors ${
-                isLocked ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-rose-600'
-              }`}
-              title={isLocked ? 'Feature is locked' : 'Delete service'}
-            >
-              <Icons.Trash />
-            </button>
+          <div onClick={(e) => e.stopPropagation()}>
+            <RowActionsMenu
+              rowId={service.id}
+              disabled={Boolean(isLocked)}
+              onEdit={() => handleOpenEditModal(service, 'services')}
+              onDelete={() => setItemToDelete({ id: service.id, name: service.name, type: 'services' })}
+            />
           </div>
         </td>
       </tr>
     );
   };
+  // Products/packages have no stock or hidden concept beyond what's modeled here — this only
+  // reads the existing stock number using the same <=5 threshold already used elsewhere in this file.
+  const productStatus = (stock: number): { tone: StatusTone; label: string } => {
+    if (stock <= 0) return { tone: 'danger', label: 'Out of Stock' };
+    if (stock <= LOW_STOCK_THRESHOLD) return { tone: 'warning', label: 'Low Stock' };
+    return { tone: 'success', label: 'Active' };
+  };
+
+  // Compact 3-dot row menu — mirrors the existing per-row menu pattern already used for package services below.
+  const RowActionsMenu: React.FC<{
+    rowId: string;
+    disabled?: boolean;
+    onEdit: () => void;
+    onDelete: () => void;
+  }> = ({ rowId, disabled, onEdit, onDelete }) => {
+    const open = openRowMenuId === rowId;
+    return (
+      <div className="relative inline-block text-left" onClick={(e) => e.stopPropagation()}>
+        <button
+          type="button"
+          onClick={() => setOpenRowMenuId(open ? null : rowId)}
+          disabled={disabled}
+          aria-label="Row actions"
+          aria-haspopup="menu"
+          aria-expanded={open}
+          className={`p-2 rounded-lg transition-colors ${
+            disabled ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+          }`}
+        >
+          <MoreVertical className="w-4 h-4" />
+        </button>
+        {open && (
+          <>
+            <div className="fixed inset-0 z-10" aria-hidden onClick={() => setOpenRowMenuId(null)} />
+            <div
+              role="menu"
+              className="absolute right-0 top-full mt-1 py-1 bg-white border border-slate-200 rounded-lg shadow-lg z-20 min-w-[140px]"
+            >
+              <button
+                type="button"
+                role="menuitem"
+                className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                onClick={() => {
+                  setOpenRowMenuId(null);
+                  onEdit();
+                }}
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="w-full px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50"
+                onClick={() => {
+                  setOpenRowMenuId(null);
+                  onDelete();
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLocked) return;
@@ -782,6 +938,26 @@ const Services: React.FC<ServicesProps> = ({
   const itemModalTitle = `${editingItem ? 'Edit' : 'Add New'} ${
     formData.type === 'service' ? 'Service' : formData.type === 'product' ? 'Product' : 'Package'
   }`;
+  const itemModalTitleNode = (
+    <span className="block">
+      <span className="block text-[11px] font-bold tracking-wide uppercase text-[var(--text-muted)]">
+        {itemModalTitle}
+      </span>
+      <span className="block text-lg font-bold text-[var(--text-primary)] mt-0.5 truncate">
+        {formData.name || 'Untitled'}
+      </span>
+    </span>
+  );
+  const EDIT_TABS: { id: 'details' | 'pricing' | 'availability' | 'media'; label: string }[] = [
+    { id: 'details', label: 'Details' },
+    { id: 'pricing', label: 'Pricing' },
+    { id: 'availability', label: 'Availability' },
+    { id: 'media', label: 'Media' },
+  ];
+  // Products/packages keep their existing single-scroll layout (always shown, ignores the tab state).
+  // Services get the same fields grouped behind Details/Pricing/Availability/Media.
+  const showSection = (tabId: 'details' | 'pricing' | 'availability' | 'media') =>
+    formData.type !== 'service' || editPanelTab === tabId;
 
   const filteredCount =
     activeTab === 'services'
@@ -847,37 +1023,64 @@ const Services: React.FC<ServicesProps> = ({
 
       {/* ——— Desktop header + toolbar ——— */}
       <div className="hidden md:block space-y-4">
-        <InventoryPageHeader
-          primaryLabel={`New ${activeTab === 'services' ? 'Service' : activeTab === 'products' ? 'Product' : 'Package'}`}
-          onPrimaryAction={handleOpenAddModal}
-          primaryDisabled={Boolean(isLocked)}
-          secondaryActions={
-            <>
-              <InventoryTypeTabs activeTab={activeTab} onChange={setActiveTab} />
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={Boolean(isLocked)}
-                onClick={() => !isLocked && setShowCategoryModal(true)}
-              >
-                {isLocked ? <Icons.Lock /> : <Icons.Settings />} Categories
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={Boolean(isLocked)}
-                onClick={() => {
-                  if (isLocked) return;
-                  setReorderCategoriesList([...categories]);
-                  setShowRearrangeCategoriesModal(true);
-                }}
-              >
-                {isLocked ? <Icons.Lock /> : <GripVertical className="w-4 h-4" />} Rearrange
-              </Button>
-            </>
-          }
-        />
+        {/* Row 1: title + live badge | Categories / Rearrange / New X */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <h1 className="m-page-header--compact ui-page-title truncate">Menu &amp; Inventory</h1>
+            {outletId ? (
+              <span className="m-pos-live-badge inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[var(--success-soft)] text-[var(--success)] border border-[var(--success-border)] shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)]" aria-hidden />
+                Live outlet
+              </span>
+            ) : null}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={Boolean(isLocked)}
+              onClick={() => !isLocked && setShowCategoryModal(true)}
+            >
+              {isLocked ? <Icons.Lock /> : <Icons.Settings />} Categories
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={Boolean(isLocked)}
+              onClick={() => {
+                if (isLocked) return;
+                setReorderCategoriesList([...categories]);
+                setShowRearrangeCategoriesModal(true);
+              }}
+            >
+              {isLocked ? <Icons.Lock /> : <GripVertical className="w-4 h-4" />} Rearrange
+            </Button>
+            <Button variant="primary" size="sm" onClick={handleOpenAddModal} disabled={Boolean(isLocked)}>
+              {fabLabel}
+            </Button>
+          </div>
+        </div>
 
+        {/* Row 2: search + type tabs */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative flex-1 min-w-[240px]">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" aria-hidden />
+            <label className="sr-only" htmlFor="inventory-search-desktop">
+              Search services, products, packages
+            </label>
+            <input
+              id="inventory-search-desktop"
+              type="search"
+              placeholder="Search services, products, packages..."
+              value={menuSearchQuery}
+              onChange={(e) => setMenuSearchQuery(e.target.value)}
+              className="m-inventory-search w-full h-10 pl-9 pr-3 rounded-ui-sm border border-[var(--line-strong)] bg-[var(--bg-surface)] text-sm text-[var(--text-primary)] focus-visible:shadow-ui-focus-strong"
+            />
+          </div>
+          <InventoryTypeTabs activeTab={activeTab} onChange={setActiveTab} />
+        </div>
+
+        {/* Row 3: category / status / visibility filters (left), sort (right) */}
         <InventoryToolbar
           categories={categoriesForTab}
           selectedCategory={selectedCategory}
@@ -886,8 +1089,21 @@ const Services: React.FC<ServicesProps> = ({
           onSearchChange={setMenuSearchQuery}
           sortBy={menuSortBy}
           onSortChange={setMenuSortBy}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+          visibilityFilter={visibilityFilter}
+          onVisibilityFilterChange={setVisibilityFilter}
           onOpenFiltersSheet={() => setFiltersSheetOpen(true)}
           activeTab={activeTab}
+        />
+
+        {/* KPI summary cards — computed from the full catalog, not the current filtered view */}
+        <InventoryKpiCards
+          totalItems={kpiTotals.totalItems}
+          activeItems={kpiTotals.activeItems}
+          lowStockItems={kpiTotals.lowStockItems}
+          outOfStockItems={kpiTotals.outOfStockItems}
+          hiddenItems={kpiTotals.hiddenItems}
         />
       </div>
 
@@ -1001,9 +1217,11 @@ const Services: React.FC<ServicesProps> = ({
                 {activeTab === 'services' && <th className="px-3 py-4 w-8"></th>}
                 <th className="px-6 py-4">Item Name</th>
                 <th className="px-6 py-4">Category</th>
+                {activeTab === 'services' && <th className="px-6 py-4">Duration</th>}
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4">Visibility</th>
                 {activeTab === 'services' && (
                   <>
-                    <th className="px-6 py-4">Duration</th>
                     <th className="px-6 py-4">Commission</th>
                     <th className="px-6 py-4">Loyalty Pts</th>
                   </>
@@ -1035,12 +1253,14 @@ const Services: React.FC<ServicesProps> = ({
               )}
               {activeTab === 'services' && filteredServices.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={10} className="px-6 py-12 text-center text-slate-500">
                     No services found. Try changing the category or search.
                   </td>
                 </tr>
               )}
-              {activeTab === 'products' && filteredProducts.map(product => (
+              {activeTab === 'products' && paginatedProducts.map(product => {
+                const status = productStatus(product.stock);
+                return (
                 <tr key={product.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -1049,48 +1269,33 @@ const Services: React.FC<ServicesProps> = ({
                     </div>
                   </td>
                   <td className="px-6 py-4"><span className="m-inventory-badge bg-[var(--bg-soft)] text-[var(--text-muted)]">{product.category}</span></td>
-                  <td className="px-6 py-4"><span className={`text-xs font-bold ${product.stock <= 5 ? 'text-rose-600 animate-pulse' : 'text-slate-500'}`}>{product.stock} units</span></td>
+                  <td className="px-6 py-4">
+                    <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
+                  </td>
+                  <td className="px-6 py-4 text-slate-300" aria-label="Visibility not tracked for products">—</td>
+                  <td className="px-6 py-4"><span className={`text-xs font-bold ${product.stock <= LOW_STOCK_THRESHOLD ? 'text-rose-600 animate-pulse' : 'text-slate-500'}`}>{product.stock} units</span></td>
                   <td className="px-6 py-4 text-right font-bold text-[var(--text-primary)] text-sm">${product.price.toLocaleString()}</td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (!isLocked) {
-                            handleOpenEditModal(product, 'products');
-                          }
-                        }} 
-                        disabled={isLocked}
-                        className={`p-2 transition-colors ${isLocked ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-[var(--brand)]'}`}
-                        title={isLocked ? 'Feature is locked' : 'Edit product'}
-                      >
-                        <Icons.Edit />
-                      </button>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (!isLocked) {
-                            setItemToDelete({ id: product.id, name: product.name, type: 'products' });
-                          }
-                        }} 
-                        disabled={isLocked}
-                        className={`p-2 transition-colors ${isLocked ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-rose-600'}`}
-                        title={isLocked ? 'Feature is locked' : 'Delete product'}
-                      >
-                        <Icons.Trash />
-                      </button>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <RowActionsMenu
+                        rowId={product.id}
+                        disabled={Boolean(isLocked)}
+                        onEdit={() => handleOpenEditModal(product, 'products')}
+                        onDelete={() => setItemToDelete({ id: product.id, name: product.name, type: 'products' })}
+                      />
                     </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
               {activeTab === 'products' && filteredProducts.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
                     No products found. Try changing the category or search.
                   </td>
                 </tr>
               )}
-              {activeTab === 'packages' && filteredPackages.map(pkg => (
+              {activeTab === 'packages' && paginatedPackages.map(pkg => (
                 <tr key={pkg.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -1099,6 +1304,11 @@ const Services: React.FC<ServicesProps> = ({
                     </div>
                   </td>
                   <td className="px-6 py-4"><span className="m-inventory-badge bg-[var(--bg-soft)] text-[var(--text-muted)]">{pkg.category}</span></td>
+                  <td className="px-6 py-4">
+                    {/* Packages have no stock concept, so they are always "Active" in the status sense. */}
+                    <StatusBadge tone="success">Active</StatusBadge>
+                  </td>
+                  <td className="px-6 py-4 text-slate-300" aria-label="Visibility not tracked for packages">—</td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-1">
                       {pkg.services.map((ps, idx) => {
@@ -1110,40 +1320,20 @@ const Services: React.FC<ServicesProps> = ({
                   <td className="px-6 py-4"><span className="m-caption font-semibold text-amber-600">+{pkg.points}</span></td>
                   <td className="px-6 py-4 text-right font-bold text-[var(--text-primary)] text-sm">${pkg.price.toLocaleString()}</td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (!isLocked) {
-                            handleOpenEditModal(pkg, 'packages');
-                          }
-                        }} 
-                        disabled={isLocked}
-                        className={`p-2 transition-colors ${isLocked ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-[var(--brand)]'}`}
-                        title={isLocked ? 'Feature is locked' : 'Edit package'}
-                      >
-                        <Icons.Edit />
-                      </button>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (!isLocked) {
-                            setItemToDelete({ id: pkg.id, name: pkg.name, type: 'packages' });
-                          }
-                        }} 
-                        disabled={isLocked}
-                        className={`p-2 transition-colors ${isLocked ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-rose-600'}`}
-                        title={isLocked ? 'Feature is locked' : 'Delete package'}
-                      >
-                        <Icons.Trash />
-                      </button>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <RowActionsMenu
+                        rowId={pkg.id}
+                        disabled={Boolean(isLocked)}
+                        onEdit={() => handleOpenEditModal(pkg, 'packages')}
+                        onDelete={() => setItemToDelete({ id: pkg.id, name: pkg.name, type: 'packages' })}
+                      />
                     </div>
                   </td>
                 </tr>
               ))}
               {activeTab === 'packages' && filteredPackages.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
                     No packages found. Try changing the category or search.
                   </td>
                 </tr>
@@ -1151,20 +1341,123 @@ const Services: React.FC<ServicesProps> = ({
             </tbody>
           </table>
         </div>
+
+        {/* Pagination — client-side only, over already-loaded records. Services keep the full
+            drag-reorderable list (see catalogPage effect above) since paginating it would require
+            restructuring the reorder feature itself. */}
+        {(activeTab === 'products' || activeTab === 'packages') && totalForPagination > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-3 border-t border-[var(--line)]">
+            <p className="text-xs text-[var(--text-muted)]">
+              Showing {(catalogPage - 1) * catalogPageSize + 1} to{' '}
+              {Math.min(catalogPage * catalogPageSize, totalForPagination)} of {totalForPagination} items
+            </p>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setCatalogPage((p) => Math.max(1, p - 1))}
+                  disabled={catalogPage <= 1}
+                  aria-label="Previous page"
+                  className="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-[var(--line)] text-[var(--text-secondary)] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[var(--bg-soft)]"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - catalogPage) <= 1)
+                  .reduce<(number | 'ellipsis')[]>((acc, p, idx, arr) => {
+                    if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('ellipsis');
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((p, idx) =>
+                    p === 'ellipsis' ? (
+                      <span key={`ellipsis-${idx}`} className="px-1 text-[var(--text-muted)]">
+                        …
+                      </span>
+                    ) : (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setCatalogPage(p)}
+                        aria-current={p === catalogPage ? 'page' : undefined}
+                        className={`w-8 h-8 inline-flex items-center justify-center rounded-lg text-sm font-semibold transition-colors ${
+                          p === catalogPage
+                            ? 'bg-[var(--brand)] text-white'
+                            : 'text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ),
+                  )}
+                <button
+                  type="button"
+                  onClick={() => setCatalogPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={catalogPage >= totalPages}
+                  aria-label="Next page"
+                  className="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-[var(--line)] text-[var(--text-secondary)] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[var(--bg-soft)]"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+              <label className="sr-only" htmlFor="inventory-page-size">
+                Items per page
+              </label>
+              <select
+                id="inventory-page-size"
+                value={catalogPageSize}
+                onChange={(e) => {
+                  setCatalogPageSize(Number(e.target.value));
+                  setCatalogPage(1);
+                }}
+                className="h-8 px-2 rounded-lg border border-[var(--line)] bg-[var(--bg-surface)] text-xs font-medium text-[var(--text-primary)]"
+              >
+                <option value={8}>8 / page</option>
+                <option value={16}>16 / page</option>
+                <option value={24}>24 / page</option>
+                <option value={50}>50 / page</option>
+              </select>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Item Modal — presentation chrome via InventoryEditPanel; handlers unchanged */}
       <InventoryEditPanel
         open={showItemModal}
-        title={itemModalTitle}
+        title={itemModalTitleNode}
         onClose={closeItemModal}
         formId="inventory-edit-form"
         saving={isUploadingImage}
         saveDisabled={Boolean(isLocked)}
       >
             <form id="inventory-edit-form" onSubmit={handleSubmit} className={`${formData.type === 'package' ? 'space-y-8' : 'space-y-6'}`}>
-              {/* Service Image / Icon Section */}
+              {/* Details / Pricing / Availability / Media tabs — services only. Products and packages
+                  keep their existing single-scroll layout below: their smaller field sets don't gain
+                  anything from tab-splitting, and forcing empty tabs onto them isn't the goal here. */}
               {formData.type === 'service' && (
+                <div role="tablist" aria-label="Edit sections" className="flex items-center gap-1 -mt-2 mb-4 border-b border-slate-100">
+                  {EDIT_TABS.map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={editPanelTab === tab.id}
+                      onClick={() => setEditPanelTab(tab.id)}
+                      className={`px-3 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
+                        editPanelTab === tab.id
+                          ? 'border-[var(--brand)] text-[var(--brand)]'
+                          : 'border-transparent text-slate-400 hover:text-slate-700'
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Service Image / Icon Section */}
+              {formData.type === 'service' && editPanelTab === 'media' && (
                 <div className="mb-6">
                   <label className="m-settings-label block uppercase">Service Image</label>
                   <div className="flex items-start gap-4 flex-wrap">
@@ -1375,44 +1668,52 @@ const Services: React.FC<ServicesProps> = ({
               ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <div>
-                    <label className="m-settings-label block uppercase">Name</label>
-                    <input required type="text" className="m-settings-control w-full outline-none font-medium" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
-                  </div>
-                  <div>
-                    <label className="m-settings-label block uppercase">Category</label>
-                    <select required className="m-settings-control w-full outline-none font-medium" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
-                      {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="m-settings-label block uppercase">Price ($)</label>
-                    <input required type="number" step="0.01" className="m-settings-control w-full outline-none font-bold text-lg" value={formData.price} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })} />
-                  </div>
-                  {(formData.type === 'service' || formData.type === 'package') && (
+                  {showSection('details') && (
+                    <>
+                      <div>
+                        <label className="m-settings-label block uppercase">Name</label>
+                        <input required type="text" className="m-settings-control w-full outline-none font-medium" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="m-settings-label block uppercase">Category</label>
+                        <select required className="m-settings-control w-full outline-none font-medium" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
+                          {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                        </select>
+                      </div>
+                    </>
+                  )}
+                  {showSection('pricing') && (
+                    <div>
+                      <label className="m-settings-label block uppercase">Price ($)</label>
+                      <input required type="number" step="0.01" className="m-settings-control w-full outline-none font-bold text-lg" value={formData.price} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })} />
+                    </div>
+                  )}
+                  {(formData.type === 'service' || formData.type === 'package') && showSection('pricing') && (
                     <div>
                       <label className="m-settings-label block uppercase">Free Point (Loyalty)</label>
-                      <input 
-                        required 
-                        type="number" 
+                      <input
+                        required
+                        type="number"
                         min="0"
                         step="1"
-                        className="m-settings-control w-full outline-none font-bold text-amber-600" 
-                        value={formData.points ?? 0} 
+                        className="m-settings-control w-full outline-none font-bold text-amber-600"
+                        value={formData.points ?? 0}
                         onChange={e => {
                           const value = parseInt(e.target.value) || 0;
                           setFormData({ ...formData, points: value });
-                        }} 
+                        }}
                       />
                       <p className="mt-1 m-settings-hint">Free point is the point given to the customer when they buy this item.</p>
                     </div>
                   )}
-                  {formData.type === 'service' && (
+                  {formData.type === 'service' && showSection('details') && (
+                    <div>
+                      <label className="m-settings-label block uppercase">Duration (Mins)</label>
+                      <input required type="number" className="m-settings-control w-full outline-none font-medium" value={formData.duration} onChange={e => setFormData({ ...formData, duration: parseInt(e.target.value) || 0 })} />
+                    </div>
+                  )}
+                  {formData.type === 'service' && showSection('pricing') && (
                     <>
-                      <div>
-                        <label className="m-settings-label block uppercase">Duration (Mins)</label>
-                        <input required type="number" className="m-settings-control w-full outline-none font-medium" value={formData.duration} onChange={e => setFormData({ ...formData, duration: parseInt(e.target.value) || 0 })} />
-                      </div>
                       <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer">
                         <input type="checkbox" checked={formData.isCommissionable} onChange={e => setFormData({ ...formData, isCommissionable: e.target.checked })} />
                         <span className="text-xs font-bold text-slate-700">Commission Eligible</span>
@@ -1463,30 +1764,32 @@ const Services: React.FC<ServicesProps> = ({
                           </p>
                         </div>
                       </div>
-                      <div className="mt-4 space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <p className="m-settings-label uppercase">Show on Booking Page</p>
-                            <p className="m-settings-hint">When off, this service is hidden from the customer booking page but still available in POS.</p>
-                          </div>
-                          <button
-                            type="button"
-                            role="switch"
-                            aria-checked={formData.isVisible !== false}
-                            onClick={() => setFormData({ ...formData, isVisible: formData.isVisible === false })}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                              formData.isVisible !== false ? 'bg-[var(--brand-soft)]0' : 'bg-slate-300'
-                            }`}
-                          >
-                            <span
-                              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-                                formData.isVisible !== false ? 'translate-x-5' : 'translate-x-1'
-                              }`}
-                            />
-                          </button>
-                        </div>
-                      </div>
                     </>
+                  )}
+                  {formData.type === 'service' && showSection('availability') && (
+                    <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="m-settings-label uppercase">Show on Booking Page</p>
+                          <p className="m-settings-hint">When off, this service is hidden from the customer booking page but still available in POS.</p>
+                        </div>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={formData.isVisible !== false}
+                          onClick={() => setFormData({ ...formData, isVisible: formData.isVisible === false })}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            formData.isVisible !== false ? 'bg-[var(--brand-soft)]0' : 'bg-slate-300'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                              formData.isVisible !== false ? 'translate-x-5' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    </div>
                   )}
                   {formData.type === 'product' && (
                     <>
@@ -1533,12 +1836,14 @@ const Services: React.FC<ServicesProps> = ({
                   )}
                 </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <label className="m-settings-label block uppercase">Description</label>
-                    <textarea rows={8} className="m-settings-control w-full outline-none text-sm" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
+                {showSection('details') && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="m-settings-label block uppercase">Description</label>
+                      <textarea rows={8} className="m-settings-control w-full outline-none text-sm" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
               )}
 

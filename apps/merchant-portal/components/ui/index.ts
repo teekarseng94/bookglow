@@ -51,3 +51,4 @@ export type { ConfirmationDialogProps } from './ConfirmationDialog';
 export { StickyActionBar } from './StickyActionBar';
 export type { StickyActionBarProps } from './StickyActionBar';
 export { ModalLoadingFallback } from './ModalLoadingFallback';
+export { NetworkStatusBanner } from './NetworkStatusBanner';

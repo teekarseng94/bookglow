@@ -38,7 +38,7 @@ export const InventoryFiltersSheet: React.FC<InventoryFiltersSheetProps> = ({
           className={cx(
             'm-inventory-chip border',
             selectedCategory === 'All'
-              ? 'bg-[var(--brand)] text-white border-[var(--brand)]'
+              ? 'bg-[var(--brand)] text-[var(--text-on-brand)] border-[var(--brand)]'
               : 'bg-[var(--bg-soft)] border-[var(--line)] text-[var(--text-secondary)]',
           )}
         >
@@ -52,7 +52,7 @@ export const InventoryFiltersSheet: React.FC<InventoryFiltersSheetProps> = ({
             className={cx(
               'm-inventory-chip border',
               selectedCategory === cat
-                ? 'bg-[var(--brand)] text-white border-[var(--brand)]'
+                ? 'bg-[var(--brand)] text-[var(--text-on-brand)] border-[var(--brand)]'
                 : 'bg-[var(--bg-soft)] border-[var(--line)] text-[var(--text-secondary)]',
             )}
           >

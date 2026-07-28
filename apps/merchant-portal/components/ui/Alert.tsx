@@ -28,7 +28,8 @@ export const Alert: React.FC<AlertProps> = ({
   className,
 }) => (
   <div
-    role="status"
+    role={tone === 'danger' ? 'alert' : 'status'}
+    aria-live={tone === 'danger' ? 'assertive' : 'polite'}
     className={cx(
       'm-alert flex gap-3 rounded-ui-md border px-3 py-3 text-sm',
       toneClass[tone],
@@ -44,7 +45,7 @@ export const Alert: React.FC<AlertProps> = ({
       <button
         type="button"
         onClick={onDismiss}
-        className="shrink-0 text-current opacity-70 hover:opacity-100"
+        className="shrink-0 inline-flex min-h-[44px] min-w-[44px] -m-2 items-center justify-center rounded-ui-sm text-current opacity-70 hover:opacity-100 focus-visible:shadow-ui-focus-strong"
         aria-label="Dismiss"
       >
         ×

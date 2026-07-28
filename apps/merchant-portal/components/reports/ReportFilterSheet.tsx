@@ -45,7 +45,7 @@ function ChipButton({
       className={cx(
         'px-3.5 min-h-[40px] rounded-full text-xs font-bold border transition-colors',
         active
-          ? 'bg-[var(--brand)] text-white border-[var(--brand)]'
+          ? 'bg-[var(--brand)] text-[var(--text-on-brand)] border-[var(--brand)]'
           : 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--line)]',
       )}
     >

@@ -5,6 +5,7 @@ export interface PlatformPageHeaderProps {
   title: string;
   description?: string;
   meta?: React.ReactNode;
+  action?: React.ReactNode;
   className?: string;
 }
 
@@ -13,15 +14,17 @@ export const PlatformPageHeader: React.FC<PlatformPageHeaderProps> = ({
   title,
   description,
   meta,
+  action,
   className,
 }) => (
-  <header className={cx('space-y-1 pb-4 border-b border-[var(--platform-line)]', className)}>
-    <p className="m-caption font-bold uppercase tracking-widest text-[var(--platform-accent)]">
-      Bookglow Platform
-    </p>
-    <h1 className="text-app-page font-bold tracking-tight text-[var(--platform-text)]">{title}</h1>
-    {description ? <p className="text-sm text-[var(--platform-muted)] max-w-2xl">{description}</p> : null}
-    {meta ? <div className="pt-2">{meta}</div> : null}
+  <header className={cx('flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between', className)}>
+    <div>
+      <p className="m-caption font-bold uppercase tracking-widest text-[var(--brand)]">Bookglow Platform</p>
+      <h1 className="mt-1 text-app-page font-bold tracking-tight text-[var(--text-primary)]">{title}</h1>
+      {description ? <p className="mt-1 max-w-3xl text-sm text-[var(--text-secondary)]">{description}</p> : null}
+      {meta ? <div className="pt-2">{meta}</div> : null}
+    </div>
+    {action ? <div className="shrink-0">{action}</div> : null}
   </header>
 );
 

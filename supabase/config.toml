@@ -32,3 +32,9 @@ enabled = true
 # Custom API-key auth (X-API-Key / X-Outlet-Id); do not require JWT.
 [functions.chatbot-webhook]
 verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.billing-admin]
+verify_jwt = true

@@ -4,6 +4,7 @@ import { Icons } from '../constants';
 import type { UserRole } from '../contexts/UserContext';
 import type { PortalAuthUser } from '../services/authService';
 import { isTabAllowed } from '../utils/permissions';
+import { NetworkStatusBanner } from './ui';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -394,6 +395,7 @@ const Layout: React.FC<LayoutProps> = ({
                 }
                 return null;
               })()}
+              <NetworkStatusBanner />
               {children}
             </div>
           </div>

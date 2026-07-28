@@ -1,7 +1,12 @@
 
 import React, { useState, useRef, useMemo, useEffect } from 'react';
-import * as LucideIcons from 'lucide-react';
-import { MoreVertical, Plus, Search, GripVertical, Eye, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Activity, Bath, Brush, ChevronLeft, ChevronRight, CircleDot, CircleUser, Cloud,
+  Droplets, Eye, EyeOff, Flame, Flower2, Footprints, Gem, GripVertical,
+  Hand, Heart, Lamp, Leaf, MoreVertical, Mountain, Moon, Paintbrush, Palette,
+  Pipette, Plus, Scissors, Search, Shirt, Smile, Sparkles, Star, Sun, TreePine,
+  User, Waves, Wind, Zap,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Service, Product, Package, PackageService } from '../types';
 import { Icons } from '../constants';
@@ -14,6 +19,7 @@ import { SERVICE_ICON_CATEGORIES } from '../serviceIcons';
 import { useUserContext } from '../contexts/UserContext';
 import {
   AppModal,
+  Alert,
   Button,
   fieldControlClassName,
   ModalFooterActions,
@@ -38,12 +44,15 @@ import {
   type InventoryVisibilityFilter,
 } from '../components/inventory';
 
+const SERVICE_ICON_COMPONENTS: Record<string, LucideIcon> = {
+  Activity, Bath, Brush, CircleDot, CircleUser, Cloud, Droplets, Flame, Flower2,
+  Footprints, Gem, Hand, Heart, Lamp, Leaf, Mountain, Moon, Paintbrush,
+  Palette, Pipette, Scissors, Shirt, Smile, Sparkles, Star, Sun, TreePine, User,
+  Waves, Wind, Zap,
+};
+
 function resolveLucideIcon(iconId: string): LucideIcon | undefined {
-  const candidate = (LucideIcons as Record<string, unknown>)[iconId];
-  if (typeof candidate === 'function') {
-    return candidate as LucideIcon;
-  }
-  return undefined;
+  return SERVICE_ICON_COMPONENTS[iconId];
 }
 interface ServicesProps {
   services: Service[];
@@ -104,6 +113,7 @@ const Services: React.FC<ServicesProps> = ({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [showIconPickerModal, setShowIconPickerModal] = useState(false);
   const [showServiceSelectorModal, setShowServiceSelectorModal] = useState(false);
   const [serviceSelectorSearch, setServiceSelectorSearch] = useState('');
@@ -426,11 +436,11 @@ const Services: React.FC<ServicesProps> = ({
       opacity: isDragging ? 0.8 : 1
     };
     return (
-      <div ref={setNodeRef} style={style} className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl">
-        <button type="button" className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-200 cursor-grab active:cursor-grabbing" {...attributes} {...listeners} aria-label="Drag to reorder">
+      <div ref={setNodeRef} style={style} className="flex items-center gap-3 p-3 bg-[var(--bg-soft)] border border-[var(--line)] rounded-xl">
+        <button type="button" className="p-1.5 rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-selection)] cursor-grab active:cursor-grabbing" {...attributes} {...listeners} aria-label="Drag to reorder">
           <GripVertical className="w-4 h-4" />
         </button>
-        <span className="text-sm font-semibold text-slate-800">{name}</span>
+        <span className="text-sm font-semibold text-[var(--text-primary)]">{name}</span>
       </div>
     );
   };
@@ -450,12 +460,12 @@ const Services: React.FC<ServicesProps> = ({
       <tr
         ref={setNodeRef}
         style={style}
-        className="hover:bg-slate-50/50 transition-colors group cursor-grab"
+        className="hover:bg-[var(--bg-soft)] transition-colors group cursor-grab"
       >
-        <td className="px-3 py-4 w-8 text-slate-400 align-middle">
+        <td className="px-3 py-4 w-8 text-[var(--text-muted)] align-middle">
           <button
             type="button"
-            className="p-1 rounded hover:bg-slate-100 active:cursor-grabbing"
+            className="p-1 rounded hover:bg-[var(--bg-selection)] active:cursor-grabbing"
             {...attributes}
             {...listeners}
           >
@@ -468,7 +478,7 @@ const Services: React.FC<ServicesProps> = ({
               <img
                 src={service.imageUrl}
                 alt={service.name}
-                className="w-10 h-10 rounded-xl object-cover border-2 border-slate-200"
+                className="w-10 h-10 rounded-xl object-cover border-2 border-[var(--line)]"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.style.display = 'none';
@@ -478,7 +488,7 @@ const Services: React.FC<ServicesProps> = ({
               />
             ) : null}
             <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center border-2 border-slate-200 text-[var(--brand)] ${
+              className={`w-10 h-10 rounded-xl flex items-center justify-center border-2 border-[var(--line)] text-[var(--brand)] ${
                 service.imageUrl ? 'hidden' : 'bg-[var(--brand-soft)]'
               }`}
             >
@@ -488,7 +498,7 @@ const Services: React.FC<ServicesProps> = ({
                 ? renderServiceIcon(service.iconId, 'w-5 h-5')
                 : getCategoryIcon(service.category)}
             </div>
-            <span className="text-sm font-bold text-slate-800">{service.name}</span>
+            <span className="text-sm font-bold text-[var(--text-primary)]">{service.name}</span>
           </div>
         </td>
         <td className="px-6 py-4">
@@ -496,7 +506,7 @@ const Services: React.FC<ServicesProps> = ({
             {service.category}
           </span>
         </td>
-        <td className="px-6 py-4 text-xs font-bold text-slate-500">{service.duration} MINS</td>
+        <td className="px-6 py-4 text-xs font-bold text-[var(--text-muted)]">{service.duration} MINS</td>
         <td className="px-6 py-4">
           {/* Services have no stock concept, so they are always "Active" in the status sense. */}
           <StatusBadge tone="success">Active</StatusBadge>
@@ -512,9 +522,9 @@ const Services: React.FC<ServicesProps> = ({
             title={isLocked ? 'Feature is locked' : service.isVisible === false ? 'Hidden — click to show' : 'Visible — click to hide'}
             className={`inline-flex items-center justify-center w-8 h-8 rounded-lg transition-colors ${
               isLocked
-                ? 'text-slate-200 cursor-not-allowed'
+                ? 'text-[var(--line-strong)] cursor-not-allowed'
                 : service.isVisible === false
-                  ? 'text-slate-400 hover:bg-slate-100'
+                  ? 'text-[var(--text-muted)] hover:bg-[var(--bg-selection)]'
                   : 'text-[var(--brand)] hover:bg-[var(--brand-soft)]'
             }`}
           >
@@ -524,14 +534,14 @@ const Services: React.FC<ServicesProps> = ({
         <td className="px-6 py-4">
           <span
             className={`m-inventory-badge ${
-              service.isCommissionable ? 'text-[var(--brand)]' : 'text-slate-300'
+              service.isCommissionable ? 'text-[var(--brand)]' : 'text-[var(--line-strong)]'
             }`}
           >
             {service.isCommissionable ? 'Eligible' : 'Excluded'}
           </span>
         </td>
         <td className="px-6 py-4">
-          <span className="m-caption font-semibold text-amber-600">+{service.points}</span>
+          <span className="m-caption font-semibold text-[var(--warning)]">+{service.points}</span>
         </td>
         <td className="px-6 py-4 text-right font-bold text-[var(--text-primary)] text-sm">
           ${service.price.toLocaleString()}
@@ -575,7 +585,7 @@ const Services: React.FC<ServicesProps> = ({
           aria-haspopup="menu"
           aria-expanded={open}
           className={`p-2 rounded-lg transition-colors ${
-            disabled ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+            disabled ? 'text-[var(--line-strong)] cursor-not-allowed' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-selection)]'
           }`}
         >
           <MoreVertical className="w-4 h-4" />
@@ -585,12 +595,12 @@ const Services: React.FC<ServicesProps> = ({
             <div className="fixed inset-0 z-10" aria-hidden onClick={() => setOpenRowMenuId(null)} />
             <div
               role="menu"
-              className="absolute right-0 top-full mt-1 py-1 bg-white border border-slate-200 rounded-lg shadow-lg z-20 min-w-[140px]"
+              className="absolute right-0 top-full mt-1 py-1 bg-[var(--bg-surface)] border border-[var(--line)] rounded-lg shadow-lg z-20 min-w-[140px]"
             >
               <button
                 type="button"
                 role="menuitem"
-                className="w-full px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                className="w-full px-3 py-2 text-left text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]"
                 onClick={() => {
                   setOpenRowMenuId(null);
                   onEdit();
@@ -601,7 +611,7 @@ const Services: React.FC<ServicesProps> = ({
               <button
                 type="button"
                 role="menuitem"
-                className="w-full px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50"
+                className="w-full px-3 py-2 text-left text-sm text-[var(--danger)] hover:bg-[var(--danger-soft)]"
                 onClick={() => {
                   setOpenRowMenuId(null);
                   onDelete();
@@ -766,6 +776,8 @@ const Services: React.FC<ServicesProps> = ({
           await onAddPackage(packageWithoutId as Omit<Package, 'id'>);
         }
       }
+      setSaveMessage(`${editingItem ? 'Updated' : 'Created'} ${formData.type} successfully.`);
+      window.setTimeout(() => setSaveMessage(null), 4000);
     } catch (error: any) {
       console.error('Error saving item:', error);
       alert(`Failed to save ${formData.type}: ${error.message || 'Unknown error'}`);
@@ -983,6 +995,12 @@ const Services: React.FC<ServicesProps> = ({
   return (
     <div className="space-y-4 animate-fadeIn">
       {/* ——— Mobile chrome (below 768px) ——— */}
+      {saveMessage ? (
+        <Alert tone="success" title="Changes saved">
+          {saveMessage}
+        </Alert>
+      ) : null}
+
       <div className="md:hidden space-y-3">
         <InventoryOutletCard />
 
@@ -1161,7 +1179,7 @@ const Services: React.FC<ServicesProps> = ({
               lowStock={product.stock <= 5}
               visible
               fallback={
-                <div className="w-full h-full bg-amber-50 text-amber-600 flex items-center justify-center">
+                <div className="w-full h-full bg-[var(--warning-soft)] text-[var(--warning)] flex items-center justify-center">
                   <Icons.POS />
                 </div>
               }
@@ -1213,7 +1231,7 @@ const Services: React.FC<ServicesProps> = ({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100 m-settings-label text-[var(--text-muted)] uppercase tracking-widest">
+              <tr className="bg-[var(--bg-soft)] border-b border-[var(--line)] m-settings-label text-[var(--text-muted)] uppercase tracking-widest">
                 {activeTab === 'services' && <th className="px-3 py-4 w-8"></th>}
                 <th className="px-6 py-4">Item Name</th>
                 <th className="px-6 py-4">Category</th>
@@ -1239,7 +1257,7 @@ const Services: React.FC<ServicesProps> = ({
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[var(--line)]">
               {activeTab === 'services' && (
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                   <SortableContext items={serviceOrder} strategy={verticalListSortingStrategy}>
@@ -1253,7 +1271,7 @@ const Services: React.FC<ServicesProps> = ({
               )}
               {activeTab === 'services' && filteredServices.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={10} className="px-6 py-12 text-center text-[var(--text-muted)]">
                     No services found. Try changing the category or search.
                   </td>
                 </tr>
@@ -1261,19 +1279,19 @@ const Services: React.FC<ServicesProps> = ({
               {activeTab === 'products' && paginatedProducts.map(product => {
                 const status = productStatus(product.stock);
                 return (
-                <tr key={product.id} className="hover:bg-slate-50/50 transition-colors group">
+                <tr key={product.id} className="hover:bg-[var(--bg-soft)] transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-amber-50 text-amber-600"><Icons.POS /></div>
-                      <span className="text-sm font-bold text-slate-800">{product.name}</span>
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--warning-soft)] text-[var(--warning)]"><Icons.POS /></div>
+                      <span className="text-sm font-bold text-[var(--text-primary)]">{product.name}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4"><span className="m-inventory-badge bg-[var(--bg-soft)] text-[var(--text-muted)]">{product.category}</span></td>
                   <td className="px-6 py-4">
                     <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
                   </td>
-                  <td className="px-6 py-4 text-slate-300" aria-label="Visibility not tracked for products">—</td>
-                  <td className="px-6 py-4"><span className={`text-xs font-bold ${product.stock <= LOW_STOCK_THRESHOLD ? 'text-rose-600 animate-pulse' : 'text-slate-500'}`}>{product.stock} units</span></td>
+                  <td className="px-6 py-4 text-[var(--line-strong)]" aria-label="Visibility not tracked for products">—</td>
+                  <td className="px-6 py-4"><span className={`text-xs font-bold ${product.stock <= LOW_STOCK_THRESHOLD ? 'text-[var(--danger)] animate-pulse' : 'text-[var(--text-muted)]'}`}>{product.stock} units</span></td>
                   <td className="px-6 py-4 text-right font-bold text-[var(--text-primary)] text-sm">${product.price.toLocaleString()}</td>
                   <td className="px-6 py-4 text-right">
                     <div onClick={(e) => e.stopPropagation()}>
@@ -1290,17 +1308,17 @@ const Services: React.FC<ServicesProps> = ({
               })}
               {activeTab === 'products' && filteredProducts.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={7} className="px-6 py-12 text-center text-[var(--text-muted)]">
                     No products found. Try changing the category or search.
                   </td>
                 </tr>
               )}
               {activeTab === 'packages' && paginatedPackages.map(pkg => (
-                <tr key={pkg.id} className="hover:bg-slate-50/50 transition-colors group">
+                <tr key={pkg.id} className="hover:bg-[var(--bg-soft)] transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-indigo-50 text-indigo-600"><Icons.Package /></div>
-                      <span className="text-sm font-bold text-slate-800">{pkg.name}</span>
+                      <span className="text-sm font-bold text-[var(--text-primary)]">{pkg.name}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4"><span className="m-inventory-badge bg-[var(--bg-soft)] text-[var(--text-muted)]">{pkg.category}</span></td>
@@ -1308,7 +1326,7 @@ const Services: React.FC<ServicesProps> = ({
                     {/* Packages have no stock concept, so they are always "Active" in the status sense. */}
                     <StatusBadge tone="success">Active</StatusBadge>
                   </td>
-                  <td className="px-6 py-4 text-slate-300" aria-label="Visibility not tracked for packages">—</td>
+                  <td className="px-6 py-4 text-[var(--line-strong)]" aria-label="Visibility not tracked for packages">—</td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-1">
                       {pkg.services.map((ps, idx) => {
@@ -1317,7 +1335,7 @@ const Services: React.FC<ServicesProps> = ({
                       })}
                     </div>
                   </td>
-                  <td className="px-6 py-4"><span className="m-caption font-semibold text-amber-600">+{pkg.points}</span></td>
+                  <td className="px-6 py-4"><span className="m-caption font-semibold text-[var(--warning)]">+{pkg.points}</span></td>
                   <td className="px-6 py-4 text-right font-bold text-[var(--text-primary)] text-sm">${pkg.price.toLocaleString()}</td>
                   <td className="px-6 py-4 text-right">
                     <div onClick={(e) => e.stopPropagation()}>
@@ -1333,7 +1351,7 @@ const Services: React.FC<ServicesProps> = ({
               ))}
               {activeTab === 'packages' && filteredPackages.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={8} className="px-6 py-12 text-center text-[var(--text-muted)]">
                     No packages found. Try changing the category or search.
                   </td>
                 </tr>
@@ -1382,7 +1400,7 @@ const Services: React.FC<ServicesProps> = ({
                         aria-current={p === catalogPage ? 'page' : undefined}
                         className={`w-8 h-8 inline-flex items-center justify-center rounded-lg text-sm font-semibold transition-colors ${
                           p === catalogPage
-                            ? 'bg-[var(--brand)] text-white'
+                            ? 'bg-[var(--brand)] text-[var(--text-on-brand)]'
                             : 'text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]'
                         }`}
                       >
@@ -1466,7 +1484,7 @@ const Services: React.FC<ServicesProps> = ({
                       {imagePreview ? (
                         <div className="relative">
                           <img src={imagePreview} alt="Preview" className="w-20 h-20 rounded-ui-sm object-cover border-2 border-[var(--line)]" />
-                          <button type="button" onClick={handleRemoveImage} className="absolute -top-2 -right-2 w-6 h-6 bg-rose-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-rose-600" title="Remove image">×</button>
+                          <button type="button" onClick={handleRemoveImage} className="absolute -top-2 -right-2 w-6 h-6 bg-[var(--danger)] text-[var(--text-on-brand)] rounded-full flex items-center justify-center text-xs hover:opacity-90" title="Remove image">×</button>
                         </div>
                       ) : formData.iconId ? (
                         <div className="w-20 h-20 rounded-xl bg-[var(--brand-soft)] border-2 border-[var(--brand)]/30 flex items-center justify-center text-[var(--brand)]">
@@ -1696,7 +1714,7 @@ const Services: React.FC<ServicesProps> = ({
                         type="number"
                         min="0"
                         step="1"
-                        className="m-settings-control w-full outline-none font-bold text-amber-600"
+                        className="m-settings-control w-full outline-none font-bold text-[var(--warning)]"
                         value={formData.points ?? 0}
                         onChange={e => {
                           const value = parseInt(e.target.value) || 0;
@@ -1714,11 +1732,11 @@ const Services: React.FC<ServicesProps> = ({
                   )}
                   {formData.type === 'service' && showSection('pricing') && (
                     <>
-                      <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer">
+                      <label className="flex items-center gap-3 p-4 bg-[var(--bg-soft)] rounded-xl border border-[var(--line)] cursor-pointer">
                         <input type="checkbox" checked={formData.isCommissionable} onChange={e => setFormData({ ...formData, isCommissionable: e.target.checked })} />
-                        <span className="text-xs font-bold text-slate-700">Commission Eligible</span>
+                        <span className="text-xs font-bold text-[var(--text-secondary)]">Commission Eligible</span>
                       </label>
-                      <div className="mt-4 space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="mt-4 space-y-3 rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] p-4">
                         <div className="flex items-center justify-between gap-3">
                           <div>
                             <p className="m-settings-label uppercase">Redeem Point</p>
@@ -1728,12 +1746,12 @@ const Services: React.FC<ServicesProps> = ({
                             type="button"
                             onClick={() => setFormData({ ...formData, redeemPointsEnabled: !formData.redeemPointsEnabled })}
                             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                              formData.redeemPointsEnabled ? 'bg-blue-500' : 'bg-slate-300'
+                              formData.redeemPointsEnabled ? 'bg-[var(--brand)]' : 'bg-[var(--line-strong)]'
                             }`}
                             aria-pressed={!!formData.redeemPointsEnabled}
                           >
                             <span
-                              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                              className={`inline-block h-4 w-4 transform rounded-full bg-[var(--bg-surface)] shadow transition-transform ${
                                 formData.redeemPointsEnabled ? 'translate-x-5' : 'translate-x-1'
                               }`}
                             />
@@ -1755,8 +1773,8 @@ const Services: React.FC<ServicesProps> = ({
                             disabled={!formData.redeemPointsEnabled}
                             className={`w-full p-4 rounded-xl outline-none border text-sm font-semibold ${
                               formData.redeemPointsEnabled
-                                ? 'bg-white border-blue-300 text-blue-700 focus:ring-2 focus:ring-blue-500'
-                                : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
+                                ? 'bg-[var(--bg-surface)] border-[var(--brand-border)] text-[var(--brand-deep)] focus:ring-2 focus:ring-[var(--brand)]'
+                                : 'bg-[var(--bg-soft)] border-[var(--line)] text-[var(--text-muted)] cursor-not-allowed'
                             }`}
                           />
                           <p className="mt-1 m-settings-hint">
@@ -1767,7 +1785,7 @@ const Services: React.FC<ServicesProps> = ({
                     </>
                   )}
                   {formData.type === 'service' && showSection('availability') && (
-                    <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="space-y-3 rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] p-4">
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <p className="m-settings-label uppercase">Show on Booking Page</p>
@@ -1779,11 +1797,11 @@ const Services: React.FC<ServicesProps> = ({
                           aria-checked={formData.isVisible !== false}
                           onClick={() => setFormData({ ...formData, isVisible: formData.isVisible === false })}
                           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            formData.isVisible !== false ? 'bg-[var(--brand-soft)]0' : 'bg-slate-300'
+                            formData.isVisible !== false ? 'bg-[var(--brand)]' : 'bg-[var(--line-strong)]'
                           }`}
                         >
                           <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                            className={`inline-block h-4 w-4 transform rounded-full bg-[var(--bg-surface)] shadow transition-transform ${
                               formData.isVisible !== false ? 'translate-x-5' : 'translate-x-1'
                             }`}
                           />
@@ -1847,7 +1865,7 @@ const Services: React.FC<ServicesProps> = ({
               </div>
               )}
 
-              <div className={`pt-4 ${formData.type === 'package' ? 'border-t border-slate-100' : ''}`}>
+              <div className={`pt-4 ${formData.type === 'package' ? 'border-t border-[var(--line)]' : ''}`}>
                 <button
                   type="button"
                   onClick={closeItemModal}
@@ -1994,7 +2012,7 @@ const Services: React.FC<ServicesProps> = ({
                   >
                     {renderServiceIcon(iconId, 'w-6 h-6')}
                     {isSelected && (
-                      <span className="absolute bottom-0.5 right-0.5 w-4 h-4 bg-[var(--brand)] rounded-full flex items-center justify-center text-white m-caption leading-none">
+                      <span className="absolute bottom-0.5 right-0.5 w-4 h-4 bg-[var(--brand)] rounded-full flex items-center justify-center text-[var(--text-on-brand)] m-caption leading-none">
                         ✓
                       </span>
                     )}

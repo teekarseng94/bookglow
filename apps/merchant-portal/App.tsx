@@ -10,6 +10,7 @@ import { useUserContext, UserRole } from './contexts/UserContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { outletService } from './services/databaseService';
 import { isTabAllowed } from './utils/permissions';
+import { ErrorState, LoadingSkeleton } from './components/ui';
 
 // Lazy-load pages to reduce build memory (each page becomes a separate chunk)
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
@@ -28,6 +29,10 @@ const ReportPage = React.lazy(() => import('./pages/ReportPage'));
 const SuperAdminLayout = React.lazy(() => import('./components/SuperAdminLayout'));
 const SuperAdminDashboard = React.lazy(() => import('./pages/SuperAdminDashboard'));
 const SuperAdminSubscribers = React.lazy(() => import('./pages/SuperAdminSubscribers'));
+const SuperAdminSubscriptions = React.lazy(() => import('./pages/SuperAdminSubscriptions'));
+const SuperAdminUsers = React.lazy(() => import('./pages/SuperAdminUsers'));
+const SuperAdminHealth = React.lazy(() => import('./pages/SuperAdminHealth'));
+const SuperAdminAudit = React.lazy(() => import('./pages/SuperAdminAudit'));
 
 const App: React.FC = () => {
   const { user, loading: authLoading, isAuthenticated, logout } = useAuth();
@@ -130,6 +135,10 @@ const App: React.FC = () => {
               <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="/admin/dashboard" element={<SuperAdminDashboard />} />
               <Route path="/admin/subscribers" element={<SuperAdminSubscribers />} />
+              <Route path="/admin/subscriptions" element={<SuperAdminSubscriptions />} />
+              <Route path="/admin/users" element={<SuperAdminUsers />} />
+              <Route path="/admin/health" element={<SuperAdminHealth />} />
+              <Route path="/admin/audit" element={<SuperAdminAudit />} />
               <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
             </Routes>
           </SuperAdminLayout>
@@ -138,17 +147,30 @@ const App: React.FC = () => {
         <>
           {/* Show loading state while loading Firestore data */}
           {dataLoading && (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50">
-              <div className="text-center">
-                <div className="inline-block w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                <p className="text-slate-600">Loading data from Firestore...</p>
-                {outletName && <p className="text-sm text-slate-400 mt-2">Outlet: {outletName}</p>}
+            <div className="min-h-screen flex items-center justify-center bg-[var(--bg-canvas)] p-6">
+              <div className="w-full max-w-lg rounded-ui-lg border border-[var(--line)] bg-[var(--bg-surface)] p-6 shadow-ui-sm">
+                <p className="font-semibold text-[var(--text-primary)]">Loading workspace data</p>
+                {outletName && <p className="mt-1 text-sm text-[var(--text-muted)]">Outlet: {outletName}</p>}
+                <LoadingSkeleton rows={5} className="mt-5" />
+              </div>
+            </div>
+          )}
+
+          {!dataLoading && dataError && (
+            <div className="min-h-screen flex items-center justify-center bg-[var(--bg-canvas)] p-6">
+              <div className="w-full max-w-lg rounded-ui-lg border border-[var(--line)] bg-[var(--bg-surface)] p-6 shadow-ui-sm">
+                <ErrorState
+                  title="Workspace data could not be loaded"
+                  message={dataError}
+                  onRetry={() => window.location.reload()}
+                  retryLabel="Reload workspace"
+                />
               </div>
             </div>
           )}
 
           {/* Render app content when data is loaded */}
-          {!dataLoading && (
+          {!dataLoading && !dataError && (
             <AppContent
               activeTab={activeTab}
               setActiveTab={setActiveTab}

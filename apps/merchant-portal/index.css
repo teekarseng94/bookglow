@@ -20,6 +20,7 @@
   --text-primary: #19161d;
   --text-secondary: #615a66;
   --text-muted: #89818c;
+  --text-on-brand: #ffffff;
   --text: var(--text-primary);
   --text-subtle: var(--text-muted);
   --ink: var(--text-primary);

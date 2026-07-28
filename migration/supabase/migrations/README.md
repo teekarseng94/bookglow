@@ -31,4 +31,9 @@
 # Create new files with:
 #   npx supabase migration new <descriptive_name>
 #
+# Platform billing + immutable audit/monitoring:
+#   20260729010000_platform_billing_audit_monitoring.sql
+# Marketing Phase 2 (reusable audiences + campaign drafts/schedules):
+#   20260729020000_marketing_audiences_campaigns.sql
+#
 # Do not renumber or duplicate 001–004 without an explicit migration plan.

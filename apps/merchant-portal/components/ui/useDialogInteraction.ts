@@ -43,7 +43,15 @@ export const useDialogInteraction = ({
 
     const focusableElements = () =>
       Array.from(panelRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR) ?? [])
-        .filter((element) => !element.hasAttribute('disabled') && element.offsetParent !== null);
+        .filter((element) => {
+          const style = window.getComputedStyle(element);
+          return (
+            !element.hasAttribute('disabled') &&
+            element.getAttribute('aria-hidden') !== 'true' &&
+            style.display !== 'none' &&
+            style.visibility !== 'hidden'
+          );
+        });
 
     const focusFrame = window.requestAnimationFrame(() => {
       const first = focusableElements()[0];

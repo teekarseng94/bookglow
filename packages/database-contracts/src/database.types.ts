@@ -754,6 +754,90 @@ export type Database = {
         };
         Relationships: [];
       };
+      marketing_audiences: {
+        Row: {
+          id: string;
+          outlet_id: string;
+          name: string;
+          description: string | null;
+          criteria: Json;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          outlet_id: string;
+          name: string;
+          description?: string | null;
+          criteria?: Json;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          outlet_id?: string;
+          name?: string;
+          description?: string | null;
+          criteria?: Json;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      marketing_campaigns: {
+        Row: {
+          id: string;
+          outlet_id: string;
+          audience_id: string | null;
+          name: string;
+          objective: string;
+          channel: string;
+          subject: string | null;
+          message: string;
+          offer: Json;
+          status: string;
+          scheduled_at: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          outlet_id: string;
+          audience_id?: string | null;
+          name: string;
+          objective?: string;
+          channel: string;
+          subject?: string | null;
+          message: string;
+          offer?: Json;
+          status?: string;
+          scheduled_at?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          outlet_id?: string;
+          audience_id?: string | null;
+          name?: string;
+          objective?: string;
+          channel?: string;
+          subject?: string | null;
+          message?: string;
+          offer?: Json;
+          status?: string;
+          scheduled_at?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       users: {
         Row: {
           uid: string;

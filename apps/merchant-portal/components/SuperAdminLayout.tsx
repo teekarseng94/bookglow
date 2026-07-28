@@ -1,81 +1,109 @@
 import React from 'react';
+import { Activity, Building2, CreditCard, FileClock, HeartPulse, LayoutDashboard, LogOut, ShieldCheck, Users } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
-import { PlatformBanner } from './admin/PlatformBanner';
+import type { PortalAuthUser } from '../services/authService';
+import { NetworkStatusBanner } from './ui';
 
 interface SuperAdminLayoutProps {
-  user: any;
-  onLogout: () => Promise<void> | void;
+  user: PortalAuthUser | null;
+  onLogout: () => void | Promise<void>;
   children: React.ReactNode;
 }
 
-/**
- * Platform Super Admin shell — bright, premium operational UI.
- * Only mounted when App gates `isSuperAdmin`; never shown to ordinary merchants.
- */
-const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ user, onLogout, children }) => {
-  return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-[var(--bg-canvas)] text-[var(--text-primary)] font-sans">
-      <aside className="w-full md:w-64 bg-[var(--bg-surface)] border-b md:border-b-0 md:border-r border-[var(--line)] flex flex-col shrink-0">
-        <div className="px-5 py-5 border-b border-[var(--line-soft)]">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-violet-600">Platform Console</p>
-          <h1 className="text-app-section font-bold tracking-tight text-[var(--text-primary)] mt-0.5">Bookglow Control</h1>
-          <p className="text-xs text-[var(--text-muted)] mt-1 truncate" title={user?.email || undefined}>
-            {user?.email}
-          </p>
-        </div>
-        
-        <nav className="flex md:flex-col gap-1 px-3 py-4 text-sm overflow-x-auto md:overflow-visible" aria-label="Platform navigation">
-          <NavLink
-            to="/admin/dashboard"
-            className={({ isActive }) =>
-              `flex items-center gap-2 px-3 py-2.5 rounded-lg whitespace-nowrap transition-colors ${
-                isActive
-                  ? 'bg-violet-50 text-violet-700 font-semibold shadow-sm'
-                  : 'text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] hover:text-[var(--text-primary)]'
-              }`
-            }
-          >
-            <span className="text-sm font-medium">Overview</span>
-          </NavLink>
-          <NavLink
-            to="/admin/subscribers"
-            className={({ isActive }) =>
-              `flex items-center gap-2 px-3 py-2.5 rounded-lg whitespace-nowrap transition-colors ${
-                isActive
-                  ? 'bg-violet-50 text-violet-700 font-semibold shadow-sm'
-                  : 'text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] hover:text-[var(--text-primary)]'
-              }`
-            }
-          >
-            <span className="text-sm font-medium">Outlets & Access</span>
-          </NavLink>
-        </nav>
-        
-        <div className="mt-auto px-4 py-4 border-t border-[var(--line-soft)] text-[11px] text-[var(--text-muted)] space-y-3">
-          <div className="flex items-center gap-1.5 text-[var(--text-muted)]">
-            <span className="h-2 w-2 rounded-full bg-violet-600 animate-pulse" />
-            <span className="font-semibold uppercase tracking-wider text-[9px]">Super Admin Mode</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => onLogout()}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-slate-900 text-xs font-semibold text-white hover:bg-slate-800 transition-colors shadow-sm"
-          >
-            Log out
-          </button>
-        </div>
-      </aside>
+const navigation = [
+  { to: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
+  { to: '/admin/subscribers', label: 'Outlets & Access', icon: Building2 },
+  { to: '/admin/subscriptions', label: 'Subscriptions', icon: CreditCard },
+  { to: '/admin/users', label: 'Platform Users', icon: Users },
+  { to: '/admin/health', label: 'System Health', icon: HeartPulse },
+  { to: '/admin/audit', label: 'Audit Log', icon: FileClock },
+];
 
-      <main className="flex-1 bg-[var(--bg-canvas)] text-[var(--text-secondary)] min-w-0">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
-          <PlatformBanner title="Bookglow Platform Console">
-            Bookglow Platform Console — changes here affect merchant workspace access and credentials.
-          </PlatformBanner>
+const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ user, onLogout, children }) => (
+  <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)]">
+    <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-white/10 bg-[#171322] text-white lg:flex">
+      <div className="border-b border-white/10 px-5 py-5">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-ui-md bg-[var(--brand)] shadow-ui-sm">
+            <ShieldCheck className="h-5 w-5" aria-hidden />
+          </span>
+          <div>
+            <p className="text-sm font-bold">Bookglow Control</p>
+            <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/55">Platform operations</p>
+          </div>
+        </div>
+      </div>
+
+      <nav className="flex-1 space-y-1 px-3 py-5" aria-label="Platform navigation">
+        {navigation.map(({ to, label, icon: Icon }) => (
+          <NavLink
+            key={to}
+            to={to}
+            className={({ isActive }) =>
+              `flex min-h-11 items-center gap-3 rounded-ui-md px-3 text-sm font-semibold transition-colors ${
+                isActive ? 'bg-white/12 text-white' : 'text-white/65 hover:bg-white/7 hover:text-white'
+              }`
+            }
+          >
+            <Icon className="h-4 w-4" aria-hidden />
+            {label}
+          </NavLink>
+        ))}
+      </nav>
+
+      <div className="border-t border-white/10 p-4">
+        <div className="mb-3 rounded-ui-md bg-white/7 p-3">
+          <div className="flex items-center gap-2 text-xs font-semibold text-white">
+            <span className="h-2 w-2 rounded-full bg-[var(--success)]" aria-hidden />
+            Platform administrator
+          </div>
+          <p className="mt-1 truncate text-[11px] text-white/55" title={user?.email || undefined}>{user?.email}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => onLogout()}
+          className="flex min-h-10 w-full items-center justify-center gap-2 rounded-ui-md border border-white/15 text-xs font-semibold text-white/75 transition-colors hover:bg-white/10 hover:text-white"
+        >
+          <LogOut className="h-4 w-4" aria-hidden />
+          Log out
+        </button>
+      </div>
+    </aside>
+
+    <div className="lg:pl-64">
+      <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--bg-surface)_92%,transparent)] backdrop-blur lg:hidden">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div>
+            <p className="text-sm font-bold">Bookglow Control</p>
+            <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">Platform administrator</p>
+          </div>
+          <Activity className="h-5 w-5 text-[var(--brand)]" aria-hidden />
+        </div>
+        <nav className="flex gap-1 overflow-x-auto px-3 pb-3" aria-label="Platform navigation">
+          {navigation.map(({ to, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                `whitespace-nowrap rounded-ui-sm px-3 py-2 text-xs font-semibold ${
+                  isActive ? 'bg-[var(--brand-soft)] text-[var(--brand-deep)]' : 'text-[var(--text-secondary)]'
+                }`
+              }
+            >
+              {label}
+            </NavLink>
+          ))}
+        </nav>
+      </header>
+
+      <main className="min-w-0">
+        <div className="mx-auto max-w-[1500px] space-y-5 px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
+          <NetworkStatusBanner />
           {children}
         </div>
       </main>
     </div>
-  );
-};
+  </div>
+);
 
 export default SuperAdminLayout;

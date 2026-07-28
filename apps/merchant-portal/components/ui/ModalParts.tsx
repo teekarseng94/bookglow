@@ -11,6 +11,8 @@ const CloseIcon = () => (
 export interface ModalHeaderProps {
   title: React.ReactNode;
   description?: React.ReactNode;
+  titleId?: string;
+  descriptionId?: string;
   onClose?: () => void;
   actions?: React.ReactNode;
   className?: string;
@@ -19,6 +21,8 @@ export interface ModalHeaderProps {
 export const ModalHeader: React.FC<ModalHeaderProps> = ({
   title,
   description,
+  titleId,
+  descriptionId,
   onClose,
   actions,
   className,
@@ -31,11 +35,11 @@ export const ModalHeader: React.FC<ModalHeaderProps> = ({
     )}
   >
     <div className="min-w-0 flex-1 space-y-0.5">
-      <h2 className="m-modal-title text-base sm:text-lg font-bold text-[var(--text-primary)] truncate">
+      <h2 id={titleId} className="m-modal-title text-base sm:text-lg font-bold text-[var(--text-primary)] truncate">
         {title}
       </h2>
       {description ? (
-        <p className="m-modal-desc text-xs sm:text-sm text-[var(--text-secondary)] line-clamp-2">
+        <p id={descriptionId} className="m-modal-desc text-xs sm:text-sm text-[var(--text-secondary)] line-clamp-2">
           {description}
         </p>
       ) : null}

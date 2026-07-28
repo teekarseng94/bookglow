@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { cx } from './cx';
 import { ModalBody, ModalFooter, ModalHeader } from './ModalParts';
@@ -35,6 +35,8 @@ export const AppSheet: React.FC<AppSheetProps> = ({
   busy = false,
 }) => {
   const panelRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const descriptionId = useId();
   useDialogInteraction({ open, busy, onClose, panelRef });
 
   if (!open || typeof document === 'undefined') return null;
@@ -59,7 +61,9 @@ export const AppSheet: React.FC<AppSheetProps> = ({
         ref={panelRef}
         role="dialog"
         aria-modal="true"
-        aria-label={typeof title === 'string' ? title : undefined}
+        aria-labelledby={title != null ? titleId : undefined}
+        aria-label={title == null ? 'Options' : undefined}
+        aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
         className={cx(
           'absolute flex flex-col bg-[var(--bg-surface)] shadow-ui-lg border border-[var(--line)]',
@@ -72,6 +76,8 @@ export const AppSheet: React.FC<AppSheetProps> = ({
           <ModalHeader
             title={title}
             description={description}
+            titleId={titleId}
+            descriptionId={description ? descriptionId : undefined}
             onClose={busy ? undefined : onClose}
           />
         ) : null}

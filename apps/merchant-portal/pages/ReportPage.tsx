@@ -58,7 +58,7 @@ const ReportIcons = {
     </svg>
   ),
   Search: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
     </svg>
   ),
@@ -88,7 +88,7 @@ const ReportIcons = {
     </svg>
   ),
   Star: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-[var(--warning)]" fill="currentColor" viewBox="0 0 24 24">
       <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
     </svg>
   ),
@@ -128,7 +128,7 @@ const ReportIcons = {
     </svg>
   ),
   DocumentVoid: () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
     </svg>
@@ -455,7 +455,7 @@ function MonthlySummaryCard({ data, monthLabel }: { data: MonthlySummaryData; mo
 
   return (
     <div className="m-report-detail-card bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs overflow-hidden">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--line)]">
         <h3 className="text-app-section font-bold text-[var(--text-primary)]">{monthLabel}</h3>
         <button type="button" className="p-2 rounded-ui-sm hover:bg-[var(--bg-soft)] text-[var(--text-muted)]" aria-label="Print">
           <ReportIcons.Printer />
@@ -464,16 +464,16 @@ function MonthlySummaryCard({ data, monthLabel }: { data: MonthlySummaryData; mo
       <div className="p-6 space-y-6">
         {/* Collection */}
         <div>
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Collection</p>
-          <p className="text-app-section font-bold text-slate-900 mb-3">{formatMoney(data.collectionTotal)}</p>
+          <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Collection</p>
+          <p className="text-app-section font-bold text-[var(--text-primary)] mb-3">{formatMoney(data.collectionTotal)}</p>
           <ul className="space-y-2">
             {data.collection.map((row) => (
               <li key={row.name} className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2 text-slate-600">
+                <span className="flex items-center gap-2 text-[var(--text-secondary)]">
                   <ReportIcons.Star />
                   {row.name}
                 </span>
-                <span className="font-semibold text-slate-800">{formatMoney(row.value)}</span>
+                <span className="font-semibold text-[var(--text-primary)]">{formatMoney(row.value)}</span>
               </li>
             ))}
           </ul>
@@ -481,32 +481,32 @@ function MonthlySummaryCard({ data, monthLabel }: { data: MonthlySummaryData; mo
 
         {/* Sales */}
         <div>
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Sales</p>
-          <p className="text-app-section font-bold text-slate-900 mb-3">{formatMoney(data.salesTotal)}</p>
+          <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Sales</p>
+          <p className="text-app-section font-bold text-[var(--text-primary)] mb-3">{formatMoney(data.salesTotal)}</p>
           <ul className="space-y-2">
             <li className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 text-slate-600"><ReportIcons.Customer /> Customer</span>
-              <span className="font-semibold text-slate-800">{data.customerPax} Pax</span>
+              <span className="flex items-center gap-2 text-[var(--text-secondary)]"><ReportIcons.Customer /> Customer</span>
+              <span className="font-semibold text-[var(--text-primary)]">{data.customerPax} Pax</span>
             </li>
             <li className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 text-slate-600"><ReportIcons.Service /> Service</span>
-              <span className="font-semibold text-slate-800">{formatMoney(data.service)}</span>
+              <span className="flex items-center gap-2 text-[var(--text-secondary)]"><ReportIcons.Service /> Service</span>
+              <span className="font-semibold text-[var(--text-primary)]">{formatMoney(data.service)}</span>
             </li>
             <li className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 text-slate-600"><ReportIcons.Product /> Product</span>
-              <span className="font-semibold text-slate-800">{formatMoney(data.product)}</span>
+              <span className="flex items-center gap-2 text-[var(--text-secondary)]"><ReportIcons.Product /> Product</span>
+              <span className="font-semibold text-[var(--text-primary)]">{formatMoney(data.product)}</span>
             </li>
             <li className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 text-slate-600"><ReportIcons.Package /> Package</span>
-              <span className="font-semibold text-slate-800">{formatMoney(data.package)}</span>
+              <span className="flex items-center gap-2 text-[var(--text-secondary)]"><ReportIcons.Package /> Package</span>
+              <span className="font-semibold text-[var(--text-primary)]">{formatMoney(data.package)}</span>
             </li>
             <li className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 text-slate-600"><ReportIcons.Discount /> Discount</span>
-              <span className="font-semibold text-slate-800">{formatMoney(data.discount)}</span>
+              <span className="flex items-center gap-2 text-[var(--text-secondary)]"><ReportIcons.Discount /> Discount</span>
+              <span className="font-semibold text-[var(--text-primary)]">{formatMoney(data.discount)}</span>
             </li>
             <li className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 text-slate-600"><ReportIcons.Outstanding /> Outstanding</span>
-              <span className="font-semibold text-slate-800">{formatMoney(data.outstanding)}</span>
+              <span className="flex items-center gap-2 text-[var(--text-secondary)]"><ReportIcons.Outstanding /> Outstanding</span>
+              <span className="font-semibold text-[var(--text-primary)]">{formatMoney(data.outstanding)}</span>
             </li>
           </ul>
         </div>
@@ -514,45 +514,45 @@ function MonthlySummaryCard({ data, monthLabel }: { data: MonthlySummaryData; mo
         {/* Receipt */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Receipt</p>
-            <span className="text-sm font-bold text-slate-800">{data.receipt.totalCount}</span>
+            <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Receipt</p>
+            <span className="text-sm font-bold text-[var(--text-primary)]">{data.receipt.totalCount}</span>
           </div>
           <ul className="space-y-2">
             <li className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 text-slate-600"><ReportIcons.Document /> Start No.</span>
-              <span className="font-semibold text-slate-800">{data.receipt.startNo}</span>
+              <span className="flex items-center gap-2 text-[var(--text-secondary)]"><ReportIcons.Document /> Start No.</span>
+              <span className="font-semibold text-[var(--text-primary)]">{data.receipt.startNo}</span>
             </li>
             <li className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 text-slate-600"><ReportIcons.Document /> End No.</span>
-              <span className="font-semibold text-slate-800">{data.receipt.endNo}</span>
+              <span className="flex items-center gap-2 text-[var(--text-secondary)]"><ReportIcons.Document /> End No.</span>
+              <span className="font-semibold text-[var(--text-primary)]">{data.receipt.endNo}</span>
             </li>
             <li className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 text-slate-600"><ReportIcons.Dollar /> Average Sales</span>
-              <span className="font-semibold text-slate-800">{formatMoney(data.receipt.averageSales)}</span>
+              <span className="flex items-center gap-2 text-[var(--text-secondary)]"><ReportIcons.Dollar /> Average Sales</span>
+              <span className="font-semibold text-[var(--text-primary)]">{formatMoney(data.receipt.averageSales)}</span>
             </li>
             <li className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 text-slate-600"><ReportIcons.DocumentVoid /> Voided ({data.receipt.voidedCount})</span>
-              <span className="font-semibold text-slate-800">{formatMoney(data.receipt.voidedSales + data.receipt.voidedRedeem)}</span>
+              <span className="flex items-center gap-2 text-[var(--text-secondary)]"><ReportIcons.DocumentVoid /> Voided ({data.receipt.voidedCount})</span>
+              <span className="font-semibold text-[var(--text-primary)]">{formatMoney(data.receipt.voidedSales + data.receipt.voidedRedeem)}</span>
             </li>
-            <li className="pl-6 text-sm text-slate-600">
+            <li className="pl-6 text-sm text-[var(--text-secondary)]">
               <span className="mr-2">• Sales</span>
-              <span className="font-semibold text-slate-800">{formatMoney(data.receipt.voidedSales)}</span>
+              <span className="font-semibold text-[var(--text-primary)]">{formatMoney(data.receipt.voidedSales)}</span>
             </li>
-            <li className="pl-6 text-sm text-slate-600">
+            <li className="pl-6 text-sm text-[var(--text-secondary)]">
               <span className="mr-2">• Redeem</span>
-              <span className="font-semibold text-slate-800">{formatMoney(data.receipt.voidedRedeem)}</span>
+              <span className="font-semibold text-[var(--text-primary)]">{formatMoney(data.receipt.voidedRedeem)}</span>
             </li>
           </ul>
         </div>
 
         {/* Expense */}
         <div>
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Expense</p>
+          <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Expense</p>
           <ul className="space-y-2">
             {EXPENSE_CATEGORIES.map(({ key, label, Icon }) => (
               <li key={key} className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2 text-slate-600"><Icon /> {label}</span>
-                <span className="font-semibold text-slate-800">{formatMoney(data.expenses[key] ?? 0)}</span>
+                <span className="flex items-center gap-2 text-[var(--text-secondary)]"><Icon /> {label}</span>
+                <span className="font-semibold text-[var(--text-primary)]">{formatMoney(data.expenses[key] ?? 0)}</span>
               </li>
             ))}
           </ul>
@@ -561,56 +561,56 @@ function MonthlySummaryCard({ data, monthLabel }: { data: MonthlySummaryData; mo
         {/* Redeem */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Redeem</p>
-            <span className="text-sm font-bold text-slate-800">{formatMoney(data.redeem.total)}</span>
+            <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Redeem</p>
+            <span className="text-sm font-bold text-[var(--text-primary)]">{formatMoney(data.redeem.total)}</span>
           </div>
           <ul className="space-y-2">
             <li className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 text-slate-600"><ReportIcons.Dollar /> Credit</span>
-              <span className="font-semibold text-slate-800">{formatMoney(data.redeem.credit)}</span>
+              <span className="flex items-center gap-2 text-[var(--text-secondary)]"><ReportIcons.Dollar /> Credit</span>
+              <span className="font-semibold text-[var(--text-primary)]">{formatMoney(data.redeem.credit)}</span>
             </li>
             <li className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 text-slate-600"><ReportIcons.Tag /> Package</span>
-              <span className="font-semibold text-slate-800">{formatMoney(data.redeem.package)}</span>
+              <span className="flex items-center gap-2 text-[var(--text-secondary)]"><ReportIcons.Tag /> Package</span>
+              <span className="font-semibold text-[var(--text-primary)]">{formatMoney(data.redeem.package)}</span>
             </li>
           </ul>
         </div>
 
         {/* KPIs: Highest Staff Sales & Top Service */}
-        <div className="border-t border-slate-100 pt-4">
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Monthly Summary</p>
-          <p className="text-sm text-slate-600 mb-1">Total Sales: <span className="font-semibold text-slate-800">{formatMoney(data.salesTotal)}</span></p>
-          <p className="text-sm text-slate-600 mb-1">Total Redeem: <span className="font-semibold text-slate-800">{formatMoney(data.redeem.total)}</span></p>
-          <p className="text-sm text-slate-600 mb-1">Highest Staff Sales: <span className="font-semibold text-slate-800">{data.highestStaffSales.name} - {formatMoney(data.highestStaffSales.total)}</span></p>
-          <p className="text-sm text-slate-600">Top Service: <span className="font-semibold text-slate-800">{data.topService.name} - {data.topService.units} Unit</span></p>
+        <div className="border-t border-[var(--line)] pt-4">
+          <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-2">Monthly Summary</p>
+          <p className="text-sm text-[var(--text-secondary)] mb-1">Total Sales: <span className="font-semibold text-[var(--text-primary)]">{formatMoney(data.salesTotal)}</span></p>
+          <p className="text-sm text-[var(--text-secondary)] mb-1">Total Redeem: <span className="font-semibold text-[var(--text-primary)]">{formatMoney(data.redeem.total)}</span></p>
+          <p className="text-sm text-[var(--text-secondary)] mb-1">Highest Staff Sales: <span className="font-semibold text-[var(--text-primary)]">{data.highestStaffSales.name} - {formatMoney(data.highestStaffSales.total)}</span></p>
+          <p className="text-sm text-[var(--text-secondary)]">Top Service: <span className="font-semibold text-[var(--text-primary)]">{data.topService.name} - {data.topService.units} Unit</span></p>
         </div>
 
         {/* Final Summary Totals */}
-        <div className="border-t border-slate-200 pt-4 space-y-2">
+        <div className="border-t border-[var(--line-strong)] pt-4 space-y-2">
           <div className="flex items-center justify-between text-sm">
-            <span className="font-bold text-slate-600">Total Collection</span>
-            <span className="font-bold text-slate-800">{formatMoney(data.totalCollection)}</span>
+            <span className="font-bold text-[var(--text-secondary)]">Total Collection</span>
+            <span className="font-bold text-[var(--text-primary)]">{formatMoney(data.totalCollection)}</span>
           </div>
           <div className="flex items-center justify-between text-sm">
-            <span className="font-bold text-slate-600">Total Expenses</span>
-            <span className="font-bold text-slate-800">{formatMoney(data.totalExpenses)}</span>
+            <span className="font-bold text-[var(--text-secondary)]">Total Expenses</span>
+            <span className="font-bold text-[var(--text-primary)]">{formatMoney(data.totalExpenses)}</span>
           </div>
-          <div className="flex items-center justify-between text-sm pt-2 border-t border-slate-100">
-            <span className="font-bold text-slate-800">Closing Balance</span>
-            <span className="font-bold text-slate-800">{formatMoney(data.closingBalance)}</span>
+          <div className="flex items-center justify-between text-sm pt-2 border-t border-[var(--line)]">
+            <span className="font-bold text-[var(--text-primary)]">Closing Balance</span>
+            <span className="font-bold text-[var(--text-primary)]">{formatMoney(data.closingBalance)}</span>
           </div>
         </div>
 
         {/* Staff Sales - below closing balance (like 123.png) */}
         {staffList.length > 0 && (
-          <div className="border-t border-slate-200 pt-4">
+          <div className="border-t border-[var(--line-strong)] pt-4">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-bold text-slate-800">Staff Sales</p>
+              <p className="text-sm font-bold text-[var(--text-primary)]">Staff Sales</p>
               {hasMoreStaff && (
                 <button
                   type="button"
                   onClick={() => setStaffSalesExpanded(!staffSalesExpanded)}
-                  className="text-sm font-semibold text-blue-600 hover:underline"
+                  className="text-sm font-semibold text-[var(--brand)] hover:underline"
                 >
                   {staffSalesExpanded ? 'View less' : 'View All'}
                 </button>
@@ -620,23 +620,23 @@ function MonthlySummaryCard({ data, monthLabel }: { data: MonthlySummaryData; mo
               {showStaffList.map((staff) => (
                 <li key={staff.name} className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-full bg-slate-200 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                    <div className="w-10 h-10 rounded-full bg-[var(--bg-selection)] flex-shrink-0 flex items-center justify-center overflow-hidden">
                       {staff.avatarUrl ? (
                         <img src={staff.avatarUrl} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-slate-500 font-bold text-sm">
+                        <span className="text-[var(--text-muted)] font-bold text-sm">
                           {staff.name.charAt(0).toUpperCase()}
                         </span>
                       )}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-semibold text-slate-800 truncate">{staff.name}</p>
-                      <p className="text-xs text-slate-500">{staff.pax} Pax</p>
+                      <p className="font-semibold text-[var(--text-primary)] truncate">{staff.name}</p>
+                      <p className="text-xs text-[var(--text-muted)]">{staff.pax} Pax</p>
                     </div>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className="font-semibold text-slate-800">{formatMoney(staff.total)}</p>
-                    <p className="text-xs text-slate-500">HOF: {formatMoney(staff.hof)}</p>
+                    <p className="font-semibold text-[var(--text-primary)]">{formatMoney(staff.total)}</p>
+                    <p className="text-xs text-[var(--text-muted)]">HOF: {formatMoney(staff.hof)}</p>
                   </div>
                 </li>
               ))}
@@ -749,7 +749,7 @@ const ReportPage: React.FC<ReportPageProps> = ({ transactions, outletID, staff }
                 onClick={() => setReportNav(item.id)}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-ui-sm text-left text-sm font-medium transition-all min-h-[44px] ${
                   isActive
-                    ? 'bg-[var(--brand)] text-white shadow-ui-xs'
+                    ? 'bg-[var(--brand)] text-[var(--text-on-brand)] shadow-ui-xs'
                     : 'text-[var(--text-secondary)] hover:bg-[var(--bg-selection)] hover:text-[var(--text-primary)]'
                 }`}
               >
@@ -827,7 +827,7 @@ const ReportPage: React.FC<ReportPageProps> = ({ transactions, outletID, staff }
                 setShowNavSheet(false);
               }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-ui-sm text-left text-sm font-medium min-h-[44px] ${
-                reportNav === item.id ? 'bg-[var(--brand)] text-white' : 'bg-[var(--bg-soft)] text-[var(--text-secondary)]'
+                reportNav === item.id ? 'bg-[var(--brand)] text-[var(--text-on-brand)]' : 'bg-[var(--bg-soft)] text-[var(--text-secondary)]'
               }`}
             >
               {item.icon}

@@ -57,7 +57,7 @@ export const StaffRolesModal: React.FC<StaffRolesModalProps> = ({
 
         {/* Existing roles — compact rows */}
         <section className="space-y-2">
-          <h3 className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+          <h3 className="m-staff-section-title">
             Existing roles
           </h3>
           {roleCommissions.length === 0 ? (

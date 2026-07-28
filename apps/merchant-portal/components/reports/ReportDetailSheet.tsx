@@ -77,7 +77,7 @@ export const ReportDetailSheet: React.FC<ReportDetailSheetProps> = ({
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
         <StatusBadge tone={statusTone}>{statusLabel}</StatusBadge>
-        <span className={cx('text-xl font-black tabular-nums', amountClassName)}>{amountLabel}</span>
+        <span className={cx('m-txn-amount text-xl tabular-nums', amountClassName)}>{amountLabel}</span>
       </div>
       <div className="space-y-2.5 pt-1">
         {rows.map((row) => (

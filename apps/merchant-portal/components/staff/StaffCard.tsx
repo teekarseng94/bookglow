@@ -56,7 +56,7 @@ export const StaffCard: React.FC<StaffCardProps> = ({
           : undefined
       }
       className={cx(
-        'px-3.5 py-3.5 rounded-ui-md border cursor-pointer transition-all',
+        'm-staff-card px-3.5 py-3.5 rounded-ui-md border cursor-pointer transition-all',
         selected
           ? 'bg-[var(--brand-soft)] border-[var(--brand)] shadow-ui-xs ring-1 ring-[var(--brand)]/20'
           : 'bg-[var(--bg-surface)] border-[var(--line)] hover:border-[var(--brand-border)] shadow-ui-xs xl:shadow-none',
@@ -65,7 +65,7 @@ export const StaffCard: React.FC<StaffCardProps> = ({
     >
       <div className="flex items-start gap-3">
         <div className="relative shrink-0">
-          <div className="w-11 h-11 rounded-full flex items-center justify-center font-bold text-sm overflow-hidden bg-[var(--brand-soft)] text-[var(--brand-deep)]">
+          <div className="m-staff-avatar rounded-full flex items-center justify-center overflow-hidden bg-[var(--brand-soft)] text-[var(--brand-deep)]">
             {photoUrl ? (
               <img src={photoUrl} alt="" className="w-full h-full object-cover" />
             ) : (
@@ -85,15 +85,15 @@ export const StaffCard: React.FC<StaffCardProps> = ({
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-1.5">
-                <p className="font-bold text-sm truncate leading-tight text-[var(--text-primary)]">
+                <p className="m-staff-card__name truncate text-[var(--text-primary)]">
                   {name}
                 </p>
-                <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide bg-[var(--brand-soft)] text-[var(--brand-deep)]">
+                <span className="m-staff-card__role bg-[var(--brand-soft)] text-[var(--brand-deep)]">
                   {role}
                 </span>
               </div>
               {metaSecondary ? (
-                <p className="mt-1 text-[11px] font-medium text-[var(--text-secondary)] truncate">
+                <p className="m-staff-card__meta mt-1 truncate">
                   {metaSecondary}
                 </p>
               ) : null}
@@ -106,23 +106,23 @@ export const StaffCard: React.FC<StaffCardProps> = ({
           {hasStats ? (
             <div className="mt-2.5 grid grid-cols-3 gap-2 pt-2 border-t border-[var(--line)]">
               <div className="min-w-0">
-                <p className="text-[9px] font-black uppercase tracking-wider text-[var(--text-muted)]">
+                <p className="m-staff-stat-label">
                   Today
                 </p>
-                <p className="text-[11px] font-bold text-[var(--text-primary)] truncate">
+                <p className="m-staff-stat-value text-[var(--text-primary)] truncate">
                   {shiftLabel ?? '—'}
                 </p>
               </div>
               <div className="min-w-0">
-                <p className="text-[9px] font-black uppercase tracking-wider text-[var(--text-muted)]">
+                <p className="m-staff-stat-label">
                   Commission
                 </p>
-                <p className="text-[11px] font-bold tabular-nums text-[var(--brand)] truncate">
+                <p className="m-staff-stat-value tabular-nums text-[var(--brand)] truncate">
                   {commissionLabel ?? revenueLabel ?? '—'}
                 </p>
               </div>
               <div className="min-w-0 flex flex-col items-start gap-0.5">
-                <p className="text-[9px] font-black uppercase tracking-wider text-[var(--text-muted)]">
+                <p className="m-staff-stat-label">
                   Status
                 </p>
                 <StaffStatusBadge status={status} />
@@ -132,7 +132,7 @@ export const StaffCard: React.FC<StaffCardProps> = ({
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <StaffStatusBadge status={status} />
               {contextLabel ? (
-                <span className="text-[11px] font-semibold text-[var(--text-secondary)] truncate">
+                <span className="m-staff-card__meta truncate">
                   {contextLabel}
                 </span>
               ) : null}

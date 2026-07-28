@@ -233,7 +233,7 @@ const Layout: React.FC<LayoutProps> = ({
           Sign out
         </button>
       )}
-      {mobile && <p className="px-4 pb-3 pt-1 text-[11px] text-slate-400">{user?.email}</p>}
+      {mobile && <p className="px-4 pb-3 pt-1 m-shell-meta">{user?.email}</p>}
     </div>
   );
 
@@ -252,7 +252,7 @@ const Layout: React.FC<LayoutProps> = ({
           <span className="bookglow-status-dot" aria-hidden />
           <div className="min-w-0">
             <p className="truncate text-xs font-semibold text-slate-700">{roleTitle} workspace</p>
-            <p className="truncate text-[11px] text-slate-400">{todayLabel}</p>
+            <p className="truncate m-shell-meta">{todayLabel}</p>
           </div>
         </div>
 
@@ -286,7 +286,7 @@ const Layout: React.FC<LayoutProps> = ({
             <span className="bookglow-sidebar-profile__avatar">{getUserInitials()}</span>
             <span className="min-w-0 flex-1 text-left">
               <span className="block truncate text-sm font-semibold text-slate-800">{getUserDisplayName()}</span>
-              <span className="block truncate text-[11px] text-slate-400">{roleTitle}</span>
+              <span className="block truncate m-shell-meta">{roleTitle}</span>
             </span>
             <svg className={`h-4 w-4 text-slate-400 transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -316,7 +316,7 @@ const Layout: React.FC<LayoutProps> = ({
           )}
 
           <div className="min-w-0 flex-1 text-center">
-            <p className="truncate text-[11px] font-medium text-slate-400">{resolvedOutletName}</p>
+            <p className="truncate m-shell-meta font-medium">{resolvedOutletName}</p>
             <h1 className="truncate text-sm font-semibold text-slate-900">{currentPageTitle}</h1>
           </div>
 
@@ -349,7 +349,7 @@ const Layout: React.FC<LayoutProps> = ({
           <div className="flex items-center gap-3 text-right">
             <div>
               <p className="text-sm font-semibold text-slate-700">{roleTitle}</p>
-              <p className="text-[11px] text-slate-400">{user?.email || 'Secure session'}</p>
+              <p className="m-shell-meta">{user?.email || 'Secure session'}</p>
             </div>
             <span className={`bookglow-utility-avatar ${isAdmin ? 'bookglow-utility-avatar--admin' : ''}`}>{getUserInitials()}</span>
           </div>

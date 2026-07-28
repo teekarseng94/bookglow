@@ -30,13 +30,13 @@ export const InventoryFiltersSheet: React.FC<InventoryFiltersSheetProps> = ({
     }
   >
     <div className="space-y-2">
-      <p className="text-app-label font-bold uppercase text-[var(--text-muted)]">Category</p>
+      <p className="m-settings-label uppercase text-[var(--text-muted)]">Category</p>
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
           onClick={() => onCategoryChange('All')}
           className={cx(
-            'px-3 py-2 rounded-ui-sm text-sm font-semibold border',
+            'm-inventory-chip border',
             selectedCategory === 'All'
               ? 'bg-[var(--brand)] text-white border-[var(--brand)]'
               : 'bg-[var(--bg-soft)] border-[var(--line)] text-[var(--text-secondary)]',
@@ -50,7 +50,7 @@ export const InventoryFiltersSheet: React.FC<InventoryFiltersSheetProps> = ({
             type="button"
             onClick={() => onCategoryChange(cat)}
             className={cx(
-              'px-3 py-2 rounded-ui-sm text-sm font-semibold border',
+              'm-inventory-chip border',
               selectedCategory === cat
                 ? 'bg-[var(--brand)] text-white border-[var(--brand)]'
                 : 'bg-[var(--bg-soft)] border-[var(--line)] text-[var(--text-secondary)]',

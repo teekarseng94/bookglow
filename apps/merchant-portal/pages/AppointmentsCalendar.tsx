@@ -439,7 +439,6 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
           const client = clients.find((c) => c.id === app.clientId);
           const service = services.find((s) => s.id === app.serviceId);
           const therapist = staff.find((s) => s.id === app.staffId);
-          const color = colorFor(app.staffId || app.id);
           return {
             id: app.id,
             timeLabel: `${formatDisplayTime(app.time)}${app.endTime ? ` – ${formatDisplayTime(app.endTime)}` : ''}`,
@@ -447,7 +446,6 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
             serviceName: service?.name || 'Service',
             staffName: therapist?.name || outletSettings.shopName || 'Staff',
             status: app.status,
-            accentClassName: `${color.bg} ${color.border}`,
           };
         }),
       };
@@ -684,7 +682,7 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
                         <div className="w-9 h-9 rounded-ui-sm bg-[var(--brand)] text-white flex items-center justify-center font-bold text-sm shadow-ui-xs">{member.name.charAt(0)}</div>
                         <div className="min-w-0">
                           <p className="text-sm font-bold text-[var(--text-primary)] leading-tight truncate">{member.name}</p>
-                          <p className="text-[10px] font-bold uppercase text-[var(--text-muted)] tracking-wide">{member.role}</p>
+                          <p className="m-staff-card__role text-[var(--text-muted)]">{member.role}</p>
                         </div>
                       </div>
                     </th>
@@ -694,7 +692,7 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
               <tbody>
                 {hours.map(hour => (
                   <tr key={hour} className="border-b border-[var(--line)] group hover:bg-[var(--bg-soft)]/40 transition-colors">
-                    <td className="p-3 text-center text-[10px] font-bold text-[var(--text-muted)] sticky left-0 bg-[var(--bg-surface)] group-hover:bg-[var(--bg-soft)]/50 z-10 border-r border-[var(--line)]">
+                    <td className="p-3 m-calendar-slot-meta text-center text-[var(--text-muted)] sticky left-0 bg-[var(--bg-surface)] group-hover:bg-[var(--bg-soft)]/50 z-10 border-r border-[var(--line)]">
                       {hour.replace(':', '')}
                     </td>
                     {staff.map(member => {
@@ -715,7 +713,7 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
                                   <div className="flex-1 min-w-0">
                                     <p className="text-xs font-bold truncate">{client?.name || 'Guest'}</p>
                                     {app.endTime && (
-                                      <p className="text-[9px] font-bold text-[var(--text-secondary)] mt-0.5">
+                                      <p className="m-calendar-slot-meta text-[var(--text-secondary)] mt-0.5">
                                         {app.time.replace(':', '')} - {app.endTime.replace(':', '')}
                                       </p>
                                     )}
@@ -726,12 +724,12 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-[9px] font-bold opacity-80 truncate uppercase tracking-tighter">
+                                <p className="m-calendar-slot-meta opacity-80 truncate uppercase tracking-tighter">
                                   {service?.name || '—'}
                                 </p>
                               </div>
                               <div className="mt-2 flex items-center justify-between">
-                                <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${
+                                <span className={`m-calendar-status ${
                                   app.status === 'completed' ? 'bg-teal-600 text-white' : 'bg-white/40'
                                 }`}>
                                   {app.status}
@@ -775,17 +773,19 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
       {/* Mobile income bar (above bottom nav) + floating add button */}
       {!mobileDetailOpen && (
         <>
-          <div className="md:hidden fixed left-0 right-0 bottom-[calc(72px+var(--safe-bottom))] z-40 border-t border-[var(--line)] bg-[var(--bg-surface)] px-4 py-2.5 flex items-center justify-between">
-            <span className="text-[14px] leading-none text-[var(--text-secondary)] font-medium">This week&apos;s income</span>
-            <span className="text-[14px] leading-none font-semibold text-[var(--text-primary)]">RM{thisWeekIncome.toFixed(0)}</span>
+          <div className="m-schedule-income-bar md:hidden fixed left-0 right-0 bottom-[calc(72px+var(--safe-bottom))] z-40 border-t border-[var(--line)] bg-[var(--bg-surface)] flex items-center justify-between">
+            <span className="m-schedule-income-label">This week&apos;s income</span>
+            <span className="m-schedule-income-value">RM{thisWeekIncome.toFixed(0)}</span>
           </div>
           <button
             type="button"
             onClick={handleQuickAddBooking}
-            className="md:hidden fixed bottom-[calc(128px+var(--safe-bottom))] right-4 z-50 w-14 h-14 rounded-full bg-[var(--text-primary)] text-white shadow-ui-md flex items-center justify-center active:scale-95 transition-transform"
+            className="m-schedule-fab md:hidden fixed bottom-[calc(128px+var(--safe-bottom))] right-4 z-50 w-14 h-14 rounded-full bg-[var(--brand)] text-white shadow-ui-md flex items-center justify-center active:scale-95 transition-transform"
             aria-label="Quick add booking"
           >
-            <span className="text-[34px] leading-none">+</span>
+            <span className="m-schedule-fab__plus leading-none" aria-hidden>
+              +
+            </span>
           </button>
         </>
       )}
@@ -879,7 +879,7 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
               <div>
                 <p className="text-app-label font-bold uppercase text-[var(--text-muted)] mb-1">Status</p>
                 <span
-                  className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${
+                  className={`m-calendar-status inline-flex ${
                     selectedAppointment.status === 'completed'
                       ? 'bg-[var(--brand-soft)] text-[var(--brand-deep)]'
                       : 'bg-amber-50 text-amber-700'

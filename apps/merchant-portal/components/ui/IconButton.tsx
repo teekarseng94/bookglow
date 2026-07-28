@@ -8,9 +8,9 @@ export interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEl
 }
 
 const sizeClass = {
-  sm: 'h-8 w-8 rounded-ui-sm',
-  md: 'h-10 w-10 rounded-ui-sm',
-  lg: 'h-12 w-12 rounded-ui-md',
+  sm: 'm-icon-btn--sm h-8 w-8 rounded-ui-sm',
+  md: 'm-icon-btn--md h-10 w-10 rounded-ui-sm',
+  lg: 'm-icon-btn--lg h-12 w-12 rounded-ui-md',
 } as const;
 
 const variantClass = {

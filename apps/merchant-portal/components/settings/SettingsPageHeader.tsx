@@ -15,7 +15,7 @@ export const SettingsPageHeader: React.FC<SettingsPageHeaderProps> = ({
   actions,
   className,
 }) => (
-  <PageHeader className={cx(className)} title={title} description={description} actions={actions} />
+  <PageHeader className={cx('m-settings-page-title', className)} title={title} description={description} actions={actions} />
 );
 
 export default SettingsPageHeader;

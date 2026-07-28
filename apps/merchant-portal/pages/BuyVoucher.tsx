@@ -131,12 +131,12 @@ const BuyVoucher: React.FC = () => {
                 <p className="text-xs font-mono text-emerald-800 mt-1">{redemptionLink}</p>
                 <p className="text-sm font-semibold text-emerald-700 mt-3">Secret Code</p>
                 <div className="flex items-center gap-2 mt-1">
-                  <p className="text-lg font-black tracking-widest text-emerald-900">{secretCode}</p>
+                  <p className="m-voucher-code text-emerald-900">{secretCode}</p>
                   <Button type="button" size="sm" variant="secondary" onClick={onCopySecretCode}>
                     {copiedCode ? 'Copied' : 'Copy'}
                   </Button>
                 </div>
-                <p className="text-[11px] text-emerald-800 mt-1">
+                <p className="m-voucher-hint text-emerald-800 mt-1">
                   Show this code to staff. Voucher is considered sold only after staff confirms this code in Marketing.
                 </p>
               </div>

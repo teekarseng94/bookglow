@@ -666,7 +666,7 @@ const CRM: React.FC<CRMProps> = ({
   };
 
   return (
-    <div className="space-y-4 sm:space-y-5 md:space-y-6 animate-fadeIn text-[13px] md:text-base pb-24 sm:pb-6">
+    <div className="space-y-4 sm:space-y-5 md:space-y-6 animate-fadeIn m-body md:text-base pb-24 sm:pb-6">
       <div className="hidden sm:block">
         <MemberPageHeader clientCount={clients.length} />
       </div>
@@ -809,8 +809,8 @@ const CRM: React.FC<CRMProps> = ({
       </div>
 
       {/* Bottom bar: Total + Delete All + Add */}
-      <div className="flex items-center justify-between py-4 px-2 border-t border-slate-200 bg-slate-50/50 rounded-xl">
-        <div className="flex items-center gap-2 text-slate-600">
+      <div className="m-sticky-bar flex items-center justify-between py-4 px-2 border-t border-[var(--line)] bg-[var(--bg-soft)]/50 rounded-xl">
+        <div className="flex items-center gap-2 text-[var(--text-secondary)]">
           <Icons.Clients />
           <span className="font-semibold">Total {sortedClients.length}</span>
         </div>
@@ -819,7 +819,7 @@ const CRM: React.FC<CRMProps> = ({
             type="button"
             onClick={handleDeleteAllClients}
             disabled={deleteAllInProgress || sortedClients.length === 0}
-            className="py-2.5 px-4 rounded-xl text-sm font-semibold text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+            className="m-btn m-btn--md py-2.5 px-4 rounded-xl text-sm font-semibold text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
             title="Delete all members"
           >
             {deleteAllInProgress ? (
@@ -836,7 +836,7 @@ const CRM: React.FC<CRMProps> = ({
           </button>
           <button
             onClick={() => setShowAddClientModal(true)}
-            className="bg-teal-600 hover:bg-teal-700 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-colors"
+            className="m-schedule-fab bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white w-12 h-12 rounded-full flex items-center justify-center shadow-ui-md transition-colors"
             aria-label="Add member"
           >
             <Icons.Add />

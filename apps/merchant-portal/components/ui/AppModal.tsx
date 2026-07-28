@@ -109,7 +109,7 @@ export const AppModal: React.FC<AppModalProps> = ({
           'max-h-[calc(100dvh-24px)]',
           'grid overflow-hidden',
           footer ? 'grid-rows-[auto_minmax(0,1fr)_auto]' : 'grid-rows-[auto_minmax(0,1fr)]',
-          'bg-[var(--bg-surface)] border border-[var(--line)] rounded-ui-lg shadow-ui-lg',
+          'm-modal-panel bg-[var(--bg-surface)] border border-[var(--line)] rounded-ui-lg shadow-ui-lg',
           className,
         )}
       >

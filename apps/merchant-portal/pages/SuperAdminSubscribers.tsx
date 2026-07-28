@@ -112,7 +112,7 @@ const SuperAdminSubscribers: React.FC = () => {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="font-semibold text-slate-100 truncate">{name}</p>
-                      <p className="text-[11px] font-mono text-slate-500 truncate">{o.outletID}</p>
+                      <p className="m-caption font-mono text-slate-500 truncate">{o.outletID}</p>
                     </div>
                     <StatusBadge tone={isActive ? 'success' : 'danger'}>
                       {isActive ? 'Active' : 'Disabled'}
@@ -120,11 +120,11 @@ const SuperAdminSubscribers: React.FC = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-xs text-slate-400">
                     <div>
-                      <p className="uppercase tracking-wide text-[10px] text-slate-500">Joined</p>
+                      <p className="uppercase tracking-wide m-caption text-slate-500">Joined</p>
                       <p>{joinDate}</p>
                     </div>
                     <div>
-                      <p className="uppercase tracking-wide text-[10px] text-slate-500">Last login</p>
+                      <p className="uppercase tracking-wide m-caption text-slate-500">Last login</p>
                       <p>{lastLogin}</p>
                     </div>
                   </div>

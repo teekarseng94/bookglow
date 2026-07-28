@@ -33,7 +33,7 @@ export const StaffPageHeader: React.FC<StaffPageHeaderProps> = ({
         <span className="inline-flex flex-wrap items-center gap-2">
           <span>{title}</span>
           {liveBadge ? (
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-50 text-emerald-700 border border-emerald-100">
+            <span className="m-staff-card__role inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-100">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden />
               <span className="sm:hidden">Live</span>
               <span className="hidden sm:inline">Live outlet</span>

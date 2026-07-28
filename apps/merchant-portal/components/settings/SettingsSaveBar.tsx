@@ -35,7 +35,7 @@ export const SettingsSaveBar: React.FC<SettingsSaveBarProps> = ({
   return (
     <div
       className={cx(
-        'flex items-center justify-between gap-3 pt-4 border-t border-[var(--line)]',
+        'm-settings-body flex items-center justify-between gap-3 pt-4 border-t border-[var(--line)]',
         className,
       )}
     >

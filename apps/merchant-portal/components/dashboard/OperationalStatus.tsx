@@ -40,7 +40,7 @@ export const OperationalStatus: React.FC<OperationalStatusProps> = ({
             className="flex flex-col items-center gap-1.5 py-3 px-2 bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] hover:border-[var(--brand)] hover:bg-[var(--brand-soft)] active:scale-95 transition-all min-h-[72px]"
           >
             {action.icon ? <span className="text-xl">{action.icon}</span> : null}
-            <span className="text-[10px] font-bold text-[var(--text-secondary)] leading-tight text-center">
+            <span className="m-caption font-semibold text-[var(--text-secondary)] leading-tight text-center">
               {action.label}
             </span>
           </button>

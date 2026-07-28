@@ -105,7 +105,7 @@ export const ScheduleBookingDetailPanel: React.FC<ScheduleBookingDetailPanelProp
         )
       }
     >
-      <div className="flex border-b border-[var(--line)] -mx-4 sm:-mx-5 px-4 sm:px-5 mb-4">
+      <div className="m-schedule-detail-tabs flex border-b border-[var(--line)] -mx-4 sm:-mx-5 px-4 sm:px-5 mb-4">
         {(['details', 'payments', 'history'] as const).map((tab) => (
           <button
             key={tab}
@@ -128,8 +128,10 @@ export const ScheduleBookingDetailPanel: React.FC<ScheduleBookingDetailPanelProp
           <div className="flex gap-3">
             <span className={cx('mt-1.5 w-3 h-3 rounded-full flex-shrink-0', accentDotClassName)} />
             <div className="min-w-0">
-              <p className="text-base font-semibold text-[var(--text-primary)] leading-snug">{serviceName}</p>
-              <div className="flex flex-wrap gap-x-5 gap-y-0.5 mt-1 text-sm text-[var(--text-secondary)]">
+              <p className="m-schedule-detail-service text-base font-semibold text-[var(--text-primary)] leading-snug">
+                {serviceName}
+              </p>
+              <div className="m-schedule-detail-meta flex flex-wrap gap-x-5 gap-y-0.5 mt-1 text-sm text-[var(--text-secondary)]">
                 <span>
                   Cost: <span className="font-semibold text-[var(--text-primary)]">{servicePriceLabel}</span>
                 </span>
@@ -140,19 +142,27 @@ export const ScheduleBookingDetailPanel: React.FC<ScheduleBookingDetailPanelProp
               </div>
             </div>
           </div>
-          <p className="text-sm text-[var(--text-secondary)]">{dateTimeLabel}</p>
+          <p className="m-schedule-detail-meta text-sm text-[var(--text-secondary)]">{dateTimeLabel}</p>
           <div className="space-y-1">
-            <p className="text-sm font-semibold text-[var(--text-primary)]">{customerName}</p>
+            <p className="m-schedule-detail-service text-sm font-semibold text-[var(--text-primary)]">
+              {customerName}
+            </p>
             {customerEmail ? (
-              <p className="text-sm text-[var(--text-muted)] truncate">{customerEmail}</p>
+              <p className="m-schedule-detail-meta text-sm text-[var(--text-muted)] truncate">
+                {customerEmail}
+              </p>
             ) : null}
-            {customerPhone ? <p className="text-sm text-[var(--text-muted)]">{customerPhone}</p> : null}
+            {customerPhone ? (
+              <p className="m-schedule-detail-meta text-sm text-[var(--text-muted)]">{customerPhone}</p>
+            ) : null}
           </div>
-          <p className="text-sm font-medium text-[var(--text-primary)]">{staffName}</p>
+          <p className="m-schedule-detail-meta text-sm font-medium text-[var(--text-primary)]">{staffName}</p>
           <div>
-            <p className="text-sm text-[var(--text-secondary)]">Booked from {sourceLabel}</p>
+            <p className="m-schedule-detail-meta text-sm text-[var(--text-secondary)]">
+              Booked from {sourceLabel}
+            </p>
             <div className="flex items-center gap-2 mt-0.5">
-              <p className="text-xs text-[var(--text-muted)] truncate">Booking ID: {bookingId}</p>
+              <p className="m-caption text-xs text-[var(--text-muted)] truncate">Booking ID: {bookingId}</p>
               <button
                 type="button"
                 onClick={onCopyBookingId}
@@ -167,7 +177,7 @@ export const ScheduleBookingDetailPanel: React.FC<ScheduleBookingDetailPanelProp
       )}
       {detailTab === 'payments' && (
         <div className="py-10 text-center space-y-3">
-          <p className="text-sm text-[var(--text-secondary)]">
+          <p className="m-schedule-detail-meta text-sm text-[var(--text-secondary)]">
             {isCompleted ? 'This appointment is marked completed.' : 'No payment recorded yet.'}
           </p>
           {!isCompleted ? (
@@ -212,21 +222,21 @@ export const ScheduleBookingDetailPanel: React.FC<ScheduleBookingDetailPanelProp
         <button
           type="button"
           onClick={onMarkCompleted}
-          className="w-full text-left px-3 py-3 rounded-ui-md text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]"
+          className="m-schedule-action-row w-full text-left px-3 py-3 rounded-ui-md text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]"
         >
           Mark completed
         </button>
         <button
           type="button"
           onClick={onMarkScheduled}
-          className="w-full text-left px-3 py-3 rounded-ui-md text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]"
+          className="m-schedule-action-row w-full text-left px-3 py-3 rounded-ui-md text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]"
         >
           Mark scheduled
         </button>
         <button
           type="button"
           onClick={onMarkNoShow}
-          className="w-full text-left px-3 py-3 rounded-ui-md text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]"
+          className="m-schedule-action-row w-full text-left px-3 py-3 rounded-ui-md text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]"
         >
           Mark no-show
         </button>
@@ -234,7 +244,7 @@ export const ScheduleBookingDetailPanel: React.FC<ScheduleBookingDetailPanelProp
           <button
             type="button"
             onClick={onSendReminder}
-            className="w-full text-left px-3 py-3 rounded-ui-md text-sm font-semibold text-[var(--brand)] hover:bg-[var(--brand-soft)]"
+            className="m-schedule-action-row w-full text-left px-3 py-3 rounded-ui-md text-sm font-semibold text-[var(--brand)] hover:bg-[var(--brand-soft)]"
           >
             {reminderSent ? 'Resend reminder' : 'Send reminder'}
           </button>
@@ -242,14 +252,14 @@ export const ScheduleBookingDetailPanel: React.FC<ScheduleBookingDetailPanelProp
         <button
           type="button"
           onClick={onCancel}
-          className="w-full text-left px-3 py-3 rounded-ui-md text-sm font-semibold text-[var(--danger)] hover:bg-[var(--danger-soft)]"
+          className="m-schedule-action-row w-full text-left px-3 py-3 rounded-ui-md text-sm font-semibold text-[var(--danger)] hover:bg-[var(--danger-soft)]"
         >
           Cancel appointment
         </button>
         <button
           type="button"
           onClick={onDelete}
-          className="w-full text-left px-3 py-3 rounded-ui-md text-sm font-semibold text-[var(--danger)] hover:bg-[var(--danger-soft)]"
+          className="m-schedule-action-row w-full text-left px-3 py-3 rounded-ui-md text-sm font-semibold text-[var(--danger)] hover:bg-[var(--danger-soft)]"
         >
           Delete appointment
         </button>

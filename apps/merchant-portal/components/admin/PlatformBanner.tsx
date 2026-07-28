@@ -20,7 +20,7 @@ export const PlatformBanner: React.FC<PlatformBannerProps> = ({
     )}
     role="status"
   >
-    <p className="text-xs font-black uppercase tracking-widest text-amber-300">{title}</p>
+    <p className="text-xs font-bold uppercase tracking-widest text-amber-300">{title}</p>
     <p className="text-sm mt-1 text-amber-50/90">
       {children ||
         'You are in the Bookglow platform console. This is not a merchant outlet workspace. Ordinary merchant users never see this navigation.'}

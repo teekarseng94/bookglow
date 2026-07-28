@@ -35,11 +35,11 @@ export const DenseEntityRow: React.FC<DenseEntityRowProps> = ({
     <>
       {leading ? <div className="shrink-0">{leading}</div> : null}
       <div className="min-w-0 flex-1 space-y-0.5">
-        <div className="truncate text-sm font-semibold text-[var(--text-primary)]">{title}</div>
+        <div className="truncate m-list-title text-sm font-semibold text-[var(--text-primary)]">{title}</div>
         {subtitle ? (
-          <div className="truncate text-xs text-[var(--text-secondary)]">{subtitle}</div>
+          <div className="truncate m-secondary text-xs text-[var(--text-secondary)]">{subtitle}</div>
         ) : null}
-        {meta ? <div className="truncate text-xs text-[var(--text-muted)]">{meta}</div> : null}
+        {meta ? <div className="truncate m-secondary text-xs text-[var(--text-muted)]">{meta}</div> : null}
       </div>
       {trailing ? <div className="shrink-0 flex items-center gap-2">{trailing}</div> : null}
     </>

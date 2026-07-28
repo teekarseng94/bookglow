@@ -10,7 +10,6 @@ export interface ScheduleBookingListItem {
   serviceName: string;
   staffName: string;
   status: string;
-  accentClassName?: string;
 }
 
 export interface ScheduleBookingDaySection {
@@ -34,13 +33,15 @@ export const ScheduleBookingList: React.FC<ScheduleBookingListProps> = ({
 }) => (
   <div
     className={cx(
-      'md:hidden bg-[var(--bg-surface)] px-4 pt-4 pb-[calc(8.5rem+var(--safe-bottom))] space-y-5',
+      'md:hidden bg-[var(--bg-surface)] m-page-pad-compact pt-4 pb-[calc(8.5rem+var(--safe-bottom))] space-y-5',
       className,
     )}
   >
     {days.map((day) => (
       <section key={day.date} data-agenda-date={day.date} className="space-y-2 scroll-mt-[116px]">
-        <h4 className="text-[17px] leading-tight font-semibold text-[var(--text-primary)]">{day.heading}</h4>
+        <h4 className="m-schedule-day-heading m-section-title text-[var(--text-primary)]">
+          {day.heading}
+        </h4>
         {day.bookings.length === 0 ? (
           <ScheduleEmptyState compact title="Nothing planned" />
         ) : (
@@ -53,7 +54,6 @@ export const ScheduleBookingList: React.FC<ScheduleBookingListProps> = ({
                 serviceName={booking.serviceName}
                 staffName={booking.staffName}
                 status={booking.status}
-                accentClassName={booking.accentClassName}
                 onClick={() => onSelectBooking(booking.id)}
               />
             ))}

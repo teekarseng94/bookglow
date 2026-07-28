@@ -23,7 +23,7 @@ export const POSCatalogueSection: React.FC<POSCatalogueSectionProps> = ({
   <section className={cx('animate-fadeIn', className)}>
     <h3
       className={cx(
-        'text-[11px] font-bold uppercase tracking-wider mb-3 flex items-center gap-2',
+        'm-pos-section-title mb-3 flex items-center gap-2',
         titleClassName || 'text-[var(--brand)]',
       )}
     >
@@ -33,7 +33,7 @@ export const POSCatalogueSection: React.FC<POSCatalogueSectionProps> = ({
     {empty ? (
       <div className="py-10 text-center text-[var(--text-muted)] text-sm">{emptyMessage}</div>
     ) : (
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
         {children}
       </div>
     )}

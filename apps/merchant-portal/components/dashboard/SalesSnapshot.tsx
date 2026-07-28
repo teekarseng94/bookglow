@@ -65,7 +65,7 @@ export const SalesSnapshot: React.FC<SalesSnapshotProps> = ({
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{row.title}</p>
                 {row.meta ? (
-                  <p className="text-[10px] text-[var(--text-muted)] font-medium uppercase">{row.meta}</p>
+                  <p className="m-dash-metric-label">{row.meta}</p>
                 ) : null}
               </div>
               <span className="text-sm font-bold text-emerald-600 tabular-nums shrink-0">{row.amountLabel}</span>

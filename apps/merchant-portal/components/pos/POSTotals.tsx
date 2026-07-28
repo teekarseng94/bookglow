@@ -35,7 +35,9 @@ export const POSTotals: React.FC<POSTotalsProps> = ({
     ) : null}
     <div className="flex justify-between items-baseline text-[var(--text-primary)]">
       <span className="text-base font-bold">Total</span>
-      <span className="text-xl font-black tabular-nums text-[var(--brand)]">{totalLabel}</span>
+        <span className="m-pos-totals-total text-xl font-bold tabular-nums text-[var(--brand)]">
+        {totalLabel}
+      </span>
     </div>
     {warning}
     <button
@@ -43,7 +45,7 @@ export const POSTotals: React.FC<POSTotalsProps> = ({
       disabled={checkoutDisabled || isProcessing}
       onClick={onCheckout}
       className={cx(
-        'w-full py-3 px-4 rounded-ui-md font-semibold shadow-ui-xs transition-all',
+        'm-pos-checkout-btn w-full py-3 px-4 rounded-ui-md font-semibold shadow-ui-xs transition-all',
         'flex items-center justify-between gap-3 min-h-[48px] text-sm',
         checkoutDisabled
           ? 'bg-[var(--bg-soft)] text-[var(--text-muted)] cursor-not-allowed'

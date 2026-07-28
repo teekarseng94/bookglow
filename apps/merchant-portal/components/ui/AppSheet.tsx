@@ -51,8 +51,8 @@ export const AppSheet: React.FC<AppSheetProps> = ({
 
   const panelClass =
     side === 'right'
-      ? 'fixed inset-y-0 right-0 w-full max-w-md rounded-l-ui-lg'
-      : 'fixed inset-x-0 bottom-0 max-h-[90dvh] rounded-t-ui-lg';
+      ? 'm-sheet-panel--right fixed inset-y-0 right-0 w-full max-w-md rounded-l-ui-lg'
+      : 'm-sheet-panel--bottom fixed inset-x-0 bottom-0 max-h-[90dvh] rounded-t-ui-lg';
 
   return createPortal(
     <div className={cx('fixed inset-0', zIndexClass)} role="presentation">

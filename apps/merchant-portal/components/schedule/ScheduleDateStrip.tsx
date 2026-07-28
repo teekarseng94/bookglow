@@ -32,14 +32,14 @@ export const ScheduleDateStrip: React.FC<ScheduleDateStripProps> = ({
       className,
     )}
   >
-    <div className="flex items-center justify-between px-2 h-14">
+    <div className="flex items-center justify-between px-3 h-[3.75rem]">
       <button
         type="button"
         onClick={onOpenMenu}
-        className="w-11 h-11 flex items-center justify-center rounded-ui-sm text-[var(--text-primary)] active:bg-[var(--bg-soft)]"
+        className="bookglow-icon-button"
         aria-label="Open menu"
       >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
@@ -49,16 +49,14 @@ export const ScheduleDateStrip: React.FC<ScheduleDateStripProps> = ({
         className="flex items-center gap-1 px-2 py-1 rounded-ui-sm active:bg-[var(--bg-soft)] min-w-0"
         aria-label="Open month calendar"
       >
-        <span className="text-[22px] leading-none font-semibold tracking-tight text-[var(--text-primary)] truncate">
+        <span className="m-schedule-month leading-none tracking-tight text-[var(--text-primary)] truncate">
           {monthLabel}
         </span>
         <svg className="w-5 h-5 text-[var(--text-muted)] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
-      <span className="w-9 h-9 rounded-full bg-[var(--bg-soft)] text-[var(--text-secondary)] text-xs font-bold flex items-center justify-center">
-        {shopInitial}
-      </span>
+      <span className="bookglow-mobile-avatar">{shopInitial}</span>
     </div>
     <div className="grid grid-cols-7 px-1.5 pb-2" role="listbox" aria-label="Week dates">
       {weekDates.map((iso, i) => {
@@ -73,12 +71,12 @@ export const ScheduleDateStrip: React.FC<ScheduleDateStripProps> = ({
             onClick={() => onSelectDate(iso)}
             className="flex flex-col items-center gap-1.5 py-1"
           >
-            <span className="text-[12px] font-medium text-[var(--text-muted)]">{dayInitials[i]}</span>
+            <span className="m-schedule-weekday text-[var(--text-muted)]">{dayInitials[i]}</span>
             <span
               className={cx(
-                'w-9 h-9 rounded-ui-sm flex items-center justify-center text-[16px] font-medium transition-colors',
+                'm-schedule-date rounded-ui-sm flex items-center justify-center transition-colors',
                 isSel
-                  ? 'bg-[var(--text-primary)] text-white'
+                  ? 'bg-[var(--brand)] text-white'
                   : isToday
                     ? 'text-[var(--brand)] font-bold'
                     : 'text-[var(--text-primary)]',

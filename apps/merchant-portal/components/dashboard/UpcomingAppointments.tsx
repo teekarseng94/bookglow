@@ -48,7 +48,7 @@ export const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
             className="bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] px-4 py-3 flex items-center gap-3 shadow-ui-xs"
           >
             <div className="text-center min-w-[44px]">
-              <p className="text-sm font-black text-[var(--brand)] tabular-nums">{row.timeLabel}</p>
+              <p className="m-staff-stat-value text-[var(--brand)] tabular-nums">{row.timeLabel}</p>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{row.title}</p>
@@ -59,7 +59,7 @@ export const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
             {row.statusLabel ? (
               <span
                 className={cx(
-                  'text-[9px] font-black uppercase px-2 py-1 rounded-full',
+                  'm-staff-card__role px-2 py-1',
                   row.statusClassName || 'bg-[var(--bg-soft)] text-[var(--text-muted)]',
                 )}
               >

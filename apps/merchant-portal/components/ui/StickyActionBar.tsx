@@ -17,7 +17,7 @@ export const StickyActionBar: React.FC<StickyActionBarProps> = ({
 }) => (
   <div
     className={cx(
-      'sticky bottom-0 z-20',
+      'm-sticky-bar sticky bottom-0 z-20',
       'flex items-center justify-between gap-3',
       'px-4 py-3 border-t border-[var(--line)]',
       'bg-[var(--bg-surface)]/95 backdrop-blur-sm',
@@ -26,7 +26,9 @@ export const StickyActionBar: React.FC<StickyActionBarProps> = ({
     )}
   >
     <div className="min-w-0">{leading}</div>
-    <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">{children}</div>
+    <div className="m-sticky-bar-actions flex flex-wrap items-center justify-end gap-2 shrink-0">
+      {children}
+    </div>
   </div>
 );
 

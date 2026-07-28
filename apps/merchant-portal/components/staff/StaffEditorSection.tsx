@@ -17,11 +17,11 @@ export const StaffEditorSection: React.FC<StaffEditorSectionProps> = ({
 }) => (
   <section className={cx('space-y-3 border-t border-[var(--line)] pt-4 first:border-t-0 first:pt-0', className)}>
     <div>
-      <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+      <h4 className="m-settings-label uppercase tracking-widest text-[var(--text-muted)]">
         {title}
       </h4>
       {description ? (
-        <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">{description}</p>
+        <p className="m-settings-hint mt-0.5">{description}</p>
       ) : null}
     </div>
     {children}

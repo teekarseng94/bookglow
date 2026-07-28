@@ -28,8 +28,8 @@ export const ReportSummaryStrip: React.FC<ReportSummaryStripProps> = ({ items, c
         key={item.label}
         className="bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] p-3 text-center shadow-ui-xs"
       >
-        <p className="text-[9px] font-black uppercase text-[var(--text-muted)] tracking-wider">{item.label}</p>
-        <p className={cx('text-sm sm:text-lg font-black tabular-nums truncate', toneClass[item.tone || 'neutral'])}>
+        <p className="m-report-summary-label">{item.label}</p>
+        <p className={cx('m-report-summary-value sm:text-lg tabular-nums truncate', toneClass[item.tone || 'neutral'])}>
           {item.value}
         </p>
       </div>

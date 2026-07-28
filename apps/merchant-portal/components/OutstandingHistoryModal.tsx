@@ -281,7 +281,7 @@ const OutstandingHistoryModal: React.FC<OutstandingHistoryModalProps> = ({
                         </p>
                         <p className="text-xs text-[var(--text-secondary)]">
                           {formatTimestamp(tx.timestamp)}
-                          {tx.description && <span className="block mt-0.5 font-mono text-[10px]">{tx.description}</span>}
+                          {tx.description && <span className="m-mono-caption block mt-0.5">{tx.description}</span>}
                         </p>
                       </div>
                       <div className="text-right flex-shrink-0">

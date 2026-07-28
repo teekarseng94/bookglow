@@ -36,13 +36,13 @@ export const POSCatalogueToolbar: React.FC<POSCatalogueToolbarProps> = ({
   onCategoryChange,
   className,
 }) => (
-  <div className={cx('space-y-3', className)}>
+  <div className={cx('m-pos-toolbar space-y-3', className)}>
     <div className="flex flex-col xl:flex-row xl:items-center gap-2.5 xl:gap-3">
       <div className="relative flex-1 min-w-0">
         <input
           type="search"
           placeholder="Search services or products..."
-          className="w-full pl-10 pr-4 py-2.5 min-h-[44px] bg-[var(--bg-surface)] border border-[var(--line)] rounded-ui-md focus-visible:shadow-ui-focus-strong outline-none text-sm"
+          className="m-pos-search w-full pl-10 pr-4 py-2.5 min-h-[44px] bg-[var(--bg-surface)] border border-[var(--line)] rounded-ui-md focus-visible:shadow-ui-focus-strong outline-none text-sm"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
         />
@@ -60,7 +60,7 @@ export const POSCatalogueToolbar: React.FC<POSCatalogueToolbarProps> = ({
             type="button"
             onClick={() => onCatalogChange(cat)}
             className={cx(
-              'shrink-0 px-3 py-2 rounded-ui-sm text-sm font-semibold transition-colors whitespace-nowrap',
+              'm-pos-chip shrink-0 px-3 py-2 rounded-ui-sm text-sm font-semibold transition-colors whitespace-nowrap',
               activeCatalog === cat
                 ? 'text-[var(--brand)] bg-[var(--brand-soft)]'
                 : 'text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]',
@@ -75,7 +75,7 @@ export const POSCatalogueToolbar: React.FC<POSCatalogueToolbarProps> = ({
         value={sortBy}
         onChange={(e) => onSortChange(e.target.value as POSSortBy)}
         aria-label="Sort catalog"
-        className="shrink-0 xl:ml-auto w-full xl:w-auto px-3 py-2 min-h-[40px] bg-[var(--bg-surface)] border border-[var(--line)] rounded-ui-md outline-none focus-visible:shadow-ui-focus-strong text-sm font-medium"
+        className="m-pos-sort shrink-0 xl:ml-auto w-full xl:w-auto px-3 py-2 min-h-[40px] bg-[var(--bg-surface)] border border-[var(--line)] rounded-ui-md outline-none focus-visible:shadow-ui-focus-strong text-sm font-medium"
       >
         <option value="a-z">A–Z</option>
         <option value="z-a">Z–A</option>
@@ -92,7 +92,7 @@ export const POSCatalogueToolbar: React.FC<POSCatalogueToolbarProps> = ({
             type="button"
             onClick={() => onCategoryChange(cat)}
             className={cx(
-              'shrink-0 px-3.5 py-1.5 rounded-full text-sm font-semibold transition-all whitespace-nowrap',
+              'm-pos-category-chip shrink-0 px-3.5 py-1.5 rounded-full text-sm font-semibold transition-all whitespace-nowrap',
               selectedCategory === cat
                 ? 'bg-[var(--brand)] text-white shadow-ui-xs'
                 : 'bg-[var(--bg-soft)] text-[var(--text-secondary)] hover:bg-[var(--bg-selection)]',

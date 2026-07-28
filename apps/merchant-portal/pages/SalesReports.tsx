@@ -40,7 +40,7 @@ function paymentMethodMatches(methodFromTxn: string, methodFromSettings: string)
 }
 
 const COLLECTION_ICON_COLORS = ['bg-purple-500', 'bg-green-500', 'bg-blue-500', 'bg-amber-500', 'bg-teal-500', 'bg-rose-500', 'bg-indigo-500'];
-const COLLECTION_TEXT_COLORS = ['text-purple-700', 'text-green-700', 'text-blue-700', 'text-amber-700', 'text-teal-700', 'text-rose-700', 'text-indigo-700'];
+const COLLECTION_TEXT_COLORS = ['text-purple-700', 'text-green-700', 'text-blue-700', 'text-amber-700', 'text-[var(--brand)]', 'text-rose-700', 'text-indigo-700'];
 
 const SalesReports: React.FC<SalesReportsProps> = ({ 
   transactions, 
@@ -233,10 +233,10 @@ const SalesReports: React.FC<SalesReportsProps> = ({
       {/* Collection Summary Sidebar - included in print */}
       <div className="w-full lg:w-80 flex-shrink-0 space-y-4 print:block">
         {/* Collection Card */}
-        <div className="bg-gradient-to-br from-blue-50 to-teal-50 rounded-2xl border border-blue-200 shadow-sm p-6">
-          <h3 className="text-sm font-black uppercase tracking-widest text-slate-700 mb-4">Collection</h3>
+        <div className="bg-gradient-to-br from-[var(--brand-soft)] to-[var(--bg-soft)] rounded-2xl border border-[var(--brand)]/30 shadow-sm p-6">
+          <h3 className="m-settings-subhead text-[var(--text-primary)] mb-4">Collection</h3>
           {collectionLoading ? (
-            <div className="mb-6 flex items-center gap-3 text-teal-700">
+            <div className="mb-6 flex items-center gap-3 text-[var(--brand)]">
               <svg className="animate-spin h-8 w-8 flex-shrink-0" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
@@ -244,13 +244,13 @@ const SalesReports: React.FC<SalesReportsProps> = ({
               <span className="text-sm font-medium">Loading report...</span>
             </div>
           ) : collectionError ? (
-            <div className={`mb-6 p-3 rounded-lg border ${collectionError.includes('initializing') ? 'bg-blue-50 border-blue-200' : 'bg-red-50 border-red-200'}`}>
+            <div className={`mb-6 p-3 rounded-lg border ${collectionError.includes('initializing') ? 'bg-blue-50 border-[var(--brand)]/30' : 'bg-red-50 border-red-200'}`}>
               <p className={collectionError.includes('initializing') ? 'text-xs text-blue-700 font-medium' : 'text-xs text-red-600 font-medium'}>
                 {collectionError}
               </p>
             </div>
           ) : (
-            <p className="text-4xl font-black text-teal-700 mb-6 tabular-nums">
+            <p className="m-dash-hero-value text-[var(--brand)] mb-6 tabular-nums">
               RM {collectionTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           )}
@@ -314,27 +314,27 @@ const SalesReports: React.FC<SalesReportsProps> = ({
         {/* Desktop filter bar */}
         <div className="hidden sm:grid bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5">Date From</label>
+            <label className="m-settings-label block uppercase tracking-widest">Date From</label>
             <input 
               type="date" 
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-sm"
+              className="m-settings-control w-full outline-none"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5">Date To</label>
+            <label className="m-settings-label block uppercase tracking-widest">Date To</label>
             <input 
               type="date" 
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-sm"
+              className="m-settings-control w-full outline-none"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5">Category</label>
+            <label className="m-settings-label block uppercase tracking-widest">Category</label>
             <select 
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-sm"
+              className="m-settings-control w-full outline-none"
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
             >
@@ -345,9 +345,9 @@ const SalesReports: React.FC<SalesReportsProps> = ({
             </select>
           </div>
           <div>
-            <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5">Staff Member</label>
+            <label className="m-settings-label block uppercase tracking-widest">Staff Member</label>
             <select 
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 font-bold text-sm"
+              className="m-settings-control w-full outline-none"
               value={selectedStaffId}
               onChange={(e) => setSelectedStaffId(e.target.value)}
             >
@@ -362,7 +362,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
         {/* Transaction List */}
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-            <h3 className="text-sm font-black uppercase tracking-widest text-slate-400">
+            <h3 className="m-settings-subhead">
               Total - {filteredData.length}
             </h3>
           </div>
@@ -435,7 +435,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
             </div>
             {collectionLoading ? (
               <div className="p-12 flex flex-col items-center justify-center gap-3 text-slate-500">
-                <svg className="animate-spin h-10 w-10 text-teal-600" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin h-10 w-10 text-[var(--brand)]" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
@@ -463,15 +463,15 @@ const SalesReports: React.FC<SalesReportsProps> = ({
       <ReportFiltersSheet open={showFiltersSheet} onClose={() => setShowFiltersSheet(false)}>
         <div className="space-y-4">
           <label className="block">
-            <span className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5">Date From</span>
+            <span className="m-settings-label block uppercase tracking-widest">Date From</span>
             <input type="date" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
           </label>
           <label className="block">
-            <span className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5">Date To</span>
+            <span className="m-settings-label block uppercase tracking-widest">Date To</span>
             <input type="date" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
           </label>
           <label className="block">
-            <span className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5">Category</span>
+            <span className="m-settings-label block uppercase tracking-widest">Category</span>
             <select className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
               <option value="ALL">All Categories</option>
               {serviceCategories.map((cat) => (
@@ -480,7 +480,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
             </select>
           </label>
           <label className="block">
-            <span className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1.5">Staff Member</span>
+            <span className="m-settings-label block uppercase tracking-widest">Staff Member</span>
             <select className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold" value={selectedStaffId} onChange={(e) => setSelectedStaffId(e.target.value)}>
               <option value="ALL">All Staff</option>
               {staff.map((s) => (

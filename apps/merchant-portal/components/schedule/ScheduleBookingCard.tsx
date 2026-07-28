@@ -8,7 +8,6 @@ export interface ScheduleBookingCardProps {
   serviceName: string;
   staffName: string;
   status: string;
-  accentClassName?: string;
   onClick: () => void;
   className?: string;
 }
@@ -26,30 +25,35 @@ export const ScheduleBookingCard: React.FC<ScheduleBookingCardProps> = ({
   serviceName,
   staffName,
   status,
-  accentClassName,
   onClick,
   className,
 }) => (
   <button
     type="button"
     onClick={onClick}
+    style={{ borderLeftColor: 'var(--brand)' }}
     className={cx(
-      'w-full text-left rounded-ui-sm border border-[var(--line)] border-l-4',
-      'bg-[var(--bg-surface)] px-3 py-2.5 space-y-1',
+      'w-full text-left border border-[var(--line)] border-l-4',
+      'bg-[var(--brand-soft)] space-y-1',
+      'm-booking-card',
+      'md:rounded-ui-sm md:px-3 md:py-2.5 md:min-h-0',
       'active:scale-[0.99] transition-transform',
-      accentClassName,
       className,
     )}
   >
     <div className="flex items-center justify-between gap-2 min-w-0">
-      <span className="text-sm font-semibold text-[var(--text-primary)] truncate">{timeLabel}</span>
+      <span className="m-booking-time md:text-sm md:font-semibold text-[var(--text-primary)] truncate">
+        {timeLabel}
+      </span>
       <StatusBadge tone={statusTone(status)}>{status}</StatusBadge>
     </div>
     <div className="flex items-baseline gap-1.5 min-w-0">
-      <span className="text-sm font-semibold text-[var(--text-primary)] truncate">{customerName}</span>
-      <span className="text-sm text-[var(--text-secondary)] truncate">{serviceName}</span>
+      <span className="m-booking-name md:text-sm md:font-semibold text-[var(--text-primary)] truncate">
+        {customerName}
+      </span>
+      <span className="m-secondary md:text-sm text-[var(--text-secondary)] truncate">{serviceName}</span>
     </div>
-    <p className="text-xs text-[var(--text-muted)] truncate">{staffName}</p>
+    <p className="m-caption md:text-xs text-[var(--text-muted)] truncate">{staffName}</p>
   </button>
 );
 

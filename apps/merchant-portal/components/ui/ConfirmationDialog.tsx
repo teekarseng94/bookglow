@@ -34,7 +34,7 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
     title={title}
     size="sm"
     footer={
-      <div className="flex justify-end gap-2">
+      <div className="m-modal-footer-actions flex justify-end gap-2">
         <Button variant="secondary" size="sm" onClick={onClose} disabled={busy}>
           {cancelLabel}
         </Button>

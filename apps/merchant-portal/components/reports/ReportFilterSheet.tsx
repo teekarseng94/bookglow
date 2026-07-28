@@ -96,7 +96,7 @@ export function ReportFilterSheet<TFilter extends string = string, TSort extends
     >
       <div className="space-y-5">
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-2">
+          <p className="m-settings-subhead mb-2">
             {filterLabel}
           </p>
           <div className="flex flex-wrap gap-2">
@@ -113,7 +113,7 @@ export function ReportFilterSheet<TFilter extends string = string, TSort extends
 
         {sortOptions && onSortChange && sortValue !== undefined ? (
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-2">
+            <p className="m-settings-subhead mb-2">
               {sortLabel}
             </p>
             <div className="flex flex-wrap gap-2">
@@ -131,7 +131,7 @@ export function ReportFilterSheet<TFilter extends string = string, TSort extends
 
         {orderOptions && onOrderChange && orderValue !== undefined ? (
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-widest text-[var(--text-muted)] mb-2">
+            <p className="m-settings-subhead mb-2">
               {orderLabel}
             </p>
             <div className="flex flex-wrap gap-2">

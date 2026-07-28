@@ -18,7 +18,7 @@ export const ScheduleEmptyState: React.FC<ScheduleEmptyStateProps> = ({
   className,
 }) => {
   if (compact) {
-    return <p className={cx('text-[var(--text-muted)] text-[15px]', className)}>{title}</p>;
+    return <p className={cx('m-caption', className)}>{title}</p>;
   }
   return (
     <EmptyState

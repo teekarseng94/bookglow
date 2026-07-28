@@ -45,7 +45,7 @@ export const CustomerActivity: React.FC<CustomerActivityProps> = ({
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-[var(--text-primary)] truncate">{v.name}</p>
-                  {v.tier ? <p className="text-[10px] text-[var(--text-muted)]">{v.tier}</p> : null}
+                  {v.tier ? <p className="m-caption text-[var(--text-muted)]">{v.tier}</p> : null}
                 </div>
               </div>
               <span className="text-sm font-bold text-[var(--brand)] tabular-nums shrink-0 ml-2">

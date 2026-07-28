@@ -67,11 +67,11 @@ export const StaffPermissionSection: React.FC<StaffPermissionSectionProps> = ({
             >
               <div className="min-w-0">
                 <p className="text-sm font-bold text-[var(--text-primary)]">{def.label}</p>
-                <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{def.description}</p>
+                <p className="m-settings-hint mt-0.5">{def.description}</p>
               </div>
               <span
                 className={cx(
-                  'shrink-0 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full',
+                  'm-staff-chip shrink-0',
                   allowed ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600',
                 )}
               >

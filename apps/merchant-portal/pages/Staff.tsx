@@ -625,7 +625,7 @@ const StaffPage: React.FC<StaffProps> = ({
             key={p}
             type="button"
             onClick={() => setPeriod(p)}
-            className={`px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap ${
+            className={`px-3 py-2 rounded-lg m-settings-label uppercase tracking-wider transition-all whitespace-nowrap ${
               period === p
                 ? 'bg-[var(--bg-surface)] text-[var(--brand)] shadow-sm'
                 : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
@@ -660,9 +660,9 @@ const StaffPage: React.FC<StaffProps> = ({
     : null;
 
   const editorFieldClass =
-    'w-full min-h-[44px] px-3 py-2.5 text-[13px] sm:text-sm bg-[var(--bg-soft)] border border-[var(--line)] rounded-ui-sm outline-none focus:ring-2 focus:ring-[var(--brand)] text-[var(--text-primary)] font-medium';
+    'm-settings-control w-full outline-none sm:text-sm focus:ring-2 focus:ring-[var(--brand)]';
   const editorLabelClass =
-    'block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1.5';
+    'block m-settings-label uppercase tracking-widest text-[var(--text-muted)] mb-1.5';
 
   const chipClass = (active: boolean, tone: 'brand' | 'success' | 'neutral' = 'brand') => {
     if (!active) {
@@ -779,7 +779,7 @@ const StaffPage: React.FC<StaffProps> = ({
                     <button
                       type="button"
                       onClick={() => setRoleFilter('all')}
-                      className={`shrink-0 px-3 py-1.5 rounded-full border text-[11px] font-bold ${chipClass(roleFilter === 'all')}`}
+                      className={`m-staff-chip shrink-0 border ${chipClass(roleFilter === 'all')}`}
                     >
                       All ({staff.length})
                     </button>
@@ -790,7 +790,7 @@ const StaffPage: React.FC<StaffProps> = ({
                           key={role}
                           type="button"
                           onClick={() => setRoleFilter(role)}
-                          className={`shrink-0 px-3 py-1.5 rounded-full border text-[11px] font-bold ${chipClass(roleFilter === role)}`}
+                          className={`m-staff-chip shrink-0 border ${chipClass(roleFilter === role)}`}
                         >
                           {role} ({count})
                         </button>
@@ -810,7 +810,7 @@ const StaffPage: React.FC<StaffProps> = ({
                         key={s.id}
                         type="button"
                         onClick={() => setStatusFilter(s.id)}
-                        className={`shrink-0 px-3 py-1.5 rounded-full border text-[11px] font-bold ${chipClass(statusFilter === s.id, s.tone)}`}
+                        className={`m-staff-chip shrink-0 border ${chipClass(statusFilter === s.id, s.tone)}`}
                       >
                         {s.label}
                       </button>
@@ -980,7 +980,7 @@ const StaffPage: React.FC<StaffProps> = ({
                   {uploadLoading ? (
                     <p className="text-xs font-semibold text-[var(--brand)] mt-0.5">Uploading…</p>
                   ) : (
-                    <p className="text-[11px] text-[var(--text-muted)] mt-0.5">JPEG or PNG, max 2 MB</p>
+                    <p className="m-settings-hint mt-0.5">JPEG or PNG, max 2 MB</p>
                   )}
                 </div>
               </div>
@@ -1058,14 +1058,14 @@ const StaffPage: React.FC<StaffProps> = ({
                 <button
                   type="button"
                   onClick={selectAllQualified}
-                  className="px-2.5 py-1.5 rounded-ui-sm text-[11px] font-bold text-[var(--brand)] hover:bg-[var(--brand-soft)]"
+                  className="m-staff-chip text-[var(--brand)] hover:bg-[var(--brand-soft)]"
                 >
                   Select all
                 </button>
                 <button
                   type="button"
                   onClick={clearAllQualified}
-                  className="px-2.5 py-1.5 rounded-ui-sm text-[11px] font-bold text-[var(--text-muted)] hover:bg-[var(--bg-soft)]"
+                  className="m-staff-chip text-[var(--text-muted)] hover:bg-[var(--bg-soft)]"
                 >
                   Clear all
                 </button>
@@ -1099,7 +1099,7 @@ const StaffPage: React.FC<StaffProps> = ({
             {(Object.entries(filteredServicesByCategory) as [string, Service[]][]).map(
               ([cat, list]) => (
                 <div key={cat}>
-                  <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-1">
+                  <p className="m-staff-section-title mb-1">
                     {cat}
                   </p>
                   <div className="grid grid-cols-1 gap-0.5">
@@ -1122,7 +1122,7 @@ const StaffPage: React.FC<StaffProps> = ({
                             {s.name}
                           </span>
                           {typeof s.duration === 'number' && s.duration > 0 && (
-                            <span className="text-[11px] text-[var(--text-muted)] font-medium shrink-0">
+                            <span className="m-staff-card__meta shrink-0">
                               {s.duration} min
                             </span>
                           )}

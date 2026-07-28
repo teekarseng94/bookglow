@@ -45,13 +45,13 @@ export const StaffSummaryCards: React.FC<StaffSummaryCardsProps> = ({ cards, cla
             {card.icon}
           </div>
           <div className="min-w-0">
-            <p className="text-[9px] xl:text-[10px] font-black uppercase tracking-wider text-[var(--text-muted)]">
+            <p className="m-staff-kpi-label">
               {card.label}
             </p>
-            <p className="text-lg xl:text-xl font-black tabular-nums text-[var(--text-primary)] leading-tight mt-0.5">
+            <p className="m-staff-kpi-value xl:text-xl tabular-nums text-[var(--text-primary)] mt-0.5">
               {card.value}
             </p>
-            <p className="text-[10px] xl:text-[11px] font-medium text-[var(--text-secondary)] mt-0.5 truncate">
+            <p className="m-staff-kpi-hint mt-0.5 truncate">
               {card.hint}
             </p>
           </div>

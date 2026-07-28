@@ -232,23 +232,23 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
   };
 
   const showMemberLoading = memberDataLoading && clientSales.length === 0 && clientAppointments.length === 0;
-  const bgClass = 'bg-[#f8f9fa] min-h-[60vh]';
+  const bgClass = 'bg-[var(--bg-canvas)] min-h-[60vh]';
 
   if (!client) {
     return (
-      <div className="min-h-[50vh] flex flex-col items-center justify-center text-slate-500 bg-[#f8f9fa]">
+      <div className="min-h-[50vh] flex flex-col items-center justify-center text-[var(--text-secondary)] bg-[var(--bg-canvas)]">
         <p className="font-semibold">Member not found.</p>
-        <button onClick={() => navigate(-1)} className="mt-4 text-teal-600 hover:underline">Go back</button>
+        <button onClick={() => navigate(-1)} className="mt-4 text-[var(--brand)] hover:underline">Go back</button>
       </div>
     );
   }
 
   const renderDetailHeader = (title: string, onBack: () => void) => (
-    <div className="flex items-center justify-between p-4 bg-white border-b border-slate-200 sticky top-0 z-10 rounded-t-2xl">
-      <button onClick={onBack} className="p-2 -ml-2 rounded-xl hover:bg-slate-100 text-teal-600 transition-colors" aria-label="Back">
+    <div className="m-member-subview-header flex items-center justify-between bg-[var(--bg-surface)] border-b border-[var(--line)] sticky top-0 z-10 rounded-t-2xl">
+      <button onClick={onBack} className="m-member-details-back grid place-items-center -ml-1 hover:bg-[var(--bg-soft)] text-[var(--brand)] transition-colors" aria-label="Back">
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
       </button>
-      <h2 className="text-lg font-bold text-slate-800">{title}</h2>
+      <h2 className="m-member-subview-title text-[var(--text-primary)]">{title}</h2>
       <div className="w-10" />
     </div>
   );
@@ -265,7 +265,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
                 <button
                   key={tab}
                   onClick={() => setRecentTab(tab)}
-                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${recentTab === tab ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-500'}`}
+                  className={`m-member-filter-chip flex-1 transition-colors ${recentTab === tab ? 'bg-[var(--bg-surface)] text-[var(--brand)] shadow-sm' : 'text-[var(--text-muted)]'}`}
                 >
                   {tab}
                 </button>
@@ -282,12 +282,12 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
                       {items.map((item, idx) => (
                         <div
                           key={`${date}-${item.transactionId}-${idx}`}
-                          className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex items-center gap-4"
+                          className="m-member-detail-row bg-[var(--bg-surface)] border border-[var(--line)] shadow-ui-xs flex items-center"
                         >
                           <PlaceholderIcon className="w-12 h-12 flex-shrink-0" />
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-slate-800 truncate">{item.name}</p>
-                            <p className="text-sm text-teal-600 font-medium">{item.price.toFixed(2)} {item.quantity > 1 ? `× ${item.quantity}` : ''}</p>
+                            <p className="m-list-title text-[var(--text-primary)] truncate">{item.name}</p>
+                            <p className="m-secondary font-medium text-[var(--brand)]">{item.price.toFixed(2)} {item.quantity > 1 ? `× ${item.quantity}` : ''}</p>
                           </div>
                           <svg className="w-5 h-5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                         </div>
@@ -317,7 +317,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
                   <button
                     key={key}
                     onClick={() => setSalesFilter(key)}
-                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${salesFilter === key ? 'bg-slate-200 text-teal-600' : 'bg-white text-slate-500 border border-slate-200'}`}
+                    className={`m-member-filter-chip transition-colors ${salesFilter === key ? 'bg-[var(--bg-soft)] text-[var(--brand)]' : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border border-[var(--line)]'}`}
                   >
                     {label}
                   </button>
@@ -346,14 +346,14 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
                               setSelectedSale(tx);
                             }}
                             style={{ touchAction: 'manipulation' }}
-                            className="w-full text-left bg-white rounded-2xl border border-slate-200 shadow-sm p-4 min-h-[48px] hover:border-teal-300 hover:shadow-md active:bg-slate-50 transition-all cursor-pointer"
+                            className="m-member-detail-row w-full text-left bg-[var(--bg-surface)] border border-[var(--line)] shadow-ui-xs hover:border-[var(--brand)] hover:shadow-ui-sm active:bg-[var(--bg-soft)] transition-all cursor-pointer"
                           >
                             <div className="flex justify-between items-start">
                               <div className="flex items-center gap-2">
                                 <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                 <span className="font-mono text-sm text-slate-600">{receiptNumber(tx, idx)}</span>
                               </div>
-                              <span className="text-lg font-bold text-teal-600">{tx.amount.toFixed(2)}</span>
+                              <span className="text-lg font-bold text-[var(--brand)]">{tx.amount.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between items-center mt-2 text-sm text-slate-500">
                               <span>{new Date(tx.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}, {formatDateHeader(tx.date.split('T')[0] || tx.date)}</span>
@@ -406,7 +406,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
                 <button
                   key={tab}
                   onClick={() => setAppointmentsFilter(tab)}
-                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${appointmentsFilter === tab ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-500'}`}
+                  className={`m-member-filter-chip flex-1 transition-colors ${appointmentsFilter === tab ? 'bg-[var(--bg-surface)] text-[var(--brand)] shadow-sm' : 'text-[var(--text-muted)]'}`}
                 >
                   {tab}
                 </button>
@@ -431,10 +431,10 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
                           {list.map((apt) => (
                             <div
                               key={apt.id}
-                              className="bg-white rounded-2xl border-2 border-red-200 shadow-sm p-4 bg-red-50/30"
+                              className="m-member-detail-row border-2 border-red-200 shadow-ui-xs bg-red-50/30"
                             >
                               <div className="flex justify-between items-start">
-                                <p className="font-bold text-slate-800">{client.name}</p>
+                                <p className="m-list-title text-[var(--text-primary)]">{client.name}</p>
                                 {apt.status === 'completed' && (
                                   <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
                                     <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
@@ -476,15 +476,15 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
       )}
       {showMemberLoading && (
         <div className="flex items-center justify-center py-4">
-          <div className="w-8 h-8 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-[var(--brand)] border-t-transparent rounded-full animate-spin" />
         </div>
       )}
-      <div className="flex items-center justify-between gap-4">
+      <div className="m-member-details-header flex items-center justify-between gap-4">
         <div className="flex items-center gap-4 min-w-0">
-          <button onClick={() => navigate(-1)} className="p-2 rounded-xl hover:bg-white/80 text-slate-600 transition-colors shrink-0" aria-label="Back">
+          <button onClick={() => navigate(-1)} className="m-member-details-back grid place-items-center hover:bg-[var(--bg-surface)]/80 text-[var(--text-secondary)] transition-colors shrink-0" aria-label="Back">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           </button>
-          <h2 className="text-xl font-bold text-slate-800 truncate">Member Details</h2>
+          <h2 className="m-member-details-title text-[var(--text-primary)] truncate">Member Details</h2>
         </div>
         <Button
           type="button"
@@ -599,23 +599,23 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
       {/* 8. Notes / media */}
       <MemberHistorySection title="Photos" description="Member media and notes">
         <div className="grid grid-cols-4 gap-3">
-          <button type="button" className="aspect-square rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 flex items-center justify-center text-slate-400 hover:border-teal-300 hover:bg-teal-50/50 transition-colors">
+          <button type="button" className="aspect-square rounded-xl border-2 border-dashed border-[var(--line)] bg-[var(--bg-soft)] flex items-center justify-center text-[var(--text-muted)] hover:border-[var(--brand)] hover:bg-[var(--brand-soft)] transition-colors">
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
           </button>
         </div>
       </MemberHistorySection>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+      <div className="bg-[var(--bg-surface)] rounded-2xl border border-[var(--line)] shadow-ui-xs p-6">
         <div className="grid grid-cols-4 gap-4">
           {[
             { label: 'Breakdown', icon: '⏱', color: 'bg-pink-100 text-pink-600' },
             { label: 'Remarks', icon: '📋', color: 'bg-amber-100 text-amber-600' },
-            { label: 'Checklist', icon: '✓', color: 'bg-teal-100 text-teal-600' },
+            { label: 'Checklist', icon: '✓', color: 'bg-[var(--brand-soft)] text-[var(--brand)]' },
             { label: 'Referral', icon: '👥', color: 'bg-amber-200/80 text-amber-800' }
           ].map((item) => (
-            <button key={item.label} type="button" className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-slate-50 transition-colors">
+            <button key={item.label} type="button" className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-[var(--bg-soft)] transition-colors">
               <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold ${item.color}`}>{item.icon}</div>
-              <span className="text-xs font-medium text-slate-600 text-center">{item.label}</span>
+              <span className="m-caption font-medium text-[var(--text-secondary)] text-center">{item.label}</span>
             </button>
           ))}
         </div>
@@ -628,7 +628,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
           <button
             type="button"
             onClick={() => setShowDeleteConfirm(true)}
-            className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 active:scale-[0.98] transition-all shadow-sm"
+            className="m-member-delete-btn w-full flex items-center justify-center gap-2 bg-[var(--danger)] text-white hover:opacity-90 active:scale-[0.98] transition-all shadow-ui-xs"
           >
             <Trash2 className="w-5 h-5" />
             Delete Member

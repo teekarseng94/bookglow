@@ -383,21 +383,21 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       <SettingsSection
         id="settings-business-profile"
         defaultOpen
-        iconWrap="bg-teal-50 text-teal-600"
+        iconWrap="bg-[var(--brand-soft)] text-[var(--brand)]"
         title="Business profile"
         description="Customize your brand and outlet details."
         icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>}
       >
         <div className="max-w-md">
-          <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Shop Name</label>
+          <label className="m-settings-label block uppercase tracking-widest">Shop Name</label>
           <input 
             type="text" 
             placeholder="e.g. Bookglow Spa"
-            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-bold"
+            className="m-settings-control w-full outline-none"
             value={settings.shopName}
             onChange={handleShopNameChange}
           />
-          <p className="text-[10px] text-slate-400 mt-2 italic">This name will appear in the sidebar, invoices, and browser title.</p>
+          <p className="m-settings-hint mt-2 italic">This name will appear in the sidebar, invoices, and browser title.</p>
         </div>
       </SettingsSection>
 
@@ -414,7 +414,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           <div className="flex flex-col md:flex-row gap-6 items-start">
             <div className="flex-1 min-w-0 space-y-4">
               <div>
-                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Booking page path</label>
+                <label className="m-settings-label block uppercase tracking-widest">Booking page path</label>
                 <input
                   type="text"
                   value={bookingSlug}
@@ -423,9 +423,9 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                     setBookingSlugError(null);
                   }}
                   placeholder={shopNameToBookingSlug(settings.shopName || '') || 'baliWellness'}
-                  className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-800 outline-none focus:ring-2 focus:ring-teal-500"
+                  className="m-settings-control w-full outline-none bg-[var(--bg-surface)]"
                 />
-                <p className="text-[10px] text-slate-400 mt-1">
+                <p className="m-settings-hint mt-1">
                   Last segment of your public link (e.g. baliWellness). Leave empty to use your outlet id. Save with Save Changes under Operating hours.
                 </p>
                 {bookingSlugError && (
@@ -433,19 +433,19 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                 )}
               </div>
               <div>
-                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Booking URL</label>
+                <label className="m-settings-label block uppercase tracking-widest">Booking URL</label>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
                     type="text"
                     readOnly
                     value={bookingUrl}
-                    className="flex-1 min-w-0 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 truncate"
+                    className="m-settings-control flex-1 min-w-0 truncate"
                   />
                   <div className="relative w-full sm:w-auto">
                     <button
                       type="button"
                       onClick={handleCopyLink}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-teal-600 text-white font-semibold text-sm hover:bg-teal-700 transition-colors"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl m-settings-btn bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)] transition-colors"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                       Copy Link
@@ -458,11 +458,11 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                   </div>
                 </div>
               </div>
-              <p className="text-[10px] text-slate-400">Customers can open this link to view your service menu and book a time. No login required.</p>
+              <p className="m-settings-hint">Customers can open this link to view your service menu and book a time. No login required.</p>
             </div>
             <div className="flex flex-col items-center gap-2 p-4 bg-slate-50 rounded-2xl border border-slate-100">
               <QRCodeSVG value={bookingUrl} size={160} level="M" includeMargin />
-              <span className="text-[10px] font-medium text-slate-500">Scan to book · Print for counter</span>
+              <span className="m-settings-hint font-medium">Scan to book · Print for counter</span>
             </div>
           </div>
         ) : (
@@ -473,27 +473,27 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           <div className="mt-6 pt-6 border-t border-slate-100 space-y-4">
             {(contextLoading || outletLoading) ? (
               <div className="flex items-center justify-center py-6">
-                <div className="w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
+                <div className="w-8 h-8 border-4 border-[var(--brand)] border-t-transparent rounded-full animate-spin" />
                 <span className="ml-3 text-slate-600">Loading outlet information...</span>
               </div>
             ) : (
               <>
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Address (one line)</label>
+                  <label className="m-settings-label block uppercase tracking-widest">Address (one line)</label>
                   <textarea
                     rows={2}
                     placeholder="e.g. 43-G, Jln Damai Perdana 6/1F, Bandar Damai Perdana, 56000 Cheras, Kuala Lumpur"
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+                    className="m-settings-control w-full outline-none"
                     value={addressDisplay}
                     onChange={(e) => setAddressDisplay(e.target.value)}
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Phone Number</label>
+                  <label className="m-settings-label block uppercase tracking-widest">Phone Number</label>
                   <input
                     type="text"
                     placeholder="e.g. +60 169929123"
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+                    className="m-settings-control w-full outline-none"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                   />
@@ -517,7 +517,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           <p className="text-sm text-red-600 font-semibold">Outlet ID missing — cannot save hours.</p>
         ) : (contextLoading || outletLoading) ? (
           <div className="flex items-center justify-center py-6">
-            <div className="w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-4 border-[var(--brand)] border-t-transparent rounded-full animate-spin" />
             <span className="ml-3 text-slate-600">Loading outlet information...</span>
           </div>
         ) : (
@@ -546,7 +546,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                 );
               })}
             </div>
-            <p className="text-[10px] text-slate-400 mt-2">
+            <p className="m-settings-hint mt-2">
               Saves address, phone, booking path and hours together. Closing without Save Changes does not write these fields.
             </p>
             <SettingsSaveBar
@@ -574,7 +574,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
             <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
               <div>
                 <span className="block text-sm font-bold text-slate-700">Enable Reminders</span>
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Send messages automatically</span>
+                <span className="m-settings-hint font-semibold uppercase tracking-tight">Send messages automatically</span>
               </div>
               <button 
                 onClick={() => onUpdateSettings({ ...settings, reminderEnabled: !settings.reminderEnabled })}
@@ -586,7 +586,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
 
             <div className={`space-y-4 ${!settings.reminderEnabled ? 'opacity-40 grayscale pointer-events-none' : ''}`}>
               <div>
-                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Reminder Channel</label>
+                <label className="m-settings-label block uppercase tracking-widest">Reminder Channel</label>
                 <select 
                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-bold"
                   value={settings.reminderChannel}
@@ -599,7 +599,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
               </div>
 
               <div>
-                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Reminder Timing</label>
+                <label className="m-settings-label block uppercase tracking-widest">Reminder Timing</label>
                 <div className="flex items-center gap-3">
                   <select 
                     className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-bold"
@@ -618,14 +618,14 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           </div>
 
           <div className="p-6 bg-indigo-50 rounded-2xl border border-indigo-100 h-fit">
-            <h4 className="text-xs font-black uppercase text-indigo-700 tracking-widest mb-3 flex items-center gap-2">
+            <h4 className="m-settings-subhead text-[var(--brand-deep)] mb-3 flex items-center gap-2">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               AI Messaging
             </h4>
             <p className="text-xs text-indigo-800 leading-relaxed font-medium">
               Bookglow can draft personalized, welcoming messages for each client. When reminders are triggered from the dashboard or calendar, they are simulated based on these settings.
             </p>
-            <div className="mt-4 p-3 bg-white/60 rounded-xl text-[10px] text-indigo-600 italic border border-white/40">
+            <div className="mt-4 p-3 bg-white/60 rounded-xl m-settings-hint text-[var(--brand)] italic border border-white/40">
               "Hi Sarah! Just a gentle reminder of your Swedish Massage tomorrow at 11:00 AM at Bookglow Spa. We can't wait to see you!"
             </div>
           </div>
@@ -642,24 +642,24 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       >
         <div className="space-y-8">
           <div>
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">Payment methods</h4>
+            <h4 className="m-settings-subhead">Payment methods</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-4">
-                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest">Active Methods</label>
+                <label className="m-settings-label block uppercase tracking-widest">Active Methods</label>
                 <div className="space-y-2">
                   {settings.paymentMethods.map((method, index) => (
                     <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 group">
                       {editingMethod?.index === index ? (
                         <form onSubmit={handleEditMethod} className="flex-1 flex gap-2">
-                          <input autoFocus type="text" className="flex-1 p-1 px-2 text-sm bg-white border border-teal-200 rounded outline-none" value={editingMethod.name} onChange={(e) => setEditingMethod({ ...editingMethod, name: e.target.value })} />
-                          <button type="submit" className="text-teal-600 font-bold text-xs">Save</button>
+                          <input autoFocus type="text" className="flex-1 p-1 px-2 text-sm bg-white border border-[var(--brand)]/40 rounded outline-none" value={editingMethod.name} onChange={(e) => setEditingMethod({ ...editingMethod, name: e.target.value })} />
+                          <button type="submit" className="text-[var(--brand)] font-semibold text-xs">Save</button>
                           <button type="button" onClick={() => setEditingMethod(null)} className="text-slate-400 font-bold text-xs">Cancel</button>
                         </form>
                       ) : (
                         <>
                           <span className="text-sm font-bold text-slate-700">{method}</span>
                           <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => setEditingMethod({ index, name: method })} className="text-slate-400 hover:text-teal-600"><Icons.Edit /></button>
+                            <button onClick={() => setEditingMethod({ index, name: method })} className="text-slate-400 hover:text-[var(--brand)]"><Icons.Edit /></button>
                             <button onClick={() => removePaymentMethod(index)} className="text-slate-400 hover:text-rose-500"><Icons.Trash /></button>
                           </div>
                         </>
@@ -670,20 +670,20 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
               </div>
 
               <div className="space-y-4">
-                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest">Add New Method</label>
+                <label className="m-settings-label block uppercase tracking-widest">Add New Method</label>
                 <form onSubmit={addPaymentMethod} className="flex gap-2">
-                  <input type="text" placeholder="e.g. PayPal, Apple Pay..." className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium" value={newMethodName} onChange={(e) => setNewMethodName(e.target.value)} />
-                  <button type="submit" className="px-5 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 shadow-sm">Add</button>
+                  <input type="text" placeholder="e.g. PayPal, Apple Pay..." className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus-visible:shadow-ui-focus-strong text-sm font-medium" value={newMethodName} onChange={(e) => setNewMethodName(e.target.value)} />
+                  <button type="submit" className="m-settings-btn px-5 bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)] shadow-ui-xs">Add</button>
                 </form>
               </div>
             </div>
           </div>
 
           <div className="border-t border-slate-100 pt-6">
-            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">Receipt layout</h4>
+            <h4 className="m-settings-subhead">Receipt layout</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Header Title</label>
+                <label className="m-settings-label block uppercase tracking-widest">Header Title</label>
                 <input
                   type="text"
                   value={settings.receiptHeaderTitle || 'Tax Invoice'}
@@ -693,7 +693,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Company Name</label>
+                <label className="m-settings-label block uppercase tracking-widest">Company Name</label>
                 <input
                   type="text"
                   value={settings.receiptCompanyName || settings.shopName || ''}
@@ -703,7 +703,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Company Phone</label>
+                <label className="m-settings-label block uppercase tracking-widest">Company Phone</label>
                 <input
                   type="text"
                   value={settings.receiptPhone || ''}
@@ -713,7 +713,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Company Address</label>
+                <label className="m-settings-label block uppercase tracking-widest">Company Address</label>
                 <input
                   type="text"
                   value={settings.receiptAddress || ''}
@@ -723,7 +723,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                 />
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Footer Note</label>
+                <label className="m-settings-label block uppercase tracking-widest">Footer Note</label>
                 <input
                   type="text"
                   value={settings.receiptFooterNote || 'Thank you for your visit!'}
@@ -734,8 +734,8 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
               </div>
             </div>
             <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">Live Receipt Preview</p>
-              <div className="mx-auto w-full max-w-[340px] bg-white border border-slate-300 rounded-lg p-4 font-mono text-[11px] text-slate-700 space-y-1">
+              <p className="m-settings-subhead">Live Receipt Preview</p>
+              <div className="mx-auto w-full max-w-[340px] bg-white border border-slate-300 rounded-lg p-4 font-mono m-caption text-[var(--text-secondary)] space-y-1">
                 <div className="text-center border-b border-dashed border-slate-300 pb-2 mb-2">
                   <p className="font-bold text-sm">{settings.receiptCompanyName || settings.shopName || 'Bookglow Spa'}</p>
                   <p>{settings.receiptHeaderTitle || 'Tax Invoice'}</p>
@@ -755,7 +755,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                 </div>
               </div>
             </div>
-            <p className="text-[10px] text-slate-400 mt-3">Receipt layout values are stored in outlet settings and used by POS when user clicks Print Receipt.</p>
+            <p className="m-settings-hint mt-3">Receipt layout values are stored in outlet settings and used by POS when user clicks Print Receipt.</p>
           </div>
         </div>
       </SettingsSection>
@@ -764,7 +764,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       <div id="settings-access-permissions" className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 scroll-mt-4">
         <SettingsSection
           className="h-fit"
-          iconWrap="bg-teal-50 text-teal-600"
+          iconWrap="bg-[var(--brand-soft)] text-[var(--brand)]"
           title="Outlet Environment"
           description={'Toggle "restricted mode" for shared terminals.'}
           icon={<Icons.Dashboard />}
@@ -773,35 +773,35 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
             <div className="flex flex-col">
               <span className="text-sm font-bold text-slate-700">Enable Outlet Mode</span>
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Active restrictions for non-admins</span>
+              <span className="m-settings-hint font-semibold uppercase tracking-tight">Active restrictions for non-admins</span>
             </div>
             <button 
               onClick={toggleOutletMode}
-              className={`w-12 h-6 rounded-full transition-colors relative ${settings.isOutletModeEnabled ? 'bg-teal-600' : 'bg-slate-300'}`}
+              className={`w-12 h-6 rounded-full transition-colors relative ${settings.isOutletModeEnabled ? 'bg-[var(--brand)]' : 'bg-[var(--line-strong)]'}`}
             >
               <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settings.isOutletModeEnabled ? 'left-7' : 'left-1'}`}></div>
             </button>
           </div>
 
-          <div className={`p-4 rounded-xl border transition-all ${settings.isAdminAuthenticated ? 'bg-teal-50 border-teal-200' : 'bg-rose-50 border-rose-200'}`}>
+          <div className={`p-4 rounded-xl border transition-all ${settings.isAdminAuthenticated ? 'bg-[var(--brand-soft)] border-[var(--brand)]/30' : 'bg-rose-50 border-rose-200'}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${settings.isAdminAuthenticated ? 'bg-teal-600 text-white' : 'bg-rose-600 text-white'}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${settings.isAdminAuthenticated ? 'bg-[var(--brand)] text-white' : 'bg-rose-600 text-white'}`}>
                   {settings.isAdminAuthenticated ? <Icons.Dashboard /> : <Icons.Lock />}
                 </div>
                 <div>
-                  <span className="block text-sm font-black uppercase text-slate-800">
+                  <span className="block text-sm font-bold uppercase text-[var(--text-primary)]">
                     {settings.isAdminAuthenticated ? 'Admin Authenticated' : 'Restricted Access'}
                   </span>
-                  <span className="text-[10px] text-slate-500 font-bold">Currently in {settings.isAdminAuthenticated ? 'Manager' : 'Staff'} View</span>
+                  <span className="m-settings-hint font-semibold">Currently in {settings.isAdminAuthenticated ? 'Manager' : 'Staff'} View</span>
                 </div>
               </div>
               <button 
                 onClick={toggleAdminAuth}
-                className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest shadow-sm transition-all ${
+                className={`m-settings-btn text-xs uppercase tracking-widest shadow-ui-xs transition-all ${
                   settings.isAdminAuthenticated 
                     ? 'bg-white text-rose-600 hover:bg-rose-50' 
-                    : 'bg-teal-600 text-white hover:bg-teal-700'
+                    : 'bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)]'
                 }`}
               >
                 {settings.isAdminAuthenticated ? 'Logout Admin' : 'Simulate Admin'}
@@ -834,10 +834,10 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                     <span className="text-sm font-bold">{perm.label}</span>
                     {settings.lockedFeatures.includes(perm.id) && <span className="text-amber-400"><Icons.Lock /></span>}
                   </div>
-                  <p className={`text-[10px] mt-1 text-slate-400`}>{perm.description}</p>
+                  <p className={`m-settings-hint mt-1`}>{perm.description}</p>
                 </div>
                 <div className={`w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center ${
-                  settings.lockedFeatures.includes(perm.id) ? 'border-teal-500 bg-teal-500' : 'border-slate-300 bg-transparent'
+                  settings.lockedFeatures.includes(perm.id) ? 'border-[var(--brand)] bg-[var(--brand)]' : 'border-[var(--line-strong)] bg-transparent'
                 }`}>
                   {settings.lockedFeatures.includes(perm.id) && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>}
                 </div>
@@ -859,9 +859,9 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           <button
             type="button"
             onClick={handleOpenApiModal}
-            className="flex items-start gap-3 p-4 rounded-xl border border-teal-200 bg-teal-50 hover:bg-teal-100 transition-colors text-left"
+            className="flex items-start gap-3 p-4 rounded-xl border border-[var(--brand)]/30 bg-[var(--brand-soft)] hover:bg-[var(--bg-selection)] transition-colors text-left"
           >
-            <svg className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+            <svg className="w-5 h-5 text-[var(--brand)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
             <div>
               <p className="text-sm font-bold text-slate-900">Chatbot API Integration</p>
               <p className="text-xs text-slate-500 mt-0.5">Outlet ID, API key, and webhook URL</p>
@@ -879,7 +879,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         icon={<Icons.Lock />}
       >
         <div className="max-w-md space-y-2">
-          <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
+          <label className="m-settings-label block uppercase tracking-widest">
             Voucher Redemption PIN
           </label>
           <input
@@ -894,7 +894,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
             placeholder="e.g. 1234"
             className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-rose-500 text-sm font-medium"
           />
-          <p className="text-[10px] text-slate-400">
+          <p className="m-settings-hint">
             Leave blank to disable PIN checking and use confirmation checkbox only.
           </p>
         </div>

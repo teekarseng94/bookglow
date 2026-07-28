@@ -29,12 +29,12 @@ export const MemberBalanceSection: React.FC<MemberBalanceSectionProps> = ({
 }) => (
   <section
     className={cx(
-      'bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs p-4 sm:p-6',
+      'm-member-balance bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs p-4 sm:p-6',
       className,
     )}
   >
     {title ? (
-      <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-3">
+      <h4 className="m-member-balance__title uppercase tracking-widest text-[var(--text-muted)] mb-3">
         {title}
       </h4>
     ) : null}
@@ -56,9 +56,17 @@ export const MemberBalanceSection: React.FC<MemberBalanceSectionProps> = ({
               {item.icon}
             </div>
           ) : null}
-          <p className="text-xs font-medium text-[var(--text-muted)] uppercase">{item.label}</p>
-          <p className="text-lg font-bold text-[var(--text-primary)] tabular-nums">{item.value}</p>
-          {item.hint ? <p className="text-[10px] font-semibold text-[var(--brand)] uppercase mt-0.5">{item.hint}</p> : null}
+          <p className="m-member-balance__label text-xs font-medium text-[var(--text-muted)] uppercase">
+            {item.label}
+          </p>
+          <p className="m-member-balance__value text-lg font-bold text-[var(--text-primary)] tabular-nums">
+            {item.value}
+          </p>
+          {item.hint ? (
+            <p className="m-member-balance__hint uppercase mt-0.5 text-[var(--brand)]">
+              {item.hint}
+            </p>
+          ) : null}
         </button>
       ))}
     </div>

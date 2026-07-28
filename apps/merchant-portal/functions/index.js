@@ -3,7 +3,7 @@
  *
  * Production data lives in Supabase. Chatbot webhook moved to:
  *   https://uecphpjymbgtttrizhgy.supabase.co/functions/v1/chatbot-webhook
- *
+ * 
  * This file keeps a thin proxy for the old Firebase chatbotWebhook URL
  * (so existing MyChatBot configs keep working) and returns 410 for all
  * other legacy Firestore-backed endpoints.

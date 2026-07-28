@@ -66,21 +66,21 @@ export const ReportDateRangeBar: React.FC<ReportDateRangeBarProps> = ({
     {title ? <h2 className="text-app-section font-bold text-[var(--text-primary)]">{title}</h2> : null}
     <div className="hidden sm:grid grid-cols-2 gap-2 w-full sm:w-auto sm:min-w-[280px]">
       <label className="block">
-        <span className="block text-[10px] font-black uppercase text-[var(--text-muted)] tracking-widest mb-1">From</span>
+        <span className="m-settings-label block uppercase tracking-widest">From</span>
         <input
           type="date"
           value={startDate}
           onChange={(e) => onStartDateChange(e.target.value)}
-          className="w-full p-2.5 bg-[var(--bg-soft)] border border-[var(--line)] rounded-ui-sm text-sm font-semibold outline-none focus-visible:shadow-ui-focus-strong"
+          className="m-settings-control w-full outline-none"
         />
       </label>
       <label className="block">
-        <span className="block text-[10px] font-black uppercase text-[var(--text-muted)] tracking-widest mb-1">To</span>
+        <span className="m-settings-label block uppercase tracking-widest">To</span>
         <input
           type="date"
           value={endDate}
           onChange={(e) => onEndDateChange(e.target.value)}
-          className="w-full p-2.5 bg-[var(--bg-soft)] border border-[var(--line)] rounded-ui-sm text-sm font-semibold outline-none focus-visible:shadow-ui-focus-strong"
+          className="m-settings-control w-full outline-none"
         />
       </label>
     </div>

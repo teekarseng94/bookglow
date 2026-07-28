@@ -214,16 +214,16 @@ const Transactions: React.FC<TransactionsProps> = ({
         description="Review, edit, or filter past transactions."
       />
 
-      <div className="hidden md:flex bg-teal-50 border border-teal-100 rounded-xl p-4 items-center gap-3">
-        <div className="bg-teal-600 text-white p-2 rounded-lg">
+      <div className="hidden md:flex bg-[var(--brand-soft)] border border-[var(--brand)]/20 rounded-xl p-4 items-center gap-3">
+        <div className="bg-[var(--brand)] text-white p-2 rounded-lg">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
         </div>
-        <p className="text-teal-800 text-xs font-medium">
+        <p className="text-[var(--brand-deep)] text-xs font-medium">
           Management Console: Review, edit, or remove historical records to maintain data accuracy.
         </p>
       </div>
-      <div className="md:hidden flex items-center gap-1.5 text-[11px] font-medium text-slate-400">
-        <svg className="w-3.5 h-3.5 flex-shrink-0 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+      <div className="md:hidden flex items-center gap-1.5 m-caption font-medium text-[var(--text-muted)]">
+        <svg className="w-3.5 h-3.5 flex-shrink-0 text-[var(--brand)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
         <span>Management mode: review, edit, remove records</span>
       </div>
 
@@ -240,8 +240,8 @@ const Transactions: React.FC<TransactionsProps> = ({
             onClick={() => setFilterType(chip.key)}
             className={`flex-shrink-0 px-3.5 sm:px-4 min-h-[38px] sm:min-h-[40px] rounded-full text-xs font-bold whitespace-nowrap border transition-all ${
               filterType === chip.key
-                ? 'bg-teal-600 text-white border-teal-600 shadow-sm'
-                : 'bg-white text-slate-500 border-slate-200 hover:border-teal-300'
+                ? 'm-txn-filter-chip bg-[var(--brand)] text-white border-[var(--brand)] shadow-ui-xs'
+                : 'm-txn-filter-chip bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--line)] hover:border-[var(--brand)]'
             }`}
           >
             {chip.label}
@@ -249,10 +249,10 @@ const Transactions: React.FC<TransactionsProps> = ({
         ))}
         desktopSort={
           <>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sort</span>
+            <span className="m-settings-label uppercase tracking-widest">Sort</span>
             <select
               aria-label="Sort by"
-              className="bg-white border border-slate-200 px-3 py-2.5 min-h-[44px] rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-teal-500 shadow-sm transition-all"
+              className="bg-white border border-slate-200 m-settings-control text-xs outline-none shadow-sm transition-all"
               value={sortField}
               onChange={(e) => setSortField(e.target.value as SortField)}
             >
@@ -262,7 +262,7 @@ const Transactions: React.FC<TransactionsProps> = ({
             </select>
             <select
               aria-label="Sort order"
-              className="bg-white border border-slate-200 px-3 py-2.5 min-h-[44px] rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-teal-500 shadow-sm transition-all"
+              className="bg-white border border-slate-200 m-settings-control text-xs outline-none shadow-sm transition-all"
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value as SortOrder)}
             >
@@ -326,7 +326,7 @@ const Transactions: React.FC<TransactionsProps> = ({
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="text-slate-400 text-[10px] uppercase tracking-widest font-bold bg-slate-50 border-b border-slate-100">
+                  <tr className="m-settings-label uppercase tracking-widest bg-slate-50 border-b border-slate-100">
                     <th className="px-3 lg:px-6 py-4">Status</th>
                     <th className="px-3 lg:px-6 py-4">Date &amp; Description</th>
                     <th className="px-3 lg:px-6 py-4">Client</th>
@@ -363,7 +363,7 @@ const Transactions: React.FC<TransactionsProps> = ({
                           <td className="px-3 lg:px-6 py-4 text-sm text-slate-600">
                             {client ? (
                               <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 bg-teal-50 rounded-full flex items-center justify-center text-[10px] font-bold text-teal-600 flex-shrink-0">
+                                <div className="w-6 h-6 bg-[var(--brand-soft)] rounded-full flex items-center justify-center m-caption font-bold text-[var(--brand)] flex-shrink-0">
                                   {client.name.charAt(0)}
                                 </div>
                                 <span className="truncate">{client.name}</span>
@@ -371,7 +371,7 @@ const Transactions: React.FC<TransactionsProps> = ({
                             ) : (txn.type === TransactionType.SALE ? <span className="text-slate-300">Guest</span> : <span className="text-slate-300">—</span>)}
                           </td>
                           <td className="px-3 lg:px-6 py-4">
-                            <span className="px-2 py-1 bg-slate-100 text-slate-500 text-[10px] font-bold uppercase rounded-md">{txn.category}</span>
+                            <span className="px-2 py-1 bg-slate-100 text-slate-500 m-inventory-badge">{txn.category}</span>
                           </td>
                           <td className="px-3 lg:px-6 py-4 text-xs font-bold text-slate-500">
                             {txn.paymentMethod || '—'}
@@ -387,7 +387,7 @@ const Transactions: React.FC<TransactionsProps> = ({
                                 className={`p-2 rounded-lg transition-all ${
                                   isDeleteLocked
                                     ? 'text-slate-200 cursor-not-allowed'
-                                    : 'text-slate-400 hover:text-teal-600 hover:bg-teal-50'
+                                    : 'text-slate-400 hover:text-[var(--brand)] hover:bg-[var(--brand-soft)]'
                                 }`}
                               >
                                 {isDeleteLocked ? <Icons.Lock /> : <Icons.Edit />}
@@ -411,13 +411,13 @@ const Transactions: React.FC<TransactionsProps> = ({
                           <tr className="bg-slate-50">
                             <td colSpan={7} className="px-6 lg:px-12 py-6 border-y border-slate-100">
                               <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm max-w-2xl animate-fadeIn">
-                                 <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Sale Breakdown</h4>
+                                 <h4 className="m-settings-label uppercase tracking-widest mb-4">Sale Breakdown</h4>
                                  <div className="space-y-3">
                                    {txn.items.map((item, idx) => (
                                      <div key={idx} className="flex justify-between items-center text-sm border-b border-slate-50 pb-2">
                                        <div className="flex flex-col">
                                          <span className="font-semibold text-slate-700">{item.name}</span>
-                                         <span className="text-[10px] text-slate-400 uppercase font-bold">{item.type}</span>
+                                         <span className="m-caption uppercase font-semibold text-[var(--text-muted)]">{item.type}</span>
                                        </div>
                                        <div className="text-right">
                                          <span className="text-slate-500 font-medium">Qty: {item.quantity}</span>
@@ -429,11 +429,11 @@ const Transactions: React.FC<TransactionsProps> = ({
                                  <div className="mt-4 pt-4 border-t-2 border-dashed border-slate-100">
                                    <div className="flex justify-between mb-1">
                                      <span className="text-xs font-bold text-slate-400 uppercase">Payment Method</span>
-                                     <span className="text-sm font-black text-slate-600">{txn.paymentMethod || 'Not specified'}</span>
+                                     <span className="text-sm font-bold text-[var(--text-secondary)]">{txn.paymentMethod || 'Not specified'}</span>
                                    </div>
                                    <div className="flex justify-between">
                                      <span className="text-xs font-bold text-slate-400 uppercase">Total Transaction Amount</span>
-                                     <span className="text-lg font-black text-teal-600">{formatRM(txn.amount)}</span>
+                                     <span className="m-txn-amount text-[var(--brand)]">{formatRM(txn.amount)}</span>
                                    </div>
                                  </div>
                               </div>
@@ -478,13 +478,13 @@ const Transactions: React.FC<TransactionsProps> = ({
             breakdown={
               detailTxn.items && detailTxn.items.length > 0 ? (
                 <div className="mt-2 pt-3 border-t border-slate-100">
-                  <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Breakdown</h4>
+                  <h4 className="m-settings-label uppercase tracking-widest mb-2">Breakdown</h4>
                   <div className="space-y-2">
                     {detailTxn.items.map((item, idx) => (
                       <div key={idx} className="flex justify-between items-center gap-3 text-sm">
                         <div className="min-w-0">
                           <p className="font-semibold text-slate-700 truncate">{item.name}</p>
-                          <p className="text-[10px] text-slate-400 uppercase font-bold">{item.type} · Qty {item.quantity}</p>
+                          <p className="m-caption uppercase font-semibold text-[var(--text-muted)]">{item.type} · Qty {item.quantity}</p>
                         </div>
                         <span className="font-bold text-slate-800 tabular-nums flex-shrink-0">{formatRM(item.price * item.quantity)}</span>
                       </div>
@@ -662,7 +662,7 @@ const Transactions: React.FC<TransactionsProps> = ({
                 Deleting this sale will also deduct{' '}
                 <span className="font-bold">{pointsToDeduct.toLocaleString()}</span> points from{' '}
                 <span className="font-semibold">{clientName}</span>.
-                <span className="mt-1 block font-mono text-[10px] text-amber-600">
+                <span className="mt-1 block font-mono m-caption text-amber-600">
                   Receipt: {formattedReceipt}
                 </span>
               </span>

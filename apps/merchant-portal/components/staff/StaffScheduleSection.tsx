@@ -74,7 +74,7 @@ export const StaffScheduleSection: React.FC<StaffScheduleSectionProps> = ({
                     !slot.isOpen && 'opacity-60 bg-[var(--bg-soft)]',
                   )}
                 >
-                  <span className="w-8 shrink-0 text-[11px] font-bold text-[var(--text-primary)]">
+                  <span className="w-8 shrink-0 m-staff-stat-value text-[var(--text-primary)]">
                     {weekdayLabel(day)}
                   </span>
                   {editable ? (
@@ -91,19 +91,19 @@ export const StaffScheduleSection: React.FC<StaffScheduleSectionProps> = ({
                         disabled={!slot.isOpen}
                         value={slot.open}
                         onChange={(e) => updateDay(day, { open: e.target.value })}
-                        className="min-h-[32px] min-w-0 flex-1 max-w-[6.5rem] px-1 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)] text-[11px] font-semibold disabled:opacity-40"
+                        className="m-hours-row__time min-w-0 flex-1 max-w-[6.5rem] px-1 border border-[var(--line)] bg-[var(--bg-surface)] font-semibold disabled:opacity-40"
                       />
-                      <span className="text-[var(--text-muted)] text-[11px] shrink-0">–</span>
+                      <span className="text-[var(--text-muted)] m-caption shrink-0">–</span>
                       <input
                         type="time"
                         disabled={!slot.isOpen}
                         value={slot.close}
                         onChange={(e) => updateDay(day, { close: e.target.value })}
-                        className="min-h-[32px] min-w-0 flex-1 max-w-[6.5rem] px-1 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)] text-[11px] font-semibold disabled:opacity-40"
+                        className="m-hours-row__time min-w-0 flex-1 max-w-[6.5rem] px-1 border border-[var(--line)] bg-[var(--bg-surface)] font-semibold disabled:opacity-40"
                       />
                     </>
                   ) : (
-                    <span className="text-[11px] font-semibold text-[var(--text-secondary)] truncate">
+                    <span className="m-staff-card__meta truncate">
                       {slot.isOpen ? `${slot.open} – ${slot.close}` : 'Off'}
                     </span>
                   )}
@@ -115,7 +115,7 @@ export const StaffScheduleSection: React.FC<StaffScheduleSectionProps> = ({
             <button
               type="button"
               onClick={() => onChange?.(emptyWeeklyHours())}
-              className="text-[11px] font-bold text-[var(--brand)] hover:underline mt-1"
+              className="m-staff-stat-value text-[var(--brand)] hover:underline mt-1"
             >
               Reset to default week (Mon–Fri 10:00–18:00)
             </button>

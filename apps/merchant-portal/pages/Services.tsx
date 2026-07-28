@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import * as LucideIcons from 'lucide-react';
-import { MoreVertical, Search, GripVertical } from 'lucide-react';
+import { MoreVertical, Plus, Search, GripVertical } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Service, Product, Package, PackageService } from '../types';
 import { Icons } from '../constants';
@@ -11,6 +11,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { getCurrentOutletID } from '../services/databaseService';
 import { uploadImage, deleteImage, getServiceImagePath } from '../services/storageService';
 import { SERVICE_ICON_CATEGORIES } from '../serviceIcons';
+import { useUserContext } from '../contexts/UserContext';
 import {
   AppModal,
   Button,
@@ -22,6 +23,8 @@ import {
   InventoryEmptyState,
   InventoryEntityCard,
   InventoryFiltersSheet,
+  InventorySortSheet,
+  InventoryOutletCard,
   InventoryPageHeader,
   InventoryToolbar,
   InventoryTypeTabs,
@@ -106,6 +109,8 @@ const Services: React.FC<ServicesProps> = ({
   const [menuSearchQuery, setMenuSearchQuery] = useState('');
   const [menuSortBy, setMenuSortBy] = useState<SortOption>('a-z');
   const [filtersSheetOpen, setFiltersSheetOpen] = useState(false);
+  const [sortSheetOpen, setSortSheetOpen] = useState(false);
+  const { outletId } = useUserContext();
 
   const categoriesForTab = useMemo(() => {
     if (activeTab === 'services') return categories;
@@ -384,8 +389,8 @@ const Services: React.FC<ServicesProps> = ({
               />
             ) : null}
             <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center border-2 border-slate-200 text-teal-600 ${
-                service.imageUrl ? 'hidden' : 'bg-teal-50'
+              className={`w-10 h-10 rounded-xl flex items-center justify-center border-2 border-slate-200 text-[var(--brand)] ${
+                service.imageUrl ? 'hidden' : 'bg-[var(--brand-soft)]'
               }`}
             >
               {service.imageUrl
@@ -398,24 +403,24 @@ const Services: React.FC<ServicesProps> = ({
           </div>
         </td>
         <td className="px-6 py-4">
-          <span className="px-2 py-1 bg-slate-100 text-slate-500 text-[9px] font-black uppercase rounded-md">
+          <span className="m-inventory-badge bg-[var(--bg-soft)] text-[var(--text-muted)]">
             {service.category}
           </span>
         </td>
         <td className="px-6 py-4 text-xs font-bold text-slate-500">{service.duration} MINS</td>
         <td className="px-6 py-4">
           <span
-            className={`text-[9px] font-black uppercase ${
-              service.isCommissionable ? 'text-teal-600' : 'text-slate-300'
+            className={`m-inventory-badge ${
+              service.isCommissionable ? 'text-[var(--brand)]' : 'text-slate-300'
             }`}
           >
             {service.isCommissionable ? 'Eligible' : 'Excluded'}
           </span>
         </td>
         <td className="px-6 py-4">
-          <span className="text-xs font-black text-amber-600">+{service.points}</span>
+          <span className="m-caption font-semibold text-amber-600">+{service.points}</span>
         </td>
-        <td className="px-6 py-4 text-right font-black text-slate-800 text-sm">
+        <td className="px-6 py-4 text-right font-bold text-[var(--text-primary)] text-sm">
           ${service.price.toLocaleString()}
         </td>
         <td className="px-6 py-4 text-right">
@@ -429,7 +434,7 @@ const Services: React.FC<ServicesProps> = ({
               }}
               disabled={isLocked}
               className={`p-2 transition-colors ${
-                isLocked ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-teal-600'
+                isLocked ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-[var(--brand)]'
               }`}
               title={isLocked ? 'Feature is locked' : 'Edit service'}
             >
@@ -778,49 +783,113 @@ const Services: React.FC<ServicesProps> = ({
     formData.type === 'service' ? 'Service' : formData.type === 'product' ? 'Product' : 'Package'
   }`;
 
+  const filteredCount =
+    activeTab === 'services'
+      ? filteredServices.length
+      : activeTab === 'products'
+        ? filteredProducts.length
+        : filteredPackages.length;
+  const countNoun =
+    activeTab === 'services' ? 'services' : activeTab === 'products' ? 'products' : 'packages';
+  const fabLabel =
+    activeTab === 'services'
+      ? 'Add Service'
+      : activeTab === 'products'
+        ? 'Add Product'
+        : 'Add Package';
+
+  const renderServiceFallback = (service: Service) => (
+    <div className="w-full h-full bg-[var(--brand-soft)] text-[var(--brand)] flex items-center justify-center text-sm">
+      {service.iconId ? renderServiceIcon(service.iconId, 'w-5 h-5') : getCategoryIcon(service.category)}
+    </div>
+  );
+
   return (
     <div className="space-y-4 animate-fadeIn">
-      <InventoryPageHeader
-        primaryLabel={`New ${activeTab === 'services' ? 'Service' : activeTab === 'products' ? 'Product' : 'Package'}`}
-        onPrimaryAction={handleOpenAddModal}
-        primaryDisabled={Boolean(isLocked)}
-        secondaryActions={
-          <>
-            <InventoryTypeTabs activeTab={activeTab} onChange={setActiveTab} />
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={Boolean(isLocked)}
-              onClick={() => !isLocked && setShowCategoryModal(true)}
-            >
-              {isLocked ? <Icons.Lock /> : <Icons.Settings />} Categories
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={Boolean(isLocked)}
-              onClick={() => {
-                if (isLocked) return;
-                setReorderCategoriesList([...categories]);
-                setShowRearrangeCategoriesModal(true);
-              }}
-            >
-              {isLocked ? <Icons.Lock /> : <GripVertical className="w-4 h-4" />} Rearrange
-            </Button>
-          </>
-        }
-      />
+      {/* ——— Mobile chrome (below 768px) ——— */}
+      <div className="md:hidden space-y-3">
+        <InventoryOutletCard />
 
-      <InventoryToolbar
-        categories={categoriesForTab}
-        selectedCategory={selectedCategory}
-        onCategoryChange={setSelectedCategory}
-        searchQuery={menuSearchQuery}
-        onSearchChange={setMenuSearchQuery}
-        sortBy={menuSortBy}
-        onSortChange={setMenuSortBy}
-        onOpenFiltersSheet={() => setFiltersSheetOpen(true)}
-      />
+        <div>
+          <h1 className="m-inventory-page-title">Menu & Inventory</h1>
+          <p className="m-inventory-page-sub">
+            Manage your services, products and packages.
+          </p>
+        </div>
+
+        <InventoryTypeTabs activeTab={activeTab} onChange={setActiveTab} />
+
+        <InventoryToolbar
+          categories={categoriesForTab}
+          selectedCategory={selectedCategory}
+          onCategoryChange={setSelectedCategory}
+          searchQuery={menuSearchQuery}
+          onSearchChange={setMenuSearchQuery}
+          sortBy={menuSortBy}
+          onSortChange={setMenuSortBy}
+          onOpenFiltersSheet={() => setFiltersSheetOpen(true)}
+          onOpenSortSheet={() => setSortSheetOpen(true)}
+          activeTab={activeTab}
+        />
+
+        <div className="m-inventory-count-row">
+          <span>
+            {filteredCount} {countNoun}
+          </span>
+          {outletId ? (
+            <span className="m-inventory-live">
+              <span className="m-inventory-live__dot" aria-hidden />
+              Live outlet
+            </span>
+          ) : null}
+        </div>
+      </div>
+
+      {/* ——— Desktop header + toolbar ——— */}
+      <div className="hidden md:block space-y-4">
+        <InventoryPageHeader
+          primaryLabel={`New ${activeTab === 'services' ? 'Service' : activeTab === 'products' ? 'Product' : 'Package'}`}
+          onPrimaryAction={handleOpenAddModal}
+          primaryDisabled={Boolean(isLocked)}
+          secondaryActions={
+            <>
+              <InventoryTypeTabs activeTab={activeTab} onChange={setActiveTab} />
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={Boolean(isLocked)}
+                onClick={() => !isLocked && setShowCategoryModal(true)}
+              >
+                {isLocked ? <Icons.Lock /> : <Icons.Settings />} Categories
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                disabled={Boolean(isLocked)}
+                onClick={() => {
+                  if (isLocked) return;
+                  setReorderCategoriesList([...categories]);
+                  setShowRearrangeCategoriesModal(true);
+                }}
+              >
+                {isLocked ? <Icons.Lock /> : <GripVertical className="w-4 h-4" />} Rearrange
+              </Button>
+            </>
+          }
+        />
+
+        <InventoryToolbar
+          categories={categoriesForTab}
+          selectedCategory={selectedCategory}
+          onCategoryChange={setSelectedCategory}
+          searchQuery={menuSearchQuery}
+          onSearchChange={setMenuSearchQuery}
+          sortBy={menuSortBy}
+          onSortChange={setMenuSortBy}
+          onOpenFiltersSheet={() => setFiltersSheetOpen(true)}
+          activeTab={activeTab}
+        />
+      </div>
 
       <InventoryFiltersSheet
         open={filtersSheetOpen}
@@ -832,39 +901,37 @@ const Services: React.FC<ServicesProps> = ({
         }}
       />
 
-      {/* Mobile dense entity list */}
-      <div className="md:hidden space-y-2">
+      <InventorySortSheet
+        open={sortSheetOpen}
+        onClose={() => setSortSheetOpen(false)}
+        sortBy={menuSortBy}
+        onSortChange={setMenuSortBy}
+      />
+
+      {/* Mobile inventory cards */}
+      <div className="m-service-list md:hidden flex flex-col space-y-0">
         {activeTab === 'services' && filteredServices.length === 0 && (
           <InventoryEmptyState title="No services found" />
         )}
         {activeTab === 'services' &&
-          serviceOrder.map((id) => {
-            const service = filteredServices.find((s) => s.id === id);
-            if (!service) return null;
+          sortItems(filteredServices, menuSortBy).map((service) => {
+            const durationLabel = `${service.duration} mins`;
             return (
               <InventoryEntityCard
                 key={service.id}
                 name={service.name}
-                category={service.category || '—'}
                 priceLabel={`$${service.price.toLocaleString()}`}
-                metaLabel={`${service.duration} min`}
+                metaLabel={`${durationLabel} • ${service.category || '—'}`}
+                secondaryLabel={durationLabel}
                 visible={service.isVisible !== false}
-                thumbnail={
-                  service.imageUrl ? (
-                    <img src={service.imageUrl} alt="" className="w-10 h-10 rounded-ui-sm object-cover" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-ui-sm bg-[var(--brand-soft)] text-[var(--brand)] flex items-center justify-center text-sm">
-                      {service.iconId ? renderServiceIcon(service.iconId, 'w-5 h-5') : getCategoryIcon(service.category)}
-                    </div>
-                  )
-                }
+                imageUrl={service.imageUrl}
+                fallback={renderServiceFallback(service)}
                 actionsDisabled={Boolean(isLocked)}
                 onEdit={() => !isLocked && handleOpenEditModal(service, 'services')}
                 onDelete={() => !isLocked && setItemToDelete({ id: service.id, name: service.name, type: 'services' })}
               />
             );
-          })}
-        {activeTab === 'products' && filteredProducts.length === 0 && (
+          })}        {activeTab === 'products' && filteredProducts.length === 0 && (
           <InventoryEmptyState title="No products found" />
         )}
         {activeTab === 'products' &&
@@ -872,12 +939,13 @@ const Services: React.FC<ServicesProps> = ({
             <InventoryEntityCard
               key={product.id}
               name={product.name}
-              category={product.category || '—'}
               priceLabel={`$${product.price.toLocaleString()}`}
-              metaLabel={`${product.stock} units`}
+              metaLabel={product.category || '—'}
+              secondaryLabel={`Stock: ${product.stock}`}
               lowStock={product.stock <= 5}
-              thumbnail={
-                <div className="w-10 h-10 rounded-ui-sm bg-amber-50 text-amber-600 flex items-center justify-center">
+              visible
+              fallback={
+                <div className="w-full h-full bg-amber-50 text-amber-600 flex items-center justify-center">
                   <Icons.POS />
                 </div>
               }
@@ -890,30 +958,46 @@ const Services: React.FC<ServicesProps> = ({
           <InventoryEmptyState title="No packages found" />
         )}
         {activeTab === 'packages' &&
-          filteredPackages.map((pkg) => (
-            <InventoryEntityCard
-              key={pkg.id}
-              name={pkg.name}
-              category={pkg.category || '—'}
-              priceLabel={`$${pkg.price.toLocaleString()}`}
-              metaLabel={`${pkg.services?.length || 0} services`}
-              thumbnail={
-                <div className="w-10 h-10 rounded-ui-sm bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                  <Icons.Package />
-                </div>
-              }
-              actionsDisabled={Boolean(isLocked)}
-              onEdit={() => !isLocked && handleOpenEditModal(pkg, 'packages')}
-              onDelete={() => !isLocked && setItemToDelete({ id: pkg.id, name: pkg.name, type: 'packages' })}
-            />
-          ))}
+          filteredPackages.map((pkg) => {
+            const itemCount = pkg.services?.length || 0;
+            return (
+              <InventoryEntityCard
+                key={pkg.id}
+                name={pkg.name}
+                priceLabel={`$${pkg.price.toLocaleString()}`}
+                metaLabel={`${itemCount} items • ${pkg.category || '—'}`}
+                secondaryLabel={`${itemCount} items`}
+                visible
+                fallback={
+                  <div className="w-full h-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                    <Icons.Package />
+                  </div>
+                }
+                actionsDisabled={Boolean(isLocked)}
+                onEdit={() => !isLocked && handleOpenEditModal(pkg, 'packages')}
+                onDelete={() => !isLocked && setItemToDelete({ id: pkg.id, name: pkg.name, type: 'packages' })}
+              />
+            );
+          })}
       </div>
+
+      {/* Floating Add — mobile only */}
+      <button
+        type="button"
+        className="m-inventory-fab md:hidden focus-visible:shadow-ui-focus-strong"
+        onClick={handleOpenAddModal}
+        disabled={Boolean(isLocked)}
+        aria-label={fabLabel}
+      >
+        <Plus className="h-5 w-5" aria-hidden />
+        {fabLabel}
+      </button>
 
       <div className="hidden md:block bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100 text-slate-400 text-[10px] font-black uppercase tracking-widest">
+              <tr className="bg-slate-50 border-b border-slate-100 m-settings-label text-[var(--text-muted)] uppercase tracking-widest">
                 {activeTab === 'services' && <th className="px-3 py-4 w-8"></th>}
                 <th className="px-6 py-4">Item Name</th>
                 <th className="px-6 py-4">Category</th>
@@ -964,9 +1048,9 @@ const Services: React.FC<ServicesProps> = ({
                       <span className="text-sm font-bold text-slate-800">{product.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4"><span className="px-2 py-1 bg-slate-100 text-slate-500 text-[9px] font-black uppercase rounded-md">{product.category}</span></td>
+                  <td className="px-6 py-4"><span className="m-inventory-badge bg-[var(--bg-soft)] text-[var(--text-muted)]">{product.category}</span></td>
                   <td className="px-6 py-4"><span className={`text-xs font-bold ${product.stock <= 5 ? 'text-rose-600 animate-pulse' : 'text-slate-500'}`}>{product.stock} units</span></td>
-                  <td className="px-6 py-4 text-right font-black text-slate-800 text-sm">${product.price.toLocaleString()}</td>
+                  <td className="px-6 py-4 text-right font-bold text-[var(--text-primary)] text-sm">${product.price.toLocaleString()}</td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                       <button 
@@ -977,7 +1061,7 @@ const Services: React.FC<ServicesProps> = ({
                           }
                         }} 
                         disabled={isLocked}
-                        className={`p-2 transition-colors ${isLocked ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-teal-600'}`}
+                        className={`p-2 transition-colors ${isLocked ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-[var(--brand)]'}`}
                         title={isLocked ? 'Feature is locked' : 'Edit product'}
                       >
                         <Icons.Edit />
@@ -1014,17 +1098,17 @@ const Services: React.FC<ServicesProps> = ({
                       <span className="text-sm font-bold text-slate-800">{pkg.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4"><span className="px-2 py-1 bg-slate-100 text-slate-500 text-[9px] font-black uppercase rounded-md">{pkg.category}</span></td>
+                  <td className="px-6 py-4"><span className="m-inventory-badge bg-[var(--bg-soft)] text-[var(--text-muted)]">{pkg.category}</span></td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-1">
                       {pkg.services.map((ps, idx) => {
                         const s = services.find(srv => srv.id === ps.serviceId);
-                        return <span key={idx} className="text-[10px] font-bold text-slate-500">{ps.quantity}x {s?.name || 'Unknown'}</span>
+                        return <span key={idx} className="m-caption font-semibold text-[var(--text-muted)]">{ps.quantity}x {s?.name || 'Unknown'}</span>
                       })}
                     </div>
                   </td>
-                  <td className="px-6 py-4"><span className="text-xs font-black text-amber-600">+{pkg.points}</span></td>
-                  <td className="px-6 py-4 text-right font-black text-slate-800 text-sm">${pkg.price.toLocaleString()}</td>
+                  <td className="px-6 py-4"><span className="m-caption font-semibold text-amber-600">+{pkg.points}</span></td>
+                  <td className="px-6 py-4 text-right font-bold text-[var(--text-primary)] text-sm">${pkg.price.toLocaleString()}</td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                       <button 
@@ -1035,7 +1119,7 @@ const Services: React.FC<ServicesProps> = ({
                           }
                         }} 
                         disabled={isLocked}
-                        className={`p-2 transition-colors ${isLocked ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-teal-600'}`}
+                        className={`p-2 transition-colors ${isLocked ? 'text-slate-200 cursor-not-allowed' : 'text-slate-400 hover:text-[var(--brand)]'}`}
                         title={isLocked ? 'Feature is locked' : 'Edit package'}
                       >
                         <Icons.Edit />
@@ -1082,7 +1166,7 @@ const Services: React.FC<ServicesProps> = ({
               {/* Service Image / Icon Section */}
               {formData.type === 'service' && (
                 <div className="mb-6">
-                  <label className="block text-[10px] font-black uppercase text-slate-500 mb-2">Service Image</label>
+                  <label className="m-settings-label block uppercase">Service Image</label>
                   <div className="flex items-start gap-4 flex-wrap">
                     {/* Preview: uploaded image, selected icon, or placeholder */}
                     <div className="flex-shrink-0">
@@ -1092,7 +1176,7 @@ const Services: React.FC<ServicesProps> = ({
                           <button type="button" onClick={handleRemoveImage} className="absolute -top-2 -right-2 w-6 h-6 bg-rose-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-rose-600" title="Remove image">×</button>
                         </div>
                       ) : formData.iconId ? (
-                        <div className="w-20 h-20 rounded-xl bg-teal-50 border-2 border-teal-200 flex items-center justify-center text-teal-600">
+                        <div className="w-20 h-20 rounded-xl bg-[var(--brand-soft)] border-2 border-[var(--brand)]/30 flex items-center justify-center text-[var(--brand)]">
                           {renderServiceIcon(formData.iconId, 'w-10 h-10')}
                         </div>
                       ) : (
@@ -1102,10 +1186,10 @@ const Services: React.FC<ServicesProps> = ({
                       )}
                     </div>
                     <div className="flex-1 min-w-[200px] space-y-2">
-                      <p className="text-[10px] font-bold uppercase text-slate-500">Photo Library</p>
+                      <p className="m-settings-label uppercase">Photo Library</p>
                       <div className="flex items-center gap-2 flex-wrap">
                         <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" id="service-image-upload" />
-                        <label htmlFor="service-image-upload" className="w-14 h-14 rounded-xl bg-teal-100 border-2 border-dashed border-teal-300 flex items-center justify-center text-teal-600 cursor-pointer hover:bg-teal-200 transition-colors" title="Upload Image">
+                        <label htmlFor="service-image-upload" className="w-14 h-14 rounded-xl bg-[var(--brand-soft)] border-2 border-dashed border-[var(--brand)]/40 flex items-center justify-center text-[var(--brand)] cursor-pointer hover:bg-[var(--bg-selection)] transition-colors" title="Upload Image">
                           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                         </label>
                         <button type="button" onClick={() => setShowIconPickerModal(true)} className="px-4 py-2 bg-slate-100 text-slate-700 text-sm font-bold rounded-lg border border-slate-200 hover:bg-slate-200 transition-colors">
@@ -1128,7 +1212,7 @@ const Services: React.FC<ServicesProps> = ({
                         required
                         type="text"
                         placeholder="Add a bundle name, e.g. Cut and blow-dry"
-                        className="w-full p-3 bg-white border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 text-slate-800 placeholder:text-slate-400"
+                        className="w-full p-3 bg-white border border-slate-200 rounded-lg outline-none focus-visible:shadow-ui-focus-strong/30 focus:border-[var(--brand)] text-slate-800 placeholder:text-slate-400"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       />
@@ -1137,7 +1221,7 @@ const Services: React.FC<ServicesProps> = ({
                       <label className="block text-sm font-semibold text-slate-700 mb-2">Category</label>
                       <select
                         required
-                        className="w-full p-3 bg-white border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 text-slate-800 appearance-none cursor-pointer"
+                        className="w-full p-3 bg-white border border-slate-200 rounded-lg outline-none focus-visible:shadow-ui-focus-strong/30 focus:border-[var(--brand)] text-slate-800 appearance-none cursor-pointer"
                         value={formData.category}
                         onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                       >
@@ -1157,7 +1241,7 @@ const Services: React.FC<ServicesProps> = ({
                         rows={4}
                         maxLength={DESCRIPTION_MAX_LENGTH}
                         placeholder="Add a description about this bundle"
-                        className="w-full p-3 bg-white border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 text-slate-800 placeholder:text-slate-400 resize-none"
+                        className="w-full p-3 bg-white border border-slate-200 rounded-lg outline-none focus-visible:shadow-ui-focus-strong/30 focus:border-[var(--brand)] text-slate-800 placeholder:text-slate-400 resize-none"
                         value={formData.description || ''}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value.slice(0, DESCRIPTION_MAX_LENGTH) })}
                       />
@@ -1169,7 +1253,7 @@ const Services: React.FC<ServicesProps> = ({
                           required
                           type="number"
                           step="0.01"
-                          className="w-full p-3 bg-white border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-teal-500/30 font-medium text-slate-800"
+                          className="w-full p-3 bg-white border border-slate-200 rounded-lg outline-none focus-visible:shadow-ui-focus-strong/30 font-medium text-slate-800"
                           value={formData.price}
                           onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
                         />
@@ -1181,7 +1265,7 @@ const Services: React.FC<ServicesProps> = ({
                           type="number"
                           min={0}
                           step={1}
-                          className="w-full p-3 bg-white border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-teal-500/30 font-medium text-slate-800"
+                          className="w-full p-3 bg-white border border-slate-200 rounded-lg outline-none focus-visible:shadow-ui-focus-strong/30 font-medium text-slate-800"
                           value={formData.points ?? 0}
                           onChange={(e) => setFormData({ ...formData, points: parseInt(e.target.value) || 0 })}
                         />
@@ -1292,42 +1376,42 @@ const Services: React.FC<ServicesProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1.5">Name</label>
-                    <input required type="text" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 font-medium" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+                    <label className="m-settings-label block uppercase">Name</label>
+                    <input required type="text" className="m-settings-control w-full outline-none font-medium" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1.5">Category</label>
-                    <select required className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 font-medium" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
+                    <label className="m-settings-label block uppercase">Category</label>
+                    <select required className="m-settings-control w-full outline-none font-medium" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
                       {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1.5">Price ($)</label>
-                    <input required type="number" step="0.01" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 font-black text-lg" value={formData.price} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })} />
+                    <label className="m-settings-label block uppercase">Price ($)</label>
+                    <input required type="number" step="0.01" className="m-settings-control w-full outline-none font-bold text-lg" value={formData.price} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })} />
                   </div>
                   {(formData.type === 'service' || formData.type === 'package') && (
                     <div>
-                      <label className="block text-[10px] font-black uppercase text-slate-500 mb-1.5">Free Point (Loyalty)</label>
+                      <label className="m-settings-label block uppercase">Free Point (Loyalty)</label>
                       <input 
                         required 
                         type="number" 
                         min="0"
                         step="1"
-                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 font-black text-amber-600" 
+                        className="m-settings-control w-full outline-none font-bold text-amber-600" 
                         value={formData.points ?? 0} 
                         onChange={e => {
                           const value = parseInt(e.target.value) || 0;
                           setFormData({ ...formData, points: value });
                         }} 
                       />
-                      <p className="mt-1 text-[11px] text-slate-400">Free point is the point given to the customer when they buy this item.</p>
+                      <p className="mt-1 m-settings-hint">Free point is the point given to the customer when they buy this item.</p>
                     </div>
                   )}
                   {formData.type === 'service' && (
                     <>
                       <div>
-                        <label className="block text-[10px] font-black uppercase text-slate-500 mb-1.5">Duration (Mins)</label>
-                        <input required type="number" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 font-medium" value={formData.duration} onChange={e => setFormData({ ...formData, duration: parseInt(e.target.value) || 0 })} />
+                        <label className="m-settings-label block uppercase">Duration (Mins)</label>
+                        <input required type="number" className="m-settings-control w-full outline-none font-medium" value={formData.duration} onChange={e => setFormData({ ...formData, duration: parseInt(e.target.value) || 0 })} />
                       </div>
                       <label className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer">
                         <input type="checkbox" checked={formData.isCommissionable} onChange={e => setFormData({ ...formData, isCommissionable: e.target.checked })} />
@@ -1336,8 +1420,8 @@ const Services: React.FC<ServicesProps> = ({
                       <div className="mt-4 space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
                         <div className="flex items-center justify-between gap-3">
                           <div>
-                            <p className="text-[10px] font-black uppercase text-slate-500">Redeem Point</p>
-                            <p className="text-[11px] text-slate-400">Allow this service to be redeemed for free with member points.</p>
+                            <p className="m-settings-label uppercase">Redeem Point</p>
+                            <p className="m-settings-hint">Allow this service to be redeemed for free with member points.</p>
                           </div>
                           <button
                             type="button"
@@ -1355,7 +1439,7 @@ const Services: React.FC<ServicesProps> = ({
                           </button>
                         </div>
                         <div>
-                          <label className="block text-[10px] font-black uppercase text-slate-500 mb-1.5">Item Point Value</label>
+                          <label className="m-settings-label block uppercase">Item Point Value</label>
                           <input
                             type="number"
                             min="0"
@@ -1374,7 +1458,7 @@ const Services: React.FC<ServicesProps> = ({
                                 : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
                             }`}
                           />
-                          <p className="mt-1 text-[11px] text-slate-400">
+                          <p className="mt-1 m-settings-hint">
                             When a member has at least this many points, this service can be redeemed for free.
                           </p>
                         </div>
@@ -1382,8 +1466,8 @@ const Services: React.FC<ServicesProps> = ({
                       <div className="mt-4 space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
                         <div className="flex items-center justify-between gap-3">
                           <div>
-                            <p className="text-[10px] font-black uppercase text-slate-500">Show on Booking Page</p>
-                            <p className="text-[11px] text-slate-400">When off, this service is hidden from the customer booking page but still available in POS.</p>
+                            <p className="m-settings-label uppercase">Show on Booking Page</p>
+                            <p className="m-settings-hint">When off, this service is hidden from the customer booking page but still available in POS.</p>
                           </div>
                           <button
                             type="button"
@@ -1391,7 +1475,7 @@ const Services: React.FC<ServicesProps> = ({
                             aria-checked={formData.isVisible !== false}
                             onClick={() => setFormData({ ...formData, isVisible: formData.isVisible === false })}
                             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                              formData.isVisible !== false ? 'bg-teal-500' : 'bg-slate-300'
+                              formData.isVisible !== false ? 'bg-[var(--brand-soft)]0' : 'bg-slate-300'
                             }`}
                           >
                             <span
@@ -1407,13 +1491,13 @@ const Services: React.FC<ServicesProps> = ({
                   {formData.type === 'product' && (
                     <>
                       <div>
-                        <label className="block text-[10px] font-black uppercase text-slate-500 mb-1.5">
+                        <label className="m-settings-label block uppercase">
                           Initial Stock
                         </label>
                         <input
                           required
                           type="number"
-                          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 font-medium"
+                          className="m-settings-control w-full outline-none font-medium"
                           value={formData.stock}
                           onChange={(e) =>
                             setFormData({
@@ -1424,14 +1508,14 @@ const Services: React.FC<ServicesProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-black uppercase text-slate-500 mb-1.5">
+                        <label className="m-settings-label block uppercase">
                           Fixed Commission ($)
                         </label>
                         <input
                           type="number"
                           min="0"
                           step="0.01"
-                          className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 font-medium"
+                          className="m-settings-control w-full outline-none font-medium"
                           value={formData.fixedCommissionAmount ?? 0}
                           onChange={(e) =>
                             setFormData({
@@ -1440,7 +1524,7 @@ const Services: React.FC<ServicesProps> = ({
                             })
                           }
                         />
-                        <p className="mt-1 text-[11px] text-slate-400">
+                        <p className="mt-1 m-settings-hint">
                           This fixed amount will be paid as staff commission per sale of this product, instead of a percentage
                           rate.
                         </p>
@@ -1451,8 +1535,8 @@ const Services: React.FC<ServicesProps> = ({
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1.5">Description</label>
-                    <textarea rows={8} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
+                    <label className="m-settings-label block uppercase">Description</label>
+                    <textarea rows={8} className="m-settings-control w-full outline-none text-sm" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
                   </div>
                 </div>
               </div>
@@ -1605,7 +1689,7 @@ const Services: React.FC<ServicesProps> = ({
                   >
                     {renderServiceIcon(iconId, 'w-6 h-6')}
                     {isSelected && (
-                      <span className="absolute bottom-0.5 right-0.5 w-4 h-4 bg-[var(--brand)] rounded-full flex items-center justify-center text-white text-[10px] leading-none">
+                      <span className="absolute bottom-0.5 right-0.5 w-4 h-4 bg-[var(--brand)] rounded-full flex items-center justify-center text-white m-caption leading-none">
                         ✓
                       </span>
                     )}

@@ -25,17 +25,19 @@ export const ModalHeader: React.FC<ModalHeaderProps> = ({
 }) => (
   <header
     className={cx(
-      'flex items-start justify-between gap-3 px-4 py-3 sm:px-5',
+      'm-modal-header flex items-start justify-between gap-3 px-4 py-3 sm:px-5',
       'border-b border-[var(--line)] bg-[var(--bg-surface)]',
       className,
     )}
   >
     <div className="min-w-0 flex-1 space-y-0.5">
-      <h2 className="text-base sm:text-lg font-bold text-[var(--text-primary)] truncate">
+      <h2 className="m-modal-title text-base sm:text-lg font-bold text-[var(--text-primary)] truncate">
         {title}
       </h2>
       {description ? (
-        <p className="text-xs sm:text-sm text-[var(--text-secondary)] line-clamp-2">{description}</p>
+        <p className="m-modal-desc text-xs sm:text-sm text-[var(--text-secondary)] line-clamp-2">
+          {description}
+        </p>
       ) : null}
     </div>
     <div className="flex items-center gap-1 shrink-0">
@@ -75,7 +77,7 @@ export const ModalBody: React.FC<ModalBodyProps> = ({
       id={id}
       onSubmit={onSubmit}
       className={cx(
-        'min-h-0 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 space-y-4',
+        'm-modal-body min-h-0 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 space-y-4',
         className,
       )}
     >
@@ -92,7 +94,7 @@ export interface ModalFooterProps {
 export const ModalFooter: React.FC<ModalFooterProps> = ({ children, className }) => (
   <footer
     className={cx(
-      'border-t border-[var(--line)] bg-[var(--bg-surface)]',
+      'm-modal-footer border-t border-[var(--line)] bg-[var(--bg-surface)]',
       'px-4 py-3 sm:px-5',
       'pb-[max(0.75rem,env(safe-area-inset-bottom))]',
       className,
@@ -109,7 +111,9 @@ export interface ModalFooterActionsProps {
 
 /** Standard Cancel + primary action row. */
 export const ModalFooterActions: React.FC<ModalFooterActionsProps> = ({ children, className }) => (
-  <div className={cx('flex items-center justify-end gap-2', className)}>{children}</div>
+  <div className={cx('m-modal-footer-actions flex items-center justify-end gap-2', className)}>
+    {children}
+  </div>
 );
 
 export default ModalHeader;

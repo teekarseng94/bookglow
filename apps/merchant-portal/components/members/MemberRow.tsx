@@ -40,17 +40,20 @@ export const MemberRow: React.FC<MemberRowProps> = ({
       }
     }}
     className={cx(
-      'w-full rounded-ui-md border shadow-ui-xs p-2.5 sm:p-3 flex items-center gap-3 text-left cursor-pointer transition-colors',
+      'w-full flex items-center text-left cursor-pointer transition-colors',
       'focus-visible:shadow-ui-focus-strong',
+      'm-member-row',
+      'md:rounded-ui-md md:border md:shadow-ui-xs md:p-3 md:gap-3',
       highlighted
-        ? 'bg-amber-50/80 border-amber-300 hover:bg-amber-100/80'
-        : 'bg-[var(--bg-surface)] border-[var(--line)] hover:bg-[var(--bg-soft)]',
+        ? 'bg-amber-50/80 border border-amber-300 hover:bg-amber-100/80'
+        : 'bg-[var(--bg-surface)] border border-[var(--line)] hover:bg-[var(--bg-soft)]',
       className,
     )}
   >
     <div
       className={cx(
-        'w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border-2 border-white shadow-sm shrink-0',
+        'm-member-avatar rounded-full flex items-center justify-center font-semibold border-2 border-white shadow-sm shrink-0',
+        'md:w-10 md:h-10 md:text-sm md:font-bold',
         highlighted ? 'bg-amber-200 text-amber-800' : 'bg-[var(--bg-soft)] text-[var(--text-secondary)]',
       )}
     >
@@ -59,24 +62,26 @@ export const MemberRow: React.FC<MemberRowProps> = ({
     <div className="min-w-0 flex-1">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 min-w-0">
-          <p className="font-bold text-sm text-[var(--text-primary)] truncate">{name}</p>
+          <p className="m-member-name truncate md:font-bold md:text-sm text-[var(--text-primary)]">{name}</p>
           {membershipLabel ? (
             <StatusBadge tone="warning" className="shrink-0">
               {membershipLabel}
             </StatusBadge>
           ) : null}
         </div>
-        <span className="shrink-0 text-xs font-semibold text-[var(--success)] tabular-nums">
+        <span className="m-member-points shrink-0 text-sm md:text-xs font-semibold text-[var(--success)] tabular-nums">
           {balanceOrActivity}
         </span>
       </div>
-      <div className="flex items-center gap-1.5 mt-0.5 text-[11px] text-[var(--text-muted)] min-w-0">
+      <div className="flex items-center gap-1.5 mt-0.5 m-caption text-[var(--text-muted)] min-w-0">
         <span className="shrink-0">{phoneOrId}</span>
-        {secondaryMeta ? <span className="truncate">· {secondaryMeta}</span> : null}
+        {secondaryMeta ? (
+          <span className="truncate hidden sm:inline">· {secondaryMeta}</span>
+        ) : null}
       </div>
     </div>
     {onEdit ? (
-      <div onClick={(e) => e.stopPropagation()}>
+      <div className="hidden sm:block" onClick={(e) => e.stopPropagation()}>
         <IconButton label={`Edit ${name}`} size="sm" onClick={onEdit}>
           ✎
         </IconButton>

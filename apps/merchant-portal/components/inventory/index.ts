@@ -9,3 +9,5 @@ export { InventoryEmptyState } from './InventoryEmptyState';
 export { InventorySaveBar } from './InventorySaveBar';
 export { InventoryEditPanel } from './InventoryEditPanel';
 export { InventoryFiltersSheet } from './InventoryFiltersSheet';
+export { InventorySortSheet } from './InventorySortSheet';
+export { InventoryOutletCard } from './InventoryOutletCard';

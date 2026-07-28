@@ -234,7 +234,7 @@ const CreditWalletModal: React.FC<CreditWalletModalProps> = ({
       }
     >
       <div className="rounded-ui-md border border-[var(--line)] bg-[var(--bg-soft)] px-4 py-3">
-        <p className="text-app-label font-bold uppercase text-[var(--text-secondary)] mb-1">Balance</p>
+        <p className="m-settings-label uppercase text-[var(--text-secondary)] mb-1">Balance</p>
         <p className="text-3xl font-bold text-emerald-600 tabular-nums">{currentBalance.toFixed(2)}</p>
       </div>
 

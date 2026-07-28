@@ -1,3 +1,5 @@
+@import './styles/mobile-tokens.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -750,6 +752,16 @@
 
 .animate-fadeIn {
   animation: fadeIn 0.28s ease-out;
+}
+
+/* Horizontally-scrolling rows (category chips, cart body, catalog tabs) hide their scrollbar. */
+.scrollbar-thin {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  display: none;
 }
 
 @keyframes fadeIn {

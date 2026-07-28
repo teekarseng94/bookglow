@@ -17,20 +17,20 @@ export const FormSection: React.FC<FormSectionProps> = ({
   children,
   className,
 }) => (
-  <section className={cx('space-y-3', className)}>
+  <section className={cx('m-form-section space-y-3', className)}>
     {(title || description) && (
       <div className="space-y-0.5">
         {title ? (
-          <h3 className="text-app-label font-bold uppercase tracking-wide text-[var(--text-secondary)]">
+          <h3 className="m-form-section-title text-app-label font-bold uppercase tracking-wide text-[var(--text-secondary)]">
             {title}
           </h3>
         ) : null}
         {description ? (
-          <p className="text-xs text-[var(--text-muted)]">{description}</p>
+          <p className="m-form-section-desc text-xs text-[var(--text-muted)]">{description}</p>
         ) : null}
       </div>
     )}
-    <div className="space-y-3">{children}</div>
+    <div className="m-form-section-fields space-y-3">{children}</div>
   </section>
 );
 

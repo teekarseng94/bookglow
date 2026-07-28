@@ -41,8 +41,8 @@ const Finance: React.FC<FinanceProps> = ({
         <h2 className="text-app-page sm:text-app-page-lg font-bold tracking-tight text-slate-900 mb-2">Access Restricted</h2>
         <p className="text-slate-400 max-w-sm">Viewing financial reports and recording expenses requires an administrator permission level.</p>
         <div className="mt-8 p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-3 text-left">
-           <div className="text-teal-600 shrink-0"><Icons.Settings /></div>
-           <p className="text-[10px] font-bold text-slate-500 uppercase leading-tight">Please contact your manager to elevate your permissions in the System Settings.</p>
+           <div className="text-[var(--brand)] shrink-0"><Icons.Settings /></div>
+           <p className="m-finance-locked-hint">Please contact your manager to elevate your permissions in the System Settings.</p>
         </div>
       </div>
     );
@@ -198,7 +198,7 @@ const Finance: React.FC<FinanceProps> = ({
             <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="text-slate-400 text-[10px] uppercase tracking-widest font-bold bg-slate-50/50">
+                  <tr className="m-settings-label uppercase tracking-widest bg-slate-50/50">
                     <th className="px-6 py-4">Date</th>
                     <th className="px-6 py-4">Description</th>
                     <th className="px-6 py-4">Category</th>
@@ -212,11 +212,11 @@ const Finance: React.FC<FinanceProps> = ({
                       <td className="px-6 py-4 text-xs font-bold text-slate-500">{new Date(txn.date).toLocaleDateString()}</td>
                       <td className="px-6 py-4 text-sm font-bold text-slate-800">{txn.description}</td>
                       <td className="px-6 py-4">
-                        <span className="px-2 py-1 bg-slate-100 text-slate-500 text-[9px] font-black uppercase rounded-md">
+                        <span className="m-inventory-badge bg-[var(--bg-soft)] text-[var(--text-muted)]">
                           {txn.category}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm font-black text-rose-600 tabular-nums">-${txn.amount.toLocaleString()}</td>
+                      <td className="px-6 py-4 m-txn-amount text-rose-600 tabular-nums">-${txn.amount.toLocaleString()}</td>
                       <td className="px-6 py-4 text-right">
                         <button onClick={() => onDeleteTransaction(txn.id)} className="text-slate-300 hover:text-rose-500 transition-colors p-2" aria-label="Delete expense">
                           <Icons.Trash />
@@ -243,7 +243,7 @@ const Finance: React.FC<FinanceProps> = ({
         {/* Categories Sidebar */}
         <div className="space-y-6">
            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-4">Summary by Category</h3>
+              <h3 className="m-settings-subhead mb-4">Summary by Category</h3>
               <div className="space-y-4">
                  {expenseCategories.map(cat => {
                    const catTotal = expenseHistory.filter(e => e.category === cat).reduce((s, e) => s + e.amount, 0);
@@ -254,7 +254,7 @@ const Finance: React.FC<FinanceProps> = ({
                            <div className="w-2 h-2 rounded-full bg-rose-500"></div>
                            <span className="text-sm font-bold text-slate-600">{cat}</span>
                         </div>
-                        <span className="text-sm font-black text-slate-800 tabular-nums">${catTotal.toLocaleString()}</span>
+                        <span className="m-txn-amount text-[var(--text-primary)] tabular-nums">${catTotal.toLocaleString()}</span>
                      </div>
                    );
                  })}

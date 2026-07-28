@@ -521,7 +521,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                   const appsInSlot = quickAppointments.filter((a) => isAppointmentInSlot(a, slot));
                   return (
                     <div key={slot} className="flex border-b border-[var(--line)]">
-                      <div className="w-20 shrink-0 p-3 text-center text-[10px] font-black text-[var(--text-muted)] bg-[var(--bg-surface)] border-r border-[var(--line)]">
+                      <div className="w-20 shrink-0 p-3 text-center m-dash-metric-label bg-[var(--bg-surface)] border-r border-[var(--line)]">
                         {formatCompactTime(slot)}
                       </div>
                       <div className="flex-1 p-2 min-h-[44px] bg-[var(--bg-surface)]">
@@ -535,7 +535,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                               return (
                                 <div
                                   key={app.id}
-                                  className="px-2 py-1 rounded-ui-sm bg-[var(--brand-soft)] border border-[var(--brand)]/20 text-[10px] text-[var(--brand-deep)] font-bold truncate max-w-[260px]"
+                                  className="px-2 py-1 rounded-ui-sm bg-[var(--brand-soft)] border border-[var(--brand)]/20 m-caption text-[var(--brand-deep)] font-semibold truncate max-w-[260px]"
                                   title={`${formatCompactTime(app.time)} ${clientName} · ${serviceName}`}
                                 >
                                   {formatCompactTime(app.time)} {clientName.split(' ')[0]} · {serviceName}
@@ -572,7 +572,7 @@ const Dashboard: React.FC<DashboardProps> = ({
               !weekEmpty ? (
                 <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-[var(--line)]">
                   <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                    <p className="m-dash-metric-label">
                       Transactions
                     </p>
                     <p className="text-sm font-bold text-[var(--text-primary)] tabular-nums">
@@ -580,7 +580,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                     </p>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                    <p className="m-dash-metric-label">
                       Avg sale
                     </p>
                     <p className="text-sm font-bold text-[var(--text-primary)] tabular-nums truncate">
@@ -588,7 +588,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                     </p>
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                    <p className="m-dash-metric-label">
                       Top item
                     </p>
                     <p

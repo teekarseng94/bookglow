@@ -315,7 +315,7 @@ const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
             </div>
             <div className="flex justify-between items-center pt-2 border-t border-[var(--line)]">
               <span className="text-base font-bold text-[var(--text-primary)]">Total</span>
-              <span className="text-lg font-black text-[var(--brand)]">
+              <span className="m-txn-amount text-[var(--brand)]">
                 ${transaction.amount.toFixed(2)}
               </span>
             </div>

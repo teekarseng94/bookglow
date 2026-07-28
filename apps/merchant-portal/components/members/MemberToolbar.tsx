@@ -32,10 +32,10 @@ export const MemberToolbar: React.FC<MemberToolbarProps> = ({
             placeholder="Search members..."
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-10 pr-3 py-2.5 min-h-[44px] bg-[var(--bg-soft)] border-0 rounded-ui-sm outline-none focus-visible:shadow-ui-focus-strong text-sm"
+            className="w-full pl-10 pr-3 py-2.5 m-member-search md:min-h-[44px] md:h-auto md:text-sm md:rounded-ui-sm bg-[var(--bg-soft)] border-0 outline-none focus-visible:shadow-ui-focus-strong"
           />
           <svg
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]"
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 m-member-search-icon md:w-4 md:h-4 text-[var(--text-muted)]"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -48,12 +48,12 @@ export const MemberToolbar: React.FC<MemberToolbarProps> = ({
       actions={
         <div className="flex items-center gap-2">
           {onOpenFilters ? (
-            <Button type="button" variant="secondary" size="sm" className="sm:hidden" onClick={onOpenFilters}>
+            <Button type="button" variant="secondary" size="sm" className="sm:hidden m-add-customer-row px-4" onClick={onOpenFilters}>
               Actions
             </Button>
           ) : null}
-          <Button type="button" variant="primary" size="sm" className="sm:hidden" onClick={onAddMember} aria-label="Add member">
-            +
+          <Button type="button" variant="primary" size="sm" className="sm:hidden m-add-customer-row px-5" onClick={onAddMember} aria-label="Add member">
+            + Add
           </Button>
           <div className="hidden sm:flex flex-wrap items-center gap-2">{desktopActions}</div>
         </div>

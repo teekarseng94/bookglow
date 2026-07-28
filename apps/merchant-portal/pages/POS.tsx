@@ -607,7 +607,7 @@ const POS: React.FC<POSProps> = ({
   };
 
   return (
-    <div className="flex flex-col gap-4 md:gap-5 h-full min-h-0 pb-28 md:pb-0">
+    <div className="flex flex-col gap-4 md:gap-5 h-full min-h-0 pb-[calc(72px+56px+16px+env(safe-area-inset-bottom,0px))] md:pb-0">
       <POSPageHeader
         shopName={outletSettings.shopName}
         banner={
@@ -700,7 +700,7 @@ const POS: React.FC<POSProps> = ({
                         return (
                           <span
                             key={idx}
-                            className="text-[9px] bg-[var(--bg-soft)] px-1.5 py-0.5 rounded text-[var(--text-muted)] font-bold"
+                            className="m-pos-mini-chip bg-[var(--bg-soft)] text-[var(--text-muted)]"
                           >
                             {ps.quantity}x {srv?.name.split(' ')[0]}
                           </span>
@@ -775,7 +775,7 @@ const POS: React.FC<POSProps> = ({
                 paymentDisabled={isVoucherRedemptionMode}
                 paymentHint={
                   isVoucherRedemptionMode ? (
-                    <p className="text-[11px] text-[var(--text-secondary)] mt-0.5">
+                    <p className="m-caption text-[var(--text-secondary)] mt-0.5">
                       Payment is fixed to <span className="font-semibold text-[var(--brand)]">Voucher (RM 0)</span>{' '}
                       for this redemption.
                     </p>
@@ -820,7 +820,7 @@ const POS: React.FC<POSProps> = ({
                 type="text"
                 placeholder="Search by name or phone..."
                 autoComplete="off"
-                className="w-full min-h-[40px] py-2 px-3 bg-[var(--bg-surface)] border border-[var(--line)] rounded-ui-md outline-none focus-visible:shadow-ui-focus-strong text-sm font-medium box-border"
+                className="m-pos-control w-full min-h-[40px] py-2 px-3 bg-[var(--bg-surface)] border border-[var(--line)] rounded-ui-md outline-none focus-visible:shadow-ui-focus-strong text-sm font-medium box-border"
                 value={selectedClientData ? selectedClientData.name : customerSearchQuery}
                 onChange={(e) => {
                   setCustomerSearchQuery(e.target.value);
@@ -897,7 +897,7 @@ const POS: React.FC<POSProps> = ({
               </div>
               <p className="text-xl font-bold text-emerald-800">Sale Complete!</p>
               {lastSaleData ? (
-                <p className="text-2xl font-black text-[var(--text-primary)] mt-3 tabular-nums">
+                <p className="m-pos-success-total text-2xl font-bold text-[var(--text-primary)] mt-3 tabular-nums">
                   Order Total: ${lastSaleData.total.toFixed(2)}
                 </p>
               ) : null}
@@ -967,7 +967,7 @@ const POS: React.FC<POSProps> = ({
                           <button
                             type="button"
                             onClick={() => toggleRedeemWithPoints(lineId)}
-                            className={`min-h-[36px] px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wide border transition-colors focus-visible:shadow-ui-focus-strong ${
+                            className={`m-pos-redeem-chip border transition-colors focus-visible:shadow-ui-focus-strong ${
                               item.redeemedWithPoints
                                 ? 'bg-amber-500 border-amber-500 text-white'
                                 : 'bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100'
@@ -976,7 +976,7 @@ const POS: React.FC<POSProps> = ({
                             {item.redeemedWithPoints ? 'Redeeming' : 'Redeem'} · {item.redeemPoints} pts
                           </button>
                           {selectedClientData ? (
-                            <span className="text-[10px] font-bold text-[var(--text-muted)]">
+                            <span className="m-caption font-semibold text-[var(--text-muted)]">
                               Balance: {selectedClientData.points.toLocaleString()} pts
                             </span>
                           ) : null}

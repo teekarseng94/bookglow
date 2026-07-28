@@ -47,11 +47,11 @@ export const OperatingHoursRow: React.FC<OperatingHoursRowProps> = ({
   return (
     <div
       className={cx(
-        'flex flex-wrap sm:flex-nowrap items-center gap-x-2 gap-y-1.5 py-2 border-b border-[var(--line)] last:border-b-0',
+        'm-hours-row flex flex-wrap sm:flex-nowrap items-center gap-x-2 gap-y-1.5 py-2 border-b border-[var(--line)] last:border-b-0',
         className,
       )}
     >
-      <span className="w-[72px] sm:w-24 flex-shrink-0 text-sm font-semibold text-[var(--text-primary)] capitalize">
+      <span className="m-hours-row__day w-[72px] sm:w-24 flex-shrink-0 text-sm font-semibold text-[var(--text-primary)] capitalize">
         {dayLabel}
       </span>
       <span className="hidden sm:inline text-[var(--text-muted)] flex-shrink-0" aria-hidden>
@@ -63,7 +63,7 @@ export const OperatingHoursRow: React.FC<OperatingHoursRowProps> = ({
             type="time"
             value={openTime}
             onChange={(e) => onChangeOpenTime(e.target.value)}
-            className="flex-1 min-w-0 h-9 px-2 bg-[var(--bg-soft)] border border-[var(--line)] rounded-ui-sm text-sm outline-none focus-visible:shadow-ui-focus-strong"
+            className="m-hours-row__time flex-1 min-w-0 h-9 px-2 bg-[var(--bg-soft)] border border-[var(--line)] rounded-ui-sm text-sm outline-none focus-visible:shadow-ui-focus-strong"
             aria-label={`${dayLabel} opening time`}
           />
           <span className="text-[var(--text-muted)] text-xs flex-shrink-0">–</span>
@@ -71,7 +71,7 @@ export const OperatingHoursRow: React.FC<OperatingHoursRowProps> = ({
             type="time"
             value={closeTime}
             onChange={(e) => onChangeCloseTime(e.target.value)}
-            className="flex-1 min-w-0 h-9 px-2 bg-[var(--bg-soft)] border border-[var(--line)] rounded-ui-sm text-sm outline-none focus-visible:shadow-ui-focus-strong"
+            className="m-hours-row__time flex-1 min-w-0 h-9 px-2 bg-[var(--bg-soft)] border border-[var(--line)] rounded-ui-sm text-sm outline-none focus-visible:shadow-ui-focus-strong"
             aria-label={`${dayLabel} closing time`}
           />
           <span className="hidden md:inline text-xs text-[var(--text-muted)] whitespace-nowrap ml-1">
@@ -104,7 +104,7 @@ export const OperatingHoursRow: React.FC<OperatingHoursRowProps> = ({
       </button>
       <span
         className={cx(
-          'w-12 text-right text-xs font-bold uppercase tracking-wide',
+          'm-hours-row__status w-12 text-right text-xs font-bold uppercase tracking-wide',
           isOpen ? 'text-[var(--success)]' : 'text-[var(--text-muted)]',
         )}
       >

@@ -228,12 +228,12 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
         {/* Mobile cards */}
         <div className="md:hidden divide-y divide-[var(--line)]">
           {vouchers.map((voucher) => (
-            <div key={voucher.id} className="p-4 space-y-3">
+            <div key={voucher.id} className="m-txn-card p-4 space-y-3">
               <div className="flex items-start justify-between gap-2">
-                <p className="font-semibold text-[var(--text-primary)]">{voucher.name}</p>
+                <p className="m-list-title text-[var(--text-primary)]">{voucher.name}</p>
                 {voucherStatusBadge(voucher)}
               </div>
-              <p className="text-xs text-[var(--text-muted)]">
+              <p className="m-caption text-[var(--text-muted)]">
                 {voucher.serviceIds.map((id) => serviceNameMap.get(id) || id).join(', ')}
               </p>
               <div className="flex flex-wrap gap-2">
@@ -255,7 +255,7 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
                       setSaleCodeInputs((prev) => ({ ...prev, [voucher.id]: e.target.value }))
                     }
                     placeholder="Enter secret code"
-                    className="flex-1 min-w-[8rem] p-2 text-xs bg-[var(--bg-soft)] border border-[var(--line)] rounded-ui-sm outline-none"
+                    className="m-settings-control flex-1 min-w-[8rem] outline-none"
                   />
                   <Button
                     type="button"
@@ -288,7 +288,7 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-[var(--bg-soft)] text-[10px] font-black uppercase text-[var(--text-muted)]">
+              <tr className="bg-[var(--bg-soft)] m-settings-label uppercase text-[var(--text-muted)]">
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3">Secret Code</th>
@@ -335,7 +335,7 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
                             setSaleCodeInputs((prev) => ({ ...prev, [voucher.id]: e.target.value }))
                           }
                           placeholder="Enter secret code"
-                          className="w-32 p-1.5 text-[11px] bg-[var(--bg-surface)] border border-[var(--line)] rounded-ui-sm outline-none"
+                          className="m-settings-control w-32 outline-none"
                         />
                         <Button
                           type="button"

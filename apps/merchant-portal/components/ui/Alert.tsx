@@ -30,7 +30,7 @@ export const Alert: React.FC<AlertProps> = ({
   <div
     role="status"
     className={cx(
-      'flex gap-3 rounded-ui-md border px-3 py-3 text-sm',
+      'm-alert flex gap-3 rounded-ui-md border px-3 py-3 text-sm',
       toneClass[tone],
       className,
     )}

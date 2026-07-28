@@ -43,19 +43,21 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         className={cx(
-          'w-full flex items-center gap-3 sm:gap-4 text-left p-4 sm:p-5',
-          desktopAlwaysOpen && 'lg:cursor-default lg:pb-0',
+          'w-full flex items-center text-left',
+          'm-settings-row',
+          'sm:gap-4 sm:p-4 sm:min-h-0',
+          desktopAlwaysOpen && 'lg:cursor-default lg:pb-0 lg:p-5',
         )}
       >
         {icon ? (
-          <div className={cx('p-2 sm:p-2.5 rounded-ui-sm flex-shrink-0', iconWrap)}>{icon}</div>
+          <div className={cx('m-settings-icon sm:p-2.5 rounded-ui-sm flex-shrink-0', iconWrap)}>{icon}</div>
         ) : null}
         <div className="min-w-0 flex-1">
-          <h3 className="text-base sm:text-app-section font-bold text-[var(--text-primary)] leading-tight">
+          <h3 className="m-settings-title text-base sm:text-app-section font-bold text-[var(--text-primary)] leading-tight">
             {title}
           </h3>
           {description ? (
-            <p className="text-xs text-[var(--text-muted)] font-medium mt-0.5 truncate lg:whitespace-normal lg:overflow-visible">
+            <p className="m-settings-desc text-xs text-[var(--text-muted)] font-medium mt-0.5 truncate lg:whitespace-normal lg:overflow-visible">
               {description}
             </p>
           ) : null}

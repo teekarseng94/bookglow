@@ -77,15 +77,15 @@ function HistoryTable({ history }: { history: StaffHistoryLine[] }) {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-bold text-[var(--text-primary)] leading-snug">{item.name}</p>
-                <p className="text-[11px] text-[var(--text-muted)] font-semibold mt-0.5">
+                <p className="m-staff-card__meta mt-0.5">
                   {new Date(item.date).toLocaleDateString()}
                 </p>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-sm font-black text-[var(--brand)] tabular-nums">
+                <p className="m-staff-stat-value text-[var(--brand)] tabular-nums">
                   ${(item.commissionEarned ?? 0).toFixed(2)}
                 </p>
-                <p className="text-[11px] text-[var(--text-muted)] font-bold tabular-nums">
+                <p className="m-staff-card__meta tabular-nums">
                   Price ${item.price}
                 </p>
               </div>
@@ -103,7 +103,7 @@ function HistoryTable({ history }: { history: StaffHistoryLine[] }) {
       <div className="hidden sm:block overflow-x-auto">
         <table className="w-full text-left">
           <thead>
-            <tr className="text-[var(--text-muted)] text-[10px] font-black uppercase tracking-widest">
+            <tr className="m-staff-section-title">
               <th className="pb-3">Date</th>
               <th className="pb-3">Treatment</th>
               <th className="pb-3 text-right">Price</th>
@@ -120,10 +120,10 @@ function HistoryTable({ history }: { history: StaffHistoryLine[] }) {
                 <td className="py-3 text-sm font-bold text-[var(--text-secondary)] text-right tabular-nums">
                   ${item.price}
                 </td>
-                <td className="py-3 text-sm font-black text-[var(--brand)] text-right tabular-nums">
+                <td className="py-3 m-staff-stat-value text-[var(--brand)] text-right tabular-nums">
                   ${(item.commissionEarned ?? 0).toFixed(2)}
                   {item.type === 'product' && item.commissionEarned ? (
-                    <span className="ml-2 inline-flex items-center rounded-full bg-[var(--bg-soft)] px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                    <span className="ml-2 inline-flex items-center rounded-full bg-[var(--bg-soft)] m-staff-card__role text-[var(--text-muted)]">
                       Fixed
                     </span>
                   ) : null}
@@ -207,7 +207,7 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
       <div className="p-4 sm:p-5 xl:p-6 border-b border-[var(--line)]">
         <div className="flex justify-between items-start gap-3">
           <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 xl:w-20 xl:h-20 rounded-full bg-[var(--brand-soft)] text-[var(--brand-deep)] flex items-center justify-center text-xl sm:text-2xl font-black overflow-hidden shrink-0 border-2 border-white shadow-ui-sm">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 xl:w-20 xl:h-20 rounded-full bg-[var(--brand-soft)] text-[var(--brand-deep)] flex items-center justify-center font-bold overflow-hidden shrink-0 border-2 border-white shadow-ui-sm">
               {member.profilePicture ? (
                 <img src={member.profilePicture} alt="" className="w-full h-full object-cover" />
               ) : (
@@ -216,19 +216,19 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
             </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-lg sm:text-xl xl:text-2xl font-black text-[var(--text-primary)] truncate">
+                <h3 className="m-staff-detail-name sm:text-xl xl:text-2xl text-[var(--text-primary)] truncate">
                   {member.name}
                 </h3>
                 <StaffStatusBadge status={member.status} />
               </div>
               <p className="text-sm font-semibold text-[var(--text-secondary)] mt-0.5">{member.role}</p>
-              <p className="text-[11px] sm:text-xs text-[var(--text-muted)] mt-1 truncate">
+              <p className="m-staff-card__meta sm:text-xs mt-1 truncate">
                 {[member.email, member.phone].filter(Boolean).join(' · ') || 'No contact details'}
               </p>
-              <p className="text-[10px] text-[var(--text-muted)] mt-0.5 font-medium">
+              <p className="m-staff-card__meta mt-0.5">
                 Staff ID: {member.id} · Joined {joined}
               </p>
-              <p className="text-[10px] font-semibold text-[var(--brand)] mt-0.5">
+              <p className="m-staff-card__meta text-[var(--brand)] mt-0.5">
                 Today: {formatShiftLabel(member.weeklyHours)}
               </p>
             </div>
@@ -258,7 +258,7 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
               type="button"
               onClick={() => onTabChange(t.id)}
               className={cx(
-                'px-2.5 sm:px-3 py-2.5 sm:py-3 text-[11px] sm:text-xs font-bold whitespace-nowrap border-b-2 transition-colors',
+                'm-staff-tab sm:px-3 sm:py-3 sm:text-xs whitespace-nowrap border-b-2 transition-colors',
                 tab === t.id
                   ? 'border-[var(--brand)] text-[var(--brand)]'
                   : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]',
@@ -274,7 +274,7 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
         {tab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
             <section className="rounded-ui-md border border-[var(--line)] p-4 space-y-3">
-              <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+              <h4 className="m-staff-section-title">
                 About
               </h4>
               <dl className="space-y-2 text-sm">
@@ -294,23 +294,23 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
             </section>
 
             <section className="rounded-ui-md border border-[var(--line)] p-4 space-y-3">
-              <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+              <h4 className="m-staff-section-title">
                 Performance snapshot
               </h4>
               <div className="grid grid-cols-3 gap-2">
                 <div className="rounded-ui-sm bg-[var(--bg-soft)] p-3 text-center">
-                  <p className="text-[9px] font-black uppercase text-[var(--text-muted)]">Services</p>
-                  <p className="text-lg font-black tabular-nums mt-0.5">{member.totalServices}</p>
+                  <p className="m-staff-kpi-label">Services</p>
+                  <p className="m-staff-kpi-value tabular-nums mt-0.5">{member.totalServices}</p>
                 </div>
                 <div className="rounded-ui-sm bg-[var(--bg-soft)] p-3 text-center">
-                  <p className="text-[9px] font-black uppercase text-[var(--text-muted)]">Revenue</p>
-                  <p className="text-lg font-black tabular-nums mt-0.5">
+                  <p className="m-staff-kpi-label">Revenue</p>
+                  <p className="m-staff-kpi-value tabular-nums mt-0.5">
                     ${member.totalRevenue.toLocaleString()}
                   </p>
                 </div>
                 <div className="rounded-ui-sm bg-[var(--brand-soft)] p-3 text-center">
-                  <p className="text-[9px] font-black uppercase text-[var(--brand)]">Commission</p>
-                  <p className="text-lg font-black tabular-nums text-[var(--brand)] mt-0.5">
+                  <p className="m-staff-kpi-label text-[var(--brand)]">Commission</p>
+                  <p className="m-staff-kpi-value tabular-nums text-[var(--brand)] mt-0.5">
                     ${member.totalCommission.toLocaleString()}
                   </p>
                 </div>
@@ -318,7 +318,7 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
             </section>
 
             <section className="rounded-ui-md border border-[var(--line)] p-4 space-y-3">
-              <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+              <h4 className="m-staff-section-title">
                 Qualified services
               </h4>
               {serviceNames.length > 0 ? (
@@ -326,13 +326,13 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
                   {serviceNames.slice(0, 12).map((name) => (
                     <span
                       key={name}
-                      className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[var(--brand-soft)] text-[var(--brand-deep)]"
+                      className="m-staff-chip bg-[var(--brand-soft)] text-[var(--brand-deep)]"
                     >
                       {name}
                     </span>
                   ))}
                   {serviceNames.length > 12 ? (
-                    <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[var(--bg-soft)] text-[var(--text-muted)]">
+                    <span className="m-staff-chip bg-[var(--bg-soft)] text-[var(--text-muted)]">
                       +{serviceNames.length - 12} more
                     </span>
                   ) : null}
@@ -345,7 +345,7 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
             </section>
 
             <section className="rounded-ui-md border border-[var(--line)] p-4 space-y-3">
-              <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+              <h4 className="m-staff-section-title">
                 Commission
               </h4>
               <p className="text-sm text-[var(--text-secondary)]">
@@ -362,7 +362,7 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
             </section>
 
             <section className="rounded-ui-md border border-[var(--line)] p-4 space-y-2 lg:col-span-2">
-              <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+              <h4 className="m-staff-section-title">
                 Access & permissions
               </h4>
               <p className="text-sm text-[var(--text-secondary)]">
@@ -408,26 +408,26 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
             {periodControls ? <div className="flex flex-wrap items-center gap-2">{periodControls}</div> : null}
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
               <div className="rounded-ui-md border border-[var(--line)] p-3 sm:p-4">
-                <p className="text-[9px] sm:text-[10px] font-black uppercase text-[var(--text-muted)]">
+                <p className="m-staff-kpi-label">
                   Total Rev.
                 </p>
-                <p className="text-base sm:text-xl font-black tabular-nums mt-1">
+                <p className="m-staff-kpi-value sm:text-xl tabular-nums mt-1">
                   ${member.totalRevenue.toLocaleString()}
                 </p>
               </div>
               <div className="rounded-ui-md bg-[var(--brand)] p-3 sm:p-4 text-white">
-                <p className="text-[9px] sm:text-[10px] font-black uppercase text-white/80">
+                <p className="m-staff-kpi-label text-white/80">
                   Commission
                 </p>
-                <p className="text-base sm:text-xl font-black tabular-nums mt-1">
+                <p className="m-staff-kpi-value sm:text-xl tabular-nums mt-1">
                   ${member.totalCommission.toLocaleString()}
                 </p>
               </div>
               <div className="rounded-ui-md border border-[var(--line)] p-3 sm:p-4">
-                <p className="text-[9px] sm:text-[10px] font-black uppercase text-[var(--text-muted)]">
+                <p className="m-staff-kpi-label">
                   Services
                 </p>
-                <p className="text-base sm:text-xl font-black tabular-nums mt-1">{member.totalServices}</p>
+                <p className="m-staff-kpi-value sm:text-xl tabular-nums mt-1">{member.totalServices}</p>
               </div>
             </div>
             <HistoryTable history={member.history} />
@@ -453,10 +453,10 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
             />
             <div className="rounded-ui-md border border-[var(--line)] p-4">
               <div className="flex items-center justify-between gap-3 mb-3">
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">
+                <h4 className="m-staff-section-title">
                   Commission earned
                 </h4>
-                <p className="text-lg font-black text-[var(--brand)] tabular-nums">
+                <p className="m-staff-kpi-value text-[var(--brand)] tabular-nums">
                   ${member.totalCommission.toLocaleString()}
                 </p>
               </div>

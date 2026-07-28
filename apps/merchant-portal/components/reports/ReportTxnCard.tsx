@@ -52,14 +52,14 @@ export const ReportTxnCard: React.FC<ReportTxnCardProps> = ({
         : undefined
     }
     className={cx(
-      'bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs p-3',
+      'm-txn-card bg-[var(--bg-surface)] border border-[var(--line)] shadow-ui-xs',
       onClick && 'cursor-pointer active:scale-[0.99] transition-transform',
       className,
     )}
   >
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0">
-        <p className={cx('text-base font-black tabular-nums leading-tight', amountClass[amountTone])}>
+        <p className={cx('m-txn-amount tabular-nums leading-tight', amountClass[amountTone])}>
           {amountLabel}
         </p>
         <p className="text-sm font-bold text-[var(--text-primary)] mt-1 truncate">{customer}</p>
@@ -68,7 +68,7 @@ export const ReportTxnCard: React.FC<ReportTxnCardProps> = ({
         {statusLabel}
       </StatusBadge>
     </div>
-    <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-semibold text-[var(--text-secondary)]">
+    <div className="m-txn-meta mt-2 flex flex-wrap items-center gap-x-2 gap-y-0.5">
       <span>{dateTimeLabel}</span>
       <span aria-hidden>·</span>
       <span>{paymentMethod || '—'}</span>

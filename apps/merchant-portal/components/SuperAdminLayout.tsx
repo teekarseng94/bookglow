@@ -17,7 +17,7 @@ const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ user, onLogout, chi
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-950 text-slate-100">
       <aside className="w-full md:w-64 bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 flex flex-col shrink-0">
         <div className="px-5 py-4 border-b border-slate-800">
-          <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Platform</p>
+          <p className="m-caption font-bold uppercase tracking-widest text-emerald-400">Platform</p>
           <h1 className="text-lg font-bold tracking-tight text-white mt-0.5">Bookglow Admin</h1>
           <p className="text-xs text-slate-400 mt-1 truncate" title={user?.email || undefined}>
             Super Admin · {user?.email}
@@ -49,7 +49,7 @@ const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ user, onLogout, chi
             <span className="text-sm font-medium">Subscribers</span>
           </NavLink>
         </nav>
-        <div className="mt-auto px-4 py-3 border-t border-slate-800 text-[11px] text-slate-500 space-y-3">
+        <div className="mt-auto px-4 py-3 border-t border-slate-800 m-caption text-slate-500 space-y-3">
           <div className="font-semibold text-amber-400/90 uppercase tracking-wide">Remote Control Mode</div>
           <button
             type="button"

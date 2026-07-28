@@ -13,8 +13,6 @@ import {
   ReportTxnCard,
 } from '../components/reports';
 import type { StatusTone } from '../components/ui/StatusBadge';
-<<<<<<< HEAD
-=======
 import {
   AppModal,
   Button,
@@ -24,7 +22,6 @@ import {
   ModalFooterActions,
   ConfirmationDialog,
 } from '../components/ui';
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 
 interface TransactionsProps {
   transactions: Transaction[];
@@ -545,44 +542,6 @@ const Transactions: React.FC<TransactionsProps> = ({
         }}
       />
 
-<<<<<<< HEAD
-      {/* Edit Transaction Modal */}
-      {editingTxn && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl animate-scaleIn overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-teal-600 text-white">
-              <h3 className="text-lg font-bold">Edit Historical Record</h3>
-              <button onClick={() => setEditingTxn(null)} className="hover:rotate-90 transition-transform">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            <form onSubmit={handleSaveEdit} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
-                  <input 
-                    required
-                    type="date" 
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500"
-                    value={editingTxn.date.split('T')[0]}
-                    onChange={e => setEditingTxn({ ...editingTxn, date: new Date(e.target.value).toISOString() })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Amount (RM)</label>
-                  <input 
-                    required
-                    type="number" 
-                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500"
-                    value={editingTxn.amount}
-                    onChange={e => setEditingTxn({ ...editingTxn, amount: parseFloat(e.target.value) })}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
-                <input 
-=======
       <AppModal
         open={!!editingTxn}
         onClose={() => setEditingTxn(null)}
@@ -609,7 +568,6 @@ const Transactions: React.FC<TransactionsProps> = ({
               <Field id="edit-txn-date" label="Date" required>
                 <input
                   id="edit-txn-date"
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
                   required
                   type="date"
                   className={fieldControlClassName}

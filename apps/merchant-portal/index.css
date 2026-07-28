@@ -506,14 +506,9 @@
 
   .bookglow-content-frame {
     width: 100%;
-<<<<<<< HEAD
-    max-width: 94rem;
-    margin: 0 auto;
-=======
     max-width: none;
     min-width: 0;
     margin: 0;
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
     padding: 1rem;
   }
 

@@ -1,28 +1,5 @@
 import React from 'react';
 import { StaffEditorSection } from './StaffEditorSection';
-<<<<<<< HEAD
-
-export interface StaffScheduleSectionProps {
-  children?: React.ReactNode;
-}
-
-/**
- * Schedule / availability presentation.
- * No new schedule fields — shows existing outlet-hours guidance unless parent passes content.
- */
-export const StaffScheduleSection: React.FC<StaffScheduleSectionProps> = ({ children }) => (
-  <StaffEditorSection
-    title="Schedule"
-    description="Working hours follow outlet operating hours. Per-staff schedules are not edited here."
-  >
-    {children ?? (
-      <div className="rounded-ui-sm border border-[var(--line)] bg-[var(--bg-soft)] px-3 py-2.5 text-xs text-[var(--text-secondary)]">
-        Manage outlet hours in Settings → Operating hours.
-      </div>
-    )}
-  </StaffEditorSection>
-);
-=======
 import {
   STAFF_WEEKDAYS,
   emptyWeeklyHours,
@@ -148,6 +125,5 @@ export const StaffScheduleSection: React.FC<StaffScheduleSectionProps> = ({
     </StaffEditorSection>
   );
 };
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 
 export default StaffScheduleSection;

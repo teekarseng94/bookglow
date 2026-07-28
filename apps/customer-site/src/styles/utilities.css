@@ -396,8 +396,6 @@
   border: 1px solid var(--line);
   border-radius: 0.9rem;
   background: var(--bg-soft);
-<<<<<<< HEAD
-=======
   cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
@@ -411,7 +409,6 @@
   border-color: var(--brand);
   background: var(--brand-soft);
   box-shadow: 0 0 0 1px var(--brand);
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 }
 
 .booking-team-card__avatar {

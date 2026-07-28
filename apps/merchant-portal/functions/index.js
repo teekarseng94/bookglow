@@ -1,10 +1,4 @@
 /**
-<<<<<<< HEAD
- * Cloud Functions for Bookglow
- * 
- * uploadServiceImage: Receives image as base64 and uploads to Firebase Storage.
- * Used to avoid CORS when the web app cannot upload directly to Storage.
-=======
  * Bookglow Cloud Functions — Firestore retired (2026-07-26).
  *
  * Production data lives in Supabase. Chatbot webhook moved to:
@@ -13,7 +7,6 @@
  * This file keeps a thin proxy for the old Firebase chatbotWebhook URL
  * (so existing MyChatBot configs keep working) and returns 410 for all
  * other legacy Firestore-backed endpoints.
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
  */
 
 const functions = require("firebase-functions");

@@ -10,10 +10,6 @@ import {
   MemberRow,
   MemberToolbar,
 } from '../components/members';
-<<<<<<< HEAD
-import { Button } from '../components/ui/Button';
-import { EmptyState } from '../components/ui/EmptyState';
-=======
 import {
   AppModal,
   Button,
@@ -25,7 +21,6 @@ import {
   IconButton,
   ModalFooterActions,
 } from '../components/ui';
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 
 type SortFilter = 'Recent' | 'New' | 'Birthday' | 'Name';
 

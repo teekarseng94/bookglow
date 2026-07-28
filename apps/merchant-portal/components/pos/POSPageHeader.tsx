@@ -1,16 +1,9 @@
 import React from 'react';
-<<<<<<< HEAD
-import { PageHeader } from '../ui/PageHeader';
-=======
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 import { cx } from '../ui/cx';
 
 export interface POSPageHeaderProps {
   title?: string;
-<<<<<<< HEAD
-=======
   shopName?: string;
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
   description?: string;
   banner?: React.ReactNode;
   className?: string;
@@ -18,18 +11,11 @@ export interface POSPageHeaderProps {
 
 export const POSPageHeader: React.FC<POSPageHeaderProps> = ({
   title = 'Point of Sale',
-<<<<<<< HEAD
-  description = 'Add items and complete checkout.',
-=======
   shopName,
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
   banner,
   className,
 }) => (
   <div className={cx('space-y-3', className)}>
-<<<<<<< HEAD
-    <PageHeader title={title} description={description} className="lg:hidden border-b-0 pb-0" />
-=======
     <header className="space-y-1">
       {shopName ? (
         <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
@@ -44,7 +30,6 @@ export const POSPageHeader: React.FC<POSPageHeaderProps> = ({
         </span>
       </div>
     </header>
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
     {banner}
   </div>
 );

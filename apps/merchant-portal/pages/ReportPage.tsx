@@ -809,11 +809,7 @@ const ReportPage: React.FC<ReportPageProps> = ({ transactions, outletID, staff }
 
         {/* Two-column monthly cards (real data from transactions) */}
         <div className="flex-1 p-4 sm:p-6 overflow-auto">
-<<<<<<< HEAD
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto">
-=======
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
             <MonthlySummaryCard data={month1Data} monthLabel={month1Label} />
             <MonthlySummaryCard data={month2Data} monthLabel={month2Label} />
           </div>

@@ -136,11 +136,7 @@ export interface Appointment {
   sourceSaleId?: string;
   /** Optional: Same as sourceSaleId; stored in bookings collection for triggers and queries */
   saleId?: string;
-<<<<<<< HEAD
-  /** Optional: origin marker (e.g. setmore sync writes "setmore") */
-=======
-  /** Optional: origin marker for imported/external appointments */
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
+  /** Optional: origin marker for imported/external appointments (e.g. setmore) */
   source?: string;
 }
 

@@ -11,10 +11,7 @@
 - Date selection (`selectedDate`, `goToDate`, `navigate`, `setToday`)
 - Appointment create / edit status / cancel / delete handlers
 - Reminder send (`handleSendManualReminder`)
-<<<<<<< HEAD
 - Setmore sync on open (`onSyncSetmore`)
-=======
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 - `onStartPOSSale(selectedAppointment)` via `handleCollectPayment` — same argument
 - Role permissions (page has none beyond parent props)
 
@@ -28,11 +25,7 @@
 | ScheduleToolbar | Day/Week/Month + prev/today/next + date picker in one bar |
 | ScheduleDateStrip | Sticky mobile week strip + month picker entry |
 | ScheduleBookingList / ScheduleBookingCard | Dense 2–3 row cards (time, status, customer, service, staff) |
-<<<<<<< HEAD
 | ScheduleEmptyState / ScheduleLoadingState | Empty + Setmore sync banner |
-=======
-| ScheduleEmptyState / ScheduleLoadingState | Empty + loading banner |
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 | ScheduleBookingDetailPanel | Full-width mobile detail + explicit status/destructive actions |
 
 ## Layout outcomes

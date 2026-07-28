@@ -10,11 +10,7 @@ export interface ScheduleLoadingStateProps {
 }
 
 export const ScheduleLoadingState: React.FC<ScheduleLoadingStateProps> = ({
-<<<<<<< HEAD
-  message = 'Syncing with Setmore…',
-=======
   message = 'Loading schedule…',
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
   variant = 'banner',
   className,
 }) => {

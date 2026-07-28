@@ -9,15 +9,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { resolveOutletIdFromBookingPath } from "../../services/bookingPathResolve";
 import type { PublicService, PublicOutlet, PublicTeamMember } from "../../services/bookingApi";
 import {
-<<<<<<< HEAD
-  getPublicOutletData,
-  createPublicBooking,
-  getAvailableSlots,
-  PublicService,
-  PublicOutlet,
-  PublicTeamMember,
-} from "../../services/bookingApi";
-=======
   getPublicOutletFromSupabase,
   listVisibleServicesFromSupabase,
   listStaffFromSupabase,
@@ -27,7 +18,6 @@ import {
   upsertFrontendCustomerProfileFromSupabase,
 } from "../../services/supabasePublicBooking";
 import { createBrowserSupabaseClient } from "@bookglow/supabase";
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 import {
   ANY_AVAILABLE_STAFF,
   BookingEmptyState,
@@ -531,33 +521,6 @@ export function BookingPage() {
       return;
     }
 
-<<<<<<< HEAD
-    let hasReceivedData = false;
-    const outletRef = doc(db, "outlets", resolvedOutletId);
-    const unsubscribe = onSnapshot(
-      outletRef,
-      (snapshot) => {
-        if (!snapshot.exists()) {
-          // Fallback to Cloud Function if document doesn't exist or listener fails
-          if (!hasReceivedData) {
-            getPublicOutletData(resolvedOutletId)
-              .then(({ outlet: o }) => {
-                if (o) {
-                  setOutlet(o);
-                  setLoading(false);
-                  setError(null);
-                } else {
-                  setError("Outlet not found");
-                  setLoading(false);
-                }
-              })
-              .catch((e: unknown) => {
-                setError(friendlyBookingError(e, "Could not load this shop."));
-                setLoading(false);
-              });
-          }
-          return;
-=======
     let cancelled = false;
     getPublicOutletFromSupabase(resolvedOutletId)
       .then((o) => {
@@ -569,46 +532,16 @@ export function BookingPage() {
         } else {
           setError("Outlet not found");
           setLoading(false);
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
         }
       })
       .catch((e: unknown) => {
         if (cancelled) return;
         setError(friendlyBookingError(e, "Could not load this shop."));
         setLoading(false);
-<<<<<<< HEAD
-        setError(null);
-      },
-      (err) => {
-        console.error("Firestore listener error for outlet:", err);
-        // Fallback to Cloud Function if listener fails (e.g., permission denied)
-        if (!hasReceivedData) {
-          getPublicOutletData(resolvedOutletId)
-            .then(({ outlet: o }) => {
-              if (o) {
-                setOutlet(o);
-                setLoading(false);
-                setError(null);
-              } else {
-                setError(friendlyBookingError(err, "Could not load this shop."));
-                setLoading(false);
-              }
-            })
-            .catch((e: unknown) => {
-              setError(friendlyBookingError(e, "Could not load this shop."));
-              setLoading(false);
-            });
-        }
-      }
-    );
-
-    return () => unsubscribe();
-=======
       });
     return () => {
       cancelled = true;
     };
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
   }, [pathResolveDone, resolvedOutletId]);
 
   // Services load from Supabase
@@ -729,20 +662,6 @@ export function BookingPage() {
         const teamMemberId = serviceTeamMembers[sel.selectionId] || null;
         if (!teamMemberId) continue;
 
-<<<<<<< HEAD
-        if (teamMemberId === ANY_AVAILABLE_STAFF) {
-          bookingPromises.push(
-            createPublicBooking({
-              outletId,
-              serviceId: service.id,
-              date: selectedDate,
-              time: selectedTime,
-              customerName: customerName.trim(),
-              phone: phone.trim(),
-              email: email.trim() || undefined,
-            })
-          );
-=======
         const basePayload = {
           outletId,
           serviceId: service.id,
@@ -755,7 +674,6 @@ export function BookingPage() {
 
         if (teamMemberId === ANY_AVAILABLE_STAFF) {
           bookingPromises.push(createPublicBookingFromSupabase(basePayload));
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
           continue;
         }
 
@@ -767,20 +685,7 @@ export function BookingPage() {
         }
 
         bookingPromises.push(
-<<<<<<< HEAD
-          createPublicBooking({
-            outletId,
-            serviceId: service.id,
-            date: selectedDate,
-            time: selectedTime,
-            customerName: customerName.trim(),
-            phone: phone.trim(),
-            email: email.trim() || undefined,
-            staffId: teamMemberId,
-          })
-=======
           createPublicBookingFromSupabase({ ...basePayload, staffId: teamMemberId })
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
         );
       }
       const results = await Promise.all(bookingPromises);
@@ -1017,27 +922,6 @@ export function BookingPage() {
 
           {/* Team */}
           <section id="team" className="booking-section">
-<<<<<<< HEAD
-            <div className="booking-section__header"><div><span className="booking-section__eyebrow">People</span><h2>Meet the team</h2></div></div>
-            {team.length === 0 ? (
-              <p className="text-slate-500 py-2">No team members listed.</p>
-            ) : (
-              <div className="booking-team-grid">
-                {team.map((m) => (
-                  <div key={m.id} className="booking-team-card">
-                    <div className="booking-team-card__avatar">
-                      {m.profilePicture ? (
-                        <img src={m.profilePicture} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        m.name.charAt(0).toUpperCase()
-                      )}
-                    </div>
-                    <span className="font-medium text-slate-800">{m.name}</span>
-                    
-                  </div>
-                ))}
-              </div>
-=======
             <div className="booking-section__header">
               <div>
                 <span className="booking-section__eyebrow">People</span>
@@ -1081,7 +965,6 @@ export function BookingPage() {
                   })}
                 </div>
               </>
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
             )}
           </section>
 
@@ -1096,13 +979,6 @@ export function BookingPage() {
 
           {/* Reviews */}
           <section id="reviews" className="booking-section">
-<<<<<<< HEAD
-            <div className="booking-section__header"><div><span className="booking-section__eyebrow">Customer feedback</span><h2>Reviews</h2></div></div>
-            <p className="text-slate-500 text-sm mb-4">Be the first to review us and share insights about your experience.</p>
-            <button type="button" className="px-4 py-2 rounded-lg border border-slate-300 text-slate-800 font-medium text-sm hover:bg-slate-50">
-              Write a review
-            </button>
-=======
             <div className="booking-section__header">
               <div>
                 <span className="booking-section__eyebrow">Customer feedback</span>
@@ -1203,7 +1079,6 @@ export function BookingPage() {
                 </div>
               </form>
             )}
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
           </section>
 
           {/* Address + Map */}

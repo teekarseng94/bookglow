@@ -37,11 +37,7 @@ export const POSStickyCartAction: React.FC<POSStickyCartActionProps> = ({
         className={cx(
           'inline-flex items-center gap-1.5 px-5 py-2.5 rounded-ui-md text-sm font-bold transition-all',
           itemCount > 0
-<<<<<<< HEAD
-            ? 'bg-[var(--brand)] text-white shadow-lg shadow-teal-200 active:scale-95'
-=======
             ? 'bg-[var(--brand)] text-white shadow-ui-sm active:scale-95'
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
             : 'bg-[var(--bg-soft)] text-[var(--text-muted)]',
         )}
       >

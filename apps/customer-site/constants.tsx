@@ -10,12 +10,9 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Resources', href: '#integrations' },
 ];
 
-<<<<<<< HEAD
-=======
 /** Nav labels that show a decorative chevron in the mock (no separate dropdown pages yet). */
 export const NAV_ITEMS_WITH_CHEVRON = new Set(['Product', 'Industries', 'Resources']);
 
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 export const PRIMARY_GREEN = '#7656D6';
 
 export const Logo = () => (

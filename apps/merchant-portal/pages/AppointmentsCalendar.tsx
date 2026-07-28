@@ -8,16 +8,10 @@ import {
   ScheduleBookingList,
   ScheduleDateStrip,
   ScheduleEmptyState,
-<<<<<<< HEAD
-  ScheduleLoadingState,
-=======
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
   SchedulePageHeader,
   ScheduleToolbar,
   type ScheduleBookingDaySection,
 } from '../components/schedule';
-<<<<<<< HEAD
-=======
 import {
   AppModal,
   AppDrawer,
@@ -27,7 +21,6 @@ import {
   FormSection,
   ModalFooterActions,
 } from '../components/ui';
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 
 interface AppointmentsCalendarProps {
   appointments: Appointment[];
@@ -641,9 +634,6 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
 
   return (
     <div className="animate-fadeIn md:space-y-4 md:pb-24">
-<<<<<<< HEAD
-      {isSyncingSetmore && <ScheduleLoadingState />}
-
       <SchedulePageHeader
         dateLabel={desktopDateLabel}
         viewLabel={`${viewMode} view`}
@@ -660,24 +650,6 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
         onDateChange={setSelectedDate}
       />
 
-=======
-      <SchedulePageHeader
-        dateLabel={desktopDateLabel}
-        viewLabel={`${viewMode} view`}
-        onNewBooking={handleQuickAddBooking}
-      />
-
-      <ScheduleToolbar
-        viewMode={viewMode}
-        selectedDate={selectedDate}
-        onViewModeChange={setViewMode}
-        onPrev={() => navigate('prev')}
-        onNext={() => navigate('next')}
-        onToday={setToday}
-        onDateChange={setSelectedDate}
-      />
-
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
       <div className="bg-[var(--bg-surface)] md:rounded-ui-lg md:border md:border-[var(--line)] md:shadow-ui-xs md:overflow-hidden md:min-h-[600px] flex flex-col">
         {viewMode === 'day' && (
           <>

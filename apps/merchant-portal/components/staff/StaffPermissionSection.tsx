@@ -1,32 +1,5 @@
 import React from 'react';
 import { StaffEditorSection } from './StaffEditorSection';
-<<<<<<< HEAD
-
-export interface StaffPermissionSectionProps {
-  roleLabel: string;
-  children?: React.ReactNode;
-}
-
-/**
- * Permissions presentation for the assigned role.
- * Does not invent per-staff permission fields — reflects existing role assignment.
- */
-export const StaffPermissionSection: React.FC<StaffPermissionSectionProps> = ({
-  roleLabel,
-  children,
-}) => (
-  <StaffEditorSection
-    title="Permissions"
-    description="Feature access follows outlet mode and the assigned role. Locks are managed in Settings."
-  >
-    {children ?? (
-      <div className="rounded-ui-sm border border-[var(--line)] bg-[var(--bg-soft)] px-3 py-2.5 text-xs text-[var(--text-secondary)]">
-        Assigned role: <span className="font-bold text-[var(--text-primary)]">{roleLabel || '—'}</span>
-      </div>
-    )}
-  </StaffEditorSection>
-);
-=======
 import {
   STAFF_PERMISSION_DEFS,
   normalizeStaffPermissions,
@@ -111,6 +84,5 @@ export const StaffPermissionSection: React.FC<StaffPermissionSectionProps> = ({
     </StaffEditorSection>
   );
 };
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 
 export default StaffPermissionSection;

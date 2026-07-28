@@ -6,11 +6,7 @@ import { cx } from '../ui/cx';
 export interface StaffPageHeaderProps {
   title?: string;
   description?: string;
-<<<<<<< HEAD
-  periodControls?: React.ReactNode;
-=======
   liveBadge?: boolean;
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
   onAddStaff: () => void;
   onOpenRoleRates: () => void;
   addDisabled?: boolean;
@@ -21,13 +17,8 @@ export interface StaffPageHeaderProps {
 
 export const StaffPageHeader: React.FC<StaffPageHeaderProps> = ({
   title = 'Staff & Team',
-<<<<<<< HEAD
-  description = 'Roster, performance, and commission settings.',
-  periodControls,
-=======
   description = 'Manage your team, roles, permissions, and performance.',
   liveBadge = true,
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
   onAddStaff,
   onOpenRoleRates,
   addDisabled,
@@ -35,19 +26,6 @@ export const StaffPageHeader: React.FC<StaffPageHeaderProps> = ({
   locked,
   className,
 }) => (
-<<<<<<< HEAD
-  <div className={cx('space-y-3', className)}>
-    <PageHeader
-      title={title}
-      description={description}
-      actions={
-        <div className="flex flex-wrap items-center gap-2">
-          <Button variant="secondary" size="sm" onClick={onOpenRoleRates} disabled={ratesDisabled}>
-            {locked ? 'Locked' : 'Role Rates'}
-          </Button>
-          <Button variant="primary" onClick={onAddStaff} disabled={addDisabled}>
-            {locked ? 'Locked' : 'Add Staff'}
-=======
   <div className={cx(className)}>
     <PageHeader
       className="!pb-3 sm:!pb-4"
@@ -88,15 +66,10 @@ export const StaffPageHeader: React.FC<StaffPageHeaderProps> = ({
             className="flex-1 sm:flex-none"
           >
             {locked ? 'Locked' : '+ Add Staff'}
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
           </Button>
         </div>
       }
     />
-<<<<<<< HEAD
-    {periodControls ? <div className="flex flex-wrap items-center gap-2">{periodControls}</div> : null}
-=======
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
   </div>
 );
 

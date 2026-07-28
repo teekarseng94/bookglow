@@ -1,12 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Transaction, TransactionType, Staff, Client } from '../types';
 import TransactionDetailModal from '../components/TransactionDetailModal';
-<<<<<<< HEAD
-import { collection, query, where, orderBy, Timestamp, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase';
-=======
 import { transactionService } from '../services/databaseService';
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 import {
   ReportDateRangeBar,
   ReportEmptyState,

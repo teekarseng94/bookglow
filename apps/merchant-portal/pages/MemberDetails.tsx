@@ -15,11 +15,7 @@ import {
   MemberHistorySection,
   MemberSummary,
 } from '../components/members';
-<<<<<<< HEAD
-import { Button } from '../components/ui/Button';
-=======
 import { Button, ConfirmationDialog, ModalLoadingFallback } from '../components/ui';
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 
 // Lazy load modals to avoid circular dependency
 const PointsHistoryModal = lazy(() => import('../components/PointsHistoryModal'));

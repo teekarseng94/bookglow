@@ -11,9 +11,6 @@ import { CSS } from '@dnd-kit/utilities';
 import { getCurrentOutletID } from '../services/databaseService';
 import { uploadImage, deleteImage, getServiceImagePath } from '../services/storageService';
 import { SERVICE_ICON_CATEGORIES } from '../serviceIcons';
-<<<<<<< HEAD
-import { Button } from '../components/ui/Button';
-=======
 import {
   AppModal,
   Button,
@@ -21,7 +18,6 @@ import {
   ModalFooterActions,
   ConfirmationDialog,
 } from '../components/ui';
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 import {
   InventoryEmptyState,
   InventoryEntityCard,

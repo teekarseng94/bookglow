@@ -669,11 +669,7 @@ const AppContent: React.FC<AppContentProps> = ({
         />;
       case 'schedule':
       case 'appointments':
-<<<<<<< HEAD
-        return <AppointmentsCalendar appointments={appointments} staff={staff} clients={clients} services={services} roleCommissions={roleCommissions} onAddAppointment={handleAddAppointment} onUpdateAppointmentStatus={handleUpdateAppointmentStatusWithPOS} onDeleteAppointment={handleDeleteAppointment} onStartPOSSale={handleStartPOSSale} onMarkReminderSent={handleMarkReminderSent} outletSettings={outletSettings} onSyncSetmore={handleSyncSetmoreOnOpen} />;
-=======
         return <AppointmentsCalendar appointments={appointments} staff={staff} clients={clients} services={services} roleCommissions={roleCommissions} onAddAppointment={handleAddAppointment} onUpdateAppointmentStatus={handleUpdateAppointmentStatusWithPOS} onDeleteAppointment={handleDeleteAppointment} onStartPOSSale={handleStartPOSSale} onMarkReminderSent={handleMarkReminderSent} outletSettings={outletSettings} />;
->>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
       case 'finance':
         return <Finance transactions={transactions} onAddTransaction={handleAddTransaction} onDeleteTransaction={handleDeleteTransaction} expenseCategories={expenseCategories} onAddCategory={handleAddExpenseCategory} onDeleteCategory={handleDeleteExpenseCategory} isLocked={isFeatureLocked('finance-view')} />;
       case 'settings':

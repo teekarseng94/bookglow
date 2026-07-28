@@ -14,15 +14,6 @@ interface SuperAdminLayoutProps {
  */
 const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ user, onLogout, children }) => {
   return (
-<<<<<<< HEAD
-    <div className="min-h-screen flex flex-col md:flex-row bg-slate-950 text-slate-100">
-      <aside className="w-full md:w-64 bg-slate-900 border-b md:border-b-0 md:border-r border-slate-800 flex flex-col shrink-0">
-        <div className="px-5 py-4 border-b border-slate-800">
-          <p className="m-caption font-bold uppercase tracking-widest text-emerald-400">Platform</p>
-          <h1 className="text-lg font-bold tracking-tight text-white mt-0.5">Bookglow Admin</h1>
-          <p className="text-xs text-slate-400 mt-1 truncate" title={user?.email || undefined}>
-            Super Admin · {user?.email}
-=======
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 text-slate-900 font-sans">
       <aside className="w-full md:w-64 bg-white border-b md:border-b-0 md:border-r border-slate-200 flex flex-col shrink-0">
         <div className="px-5 py-5 border-b border-slate-100">
@@ -30,7 +21,6 @@ const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ user, onLogout, chi
           <h1 className="text-lg font-bold tracking-tight text-slate-900 mt-0.5">Bookglow Control</h1>
           <p className="text-xs text-slate-500 mt-1 truncate" title={user?.email || undefined}>
             {user?.email}
->>>>>>> 7ef38685c93a70cde4da2747e2bed0d29e5e4d5a
           </p>
         </div>
         
@@ -60,17 +50,12 @@ const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ user, onLogout, chi
             <span className="text-sm font-medium">Outlets & Access</span>
           </NavLink>
         </nav>
-<<<<<<< HEAD
-        <div className="mt-auto px-4 py-3 border-t border-slate-800 m-caption text-slate-500 space-y-3">
-          <div className="font-semibold text-amber-400/90 uppercase tracking-wide">Remote Control Mode</div>
-=======
         
         <div className="mt-auto px-4 py-4 border-t border-slate-100 text-[11px] text-slate-400 space-y-3">
           <div className="flex items-center gap-1.5 text-slate-500">
             <span className="h-2 w-2 rounded-full bg-violet-600 animate-pulse" />
             <span className="font-semibold uppercase tracking-wider text-[9px]">Super Admin Mode</span>
           </div>
->>>>>>> 7ef38685c93a70cde4da2747e2bed0d29e5e4d5a
           <button
             type="button"
             onClick={() => onLogout()}

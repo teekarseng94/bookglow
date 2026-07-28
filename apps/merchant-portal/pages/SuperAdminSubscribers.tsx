@@ -460,23 +460,6 @@ const SuperAdminSubscribers: React.FC = () => {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-<<<<<<< HEAD
-                      <p className="font-semibold text-slate-100 truncate">{name}</p>
-                      <p className="m-caption font-mono text-slate-500 truncate">{o.outletID}</p>
-                    </div>
-                    <StatusBadge tone={isActive ? 'success' : 'danger'}>
-                      {isActive ? 'Active' : 'Disabled'}
-                    </StatusBadge>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs text-slate-400">
-                    <div>
-                      <p className="uppercase tracking-wide m-caption text-slate-500">Joined</p>
-                      <p>{joinDate}</p>
-                    </div>
-                    <div>
-                      <p className="uppercase tracking-wide m-caption text-slate-500">Last login</p>
-                      <p>{lastLogin}</p>
-=======
                       <p className="font-semibold text-slate-950 truncate">{o.name || o.settings?.shopName || '—'}</p>
                       <p className="text-[10px] font-mono text-slate-400 truncate">{o.outletID}</p>
                     </div>
@@ -495,10 +478,8 @@ const SuperAdminSubscribers: React.FC = () => {
                       }`}>
                         {isSetupCompleted ? 'Completed' : 'Pending Setup'}
                       </span>
->>>>>>> 7ef38685c93a70cde4da2747e2bed0d29e5e4d5a
                     </div>
                   </div>
-
                   <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-500 border-t border-slate-50 pt-2">
                     <div>
                       <p className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Admin</p>

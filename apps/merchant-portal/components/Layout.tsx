@@ -3,6 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Icons } from '../constants';
 import type { UserRole } from '../contexts/UserContext';
 import type { PortalAuthUser } from '../services/authService';
+import { isTabAllowed } from '../utils/permissions';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -132,11 +133,11 @@ const Layout: React.FC<LayoutProps> = ({
         .slice(0, 2);
     }
     if (user?.email) return user.email[0].toUpperCase();
-    return role === 'admin' ? 'AD' : 'CA';
+    return role === 'admin' ? 'AD' : role === 'manager' ? 'MN' : 'CA';
   };
 
-  const getUserDisplayName = () => user?.displayName || user?.email || (role === 'admin' ? 'Administrator' : 'Cashier');
-  const roleTitle = role === 'admin' ? 'Administrator' : 'Cashier';
+  const getUserDisplayName = () => user?.displayName || user?.email || (role === 'admin' ? 'Administrator' : role === 'manager' ? 'Manager' : 'Cashier');
+  const roleTitle = role === 'admin' ? 'Administrator' : role === 'manager' ? 'Manager' : 'Cashier';
 
   const allNavItems: NavItem[] = [
     { id: 'dashboard', label: 'Today', icon: <Icons.Dashboard /> },
@@ -153,28 +154,33 @@ const Layout: React.FC<LayoutProps> = ({
     { id: 'report', label: 'Report', icon: <Icons.Flag /> },
   ];
 
-  const cashierTabIds = new Set(['pos', 'member', 'menu', 'sales-reports']);
-  const navItems = role === 'admin' ? allNavItems : allNavItems.filter((item) => cashierTabIds.has(item.id));
+  const navGroupsConfig: NavGroup[] = [
+    { label: 'Workday', ids: ['dashboard', 'schedule', 'pos'] },
+    { label: 'Customers', ids: ['member', 'marketing'] },
+    { label: 'Business', ids: ['menu', 'sales-reports', 'transactions', 'finance', 'staff'] },
+    { label: 'Workspace', ids: ['settings', 'report'] },
+  ];
 
-  const navGroups: NavGroup[] = role === 'admin'
-    ? [
-        { label: 'Workday', ids: ['dashboard', 'schedule', 'pos'] },
-        { label: 'Customers', ids: ['member', 'marketing'] },
-        { label: 'Business', ids: ['menu', 'sales-reports', 'transactions', 'finance', 'staff'] },
-        { label: 'Workspace', ids: ['settings', 'report'] },
-      ]
-    : [
-        { label: 'Workday', ids: ['pos'] },
-        { label: 'Customers', ids: ['member'] },
-        { label: 'Business', ids: ['menu', 'sales-reports'] },
-      ];
+  const navItems = allNavItems.filter((item) => isTabAllowed(role, item.id));
+
+  const navGroups = navGroupsConfig
+    .map((group) => ({
+      ...group,
+      ids: group.ids.filter((id) => isTabAllowed(role, id))
+    }))
+    .filter((group) => group.ids.length > 0);
 
   const groupedNavItems = navGroups
-    .map((group) => ({ ...group, items: group.ids.map((id) => navItems.find((item) => item.id === id)).filter(Boolean) as NavItem[] }))
+    .map((group) => ({
+      ...group,
+      items: group.ids.map((id) => navItems.find((item) => item.id === id)).filter(Boolean) as NavItem[]
+    }))
     .filter((group) => group.items.length > 0);
 
   const mobileBottomNavItems = role === 'admin'
     ? allNavItems.filter((item) => ['dashboard', 'schedule', 'pos', 'member'].includes(item.id))
+    : role === 'manager'
+    ? allNavItems.filter((item) => ['schedule', 'pos', 'member', 'staff'].includes(item.id))
     : allNavItems.filter((item) => ['pos', 'member', 'menu', 'sales-reports'].includes(item.id));
 
   const mobilePrimaryIds = new Set(mobileBottomNavItems.map((item) => item.id));
@@ -357,7 +363,39 @@ const Layout: React.FC<LayoutProps> = ({
 
         <main className={`bookglow-main-scroll ${isScheduleRoute ? 'bookglow-main-scroll--schedule' : ''}`}>
           <div className={`bookglow-content-frame ${isScheduleRoute ? 'bookglow-content-frame--schedule' : ''}`}>
-            <div className="bookglow-page">{children}</div>
+            <div className="bookglow-page">
+              {(() => {
+                const ownerEmail = 'teekarseng94@gmail.com';
+                const isSuperAdmin = (user?.email || '').toLowerCase() === ownerEmail.toLowerCase();
+                const hasOverride = typeof window !== 'undefined' && !!window.localStorage.getItem('adminOverrideOutletId');
+                if (isSuperAdmin && hasOverride) {
+                  return (
+                    <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 shadow-sm flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse" />
+                        <p className="font-medium">
+                          Remote Control: Viewing workspace as admin for <strong>{resolvedOutletName || outletId}</strong>.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (typeof window !== 'undefined') {
+                            window.localStorage.removeItem('adminOverrideOutletId');
+                            window.location.reload();
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-amber-600 text-white font-semibold text-xs hover:bg-amber-700 transition-colors shadow-sm"
+                      >
+                        Exit Remote Control
+                      </button>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+              {children}
+            </div>
           </div>
         </main>
 

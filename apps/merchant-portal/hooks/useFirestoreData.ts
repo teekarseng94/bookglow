@@ -41,13 +41,13 @@ const DEFAULT_SERVICE_CATEGORIES = ['Massage', 'Facial', 'Nails', 'Aromatherapy'
 const commissionCreatedForSaleIds = new Set<string>();
 
 /** Role from users/{uid}: cashiers may only read/write SALE transactions (Firestore rules). */
-export type FirestoreUserRole = 'admin' | 'cashier' | null;
+export type FirestoreUserRole = 'admin' | 'manager' | 'cashier' | null;
 
 export const useFirestoreData = (outletID: string, role: FirestoreUserRole = null) => {
   // Multi-tenant: outletID must come from the authenticated user's Firestore document (users/{uid}.outletId). No default.
   const hasOutlet = Boolean(outletID && String(outletID).trim());
   // Until role is known, use cashier-safe query (only SALE) so we don't get permission denied
-  const isCashier = role !== 'admin';
+  const isCashier = role === 'cashier';
 
   // Set current outlet ID only when valid
   useEffect(() => {

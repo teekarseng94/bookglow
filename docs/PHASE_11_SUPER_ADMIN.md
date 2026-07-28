@@ -11,6 +11,7 @@
 | `pages/SuperAdminDashboard.tsx` | Complete — placeholder metrics stay `—` (no fake numbers) |
 | `pages/SuperAdminSubscribers.tsx` | Complete — responsive cards/table; enable/disable confirm |
 | `pages/Marketing.tsx` | Complete — shared page/state patterns; reset confirm dialog |
+| `pages/ExternalIntegrations.tsx` | Complete — Disconnected / Configured / Connected / Syncing / Error |
 | `pages/ApiIntegrationManagement.tsx` | Complete — status badge + regenerate confirm; key hash unchanged |
 | `pages/BuyVoucher.tsx` | Complete — StatusBadge / Alert / Button |
 | `pages/RedeemVoucher.tsx` | Complete — StatusBadge / Alert / Field / Button |
@@ -25,6 +26,7 @@ Presentational helpers: `components/admin/` (`PlatformPageHeader`, `PlatformBann
 - Ordinary merchants never see Super Admin navigation
 - Subscriber enable/disable portal actions and queries
 - Marketing create / copy / confirm-sold / reset handlers and admin role gate
+- Setmore sync callable and settings write path
 - API key generate / regenerate / SHA-256 hash / webhook save
 - Buy / redeem voucher flows, PIN checks, secret-code confirmation
 
@@ -34,7 +36,7 @@ Presentational helpers: `components/admin/` (`PlatformPageHeader`, `PlatformBann
 
 - **Platform identity:** Dark slate shell + amber remote-control banner; distinct from merchant Layout
 - **Destructive / sensitive actions:** `ConfirmationDialog` for subscriber portal toggle, voucher reset, API key regenerate
-- **Integrations:** Chatbot API only (Setmore calendar sync removed)
+- **Integrations:** Real connection states only — no invented providers or fake “connected” UI; Setmore external sync + Chatbot API
 - **Lists:** Subscribers and Marketing vouchers use mobile cards + desktop tables
 - **Remote outlet:** `adminOverrideOutletId` read path preserved; platform banner makes remote-control context unmistakable when Super Admin is active
 

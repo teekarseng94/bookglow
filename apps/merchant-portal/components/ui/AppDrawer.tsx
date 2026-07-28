@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { cx } from './cx';
 import { ModalBody, ModalFooter, ModalHeader } from './ModalParts';
+import { useDialogInteraction } from './useDialogInteraction';
 
 export interface AppDrawerProps {
   open: boolean;
@@ -36,19 +37,8 @@ export const AppDrawer: React.FC<AppDrawerProps> = ({
   closeOnBackdrop = true,
   busy = false,
 }) => {
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !busy) onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      document.body.style.overflow = previous;
-    };
-  }, [open, onClose, busy]);
+  const panelRef = useRef<HTMLDivElement>(null);
+  useDialogInteraction({ open, busy, onClose, panelRef });
 
   if (!open || typeof document === 'undefined') return null;
 
@@ -63,16 +53,19 @@ export const AppDrawer: React.FC<AppDrawerProps> = ({
         <button
           type="button"
           className="absolute inset-0 bg-ui-overlay border-0 cursor-default"
-          aria-label="Close drawer"
+          tabIndex={-1}
+          aria-hidden="true"
           onClick={() => {
             if (closeOnBackdrop && !busy) onClose();
           }}
         />
       ) : null}
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label={typeof title === 'string' ? title : undefined}
+        tabIndex={-1}
         className={cx(
           'grid overflow-hidden bg-[var(--bg-surface)]',
           footer ? 'grid-rows-[auto_minmax(0,1fr)_auto]' : 'grid-rows-[auto_minmax(0,1fr)]',

@@ -1431,12 +1431,12 @@ const Services: React.FC<ServicesProps> = ({
         saving={isUploadingImage}
         saveDisabled={Boolean(isLocked)}
       >
-            <form id="inventory-edit-form" onSubmit={handleSubmit} className={`${formData.type === 'package' ? 'space-y-8' : 'space-y-6'}`}>
+            <form id="inventory-edit-form" onSubmit={handleSubmit} className={`m-inventory-editor ${formData.type === 'package' ? 'space-y-8' : 'space-y-6'}`}>
               {/* Details / Pricing / Availability / Media tabs — services only. Products and packages
                   keep their existing single-scroll layout below: their smaller field sets don't gain
                   anything from tab-splitting, and forcing empty tabs onto them isn't the goal here. */}
               {formData.type === 'service' && (
-                <div role="tablist" aria-label="Edit sections" className="flex items-center gap-1 -mt-2 mb-4 border-b border-slate-100">
+                <div role="tablist" aria-label="Edit sections" className="flex items-center gap-1 -mt-2 mb-4 border-b border-[var(--line-soft)]">
                   {EDIT_TABS.map((tab) => (
                     <button
                       key={tab.id}
@@ -1447,7 +1447,7 @@ const Services: React.FC<ServicesProps> = ({
                       className={`px-3 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
                         editPanelTab === tab.id
                           ? 'border-[var(--brand)] text-[var(--brand)]'
-                          : 'border-transparent text-slate-400 hover:text-slate-700'
+                          : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
                       }`}
                     >
                       {tab.label}
@@ -1465,7 +1465,7 @@ const Services: React.FC<ServicesProps> = ({
                     <div className="flex-shrink-0">
                       {imagePreview ? (
                         <div className="relative">
-                          <img src={imagePreview} alt="Preview" className="w-20 h-20 rounded-xl object-cover border-2 border-slate-200" />
+                          <img src={imagePreview} alt="Preview" className="w-20 h-20 rounded-ui-sm object-cover border-2 border-[var(--line)]" />
                           <button type="button" onClick={handleRemoveImage} className="absolute -top-2 -right-2 w-6 h-6 bg-rose-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-rose-600" title="Remove image">×</button>
                         </div>
                       ) : formData.iconId ? (
@@ -1473,7 +1473,7 @@ const Services: React.FC<ServicesProps> = ({
                           {renderServiceIcon(formData.iconId, 'w-10 h-10')}
                         </div>
                       ) : (
-                        <div className="w-20 h-20 rounded-xl bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center text-2xl">
+                        <div className="w-20 h-20 rounded-ui-sm bg-[var(--bg-soft)] border-2 border-dashed border-[var(--line-strong)] flex items-center justify-center text-app-section">
                           {getCategoryIcon(formData.category)}
                         </div>
                       )}
@@ -1485,11 +1485,11 @@ const Services: React.FC<ServicesProps> = ({
                         <label htmlFor="service-image-upload" className="w-14 h-14 rounded-xl bg-[var(--brand-soft)] border-2 border-dashed border-[var(--brand)]/40 flex items-center justify-center text-[var(--brand)] cursor-pointer hover:bg-[var(--bg-selection)] transition-colors" title="Upload Image">
                           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                         </label>
-                        <button type="button" onClick={() => setShowIconPickerModal(true)} className="px-4 py-2 bg-slate-100 text-slate-700 text-sm font-bold rounded-lg border border-slate-200 hover:bg-slate-200 transition-colors">
+                        <button type="button" onClick={() => setShowIconPickerModal(true)} className="m-btn m-btn--secondary m-btn--sm">
                           Select Icon
                         </button>
                       </div>
-                      <p className="text-xs text-slate-500">Upload image or choose a preset icon. JPG, PNG or GIF (max 5MB).</p>
+                      <p className="text-xs text-[var(--text-muted)]">Upload image or choose a preset icon. JPG, PNG or GIF (max 5MB).</p>
                     </div>
                   </div>
                 </div>
@@ -1498,23 +1498,23 @@ const Services: React.FC<ServicesProps> = ({
               {formData.type === 'package' ? (
                 <div className="space-y-10">
                   <section className="space-y-6">
-                    <h4 className="text-xl font-bold text-slate-800">Basic info</h4>
+                    <h4 className="text-app-section font-bold text-[var(--text-primary)]">Basic info</h4>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">Bundle name</label>
+                      <label className="m-settings-label block mb-2">Bundle name</label>
                       <input
                         required
                         type="text"
                         placeholder="Add a bundle name, e.g. Cut and blow-dry"
-                        className="w-full p-3 bg-white border border-slate-200 rounded-lg outline-none focus-visible:shadow-ui-focus-strong/30 focus:border-[var(--brand)] text-slate-800 placeholder:text-slate-400"
+                        className="m-settings-control w-full"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-slate-700 mb-2">Category</label>
+                      <label className="m-settings-label block mb-2">Category</label>
                       <select
                         required
-                        className="w-full p-3 bg-white border border-slate-200 rounded-lg outline-none focus-visible:shadow-ui-focus-strong/30 focus:border-[var(--brand)] text-slate-800 appearance-none cursor-pointer"
+                        className="m-settings-control w-full appearance-none cursor-pointer"
                         value={formData.category}
                         onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                       >
@@ -1523,60 +1523,60 @@ const Services: React.FC<ServicesProps> = ({
                           <option key={cat} value={cat}>{cat}</option>
                         ))}
                       </select>
-                      <p className="mt-1.5 text-xs text-slate-500">The category displayed to you, and to clients online.</p>
+                      <p className="mt-1.5 text-xs text-[var(--text-muted)]">The category displayed to you, and to clients online.</p>
                     </div>
                     <div>
                       <div className="flex justify-between items-center mb-2">
-                        <label className="block text-sm font-semibold text-slate-700">Description (Optional)</label>
-                        <span className="text-xs text-slate-400">{(formData.description || '').length}/{DESCRIPTION_MAX_LENGTH}</span>
+                        <label className="m-settings-label block">Description (Optional)</label>
+                        <span className="text-xs text-[var(--text-muted)]">{(formData.description || '').length}/{DESCRIPTION_MAX_LENGTH}</span>
                       </div>
                       <textarea
                         rows={4}
                         maxLength={DESCRIPTION_MAX_LENGTH}
                         placeholder="Add a description about this bundle"
-                        className="w-full p-3 bg-white border border-slate-200 rounded-lg outline-none focus-visible:shadow-ui-focus-strong/30 focus:border-[var(--brand)] text-slate-800 placeholder:text-slate-400 resize-none"
+                        className="m-settings-control w-full resize-none"
                         value={formData.description || ''}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value.slice(0, DESCRIPTION_MAX_LENGTH) })}
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">Price ($)</label>
+                        <label className="m-settings-label block mb-2">Price (RM)</label>
                         <input
                           required
                           type="number"
                           step="0.01"
-                          className="w-full p-3 bg-white border border-slate-200 rounded-lg outline-none focus-visible:shadow-ui-focus-strong/30 font-medium text-slate-800"
+                          className="m-settings-control w-full font-medium"
                           value={formData.price}
                           onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">Loyalty points</label>
+                        <label className="m-settings-label block mb-2">Loyalty points</label>
                         <input
                           required
                           type="number"
                           min={0}
                           step={1}
-                          className="w-full p-3 bg-white border border-slate-200 rounded-lg outline-none focus-visible:shadow-ui-focus-strong/30 font-medium text-slate-800"
+                          className="m-settings-control w-full font-medium"
                           value={formData.points ?? 0}
                           onChange={(e) => setFormData({ ...formData, points: parseInt(e.target.value) || 0 })}
                         />
                       </div>
                     </div>
                   </section>
-                  <section className="space-y-4 pt-6 border-t border-slate-100">
-                    <h4 className="text-xl font-bold text-slate-800">Services</h4>
-                    <p className="text-sm text-slate-600">Select which services to include in this bundle and how they should be sequenced when booked.</p>
+                  <section className="space-y-4 pt-6 border-t border-[var(--line-soft)]">
+                    <h4 className="text-app-section font-bold text-[var(--text-primary)]">Services</h4>
+                    <p className="text-sm text-[var(--text-secondary)]">Select which services to include in this bundle and how they should be sequenced when booked.</p>
                     <button
                       type="button"
                       onClick={() => {
                         setServiceSelectorSearch('');
                         setShowServiceSelectorModal(true);
                       }}
-                      className="flex items-center gap-2 px-4 py-3 bg-white border border-slate-200 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors"
+                      className="flex items-center gap-2 px-4 py-3 bg-[var(--bg-surface)] border border-[var(--line)] rounded-ui-sm text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] hover:border-[var(--line-strong)] transition-colors"
                     >
-                      <span className="w-6 h-6 rounded-full border-2 border-slate-400 flex items-center justify-center text-slate-500 flex-shrink-0">
+                      <span className="w-6 h-6 rounded-full border-2 border-[var(--line-strong)] flex items-center justify-center text-[var(--text-muted)] flex-shrink-0">
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                       </span>
                       Add service
@@ -1593,18 +1593,18 @@ const Services: React.FC<ServicesProps> = ({
                         return (
                           <div
                             key={ps.serviceId + idx}
-                            className="flex items-center justify-between gap-4 py-3 px-4 border-b border-slate-100 last:border-b-0 bg-white hover:bg-slate-50/80 transition-colors border-l-4 border-l-blue-500"
+                            className="flex items-center justify-between gap-4 py-3 px-4 border-b border-[var(--line-soft)] last:border-b-0 bg-[var(--bg-surface)] hover:bg-[var(--bg-soft)] transition-colors border-l-4 border-l-[var(--brand)]"
                           >
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm font-bold text-slate-800 truncate">{srv?.name || 'Deleted Service'}</p>
-                              <p className="text-xs text-slate-500 mt-0.5">{durationLabel}</p>
+                              <p className="text-sm font-bold text-[var(--text-primary)] truncate">{srv?.name || 'Deleted Service'}</p>
+                              <p className="text-xs text-[var(--text-muted)] mt-0.5">{durationLabel}</p>
                             </div>
-                            <span className="text-sm font-bold text-slate-700 flex-shrink-0">MYR {totalRowPrice.toFixed(0)}</span>
+                            <span className="text-sm font-bold text-[var(--text-secondary)] flex-shrink-0">RM {totalRowPrice.toFixed(0)}</span>
                             <div className="flex items-center gap-1 flex-shrink-0 relative">
                               <input
                                 type="number"
                                 min={1}
-                                className="w-12 p-1.5 text-center bg-slate-50 border border-slate-200 rounded text-sm font-semibold text-slate-800"
+                                className="w-12 p-1.5 text-center bg-[var(--bg-soft)] border border-[var(--line)] rounded-ui-xs text-sm font-semibold text-[var(--text-primary)]"
                                 value={ps.quantity}
                                 onChange={(e) => handleUpdatePackageServiceQty(ps.serviceId, Math.max(1, parseInt(e.target.value) || 1))}
                                 aria-label="Quantity"
@@ -1613,7 +1613,7 @@ const Services: React.FC<ServicesProps> = ({
                                 <button
                                   type="button"
                                   onClick={() => setOpenPackageServiceMenuId((id) => (id === ps.serviceId ? null : ps.serviceId))}
-                                  className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                                  className="p-2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] rounded-ui-sm transition-colors"
                                   aria-label="Options"
                                 >
                                   <MoreVertical className="w-4 h-4" />
@@ -1621,10 +1621,10 @@ const Services: React.FC<ServicesProps> = ({
                                 {openPackageServiceMenuId === ps.serviceId && (
                                   <>
                                     <div className="fixed inset-0 z-10" aria-hidden onClick={() => setOpenPackageServiceMenuId(null)} />
-                                    <div className="absolute right-0 top-full mt-1 py-1 bg-white border border-slate-200 rounded-lg shadow-lg z-20 min-w-[120px]">
+                                    <div className="absolute right-0 top-full mt-1 py-1 bg-[var(--bg-surface)] border border-[var(--line)] rounded-ui-sm shadow-ui-md z-20 min-w-[120px]">
                                       <button
                                         type="button"
-                                        className="w-full px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50"
+                                        className="w-full px-3 py-2 text-left text-sm text-[var(--danger)] hover:bg-[var(--danger-soft)]"
                                         onClick={() => {
                                           handleRemoveServiceFromPackage(ps.serviceId);
                                           setOpenPackageServiceMenuId(null);
@@ -1641,19 +1641,19 @@ const Services: React.FC<ServicesProps> = ({
                         );
                       })}
                       {formData.packageServices.length === 0 && (
-                        <p className="text-sm text-slate-400 text-center py-6">No services added yet. Click &quot;Add service&quot; to include treatments.</p>
+                        <p className="text-sm text-[var(--text-muted)] text-center py-6">No services added yet. Click &quot;Add service&quot; to include treatments.</p>
                       )}
                     </div>
                     {formData.packageServices.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-slate-200 space-y-2">
+                      <div className="mt-4 pt-4 border-t border-[var(--line)] space-y-2">
                         <div className="flex justify-end">
-                          <div className="bg-amber-50 border border-amber-200/80 rounded-lg px-4 py-2.5 inline-flex items-baseline gap-3">
-                            <span className="text-sm font-semibold text-slate-700">Total duration: {formatDuration(packageServicesTotals.totalMinutes)}</span>
-                            <span className="text-sm font-bold text-slate-800">MYR {packageServicesTotals.totalPrice.toFixed(0)}</span>
+                          <div className="bg-[var(--warning-soft)] border border-[var(--warning-border)] rounded-ui-sm px-4 py-2.5 inline-flex items-baseline gap-3">
+                            <span className="text-sm font-semibold text-[var(--text-secondary)]">Total duration: {formatDuration(packageServicesTotals.totalMinutes)}</span>
+                            <span className="text-sm font-bold text-[var(--text-primary)]">RM {packageServicesTotals.totalPrice.toFixed(0)}</span>
                           </div>
                         </div>
                         {discountedPricePerService.length > 0 && Number(formData.price) > 0 && (
-                          <p className="text-sm text-slate-600 text-right">
+                          <p className="text-sm text-[var(--text-secondary)] text-right">
                             {discountedPricePerService.map(({ serviceId, name, perUnit }) => (
                               <span key={serviceId} className="block mt-1">
                                 RM{Math.round(perUnit)} per 1 {name}

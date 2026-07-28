@@ -454,10 +454,10 @@ function MonthlySummaryCard({ data, monthLabel }: { data: MonthlySummaryData; mo
   const hasMoreStaff = staffList.length > STAFF_SALES_COLLAPSED_COUNT;
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+    <div className="m-report-detail-card bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs overflow-hidden">
       <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-        <h3 className="text-lg font-bold text-slate-800">{monthLabel}</h3>
-        <button type="button" className="p-2 rounded-lg hover:bg-slate-100 text-slate-500" aria-label="Print">
+        <h3 className="text-app-section font-bold text-[var(--text-primary)]">{monthLabel}</h3>
+        <button type="button" className="p-2 rounded-ui-sm hover:bg-[var(--bg-soft)] text-[var(--text-muted)]" aria-label="Print">
           <ReportIcons.Printer />
         </button>
       </div>

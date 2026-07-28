@@ -405,7 +405,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       <SettingsSection
         id="settings-booking-page"
         defaultOpen
-        iconWrap="bg-emerald-50 text-emerald-600"
+        iconWrap="bg-[var(--success-soft)] text-[var(--success)]"
         title="Booking page"
         description="Public booking link, path, address and phone shown to customers."
         icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>}
@@ -429,7 +429,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                   Last segment of your public link (e.g. baliWellness). Leave empty to use your outlet id. Save with Save Changes under Operating hours.
                 </p>
                 {bookingSlugError && (
-                  <p className="text-xs text-red-600 mt-1">{bookingSlugError}</p>
+                  <p className="text-xs text-[var(--danger)] mt-1">{bookingSlugError}</p>
                 )}
               </div>
               <div>
@@ -451,7 +451,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                       Copy Link
                     </button>
                     {copySuccess && (
-                      <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-lg shadow-lg whitespace-nowrap">
+                      <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-[var(--success)] text-white text-xs font-bold rounded-ui-sm shadow-ui-md whitespace-nowrap">
                         Copied!
                       </span>
                     )}
@@ -460,21 +460,21 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
               </div>
               <p className="m-settings-hint">Customers can open this link to view your service menu and book a time. No login required.</p>
             </div>
-            <div className="flex flex-col items-center gap-2 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <div className="flex flex-col items-center gap-2 p-4 bg-[var(--bg-soft)] rounded-ui-md border border-[var(--line-soft)]">
               <QRCodeSVG value={bookingUrl} size={160} level="M" includeMargin />
               <span className="m-settings-hint font-medium">Scan to book · Print for counter</span>
             </div>
           </div>
         ) : (
-          <p className="text-slate-500 text-sm">Loading your outlet link…</p>
+          <p className="text-[var(--text-muted)] text-sm">Loading your outlet link…</p>
         )}
 
         {effectiveOutletId && (
-          <div className="mt-6 pt-6 border-t border-slate-100 space-y-4">
+          <div className="mt-6 pt-6 border-t border-[var(--line-soft)] space-y-4">
             {(contextLoading || outletLoading) ? (
               <div className="flex items-center justify-center py-6">
                 <div className="w-8 h-8 border-4 border-[var(--brand)] border-t-transparent rounded-full animate-spin" />
-                <span className="ml-3 text-slate-600">Loading outlet information...</span>
+                <span className="ml-3 text-[var(--text-secondary)]">Loading outlet information...</span>
               </div>
             ) : (
               <>
@@ -514,11 +514,11 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
       >
         {!effectiveOutletId ? (
-          <p className="text-sm text-red-600 font-semibold">Outlet ID missing — cannot save hours.</p>
+          <p className="text-sm text-[var(--danger)] font-semibold">Outlet ID missing — cannot save hours.</p>
         ) : (contextLoading || outletLoading) ? (
           <div className="flex items-center justify-center py-6">
             <div className="w-8 h-8 border-4 border-[var(--brand)] border-t-transparent rounded-full animate-spin" />
-            <span className="ml-3 text-slate-600">Loading outlet information...</span>
+            <span className="ml-3 text-[var(--text-secondary)]">Loading outlet information...</span>
           </div>
         ) : (
           <>
@@ -571,9 +571,9 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-6">
-            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+            <div className="flex items-center justify-between p-4 bg-[var(--bg-soft)] rounded-ui-sm border border-[var(--line-soft)]">
               <div>
-                <span className="block text-sm font-bold text-slate-700">Enable Reminders</span>
+                <span className="block text-sm font-bold text-[var(--text-secondary)]">Enable Reminders</span>
                 <span className="m-settings-hint font-semibold uppercase tracking-tight">Send messages automatically</span>
               </div>
               <button 
@@ -588,7 +588,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
               <div>
                 <label className="m-settings-label block uppercase tracking-widest">Reminder Channel</label>
                 <select 
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-bold"
+                  className="m-settings-control w-full"
                   value={settings.reminderChannel}
                   onChange={(e) => onUpdateSettings({ ...settings, reminderChannel: e.target.value as any })}
                 >
@@ -602,7 +602,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                 <label className="m-settings-label block uppercase tracking-widest">Reminder Timing</label>
                 <div className="flex items-center gap-3">
                   <select 
-                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-bold"
+                    className="m-settings-control flex-1"
                     value={settings.reminderTiming}
                     onChange={(e) => onUpdateSettings({ ...settings, reminderTiming: parseInt(e.target.value) })}
                   >
@@ -617,7 +617,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
             </div>
           </div>
 
-          <div className="p-6 bg-indigo-50 rounded-2xl border border-indigo-100 h-fit">
+          <div className="p-6 bg-[var(--brand-soft)] rounded-ui-md border border-[var(--brand-border)] h-fit">
             <h4 className="m-settings-subhead text-[var(--brand-deep)] mb-3 flex items-center gap-2">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               AI Messaging
@@ -625,7 +625,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
             <p className="text-xs text-indigo-800 leading-relaxed font-medium">
               Bookglow can draft personalized, welcoming messages for each client. When reminders are triggered from the dashboard or calendar, they are simulated based on these settings.
             </p>
-            <div className="mt-4 p-3 bg-white/60 rounded-xl m-settings-hint text-[var(--brand)] italic border border-white/40">
+            <div className="mt-4 p-3 bg-[var(--bg-surface)]/70 rounded-ui-sm m-settings-hint text-[var(--brand)] italic border border-[var(--brand-border)]">
               "Hi Sarah! Just a gentle reminder of your Swedish Massage tomorrow at 11:00 AM at Bookglow Spa. We can't wait to see you!"
             </div>
           </div>
@@ -635,7 +635,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       {/* 5. Receipt & payment */}
       <SettingsSection
         id="settings-receipt-payment"
-        iconWrap="bg-emerald-50 text-emerald-600"
+        iconWrap="bg-[var(--success-soft)] text-[var(--success)]"
         title="Receipt & payment"
         description="POS payment methods and printed receipt layout for this outlet."
         icon={<Icons.POS />}
@@ -648,19 +648,19 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                 <label className="m-settings-label block uppercase tracking-widest">Active Methods</label>
                 <div className="space-y-2">
                   {settings.paymentMethods.map((method, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100 group">
+                    <div key={index} className="flex items-center justify-between p-3 bg-[var(--bg-soft)] rounded-ui-sm border border-[var(--line-soft)] group">
                       {editingMethod?.index === index ? (
                         <form onSubmit={handleEditMethod} className="flex-1 flex gap-2">
-                          <input autoFocus type="text" className="flex-1 p-1 px-2 text-sm bg-white border border-[var(--brand)]/40 rounded outline-none" value={editingMethod.name} onChange={(e) => setEditingMethod({ ...editingMethod, name: e.target.value })} />
+                          <input autoFocus type="text" className="m-settings-control flex-1 !h-9 !px-2" value={editingMethod.name} onChange={(e) => setEditingMethod({ ...editingMethod, name: e.target.value })} />
                           <button type="submit" className="text-[var(--brand)] font-semibold text-xs">Save</button>
-                          <button type="button" onClick={() => setEditingMethod(null)} className="text-slate-400 font-bold text-xs">Cancel</button>
+                          <button type="button" onClick={() => setEditingMethod(null)} className="text-[var(--text-muted)] font-bold text-xs">Cancel</button>
                         </form>
                       ) : (
                         <>
-                          <span className="text-sm font-bold text-slate-700">{method}</span>
+                          <span className="text-sm font-bold text-[var(--text-secondary)]">{method}</span>
                           <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => setEditingMethod({ index, name: method })} className="text-slate-400 hover:text-[var(--brand)]"><Icons.Edit /></button>
-                            <button onClick={() => removePaymentMethod(index)} className="text-slate-400 hover:text-rose-500"><Icons.Trash /></button>
+                            <button onClick={() => setEditingMethod({ index, name: method })} className="text-[var(--text-muted)] hover:text-[var(--brand)]"><Icons.Edit /></button>
+                            <button onClick={() => removePaymentMethod(index)} className="text-[var(--text-muted)] hover:text-[var(--danger)]"><Icons.Trash /></button>
                           </div>
                         </>
                       )}
@@ -672,14 +672,14 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
               <div className="space-y-4">
                 <label className="m-settings-label block uppercase tracking-widest">Add New Method</label>
                 <form onSubmit={addPaymentMethod} className="flex gap-2">
-                  <input type="text" placeholder="e.g. PayPal, Apple Pay..." className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus-visible:shadow-ui-focus-strong text-sm font-medium" value={newMethodName} onChange={(e) => setNewMethodName(e.target.value)} />
+                  <input type="text" placeholder="e.g. PayPal, Apple Pay..." className="m-settings-control flex-1" value={newMethodName} onChange={(e) => setNewMethodName(e.target.value)} />
                   <button type="submit" className="m-settings-btn px-5 bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)] shadow-ui-xs">Add</button>
                 </form>
               </div>
             </div>
           </div>
 
-          <div className="border-t border-slate-100 pt-6">
+          <div className="border-t border-[var(--line-soft)] pt-6">
             <h4 className="m-settings-subhead">Receipt layout</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
@@ -688,7 +688,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                   type="text"
                   value={settings.receiptHeaderTitle || 'Tax Invoice'}
                   onChange={(e) => handleReceiptLayoutChange('receiptHeaderTitle', e.target.value)}
-                  className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  className="m-settings-control w-full"
                   placeholder="Tax Invoice"
                 />
               </div>
@@ -698,7 +698,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                   type="text"
                   value={settings.receiptCompanyName || settings.shopName || ''}
                   onChange={(e) => handleReceiptLayoutChange('receiptCompanyName', e.target.value)}
-                  className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  className="m-settings-control w-full"
                   placeholder="Bookglow Spa"
                 />
               </div>
@@ -708,7 +708,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                   type="text"
                   value={settings.receiptPhone || ''}
                   onChange={(e) => handleReceiptLayoutChange('receiptPhone', e.target.value)}
-                  className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  className="m-settings-control w-full"
                   placeholder="+60 12-345 6789"
                 />
               </div>
@@ -718,7 +718,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                   type="text"
                   value={settings.receiptAddress || ''}
                   onChange={(e) => handleReceiptLayoutChange('receiptAddress', e.target.value)}
-                  className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  className="m-settings-control w-full"
                   placeholder="Outlet address for receipt"
                 />
               </div>
@@ -728,15 +728,15 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                   type="text"
                   value={settings.receiptFooterNote || 'Thank you for your visit!'}
                   onChange={(e) => handleReceiptLayoutChange('receiptFooterNote', e.target.value)}
-                  className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  className="m-settings-control w-full"
                   placeholder="Thank you for your visit!"
                 />
               </div>
             </div>
-            <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div className="mt-5 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-soft)] p-4">
               <p className="m-settings-subhead">Live Receipt Preview</p>
-              <div className="mx-auto w-full max-w-[340px] bg-white border border-slate-300 rounded-lg p-4 font-mono m-caption text-[var(--text-secondary)] space-y-1">
-                <div className="text-center border-b border-dashed border-slate-300 pb-2 mb-2">
+              <div className="mx-auto w-full max-w-[340px] bg-[var(--bg-paper)] border border-[var(--line-strong)] rounded-ui-sm p-4 font-mono m-caption text-[var(--text-secondary)] space-y-1">
+                <div className="text-center border-b border-dashed border-[var(--line-strong)] pb-2 mb-2">
                   <p className="font-bold text-sm">{settings.receiptCompanyName || settings.shopName || 'Bookglow Spa'}</p>
                   <p>{settings.receiptHeaderTitle || 'Tax Invoice'}</p>
                   {(settings.receiptPhone || '').trim() && <p>Phone: {settings.receiptPhone}</p>}
@@ -746,11 +746,11 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                 </div>
                 <div className="flex justify-between"><span>Swedish Massage</span><span>1 x RM 80.00</span></div>
                 <div className="flex justify-between"><span>Aroma Oil</span><span>1 x RM 20.00</span></div>
-                <div className="border-t border-dashed border-slate-300 pt-1 mt-1 flex justify-between font-bold text-slate-900">
+                <div className="border-t border-dashed border-[var(--line-strong)] pt-1 mt-1 flex justify-between font-bold text-[var(--text-primary)]">
                   <span>Total</span><span>RM 100.00</span>
                 </div>
                 <p className="pt-1">Payment: Cash</p>
-                <div className="text-center border-t border-dashed border-slate-300 pt-2 mt-2">
+                <div className="text-center border-t border-dashed border-[var(--line-strong)] pt-2 mt-2">
                   <p>{settings.receiptFooterNote || 'Thank you for your visit!'}</p>
                 </div>
               </div>
@@ -770,9 +770,9 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           icon={<Icons.Dashboard />}
         >
           <div className="space-y-6">
-          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+          <div className="flex items-center justify-between p-4 bg-[var(--bg-soft)] rounded-ui-sm border border-[var(--line-soft)]">
             <div className="flex flex-col">
-              <span className="text-sm font-bold text-slate-700">Enable Outlet Mode</span>
+              <span className="text-sm font-bold text-[var(--text-secondary)]">Enable Outlet Mode</span>
               <span className="m-settings-hint font-semibold uppercase tracking-tight">Active restrictions for non-admins</span>
             </div>
             <button 
@@ -783,10 +783,10 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
             </button>
           </div>
 
-          <div className={`p-4 rounded-xl border transition-all ${settings.isAdminAuthenticated ? 'bg-[var(--brand-soft)] border-[var(--brand)]/30' : 'bg-rose-50 border-rose-200'}`}>
+          <div className={`p-4 rounded-ui-sm border transition-all ${settings.isAdminAuthenticated ? 'bg-[var(--brand-soft)] border-[var(--brand-border)]' : 'bg-[var(--danger-soft)] border-[var(--danger-border)]'}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${settings.isAdminAuthenticated ? 'bg-[var(--brand)] text-white' : 'bg-rose-600 text-white'}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${settings.isAdminAuthenticated ? 'bg-[var(--brand)] text-white' : 'bg-[var(--danger)] text-white'}`}>
                   {settings.isAdminAuthenticated ? <Icons.Dashboard /> : <Icons.Lock />}
                 </div>
                 <div>
@@ -800,7 +800,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                 onClick={toggleAdminAuth}
                 className={`m-settings-btn text-xs uppercase tracking-widest shadow-ui-xs transition-all ${
                   settings.isAdminAuthenticated 
-                    ? 'bg-white text-rose-600 hover:bg-rose-50' 
+                    ? 'bg-[var(--bg-surface)] text-[var(--danger)] hover:bg-[var(--danger-soft)]'
                     : 'bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)]'
                 }`}
               >
@@ -825,8 +825,8 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                 onClick={() => toggleFeatureLock(perm.id)}
                 className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between group ${
                   settings.lockedFeatures.includes(perm.id) 
-                    ? 'bg-slate-900 border-slate-900 text-white shadow-lg translate-x-1' 
-                    : 'bg-slate-50 border-slate-100 text-slate-800 hover:bg-white hover:border-slate-300'
+                    ? 'bg-[var(--brand-deep)] border-[var(--brand-deep)] text-white shadow-ui-md translate-x-1'
+                    : 'bg-[var(--bg-soft)] border-[var(--line-soft)] text-[var(--text-primary)] hover:bg-[var(--bg-surface)] hover:border-[var(--line-strong)]'
                 }`}
               >
                 <div className="flex-1">
@@ -863,8 +863,8 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           >
             <svg className="w-5 h-5 text-[var(--brand)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
             <div>
-              <p className="text-sm font-bold text-slate-900">Chatbot API Integration</p>
-              <p className="text-xs text-slate-500 mt-0.5">Outlet ID, API key, and webhook URL</p>
+              <p className="text-sm font-bold text-[var(--text-primary)]">Chatbot API Integration</p>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">Outlet ID, API key, and webhook URL</p>
             </div>
           </button>
         </div>
@@ -873,7 +873,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       {/* 8. Advanced */}
       <SettingsSection
         id="settings-advanced"
-        iconWrap="bg-rose-50 text-rose-600"
+        iconWrap="bg-[var(--danger-soft)] text-[var(--danger)]"
         title="Advanced settings"
         description="Voucher redemption security and other advanced outlet controls."
         icon={<Icons.Lock />}
@@ -892,7 +892,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
               })
             }
             placeholder="e.g. 1234"
-            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-rose-500 text-sm font-medium"
+            className="m-settings-control w-full"
           />
           <p className="m-settings-hint">
             Leave blank to disable PIN checking and use confirmation checkbox only.
@@ -927,7 +927,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         }
       >
         {apiError && (
-          <div className="rounded-ui-md border border-[var(--danger)]/30 bg-red-50 px-3 py-2 text-xs text-[var(--danger)]">
+          <div className="rounded-ui-md border border-[var(--danger-border)] bg-[var(--danger-soft)] px-3 py-2 text-xs text-[var(--danger)]">
             {apiError}
           </div>
         )}

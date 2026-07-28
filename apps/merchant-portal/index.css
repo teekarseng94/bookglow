@@ -55,6 +55,14 @@
   --info-soft: #eef3f8;
   --info-border: #cad8e7;
 
+  /* Platform administration sub-theme */
+  --platform-surface: #111827;
+  --platform-line: #263244;
+  --platform-text: #ffffff;
+  --platform-muted: #a9b4c5;
+  --platform-subtle: #7f8a9d;
+  --platform-accent: #7de2be;
+
   /* Elevation */
   --shadow-xs: 0 1px 2px rgba(39, 25, 42, 0.04);
   --shadow-sm: 0 8px 24px rgba(39, 25, 42, 0.06);
@@ -1034,16 +1042,16 @@
   width: min(100%, 29rem);
   padding: clamp(1.5rem, 3vw, 2.4rem);
   border: 1px solid var(--line);
-  border-radius: 1.6rem;
-  background: rgba(255, 255, 255, 0.9);
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--bg-surface) 90%, transparent);
   box-shadow: var(--shadow-md);
 }
 
 .bookglow-login__heading h2 {
   margin: 0;
-  font-size: clamp(1.7rem, 2.5vw, 2.25rem);
-  line-height: 1.1;
-  letter-spacing: -0.035em;
+  font-size: var(--text-page);
+  line-height: var(--leading-page);
+  letter-spacing: -0.02em;
 }
 
 .bookglow-login__heading p {
@@ -1063,35 +1071,35 @@
   min-height: 3rem;
   padding: 0 0.9rem;
   border: 1px solid var(--line-strong);
-  border-radius: 0.85rem;
+  border-radius: var(--radius-md);
   color: var(--ink);
-  background: #fff;
+  background: var(--bg-surface);
   outline: none;
 }
 
 .bookglow-login__field input:focus {
   border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(118, 86, 214, 0.16);
+  box-shadow: var(--focus-ring);
 }
 
 .bookglow-login__error {
   padding: 0.75rem 0.85rem;
-  border: 1px solid #efcfd7;
-  border-radius: 0.8rem;
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius-md);
   color: var(--danger);
-  background: #fff2f5;
+  background: var(--danger-soft);
   font-size: 0.8rem;
   white-space: pre-line;
 }
 
 .bookglow-login__submit {
   min-height: 3rem;
-  border-radius: 0.85rem;
+  border-radius: var(--radius-md);
   color: #fff;
   background: var(--brand);
   font-size: 0.88rem;
   font-weight: 800;
-  box-shadow: 0 0.8rem 1.8rem rgba(118, 86, 214, 0.23);
+  box-shadow: var(--shadow-sm);
   transition: 160ms ease;
 }
 
@@ -1104,5 +1112,5 @@
   .bookglow-login__story { display: none; }
   .bookglow-login__form-side { min-height: 100dvh; display: flex; flex-direction: column; justify-content: center; gap: 2rem; padding: 1.25rem; }
   .bookglow-login__mobile-brand { display: inline-flex; align-self: flex-start; }
-  .bookglow-login__card { border-radius: 1.3rem; box-shadow: var(--shadow-sm); }
+  .bookglow-login__card { border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
 }

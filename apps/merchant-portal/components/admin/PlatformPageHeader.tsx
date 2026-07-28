@@ -15,12 +15,12 @@ export const PlatformPageHeader: React.FC<PlatformPageHeaderProps> = ({
   meta,
   className,
 }) => (
-  <header className={cx('space-y-1 pb-4 border-b border-slate-800', className)}>
-    <p className="m-caption font-bold uppercase tracking-widest text-emerald-400/90">
+  <header className={cx('space-y-1 pb-4 border-b border-[var(--platform-line)]', className)}>
+    <p className="m-caption font-bold uppercase tracking-widest text-[var(--platform-accent)]">
       Bookglow Platform
     </p>
-    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">{title}</h1>
-    {description ? <p className="text-sm text-slate-400 max-w-2xl">{description}</p> : null}
+    <h1 className="text-app-page font-bold tracking-tight text-[var(--platform-text)]">{title}</h1>
+    {description ? <p className="text-sm text-[var(--platform-muted)] max-w-2xl">{description}</p> : null}
     {meta ? <div className="pt-2">{meta}</div> : null}
   </header>
 );

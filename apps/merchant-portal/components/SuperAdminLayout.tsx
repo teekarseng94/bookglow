@@ -14,12 +14,12 @@ interface SuperAdminLayoutProps {
  */
 const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ user, onLogout, children }) => {
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 text-slate-900 font-sans">
-      <aside className="w-full md:w-64 bg-white border-b md:border-b-0 md:border-r border-slate-200 flex flex-col shrink-0">
-        <div className="px-5 py-5 border-b border-slate-100">
+    <div className="min-h-screen flex flex-col md:flex-row bg-[var(--bg-canvas)] text-[var(--text-primary)] font-sans">
+      <aside className="w-full md:w-64 bg-[var(--bg-surface)] border-b md:border-b-0 md:border-r border-[var(--line)] flex flex-col shrink-0">
+        <div className="px-5 py-5 border-b border-[var(--line-soft)]">
           <p className="text-[10px] font-bold uppercase tracking-widest text-violet-600">Platform Console</p>
-          <h1 className="text-lg font-bold tracking-tight text-slate-900 mt-0.5">Bookglow Control</h1>
-          <p className="text-xs text-slate-500 mt-1 truncate" title={user?.email || undefined}>
+          <h1 className="text-app-section font-bold tracking-tight text-[var(--text-primary)] mt-0.5">Bookglow Control</h1>
+          <p className="text-xs text-[var(--text-muted)] mt-1 truncate" title={user?.email || undefined}>
             {user?.email}
           </p>
         </div>
@@ -31,7 +31,7 @@ const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ user, onLogout, chi
               `flex items-center gap-2 px-3 py-2.5 rounded-lg whitespace-nowrap transition-colors ${
                 isActive
                   ? 'bg-violet-50 text-violet-700 font-semibold shadow-sm'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  : 'text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] hover:text-[var(--text-primary)]'
               }`
             }
           >
@@ -43,7 +43,7 @@ const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ user, onLogout, chi
               `flex items-center gap-2 px-3 py-2.5 rounded-lg whitespace-nowrap transition-colors ${
                 isActive
                   ? 'bg-violet-50 text-violet-700 font-semibold shadow-sm'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  : 'text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] hover:text-[var(--text-primary)]'
               }`
             }
           >
@@ -51,8 +51,8 @@ const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ user, onLogout, chi
           </NavLink>
         </nav>
         
-        <div className="mt-auto px-4 py-4 border-t border-slate-100 text-[11px] text-slate-400 space-y-3">
-          <div className="flex items-center gap-1.5 text-slate-500">
+        <div className="mt-auto px-4 py-4 border-t border-[var(--line-soft)] text-[11px] text-[var(--text-muted)] space-y-3">
+          <div className="flex items-center gap-1.5 text-[var(--text-muted)]">
             <span className="h-2 w-2 rounded-full bg-violet-600 animate-pulse" />
             <span className="font-semibold uppercase tracking-wider text-[9px]">Super Admin Mode</span>
           </div>
@@ -66,7 +66,7 @@ const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ user, onLogout, chi
         </div>
       </aside>
 
-      <main className="flex-1 bg-slate-50 text-slate-800 min-w-0">
+      <main className="flex-1 bg-[var(--bg-canvas)] text-[var(--text-secondary)] min-w-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
           <PlatformBanner title="Bookglow Platform Console">
             Bookglow Platform Console — changes here affect merchant workspace access and credentials.

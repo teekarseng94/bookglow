@@ -205,7 +205,7 @@ const CreditWalletModal: React.FC<CreditWalletModalProps> = ({
                   onClick={openTopUp}
                   className="w-full flex items-center gap-2 px-4 py-3 text-left text-[var(--text-primary)] hover:bg-[var(--bg-soft)]"
                 >
-                  <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-[var(--success-soft)] text-[var(--success)] flex items-center justify-center">
                     <Plus className="w-4 h-4" />
                   </div>
                   Top Up Credit
@@ -215,7 +215,7 @@ const CreditWalletModal: React.FC<CreditWalletModalProps> = ({
                   onClick={openDeduct}
                   className="w-full flex items-center gap-2 px-4 py-3 text-left text-[var(--text-primary)] hover:bg-[var(--bg-soft)]"
                 >
-                  <div className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-[var(--danger-soft)] text-[var(--danger)] flex items-center justify-center">
                     <Minus className="w-4 h-4" />
                   </div>
                   Deduct Credit
@@ -235,7 +235,7 @@ const CreditWalletModal: React.FC<CreditWalletModalProps> = ({
     >
       <div className="rounded-ui-md border border-[var(--line)] bg-[var(--bg-soft)] px-4 py-3">
         <p className="m-settings-label uppercase text-[var(--text-secondary)] mb-1">Balance</p>
-        <p className="text-3xl font-bold text-emerald-600 tabular-nums">{currentBalance.toFixed(2)}</p>
+        <p className="text-app-page font-bold text-[var(--success)] tabular-nums">{currentBalance.toFixed(2)}</p>
       </div>
 
       {(showTopUpForm || showDeductForm) && (
@@ -315,7 +315,7 @@ const CreditWalletModal: React.FC<CreditWalletModalProps> = ({
                         <span className="text-xs text-[var(--text-secondary)]">{formatTime(entry.timestamp)}</span>
                         <span
                           className={`font-bold ${
-                            entry.type === 'topup' ? 'text-emerald-600' : 'text-[var(--danger)]'
+                            entry.type === 'topup' ? 'text-[var(--success)]' : 'text-[var(--danger)]'
                           }`}
                         >
                           {entry.type === 'topup' ? '+' : '-'}

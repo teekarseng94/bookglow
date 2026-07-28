@@ -208,7 +208,7 @@ const OutstandingHistoryModal: React.FC<OutstandingHistoryModalProps> = ({
               size="md"
               variant="outline"
               onClick={() => setShowActionMenu(!showActionMenu)}
-              className="border-[var(--danger)] text-[var(--danger)] hover:bg-red-50"
+              className="border-[var(--danger)] text-[var(--danger)] hover:bg-[var(--danger-soft)]"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -250,7 +250,7 @@ const OutstandingHistoryModal: React.FC<OutstandingHistoryModalProps> = ({
       >
         <div className="rounded-ui-md border border-[var(--line)] px-4 py-3" style={{ backgroundColor: OUTSTANDING_BG }}>
           <p className="text-app-label font-bold uppercase text-[var(--text-secondary)] mb-1">Balance</p>
-          <p className="text-3xl font-bold tabular-nums" style={{ color: OUTSTANDING_RED }}>
+          <p className="text-app-page font-bold tabular-nums" style={{ color: OUTSTANDING_RED }}>
             {currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </p>
         </div>
@@ -285,7 +285,7 @@ const OutstandingHistoryModal: React.FC<OutstandingHistoryModalProps> = ({
                         </p>
                       </div>
                       <div className="text-right flex-shrink-0">
-                        <p className={`text-sm font-bold ${tx.type === 'Add' ? 'text-[var(--danger)]' : 'text-emerald-600'}`}>
+                        <p className={`text-sm font-bold ${tx.type === 'Add' ? 'text-[var(--danger)]' : 'text-[var(--success)]'}`}>
                           {tx.type === 'Add' ? '+' : '−'}{tx.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                         </p>
                         <p className="text-xs font-medium text-[var(--text-secondary)]">

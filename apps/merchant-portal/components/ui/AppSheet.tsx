@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { cx } from './cx';
 import { ModalBody, ModalFooter, ModalHeader } from './ModalParts';
+import { useDialogInteraction } from './useDialogInteraction';
 
 export interface AppSheetProps {
   open: boolean;
@@ -33,19 +34,8 @@ export const AppSheet: React.FC<AppSheetProps> = ({
   closeOnBackdrop = true,
   busy = false,
 }) => {
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !busy) onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      document.body.style.overflow = previous;
-    };
-  }, [open, onClose, busy]);
+  const panelRef = useRef<HTMLDivElement>(null);
+  useDialogInteraction({ open, busy, onClose, panelRef });
 
   if (!open || typeof document === 'undefined') return null;
 
@@ -59,15 +49,18 @@ export const AppSheet: React.FC<AppSheetProps> = ({
       <button
         type="button"
         className="absolute inset-0 bg-ui-overlay border-0 cursor-default"
-        aria-label="Close sheet"
+        tabIndex={-1}
+        aria-hidden="true"
         onClick={() => {
           if (closeOnBackdrop && !busy) onClose();
         }}
       />
       <div
+        ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-label={typeof title === 'string' ? title : undefined}
+        tabIndex={-1}
         className={cx(
           'absolute flex flex-col bg-[var(--bg-surface)] shadow-ui-lg border border-[var(--line)]',
           'overflow-hidden',

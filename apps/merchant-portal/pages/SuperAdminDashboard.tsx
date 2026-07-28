@@ -26,11 +26,11 @@ const SuperAdminDashboard: React.FC = () => {
         ].map((card) => (
           <div
             key={card.label}
-            className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4"
+            className="bg-[var(--platform-surface)] border border-[var(--platform-line)] rounded-ui-md p-4"
           >
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">{card.label}</p>
-            <p className="mt-2 text-2xl font-bold text-emerald-300 tabular-nums">—</p>
-            <p className="mt-1 text-xs text-slate-500">{card.hint}</p>
+            <p className="text-xs font-semibold text-[var(--platform-muted)] uppercase tracking-wide">{card.label}</p>
+            <p className="mt-2 text-app-page font-bold text-[var(--platform-accent)] tabular-nums">—</p>
+            <p className="mt-1 text-xs text-[var(--platform-subtle)]">{card.hint}</p>
           </div>
         ))}
       </div>

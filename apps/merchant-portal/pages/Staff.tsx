@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../firebase';
 import { Staff, Transaction, TransactionType, RoleCommission, Service } from '../types';
+import { uploadImage, getStaffProfileImagePath } from '../services/storageService';
 import { Icons } from '../constants';
 import { ConfirmationDialog } from '../components/ui/ConfirmationDialog';
+<<<<<<< HEAD
 import {
   StaffCard,
   StaffCommissionSection,
@@ -15,6 +15,33 @@ import {
   StaffScheduleSection,
   StaffServicesSection,
   type StaffStatusKind,
+=======
+import { FilterToolbar } from '../components/ui/FilterToolbar';
+import {
+  defaultStaffPermissions,
+  emptyWeeklyHours,
+  formatShiftLabel,
+  normalizeStaffPermissions,
+  normalizeWeeklyHours,
+} from '../utils/staffExtras';
+import {
+  StaffCard,
+  StaffCommissionSection,
+  StaffDetailPanel,
+  StaffEditor,
+  StaffEditorSection,
+  StaffPageHeader,
+  StaffPermissionSection,
+  StaffProfileSection,
+  StaffRolesModal,
+  StaffRoster,
+  StaffScheduleSection,
+  StaffServicesSection,
+  StaffSummaryCards,
+  type StaffDetailTab,
+  type StaffStatusKind,
+  type StaffSummaryCardItem,
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 } from '../components/staff';
 
 const MAX_PHOTO_SIZE_MB = 2;
@@ -63,12 +90,14 @@ const StaffPage: React.FC<StaffProps> = ({
   const [newRoleName, setNewRoleName] = useState('');
   const [newRoleRate, setNewRoleRate] = useState(0);
 
-  const [formData, setFormData] = useState<Partial<Staff>>({ 
-    name: '', 
-    role: '', 
-    email: '', 
+  const [formData, setFormData] = useState<Partial<Staff>>({
+    name: '',
+    role: '',
+    email: '',
     phone: '',
-    qualifiedServices: []
+    qualifiedServices: [],
+    weeklyHours: emptyWeeklyHours(),
+    permissions: defaultStaffPermissions(''),
   });
 
   // Staff photo upload (Edit Profile modal)
@@ -84,6 +113,19 @@ const StaffPage: React.FC<StaffProps> = ({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [deletingStaff, setDeletingStaff] = useState(false);
+<<<<<<< HEAD
+=======
+
+  // Directory: search, filters, pagination, detail tab
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | StaffStatusKind>('all');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(8);
+  const [detailTab, setDetailTab] = useState<StaffDetailTab>('overview');
+  /** Mobile: list-first; open detail after tapping a card */
+  const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 
   // Auto-dismiss the success toast
   useEffect(() => {
@@ -142,15 +184,188 @@ const StaffPage: React.FC<StaffProps> = ({
     });
   }, [staff, transactions, period, startDate, endDate]);
 
-  // Top Performing Staff - ranked by commission
-  const topPerformingStaff = useMemo(() => {
-    return [...staffStats]
-      .filter(member => member.totalCommission > 0)
-      .sort((a, b) => b.totalCommission - a.totalCommission)
-      .slice(0, 10); // Top 10
-  }, [staffStats]);
+  const staffStatusFor = (member: { totalCommission: number; totalServices: number }): StaffStatusKind => {
+    if (member.totalCommission > 0) return 'earning';
+    if (member.totalServices > 0) return 'active';
+    return 'idle';
+  };
 
-  const activeStaff = staffStats.find(s => s.id === selectedStaffId) || null;
+  const filteredStaff = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return staffStats.filter((member) => {
+      if (roleFilter !== 'all' && member.role !== roleFilter) return false;
+      const status = staffStatusFor(member);
+      if (statusFilter !== 'all' && status !== statusFilter) return false;
+      if (!q) return true;
+      const serviceNames = (member.qualifiedServices ?? [])
+        .map((id) => services.find((s) => s.id === id)?.name || '')
+        .join(' ')
+        .toLowerCase();
+      return (
+        member.name.toLowerCase().includes(q) ||
+        member.role.toLowerCase().includes(q) ||
+        (member.email || '').toLowerCase().includes(q) ||
+        serviceNames.includes(q)
+      );
+    });
+  }, [staffStats, searchQuery, roleFilter, statusFilter, services]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, roleFilter, statusFilter, pageSize]);
+
+  useEffect(() => {
+    if (filteredStaff.length === 0) return;
+    const stillVisible = filteredStaff.some((m) => m.id === selectedStaffId);
+    if (!stillVisible) setSelectedStaffId(filteredStaff[0].id);
+  }, [filteredStaff, selectedStaffId]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredStaff.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  useEffect(() => {
+    if (page !== safePage) setPage(safePage);
+  }, [page, safePage]);
+  const pageStart = filteredStaff.length === 0 ? 0 : (safePage - 1) * pageSize + 1;
+  const pageEnd = Math.min(safePage * pageSize, filteredStaff.length);
+  const paginatedStaff = useMemo(
+    () => filteredStaff.slice((safePage - 1) * pageSize, safePage * pageSize),
+    [filteredStaff, safePage, pageSize],
+  );
+
+  const activeStaff = staffStats.find((s) => s.id === selectedStaffId) || null;
+
+  const activeTodayCount = useMemo(() => {
+    const now = new Date();
+    const activeIds = new Set<string>();
+    for (const t of transactions) {
+      const status = (t as Transaction & { status?: string }).status;
+      if (t.type !== TransactionType.SALE || status === 'voided') continue;
+      const d = new Date(t.date);
+      if (
+        d.getFullYear() !== now.getFullYear() ||
+        d.getMonth() !== now.getMonth() ||
+        d.getDate() !== now.getDate()
+      ) {
+        continue;
+      }
+      for (const item of t.items || []) {
+        if (item.staffId) activeIds.add(item.staffId);
+      }
+    }
+    return staff.filter((s) => activeIds.has(s.id)).length;
+  }, [transactions, staff]);
+
+  const servicesCoveredCount = useMemo(() => {
+    const ids = new Set<string>();
+    let unrestricted = 0;
+    for (const m of staff) {
+      const qs = m.qualifiedServices ?? [];
+      if (qs.length === 0) {
+        unrestricted += 1;
+      } else {
+        qs.forEach((id) => ids.add(id));
+      }
+    }
+    if (unrestricted > 0 && staff.length > 0) return services.length;
+    return ids.size;
+  }, [staff, services]);
+
+  const periodCommissionTotal = useMemo(
+    () => staffStats.reduce((sum, m) => sum + m.totalCommission, 0),
+    [staffStats],
+  );
+
+  const summaryCards: StaffSummaryCardItem[] = useMemo(() => {
+    const activePct =
+      staff.length > 0 ? Math.round((activeTodayCount / staff.length) * 100) : 0;
+    const periodLabel =
+      period === 'month'
+        ? 'This month'
+        : period === 'year'
+          ? 'This year'
+          : period === 'custom'
+            ? 'Custom range'
+            : 'All time';
+    return [
+      {
+        id: 'total',
+        label: 'Total Staff',
+        value: String(staff.length),
+        hint: `${filteredStaff.length} shown in directory`,
+        icon: (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        ),
+      },
+      {
+        id: 'active-today',
+        label: 'Active Today',
+        value: String(activeTodayCount),
+        hint: staff.length ? `${activePct}% of team with sales today` : 'No staff yet',
+        icon: (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        ),
+      },
+      {
+        id: 'services',
+        label: 'Services Covered',
+        value: String(servicesCoveredCount),
+        hint: 'Across all staff',
+        icon: (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+          </svg>
+        ),
+      },
+      {
+        id: 'commission',
+        label: 'Period Commission',
+        value: `$${periodCommissionTotal.toLocaleString()}`,
+        hint: periodLabel,
+        icon: (
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        ),
+      },
+      {
+        id: 'rating',
+        label: 'Avg. Rating',
+        value: '—',
+        hint: 'Not tracked yet',
+        emphasize: true,
+        icon: (
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+          </svg>
+        ),
+      },
+    ];
+  }, [
+    staff.length,
+    filteredStaff.length,
+    activeTodayCount,
+    servicesCoveredCount,
+    periodCommissionTotal,
+    period,
+  ]);
+
+  const roleOptions = useMemo(() => {
+    const roles = Array.from(new Set(staff.map((s) => s.role).filter(Boolean))).sort();
+    return roles;
+  }, [staff]);
+
+  const activeServiceNames = useMemo(() => {
+    if (!activeStaff) return [];
+    const qs = activeStaff.qualifiedServices ?? [];
+    if (qs.length === 0) return [];
+    return qs
+      .map((id) => services.find((s) => s.id === id)?.name)
+      .filter((n): n is string => Boolean(n));
+  }, [activeStaff, services]);
 
   const allServiceIds = useMemo(() => services.map(s => s.id), [services]);
   const servicesByCategory = useMemo(() => {
@@ -204,16 +419,29 @@ const StaffPage: React.FC<StaffProps> = ({
       const sameServices =
         JSON.stringify([...(formData.qualifiedServices ?? [])].sort()) ===
         JSON.stringify([...(editingMember.qualifiedServices ?? [])].sort());
+      const sameHours =
+        JSON.stringify(normalizeWeeklyHours(formData.weeklyHours)) ===
+        JSON.stringify(normalizeWeeklyHours(editingMember.weeklyHours));
+      const samePerms =
+        JSON.stringify(normalizeStaffPermissions(formData.permissions, formData.role || '')) ===
+        JSON.stringify(
+          normalizeStaffPermissions(editingMember.permissions, editingMember.role || ''),
+        );
       return (
         (formData.name ?? '') !== (editingMember.name ?? '') ||
         (formData.role ?? '') !== (editingMember.role ?? '') ||
         (formData.email ?? '') !== (editingMember.email ?? '') ||
         (formData.phone ?? '') !== (editingMember.phone ?? '') ||
-        !sameServices
+        !sameServices ||
+        !sameHours ||
+        !samePerms
       );
     }
     return Boolean(
-      formData.name || formData.email || formData.phone || (formData.qualifiedServices ?? []).length
+      formData.name ||
+        formData.email ||
+        formData.phone ||
+        (formData.qualifiedServices ?? []).length,
     );
   };
 
@@ -228,26 +456,34 @@ const StaffPage: React.FC<StaffProps> = ({
         setUploadLoading(true);
         if (photoFile) {
           const staffId = editingMember.id;
-          const path = `staff_photos/${staffId}_${Date.now()}.jpg`;
-          const storageRef = ref(storage, path);
+          const outletId = editingMember.outletID || '';
+          const path = outletId
+            ? getStaffProfileImagePath(outletId, staffId)
+            : `outlets/unknown/staff/${staffId}/profile.jpg`;
           try {
-            const snapshot = await uploadBytes(storageRef, photoFile, {
-              contentType: 'image/jpeg',
-            });
-            profilePictureUrl = await getDownloadURL(snapshot.ref);
+            profilePictureUrl = await uploadImage(photoFile, path);
           } catch (storageErr: unknown) {
-            const code = storageErr && typeof (storageErr as { code?: string }).code === 'string' ? (storageErr as { code: string }).code : '';
-            const isPermissionDenied = code === 'storage/unauthorized' || code === 'storage/canceled' || (storageErr as Error).message?.toLowerCase().includes('permission');
-            setUploadError(isPermissionDenied ? 'Permission denied. Please check Firebase Storage Rules.' : (storageErr instanceof Error ? storageErr.message : 'Photo upload failed.'));
+            const msg = storageErr instanceof Error ? storageErr.message : 'Photo upload failed.';
+            const isPermissionDenied = msg.toLowerCase().includes('permission') || msg.toLowerCase().includes('policy');
+            setUploadError(isPermissionDenied ? 'Permission denied. Please check storage rules / outlet access.' : msg);
             setUploadLoading(false);
             return;
           }
         }
 
+        const role = formData.role || editingMember.role || '';
         const updatedMember: Staff = {
           ...editingMember,
           ...formData,
+          role,
           qualifiedServices: formData.qualifiedServices ?? editingMember.qualifiedServices ?? [],
+          weeklyHours:
+            normalizeWeeklyHours(formData.weeklyHours) ??
+            normalizeWeeklyHours(editingMember.weeklyHours),
+          permissions: normalizeStaffPermissions(
+            formData.permissions ?? editingMember.permissions,
+            role,
+          ),
         } as Staff;
 
         if (profilePictureUrl) {
@@ -259,13 +495,16 @@ const StaffPage: React.FC<StaffProps> = ({
         handleCloseModal();
         setSuccessMessage('Staff profile updated.');
       } else {
+        const role = formData.role || roleCommissions[0]?.role || 'Staff';
         await onAddStaff({
           name: formData.name || '',
-          role: formData.role || roleCommissions[0]?.role || 'Staff',
+          role,
           email: formData.email || '',
           phone: formData.phone || '',
           createdAt: new Date().toISOString(),
           qualifiedServices: formData.qualifiedServices ?? [],
+          weeklyHours: normalizeWeeklyHours(formData.weeklyHours) ?? emptyWeeklyHours(),
+          permissions: normalizeStaffPermissions(formData.permissions, role),
         });
         handleCloseModal();
         setSuccessMessage('Staff member added.');
@@ -281,7 +520,11 @@ const StaffPage: React.FC<StaffProps> = ({
   const handleEdit = (member: Staff) => {
     if (isLocked) return;
     setEditingMember(member);
-    setFormData(member);
+    setFormData({
+      ...member,
+      weeklyHours: normalizeWeeklyHours(member.weeklyHours) ?? emptyWeeklyHours(),
+      permissions: normalizeStaffPermissions(member.permissions, member.role),
+    });
     setPhotoFile(null);
     setPhotoPreview(member.profilePicture || null);
     setUploadError(null);
@@ -289,10 +532,20 @@ const StaffPage: React.FC<StaffProps> = ({
     setShowModal(true);
   };
 
+  const blankForm = (role = roleCommissions[0]?.role || ''): Partial<Staff> => ({
+    name: '',
+    role,
+    email: '',
+    phone: '',
+    qualifiedServices: [],
+    weeklyHours: emptyWeeklyHours(),
+    permissions: defaultStaffPermissions(role),
+  });
+
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingMember(null);
-    setFormData({ name: '', role: roleCommissions[0]?.role || '', email: '', phone: '', qualifiedServices: [] });
+    setFormData(blankForm());
     setPhotoFile(null);
     setPhotoPreview(null);
     setUploadError(null);
@@ -339,19 +592,29 @@ const StaffPage: React.FC<StaffProps> = ({
     setDeletingStaff(true);
     try {
       await onDeleteStaff(pendingDeleteId);
+<<<<<<< HEAD
       if (selectedStaffId === pendingDeleteId) setSelectedStaffId(null);
+=======
+      if (selectedStaffId === pendingDeleteId) {
+        setSelectedStaffId(null);
+        setMobileDetailOpen(false);
+      }
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
       setPendingDeleteId(null);
     } finally {
       setDeletingStaff(false);
     }
   };
 
+<<<<<<< HEAD
   const staffStatusFor = (member: { totalCommission: number; totalServices: number }): StaffStatusKind => {
     if (member.totalCommission > 0) return 'earning';
     if (member.totalServices > 0) return 'active';
     return 'idle';
   };
 
+=======
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
   const pendingDeleteMember = pendingDeleteId
     ? staff.find((s) => s.id === pendingDeleteId) || null
     : null;
@@ -384,11 +647,66 @@ const StaffPage: React.FC<StaffProps> = ({
     onUpdateRoleCommissions(roleCommissions.filter(rc => rc.role !== role));
   };
 
+  const periodControls = (
+    <>
+      <div className="flex p-1 bg-[var(--bg-soft)] rounded-xl overflow-x-auto">
+        {(['month', 'year', 'all', 'custom'] as PerformancePeriod[]).map((p) => (
+          <button
+            key={p}
+            type="button"
+            onClick={() => setPeriod(p)}
+            className={`px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap ${
+              period === p
+                ? 'bg-[var(--bg-surface)] text-[var(--brand)] shadow-sm'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+            }`}
+          >
+            {p}
+          </button>
+        ))}
+      </div>
+      {period === 'custom' && (
+        <div className="flex items-center gap-2 bg-[var(--bg-surface)] border border-[var(--line)] rounded-xl px-3 py-2">
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="text-xs font-bold text-[var(--text-primary)] outline-none border-none bg-transparent"
+          />
+          <span className="text-[var(--text-muted)] font-bold">to</span>
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="text-xs font-bold text-[var(--text-primary)] outline-none border-none bg-transparent"
+          />
+        </div>
+      )}
+    </>
+  );
+
+  const activeRoleRate = activeStaff
+    ? roleCommissions.find((rc) => rc.role === activeStaff.role)?.rate
+    : null;
+
+  const editorFieldClass =
+    'w-full min-h-[44px] px-3 py-2.5 text-[13px] sm:text-sm bg-[var(--bg-soft)] border border-[var(--line)] rounded-ui-sm outline-none focus:ring-2 focus:ring-[var(--brand)] text-[var(--text-primary)] font-medium';
+  const editorLabelClass =
+    'block text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1.5';
+
+  const chipClass = (active: boolean, tone: 'brand' | 'success' | 'neutral' = 'brand') => {
+    if (!active) {
+      return 'bg-[var(--bg-surface)] border-[var(--line)] text-[var(--text-secondary)]';
+    }
+    if (tone === 'success') return 'bg-emerald-50 border-emerald-200 text-emerald-700';
+    if (tone === 'neutral') return 'bg-slate-100 border-slate-200 text-slate-600';
+    return 'bg-[var(--brand)] border-[var(--brand)] text-white';
+  };
+
   return (
-    <div className="space-y-6 animate-fadeIn">
-      {/* Success toast — shown after a successful save */}
+    <div className="space-y-4 xl:space-y-5 animate-fadeIn">
       {successMessage && (
-        <div className="fixed top-16 lg:top-6 left-1/2 -translate-x-1/2 z-[80] flex items-center gap-2 px-4 py-2.5 rounded-xl bg-teal-600 text-white text-sm font-bold shadow-xl animate-fadeIn">
+        <div className="fixed top-16 lg:top-6 left-1/2 -translate-x-1/2 z-[80] flex items-center gap-2 px-4 py-2.5 rounded-ui-md bg-[var(--brand)] text-white text-sm font-bold shadow-ui-lg animate-fadeIn">
           <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
@@ -396,6 +714,7 @@ const StaffPage: React.FC<StaffProps> = ({
         </div>
       )}
 
+<<<<<<< HEAD
       <StaffPageHeader
         locked={isLocked}
         addDisabled={isLocked}
@@ -444,72 +763,309 @@ const StaffPage: React.FC<StaffProps> = ({
           </>
         }
       />
+=======
+      <div className={mobileDetailOpen ? 'hidden xl:block' : undefined}>
+        <StaffPageHeader
+          locked={isLocked}
+          addDisabled={isLocked}
+          ratesDisabled={isLocked}
+          onOpenRoleRates={() => setShowCommissionModal(true)}
+          onAddStaff={() => {
+            setEditingMember(null);
+            setFormData(blankForm());
+            setPhotoFile(null);
+            setPhotoPreview(null);
+            setUploadError(null);
+            setServiceSearch('');
+            setShowModal(true);
+          }}
+        />
+      </div>
 
-      {/* Summary Stats Card — mobile */}
-      {topPerformingStaff.length > 0 && (
-        <div className="lg:hidden grid grid-cols-3 gap-2">
-          <div className="bg-white rounded-xl border border-slate-200 p-3 text-center">
-            <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Commission</p>
-            <p className="text-lg font-black text-teal-600 tabular-nums">${topPerformingStaff.reduce((s, m) => s + m.totalCommission, 0).toLocaleString()}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-slate-200 p-3 text-center">
-            <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Revenue</p>
-            <p className="text-lg font-black text-slate-800 tabular-nums">${topPerformingStaff.reduce((s, m) => s + m.totalRevenue, 0).toLocaleString()}</p>
-          </div>
-          <div className="bg-white rounded-xl border border-slate-200 p-3 text-center">
-            <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Services</p>
-            <p className="text-lg font-black text-slate-800 tabular-nums">{topPerformingStaff.reduce((s, m) => s + m.totalServices, 0)}</p>
-          </div>
-        </div>
-      )}
+      <div className={mobileDetailOpen ? 'hidden xl:block' : undefined}>
+        <StaffSummaryCards cards={summaryCards} />
+      </div>
 
-      {topPerformingStaff.length > 0 && (
-        <div className="bg-gradient-to-br from-teal-50 to-slate-50 rounded-2xl border border-teal-200 shadow-sm p-4 lg:p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-base lg:text-lg font-black text-slate-800 flex items-center gap-2">
-                <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                </svg>
-                Top Performing Staff
-              </h3>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Ranked by commission earned
-              </p>
-            </div>
-          </div>
-
-          {/* Mobile: compact list */}
-          <div className="lg:hidden space-y-2">
-            {topPerformingStaff.map((member, index) => (
-              <div
-                key={member.id}
-                onClick={() => setSelectedStaffId(member.id)}
-                className="bg-white rounded-xl border border-slate-200 px-3 py-3 flex items-center gap-3 cursor-pointer hover:border-teal-400 active:scale-[0.99] transition-all"
-              >
-                <div className="relative flex-shrink-0">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 text-white flex items-center justify-center font-black text-sm overflow-hidden">
-                    {member.profilePicture ? (
-                      <img src={member.profilePicture} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      member.name.charAt(0)
-                    )}
-                  </div>
-                  {index < 3 && (
-                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-amber-500 text-white rounded-full flex items-center justify-center text-[10px] font-black shadow">
-                      {index + 1}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 xl:gap-5">
+        <div className={`xl:col-span-5 ${mobileDetailOpen ? 'hidden xl:block' : ''}`}>
+          <StaffRoster
+            empty={paginatedStaff.length === 0}
+            emptyTitle={staff.length === 0 ? 'No staff members registered.' : 'No staff match your filters.'}
+            emptyDescription={
+              staff.length === 0
+                ? 'Add staff to track performance and commissions.'
+                : 'Try adjusting search or filters.'
+            }
+            toolbar={
+              <div className="space-y-3">
+                <FilterToolbar
+                  search={
+                    <div className="relative">
+                      <svg
+                        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"
+                        />
+                      </svg>
+                      <input
+                        type="search"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search staff by name or role..."
+                        className="w-full pl-9 pr-3 py-2.5 min-h-[44px] xl:min-h-[40px] bg-[var(--bg-surface)] xl:bg-[var(--bg-soft)] border border-[var(--line)] rounded-ui-md xl:rounded-ui-sm outline-none focus:ring-2 focus:ring-[var(--brand)] text-sm"
+                      />
                     </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-slate-800 truncate">{member.name}</p>
-                  <p className="text-[10px] text-slate-400 font-semibold">{member.role} · {member.totalServices} services</p>
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="text-sm font-black text-teal-600 tabular-nums">${member.totalCommission.toLocaleString()}</p>
-                  <p className="text-[10px] text-slate-400 tabular-nums">${member.totalRevenue.toLocaleString()}</p>
+                  }
+                  filters={
+                    <div className="hidden xl:flex flex-wrap items-center gap-2">
+                      <select
+                        value={roleFilter}
+                        onChange={(e) => setRoleFilter(e.target.value)}
+                        className="min-h-[40px] px-3 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)] text-xs font-bold text-[var(--text-primary)]"
+                        aria-label="Filter by role"
+                      >
+                        <option value="all">All Roles</option>
+                        {roleOptions.map((role) => (
+                          <option key={role} value={role}>
+                            {role}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value as 'all' | StaffStatusKind)}
+                        className="min-h-[40px] px-3 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)] text-xs font-bold text-[var(--text-primary)]"
+                        aria-label="Filter by status"
+                      >
+                        <option value="all">All Statuses</option>
+                        <option value="earning">Earning</option>
+                        <option value="active">Active</option>
+                        <option value="idle">No sales</option>
+                      </select>
+                    </div>
+                  }
+                />
+
+                {/* Mobile filter chips */}
+                <div className="xl:hidden space-y-2">
+                  <div className="flex gap-2 overflow-x-auto pb-0.5 -mx-0.5 px-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setRoleFilter('all')}
+                      className={`shrink-0 px-3 py-1.5 rounded-full border text-[11px] font-bold ${chipClass(roleFilter === 'all')}`}
+                    >
+                      All ({staff.length})
+                    </button>
+                    {roleOptions.map((role) => {
+                      const count = staff.filter((s) => s.role === role).length;
+                      return (
+                        <button
+                          key={role}
+                          type="button"
+                          onClick={() => setRoleFilter(role)}
+                          className={`shrink-0 px-3 py-1.5 rounded-full border text-[11px] font-bold ${chipClass(roleFilter === role)}`}
+                        >
+                          {role} ({count})
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="flex gap-2 overflow-x-auto pb-0.5 -mx-0.5 px-0.5">
+                    {(
+                      [
+                        { id: 'all', label: 'All', tone: 'brand' as const },
+                        { id: 'earning', label: 'Earning', tone: 'success' as const },
+                        { id: 'active', label: 'Active', tone: 'brand' as const },
+                        { id: 'idle', label: 'No sales', tone: 'neutral' as const },
+                      ] as const
+                    ).map((s) => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => setStatusFilter(s.id)}
+                        className={`shrink-0 px-3 py-1.5 rounded-full border text-[11px] font-bold ${chipClass(statusFilter === s.id, s.tone)}`}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
+            }
+            footer={
+              filteredStaff.length > 0 ? (
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-xs text-[var(--text-secondary)]">
+                  <p className="font-semibold">
+                    Showing {pageStart} to {pageEnd} of {filteredStaff.length} staff
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={safePage <= 1}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      className="min-w-[36px] h-9 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)] disabled:opacity-40"
+                      aria-label="Previous page"
+                    >
+                      ‹
+                    </button>
+                    <span className="font-bold tabular-nums px-1">
+                      {safePage} / {totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={safePage >= totalPages}
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      className="min-w-[36px] h-9 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)] disabled:opacity-40"
+                      aria-label="Next page"
+                    >
+                      ›
+                    </button>
+                    <select
+                      value={pageSize}
+                      onChange={(e) => setPageSize(Number(e.target.value))}
+                      className="h-9 px-2 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)] text-xs font-bold"
+                      aria-label="Rows per page"
+                    >
+                      <option value={8}>8 / page</option>
+                      <option value={25}>25 / page</option>
+                      <option value={50}>50 / page</option>
+                    </select>
+                  </div>
+                </div>
+              ) : null
+            }
+          >
+            {paginatedStaff.map((member) => {
+              const qs = member.qualifiedServices ?? [];
+              const names = qs
+                .map((id) => services.find((s) => s.id === id)?.name)
+                .filter((n): n is string => Boolean(n));
+              const specialty =
+                names.length === 0
+                  ? `${member.totalServices} services this period`
+                  : names.length <= 2
+                    ? names.join(', ')
+                    : `${names.slice(0, 2).join(', ')} +${names.length - 2}`;
+              return (
+                <StaffCard
+                  key={member.id}
+                  name={member.name}
+                  role={member.role}
+                  photoUrl={member.profilePicture}
+                  status={staffStatusFor(member)}
+                  metaSecondary={specialty}
+                  shiftLabel={formatShiftLabel(member.weeklyHours)}
+                  revenueLabel={`$${member.totalRevenue.toLocaleString()}`}
+                  commissionLabel={`$${member.totalCommission.toLocaleString()}`}
+                  selected={selectedStaffId === member.id}
+                  onSelect={() => {
+                    setSelectedStaffId(member.id);
+                    setDetailTab('overview');
+                    setMobileDetailOpen(true);
+                  }}
+                />
+              );
+            })}
+          </StaffRoster>
+        </div>
+
+        <div className={`xl:col-span-7 ${mobileDetailOpen ? '' : 'hidden xl:block'}`}>
+          <StaffDetailPanel
+            member={
+              activeStaff
+                ? {
+                    id: activeStaff.id,
+                    name: activeStaff.name,
+                    role: activeStaff.role,
+                    email: activeStaff.email,
+                    phone: activeStaff.phone,
+                    createdAt: activeStaff.createdAt,
+                    profilePicture: activeStaff.profilePicture,
+                    qualifiedServices: activeStaff.qualifiedServices,
+                    totalServices: activeStaff.totalServices,
+                    totalRevenue: activeStaff.totalRevenue,
+                    totalCommission: activeStaff.totalCommission,
+                    history: activeStaff.history,
+                    status: staffStatusFor(activeStaff),
+                    weeklyHours: activeStaff.weeklyHours,
+                    permissions: normalizeStaffPermissions(
+                      activeStaff.permissions,
+                      activeStaff.role,
+                    ),
+                  }
+                : null
+            }
+            tab={detailTab}
+            onTabChange={setDetailTab}
+            serviceNames={activeServiceNames}
+            roleRatePercent={typeof activeRoleRate === 'number' ? activeRoleRate : null}
+            periodControls={periodControls}
+            locked={isLocked}
+            onBack={() => setMobileDetailOpen(false)}
+            onEdit={activeStaff ? () => handleEdit(activeStaff) : undefined}
+            onDelete={activeStaff ? () => requestDelete(activeStaff.id) : undefined}
+            onManageRates={() => setShowCommissionModal(true)}
+          />
+        </div>
+      </div>
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
+
+      <StaffEditor
+        open={showModal}
+        title={editingMember ? 'Edit Staff' : 'Add New Staff'}
+        onClose={handleRequestClose}
+        onSubmit={handleSubmit}
+        saving={uploadLoading}
+        saveLabel={editingMember ? 'Save Changes' : 'Add Staff'}
+        saveStatus={uploadLoading ? 'saving' : uploadError ? 'failed' : 'idle'}
+      >
+        <StaffProfileSection
+          photoSlot={
+            editingMember ? (
+              <div className="flex items-center gap-3 pb-1">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handlePhotoChange}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="rounded-full overflow-hidden w-14 h-14 border border-[var(--line)] hover:border-[var(--brand)] focus:outline-none focus:ring-2 focus:ring-[var(--brand)] bg-[var(--bg-soft)] flex items-center justify-center shrink-0"
+                >
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="Profile preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="w-7 h-7 text-[var(--text-muted)] inline-flex items-center justify-center">
+                      <Icons.Staff />
+                    </span>
+                  )}
+                </button>
+                <div className="min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-sm font-semibold text-[var(--brand)] hover:underline"
+                  >
+                    Change photo
+                  </button>
+                  {uploadLoading ? (
+                    <p className="text-xs font-semibold text-[var(--brand)] mt-0.5">Uploading…</p>
+                  ) : (
+                    <p className="text-[11px] text-[var(--text-muted)] mt-0.5">JPEG or PNG, max 2 MB</p>
+                  )}
+                </div>
+              </div>
+<<<<<<< HEAD
             ))}
           </div>
 
@@ -770,19 +1326,30 @@ const StaffPage: React.FC<StaffProps> = ({
                   <p className="text-xs font-semibold text-teal-600">Uploading photo…</p>
                 ) : null}
               </div>
+=======
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
             ) : undefined
           }
         >
           <div>
+<<<<<<< HEAD
             <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Full Name</label>
             <input
               required
               type="text"
               className="w-full p-4 min-h-[48px] bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-base font-medium"
+=======
+            <label className={editorLabelClass}>Full name</label>
+            <input
+              required
+              type="text"
+              className={editorFieldClass}
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
               value={formData.name ?? ''}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             />
           </div>
+<<<<<<< HEAD
 
           <div>
             <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Assigned Role</label>
@@ -805,21 +1372,71 @@ const StaffPage: React.FC<StaffProps> = ({
               <input
                 type="email"
                 className="w-full p-4 min-h-[48px] bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-base font-medium"
+=======
+        </StaffProfileSection>
+
+        <StaffEditorSection title="Role" description="Assign a commission role for this staff member.">
+          <div>
+            <label className={editorLabelClass}>Assigned role</label>
+            <select
+              required
+              className={editorFieldClass}
+              value={formData.role ?? ''}
+              onChange={(e) => {
+                const role = e.target.value;
+                setFormData((prev) => ({
+                  ...prev,
+                  role,
+                  permissions: editingMember ? prev.permissions : defaultStaffPermissions(role),
+                }));
+              }}
+            >
+              <option value="" disabled>
+                -- Select role --
+              </option>
+              {roleCommissions.map((rc) => (
+                <option key={rc.role} value={rc.role}>
+                  {rc.role}
+                </option>
+              ))}
+            </select>
+          </div>
+        </StaffEditorSection>
+
+        <StaffEditorSection title="Contact details">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className={editorLabelClass}>Email</label>
+              <input
+                type="email"
+                className={editorFieldClass}
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
                 value={formData.email ?? ''}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
             </div>
             <div>
+<<<<<<< HEAD
               <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Phone</label>
               <input
                 type="tel"
                 className="w-full p-4 min-h-[48px] bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-base font-medium"
+=======
+              <label className={editorLabelClass}>Phone</label>
+              <input
+                type="tel"
+                className={editorFieldClass}
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
                 value={formData.phone ?? ''}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               />
             </div>
           </div>
+<<<<<<< HEAD
         </StaffProfileSection>
+=======
+        </StaffEditorSection>
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 
         <StaffServicesSection
           selectedCount={qualifiedCount}
@@ -829,33 +1446,61 @@ const StaffPage: React.FC<StaffProps> = ({
                 <button
                   type="button"
                   onClick={selectAllQualified}
+<<<<<<< HEAD
                   className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-teal-600 hover:bg-teal-50"
+=======
+                  className="px-2.5 py-1.5 rounded-ui-sm text-[11px] font-bold text-[var(--brand)] hover:bg-[var(--brand-soft)]"
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
                 >
                   Select all
                 </button>
                 <button
                   type="button"
                   onClick={clearAllQualified}
+<<<<<<< HEAD
                   className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-slate-400 hover:bg-slate-50"
+=======
+                  className="px-2.5 py-1.5 rounded-ui-sm text-[11px] font-bold text-[var(--text-muted)] hover:bg-[var(--bg-soft)]"
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
                 >
                   Clear all
                 </button>
               </div>
               <div className="relative">
+<<<<<<< HEAD
                 <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z" />
+=======
+                <svg
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"
+                  />
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
                 </svg>
                 <input
                   type="text"
                   value={serviceSearch}
                   onChange={(e) => setServiceSearch(e.target.value)}
                   placeholder="Search services..."
+<<<<<<< HEAD
                   className="w-full pl-9 pr-3 py-2.5 min-h-[44px] bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+=======
+                  className={`${editorFieldClass} pl-9`}
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
                 />
               </div>
             </div>
           }
         >
+<<<<<<< HEAD
           <div className="mt-1 space-y-3 sm:max-h-64 sm:overflow-y-auto">
             {(Object.entries(filteredServicesByCategory) as [string, Service[]][]).map(([cat, list]) => (
               <div key={cat}>
@@ -1022,9 +1667,113 @@ const StaffPage: React.FC<StaffProps> = ({
                 Close Settings
               </button>
             </div>
+=======
+          <div className="mt-1 space-y-3 max-h-48 sm:max-h-56 overflow-y-auto">
+            {(Object.entries(filteredServicesByCategory) as [string, Service[]][]).map(
+              ([cat, list]) => (
+                <div key={cat}>
+                  <p className="text-[11px] font-semibold text-[var(--text-muted)] uppercase tracking-wide mb-1">
+                    {cat}
+                  </p>
+                  <div className="grid grid-cols-1 gap-0.5">
+                    {list.map((s) => {
+                      const assigned = (formData.qualifiedServices ?? []).includes(s.id);
+                      return (
+                        <label
+                          key={s.id}
+                          className={`flex items-center gap-3 px-3 min-h-[44px] rounded-ui-sm cursor-pointer transition-colors ${
+                            assigned ? 'bg-[var(--brand-soft)]' : 'hover:bg-[var(--bg-soft)]'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={assigned}
+                            onChange={() => toggleQualifiedService(s.id)}
+                            className="w-4 h-4 rounded border-[var(--line)] text-[var(--brand)] focus:ring-[var(--brand)]"
+                          />
+                          <span className="flex-1 text-sm text-[var(--text-primary)] truncate">
+                            {s.name}
+                          </span>
+                          {typeof s.duration === 'number' && s.duration > 0 && (
+                            <span className="text-[11px] text-[var(--text-muted)] font-medium shrink-0">
+                              {s.duration} min
+                            </span>
+                          )}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              ),
+            )}
+            {Object.keys(filteredServicesByCategory).length === 0 && (
+              <p className="py-4 text-center text-sm text-[var(--text-muted)]">
+                {services.length === 0
+                  ? 'No services available yet.'
+                  : 'No services match your search.'}
+              </p>
+            )}
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
           </div>
-        </div>
-      )}
+        </StaffServicesSection>
+
+        <StaffScheduleSection
+          weeklyHours={formData.weeklyHours}
+          onChange={(weeklyHours) => setFormData((prev) => ({ ...prev, weeklyHours }))}
+        />
+
+        <StaffPermissionSection
+          roleLabel={formData.role || ''}
+          permissions={formData.permissions}
+          onChange={(permissions) => setFormData((prev) => ({ ...prev, permissions }))}
+        />
+
+        <StaffCommissionSection
+          roleLabel={formData.role || ''}
+          ratePercent={typeof editorRoleRate === 'number' ? editorRoleRate : null}
+          manageDisabled={isLocked}
+          onManageRates={() => {
+            setShowCommissionModal(true);
+          }}
+        />
+
+        {uploadError ? (
+          <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-ui-sm px-3 py-2 mt-2">
+            {uploadError}
+          </p>
+        ) : null}
+      </StaffEditor>
+
+      <ConfirmationDialog
+        open={Boolean(pendingDeleteId)}
+        onClose={() => {
+          if (!deletingStaff) setPendingDeleteId(null);
+        }}
+        onConfirm={confirmDelete}
+        tone="danger"
+        busy={deletingStaff}
+        title="Remove staff member?"
+        confirmLabel="Remove"
+        description={
+          pendingDeleteMember
+            ? `Remove ${pendingDeleteMember.name} from the active roster? Their historical performance will remain in financial records, but they will be removed from active service lists.`
+            : 'Their historical performance will remain in financial records, but they will be removed from active service lists.'
+        }
+      />
+
+      <StaffRolesModal
+        open={showCommissionModal}
+        onClose={() => setShowCommissionModal(false)}
+        roleCommissions={roleCommissions}
+        onAddRole={handleAddRole}
+        onUpdateRate={updateRoleRate}
+        onDeleteRole={handleDeleteRole}
+        newRoleName={newRoleName}
+        newRoleRate={newRoleRate}
+        onNewRoleNameChange={setNewRoleName}
+        onNewRoleRateChange={setNewRoleRate}
+        locked={isLocked}
+      />
     </div>
   );
 };

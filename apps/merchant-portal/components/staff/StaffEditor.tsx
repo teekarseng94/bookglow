@@ -1,7 +1,12 @@
 import React from 'react';
+<<<<<<< HEAD
 import { createPortal } from 'react-dom';
 import { StaffSaveBar } from './StaffSaveBar';
 import { cx } from '../ui/cx';
+=======
+import { StaffDialogShell } from './StaffDialogShell';
+import { StaffSaveBar } from './StaffSaveBar';
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 import type { SaveStatusValue } from '../ui/SaveStatus';
 
 export interface StaffEditorProps {
@@ -20,8 +25,12 @@ export interface StaffEditorProps {
 }
 
 /**
+<<<<<<< HEAD
  * Full-width mobile / centered desktop editor shell.
  * Sticky Save Changes; close does not save — parent owns discard rules.
+=======
+ * Staff add/edit dialog — white header, sticky footer, scrollable body.
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
  */
 export const StaffEditor: React.FC<StaffEditorProps> = ({
   open,
@@ -33,6 +42,7 @@ export const StaffEditor: React.FC<StaffEditorProps> = ({
   saveDisabled,
   saveStatus = 'idle',
   saveLabel = 'Save Changes',
+<<<<<<< HEAD
   tone = 'create',
   formId = 'staff-editor-form',
   className,
@@ -93,5 +103,32 @@ export const StaffEditor: React.FC<StaffEditorProps> = ({
     document.body,
   );
 };
+=======
+  formId = 'staff-editor-form',
+  className,
+}) => (
+  <StaffDialogShell
+    open={open}
+    title={title}
+    onClose={onClose}
+    closeOnBackdrop={!saving}
+    className={className}
+    footer={
+      <StaffSaveBar
+        formId={formId}
+        onCancel={onClose}
+        saving={saving}
+        disabled={saveDisabled}
+        status={saveStatus}
+        saveLabel={saveLabel}
+      />
+    }
+  >
+    <form id={formId} onSubmit={onSubmit} className="space-y-1">
+      {children}
+    </form>
+  </StaffDialogShell>
+);
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 
 export default StaffEditor;

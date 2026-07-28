@@ -1,27 +1,29 @@
 /**
  * Authentication Hook
- * 
- * Manages authentication state and provides auth methods
- * Note: User outlet data is managed by UserContext, not this hook
+ *
+ * Manages authentication state and provides auth methods.
+ * Note: User outlet data is managed by UserContext, not this hook.
  */
 
-import { useState, useEffect } from 'react';
-import { User } from 'firebase/auth';
-import { onAuthStateChange, getCurrentUser, logout as authLogout } from '../services/authService';
+import { useState, useEffect } from "react";
+import {
+  onAuthStateChange,
+  getCurrentUser,
+  logout as authLogout,
+  type PortalAuthUser,
+} from "../services/authService";
 
 export const useAuth = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<PortalAuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set initial user
     const currentUser = getCurrentUser();
     setUser(currentUser);
     setLoading(false);
 
-    // Subscribe to auth state changes
     const unsubscribe = onAuthStateChange((authUser) => {
-      console.log('Auth state changed:', authUser?.email || 'logged out');
+      console.log("Auth state changed:", authUser?.email || "logged out");
       setUser(authUser);
       setLoading(false);
     });
@@ -34,7 +36,7 @@ export const useAuth = () => {
       await authLogout();
       setUser(null);
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
       throw error;
     }
   };
@@ -43,6 +45,6 @@ export const useAuth = () => {
     user,
     loading,
     isAuthenticated: !!user,
-    logout: handleLogout
+    logout: handleLogout,
   };
 };

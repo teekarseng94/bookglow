@@ -102,7 +102,10 @@ Also ignore on disk (not mounted in the live router):
 | `/marketing` | `pages/Marketing.tsx` | Admin-only |
 | `/staff` | `pages/Staff.tsx` | Admin-only |
 | `/settings` | `pages/Settings.tsx` | Admin-only |
+<<<<<<< HEAD
 | `/settings/integrations` | `pages/ExternalIntegrations.tsx` | |
+=======
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 | `/admin/dashboard` | `pages/SuperAdminDashboard.tsx` | Super-owner |
 | `/admin/subscribers` | `pages/SuperAdminSubscribers.tsx` | Super-owner |
 
@@ -238,7 +241,11 @@ Rule: keep Firestore / save / delete / calendar math inside the page (or existin
 | Customer `tsc --noEmit` | **PASS** (0 errors) |
 | Merchant `tsc --noEmit` | **FAIL** — **23** existing `error TS` (legacy areas) |
 
+<<<<<<< HEAD
 Merchant errors align with `docs/KNOWN_EXISTING_TYPECHECK_ISSUES.md` (`AppointmentsCalendar`, `Marketing`, `ReportPage`, `SalesReports`, `setmoreSyncService`, `useFirestoreData`, etc.).  
+=======
+Merchant errors align with `docs/KNOWN_EXISTING_TYPECHECK_ISSUES.md` (`AppointmentsCalendar`, `Marketing`, `ReportPage`, `SalesReports`, `useFirestoreData`, etc.).  
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 **Do not expand this debt in Phases 1–5.** Production Vite build remains the release gate.
 
 ---

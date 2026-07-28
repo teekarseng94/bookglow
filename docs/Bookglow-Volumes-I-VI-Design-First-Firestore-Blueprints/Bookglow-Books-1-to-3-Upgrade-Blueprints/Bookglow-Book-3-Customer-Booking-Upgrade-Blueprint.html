@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Bookglow Book 3: Customer Booking Upgrade Blueprint">
+<title>Bookglow — Book 3: Customer Booking Upgrade Blueprint</title>
+<style>
+:root{--ink:#19171d;--muted:#6c6872;--line:#e8e5e9;--canvas:#f7f7f5;--paper:#fff;--soft:#f4f2f6;--accent:#7054c7;--accent-dark:#453485;--accent-soft:#eeeafd;--rose:#c85c78;--success:#19705a;--warning:#94620d;--danger:#a04455;--shadow:0 18px 60px rgba(28,22,34,.09);--shadow-sm:0 6px 24px rgba(28,22,34,.05)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--ink);background:radial-gradient(circle at 2% 2%,rgba(112,84,199,.10),transparent 29rem),radial-gradient(circle at 98% 0%,rgba(200,92,120,.08),transparent 31rem),var(--canvas);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.65;letter-spacing:-.005em}a{color:var(--accent-dark)}.shell{width:min(1480px,calc(100% - 32px));margin:24px auto 64px}.document{display:grid;grid-template-columns:292px minmax(0,1fr);background:rgba(255,255,255,.98);border:1px solid var(--line);border-radius:30px;overflow:clip;box-shadow:var(--shadow)}aside{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:30px 22px;border-right:1px solid var(--line);background:linear-gradient(180deg,#fff,#faf9fb)}.brand{display:flex;align-items:center;gap:11px;margin-bottom:27px;font-weight:820;font-size:19px;letter-spacing:-.03em}.brand-mark{display:grid;place-items:center;width:35px;height:35px;border-radius:12px;color:#fff;background:linear-gradient(135deg,var(--accent),var(--rose));font-size:15px;box-shadow:0 8px 20px rgba(112,84,199,.22)}.doc-label{margin:0 0 16px;color:var(--muted);font-size:11px;font-weight:820;letter-spacing:.14em;text-transform:uppercase}.toc{display:grid;gap:3px}.toc a{display:block;padding:8px 10px;border-radius:10px;text-decoration:none;color:#625e68;font-size:13px;line-height:1.35}.toc a:hover{color:var(--accent-dark);background:var(--accent-soft)}.side-note{margin-top:26px;padding:14px;border:1px solid #e3ddec;border-radius:15px;background:#fbf9fd;color:var(--muted);font-size:11px}main{min-width:0}.hero{position:relative;min-height:670px;padding:84px clamp(32px,7vw,94px) 68px;overflow:hidden;border-bottom:1px solid var(--line);background:linear-gradient(140deg,rgba(255,255,255,.94),rgba(249,247,250,.94)),radial-gradient(circle at 88% 13%,rgba(112,84,199,.22),transparent 25rem),radial-gradient(circle at 15% 92%,rgba(200,92,120,.12),transparent 27rem)}.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:7px 11px;border:1px solid #ded7e6;border-radius:999px;color:var(--accent-dark);background:rgba(255,255,255,.78);font-size:11px;font-weight:820;letter-spacing:.11em;text-transform:uppercase}.dot{width:7px;height:7px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--rose))}h1{max-width:980px;margin:31px 0 21px;font-family:Georgia,"Times New Roman",serif;font-size:clamp(48px,7vw,94px);line-height:.99;letter-spacing:-.055em;font-weight:500}.hero-deck{max-width:830px;margin:0;color:#5f5a64;font-size:clamp(18px,2vw,24px);line-height:1.5}.hero-rule{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,.68fr);gap:34px;align-items:end;margin-top:70px}.hero-quote{padding-left:22px;border-left:3px solid var(--accent);font-size:clamp(22px,3vw,34px);font-weight:720;line-height:1.28;letter-spacing:-.025em}.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.meta-card{padding:14px 15px;border:1px solid #ddd7e2;border-radius:16px;background:rgba(255,255,255,.8)}.meta-card span{display:block;color:var(--muted);font-size:10px;font-weight:820;letter-spacing:.12em;text-transform:uppercase}.meta-card strong{display:block;margin-top:5px;font-size:13px}.content{padding:40px clamp(28px,6vw,82px) 110px}section{scroll-margin-top:22px;padding:64px 0;border-bottom:1px solid var(--line)}section:last-child{border-bottom:0}.section-number{display:block;margin-bottom:10px;color:var(--accent);font-size:11px;font-weight:850;letter-spacing:.14em;text-transform:uppercase}h2{max-width:930px;margin:0 0 19px;font-family:Georgia,"Times New Roman",serif;font-size:clamp(34px,4.2vw,58px);line-height:1.09;letter-spacing:-.04em;font-weight:500}h3{margin:0 0 10px;font-size:20px;line-height:1.32;letter-spacing:-.025em}p{margin:0 0 16px}.lead{max-width:900px;color:#5e5963;font-size:19px}.small{font-size:12px;color:var(--muted)}.statement{margin:32px 0;padding:27px 29px;border:1px solid #e2dce7;border-radius:22px;background:linear-gradient(135deg,#faf8fd,#fff);font-size:clamp(22px,3vw,35px);line-height:1.32;letter-spacing:-.025em;font-weight:720}.statement em{font-family:Georgia,serif;color:var(--accent-dark);font-weight:500}.grid-2,.grid-3,.grid-4{display:grid;gap:18px;margin-top:25px}.grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}.card{padding:22px;border:1px solid var(--line);border-radius:19px;background:#fff;box-shadow:var(--shadow-sm)}.card p:last-child,.card ul:last-child{margin-bottom:0}.card-number{display:grid;place-items:center;width:32px;height:32px;margin-bottom:14px;border-radius:11px;background:var(--accent-soft);color:var(--accent-dark);font-size:12px;font-weight:900}.note,.success,.warning{margin:21px 0;padding:18px 20px;border-radius:16px;font-size:14px}.note{border:1px solid #ddd7e2;background:#faf8fb}.success{border:1px solid #cfe4dc;background:#eff9f5;color:#175b4b}.warning{border:1px solid #ead9b8;background:#fff8e7;color:#744b0b}ul,ol{margin:12px 0 18px;padding-left:21px}li{margin:7px 0}.clean-list{list-style:none;padding:0}.clean-list li{position:relative;padding-left:25px}.clean-list li:before{content:"✓";position:absolute;left:0;color:var(--success);font-weight:900}.no-list li:before{content:"×";color:var(--danger)}table{width:100%;margin:23px 0;border-collapse:separate;border-spacing:0;overflow:hidden;border:1px solid var(--line);border-radius:17px;background:#fff}th,td{padding:14px 15px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left;font-size:13px}th{background:#f7f5f8;color:#4e4854;font-size:10px;font-weight:850;letter-spacing:.1em;text-transform:uppercase}tr:last-child td{border-bottom:0}.flow{display:grid;gap:10px;margin-top:23px}.flow-row{display:grid;grid-template-columns:110px minmax(0,1fr) auto;gap:14px;align-items:center;padding:16px 18px;border:1px solid var(--line);border-radius:15px;background:#fff}.flow-row .step{color:var(--accent);font-size:10px;font-weight:850;letter-spacing:.1em;text-transform:uppercase}.flow-row .purpose{font-weight:760}.flow-row .proof{font-size:12px;color:var(--muted);text-align:right}.wireframe{margin-top:24px;padding:18px;border:1px solid var(--line);border-radius:22px;background:#faf8f5}.browser{overflow:hidden;border:1px solid #d9d4dc;border-radius:18px;background:#fff;box-shadow:var(--shadow-sm)}.browser-bar{display:flex;align-items:center;gap:7px;padding:11px 14px;border-bottom:1px solid var(--line);background:#f8f7f8}.browser-dot{width:8px;height:8px;border-radius:50%;background:#d7d3d8}.frame{padding:18px}.nav-demo{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:15px;border-bottom:1px solid var(--line)}.logo-demo{font-weight:850}.nav-links{display:flex;gap:15px;color:var(--muted);font-size:12px}.button-demo{padding:8px 12px;border-radius:999px;background:var(--ink);color:#fff;font-size:11px;font-weight:750}.hero-demo{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;align-items:center;padding:34px 0}.copy-lines{display:grid;gap:9px}.line{height:10px;border-radius:999px;background:#e9e6ea}.line.dark{height:22px;background:#2a272d}.w90{width:90%}.w75{width:75%}.w60{width:60%}.w45{width:45%}.product-demo{min-height:230px;padding:15px;border-radius:18px;background:#f4f1f7;display:grid;grid-template-columns:1fr .62fr;gap:10px}.panel-demo{border:1px solid var(--line);border-radius:13px;background:#fff}.panel-demo.big{padding:12px}.panel-list{display:grid;gap:8px;margin-top:10px}.mini-row{height:29px;border-radius:8px;background:#f4f2f5;border:1px solid #ece8ed}.section-demo{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:18px 0}.block-demo{min-height:90px;border:1px solid var(--line);border-radius:13px;background:#fff}.booking-shell{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:16px}.merchant-head{height:150px;border-radius:16px;background:linear-gradient(135deg,#e9e5ef,#f8f6f9);border:1px solid var(--line)}.category-strip{display:flex;gap:8px;margin:13px 0;flex-wrap:wrap}.category-pill{width:74px;height:27px;border-radius:999px;background:#f0edf3;border:1px solid var(--line)}.service-list{display:grid;gap:10px}.service-item{display:grid;grid-template-columns:1fr 78px;gap:12px;padding:13px;border:1px solid var(--line);border-radius:14px;background:#fff}.service-copy{display:grid;gap:7px}.service-img{border-radius:11px;background:#efecf1}.summary-demo{padding:15px;border:1px solid var(--line);border-radius:16px;background:#fff;height:max-content}.mobile-demo{width:min(350px,100%);margin:20px auto 0;border:1px solid #d9d4dc;border-radius:27px;padding:12px;background:#fff;box-shadow:var(--shadow-sm)}.mobile-screen{border-radius:19px;background:#fafafa;overflow:hidden}.mobile-cover{height:105px;background:linear-gradient(135deg,#e4e0e9,#f7f4f8)}.mobile-content{padding:12px}.sticky-demo{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px;border-top:1px solid var(--line);background:#fff}.source-list a{word-break:break-all}.footer{display:flex;justify-content:space-between;gap:24px;padding-top:28px;color:var(--muted);font-size:11px}
+@media(max-width:1050px){.document{grid-template-columns:1fr}aside{display:none}.hero{min-height:auto}.grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.shell{width:100%;margin:0}.document{border:0;border-radius:0}.hero{padding:54px 22px 46px}.hero-rule,.grid-2,.grid-3,.grid-4,.hero-demo,.booking-shell{grid-template-columns:1fr}.content{padding:22px 20px 70px}section{padding:50px 0}.meta-grid{margin-top:22px}.flow-row{grid-template-columns:1fr;gap:4px}.flow-row .proof{text-align:left}.nav-links{display:none}.section-demo{grid-template-columns:1fr}.footer{flex-direction:column}table{display:block;overflow-x:auto}}
+
+.portal-wireframe{margin-top:24px;padding:18px;border:1px solid var(--line);border-radius:22px;background:#faf8f5}
+.portal-browser{overflow:hidden;border:1px solid #d9d4dc;border-radius:18px;background:#fff;box-shadow:var(--shadow-sm)}
+.portal-topbar{display:flex;align-items:center;gap:7px;padding:11px 14px;border-bottom:1px solid var(--line);background:#f8f7f8}
+.portal-dot{width:8px;height:8px;border-radius:50%;background:#d7d3d8}
+.portal-app{display:grid;grid-template-columns:165px minmax(0,1fr);min-height:470px}
+.portal-sidebar{padding:14px;border-right:1px solid var(--line);background:#fbfafb}
+.portal-brand{height:28px;width:90px;border-radius:8px;background:#29262d;margin-bottom:18px}
+.portal-nav{display:grid;gap:7px}
+.portal-nav-item{height:29px;border-radius:8px;background:#f0edf2;border:1px solid #ece8ed}
+.portal-nav-item.active{background:#e9e4fa;border-color:#d8cff4}
+.portal-main{padding:16px;background:#fcfbfc}
+.portal-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+.portal-title{height:25px;width:165px;border-radius:8px;background:#29262d}
+.portal-action{height:32px;width:95px;border-radius:999px;background:#7054c7}
+.metric-grid-demo{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:12px}
+.metric-demo{height:75px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.portal-grid{display:grid;grid-template-columns:1.35fr .65fr;gap:10px}
+.portal-panel{min-height:210px;border:1px solid var(--line);border-radius:13px;background:#fff;padding:11px}
+.demo-row{height:31px;border-radius:8px;background:#f5f3f6;border:1px solid #ece8ed;margin-top:8px}
+.calendar-demo{display:grid;grid-template-columns:60px repeat(4,1fr);gap:4px;margin-top:10px}
+.calendar-cell{height:43px;border-radius:7px;background:#f4f2f5;border:1px solid #ebe7ec}
+.calendar-cell.booked{background:#e9e4fa;border-color:#d9d1f3}
+.pos-layout{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:10px}
+.product-grid-demo{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.product-tile{height:76px;border-radius:11px;background:#f5f3f6;border:1px solid #ebe7ec}
+.cart-demo{padding:11px;border:1px solid var(--line);border-radius:13px;background:#fff}
+.table-demo{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.table-head-demo{height:31px;background:#f4f2f5;border-bottom:1px solid var(--line)}
+.table-row-demo{height:38px;border-bottom:1px solid var(--line)}
+.table-row-demo:last-child{border-bottom:0}
+.portal-mobile{width:min(350px,100%);margin:20px auto 0;border:1px solid #d9d4dc;border-radius:27px;padding:12px;background:#fff;box-shadow:var(--shadow-sm)}
+.portal-mobile-screen{overflow:hidden;border-radius:19px;background:#fafafa}
+.mobile-app-bar{display:flex;align-items:center;justify-content:space-between;padding:12px;border-bottom:1px solid var(--line);background:#fff}
+.mobile-page{padding:12px}
+.mobile-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mobile-metric{height:68px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.mobile-list{display:grid;gap:8px;margin-top:10px}
+.mobile-list-item{height:65px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.mobile-bottom-nav{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:9px;border-top:1px solid var(--line);background:#fff}
+.mobile-nav-dot{height:28px;border-radius:8px;background:#f0edf2}
+.mobile-nav-dot.active{background:#e9e4fa}
+@media(max-width:760px){
+  .portal-app,.portal-grid,.pos-layout{grid-template-columns:1fr}
+  .portal-sidebar{display:none}
+  .metric-grid-demo{grid-template-columns:1fr 1fr}
+  .product-grid-demo{grid-template-columns:1fr 1fr}
+}
+
+.arch{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:25px 0}
+.arch-node{position:relative;padding:20px;border:1px solid var(--line);border-radius:18px;background:#fff;box-shadow:var(--shadow-sm)}
+.arch-node strong{display:block;margin-bottom:7px;font-size:16px}
+.arch-node span{color:var(--muted);font-size:12px}
+.arch-arrow{text-align:center;color:var(--accent);font-size:22px;font-weight:800;align-self:center}
+.path-map{display:grid;gap:8px;margin:20px 0}
+.path-row{display:grid;grid-template-columns:225px minmax(0,1fr);gap:14px;padding:13px 15px;border:1px solid var(--line);border-radius:13px;background:#fff}
+.path-row code{font-size:12px;word-break:break-all}
+.status-now,.status-next,.status-later,.status-no{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}
+.status-now{background:#eaf6f1;color:#17614f}
+.status-next{background:#eeeafd;color:#4a3985}
+.status-later{background:#fff4dd;color:#805610}
+.status-no{background:#f9e9ed;color:#963f54}
+.decision-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:22px}
+.decision{padding:18px;border:1px solid var(--line);border-radius:16px;background:#fff}
+.decision .answer{display:block;margin-top:8px;color:var(--accent-dark);font-weight:800}
+.phase{display:grid;grid-template-columns:80px minmax(0,1fr) 135px;gap:15px;align-items:start;padding:18px;border-bottom:1px solid var(--line)}
+.phase:last-child{border-bottom:0}
+.phase-id{color:var(--accent);font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}
+.phase-gate{font-size:12px;color:var(--muted)}
+.screen-spec{display:grid;grid-template-columns:170px minmax(0,1fr);gap:16px;padding:17px 0;border-bottom:1px solid var(--line)}
+.screen-spec:last-child{border-bottom:0}
+.screen-spec h3{font-size:17px}
+.screen-spec .details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.spec-cell{padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:12px}
+.spec-cell strong{display:block;margin-bottom:4px;color:var(--ink)}
+.file-map{margin-top:20px}
+.file-row{display:grid;grid-template-columns:minmax(260px,.9fr) minmax(0,1.4fr) 110px;gap:12px;padding:13px 14px;border-bottom:1px solid var(--line);align-items:start}
+.file-row:first-child{border-top:1px solid var(--line)}
+.file-row code{word-break:break-all;font-size:11px}
+.file-row p{margin:0;font-size:12px}
+.pillbar{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+.pill{padding:7px 10px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:11px;font-weight:750}
+.callout-title{display:block;margin-bottom:7px;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+@media(max-width:850px){
+  .arch,.decision-grid{grid-template-columns:1fr}
+  .path-row,.screen-spec,.file-row,.phase{grid-template-columns:1fr}
+  .screen-spec .details{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="shell"><div class="document">
+<aside>
+  <div class="brand"><span class="brand-mark">B</span> Bookglow</div>
+  <p class="doc-label">Upgrade Blueprint · Book 3</p>
+  <nav class="toc"><a href="#mandate">01 · Mandate and booking truth</a>
+<a href="#source">02 · Active customer-site source map</a>
+<a href="#journey">03 · Canonical customer journey</a>
+<a href="#routes">04 · Routes and direct-link behavior</a>
+<a href="#storefront">05 · Merchant storefront specification</a>
+<a href="#services">06 · Service discovery and selection</a>
+<a href="#professional">07 · Professional selection</a>
+<a href="#datetime">08 · Date and time selection</a>
+<a href="#details">09 · Customer details and authentication</a>
+<a href="#review">10 · Review and confirmation submission</a>
+<a href="#confirmation">11 · Confirmation and aftercare</a>
+<a href="#manage">12 · Booking management boundary</a>
+<a href="#states">13 · Governed booking states</a>
+<a href="#responsive">14 · Desktop, tablet and mobile layouts</a>
+<a href="#theming">15 · Merchant theming and Bookglow governance</a>
+<a href="#accessibility">16 · Accessibility and trust</a>
+<a href="#components">17 · Current and target component system</a>
+<a href="#logic">18 · Logic preservation and backend gates</a>
+<a href="#analytics">19 · Booking funnel measurement</a>
+<a href="#verification">20 · Booking verification matrix</a>
+<a href="#sequence">21 · Customer booking implementation sequence</a>
+<a href="#done">22 · Book 3 completion definition</a></nav>
+  <div class="side-note">Source of truth: latest <strong>bookglow(5).rar</strong>, active project maps, approved product decisions, and UI Reference Packs A–C. Strategy: upgrade the existing monorepo in place.</div>
+</aside>
+<main>
+<header class="hero">
+  <div class="eyebrow"><span class="dot"></span> Book 3 · Existing-Project Upgrade</div>
+  <h1>Customer Booking Upgrade Blueprint</h1>
+  <p class="hero-deck">The complete direct-merchant booking blueprint for refining Bookglow’s live customer journey across storefront, service, professional, availability, details, review and confirmation.</p>
+  <div class="hero-rule">
+    <div class="hero-quote">Make the merchant feel credible, each decision feel simple, and the booking result feel certain.</div>
+    <div class="meta-grid">
+      <div class="meta-card"><span>Document</span><strong>Book 3 of 3</strong></div>
+      <div class="meta-card"><span>Version</span><strong>1.0 · 17 July 2026</strong></div>
+      <div class="meta-card"><span>Scope</span><strong>Direct merchant booking, responsive journey and states</strong></div>
+      <div class="meta-card"><span>Implementation</span><strong>Retrofit, not rebuild</strong></div>
+    </div>
+  </div>
+</header>
+<div class="content">
+<section id="mandate"><span class="section-number">01 · Mandate and booking truth</span>
+<h2>Upgrade the live direct-booking route, not a parallel customer application.</h2>
+<p class="lead">Book 3 governs <code>apps/customer-site</code>, especially <code>/book/:bookingPath</code>. The current project already includes a redesigned booking page, merchant header, service cards, sticky action and governed state components. The next implementation phase audits and completes that live flow rather than reviving an experimental <code>/book-v2</code> route.</p>
+<div class="grid-3">
+<div class="card"><h3>Model</h3><p>Direct merchant booking link. No public marketplace, nearby search or merchant-discovery feed.</p></div>
+<div class="card"><h3>Customer goal</h3><p>Understand the merchant, choose service/professional/time, provide details, review and receive certainty.</p></div>
+<div class="card"><h3>Merchant goal</h3><p>Publish a credible storefront that reflects real services, staff, hours, availability and policies.</p></div>
+</div>
+<div class="statement">The booking experience belongs to the merchant’s brand, but every choice and recovery path is governed by Bookglow.</div>
+</section><section id="source"><span class="section-number">02 · Active customer-site source map</span>
+<h2>The current customer site contains both marketing and booking.</h2>
+<div class="path-map">
+<div class="path-row"><code>App.tsx</code><span>Public marketing/landing experience and merchant-facing platform entry.</span></div>
+<div class="path-row"><code>index.tsx</code><span>Browser routes, booking routes, signup and merchant-login redirect.</span></div>
+<div class="path-row"><code>apps/booking/BookingPage.tsx</code><span>Current live customer booking container and workflow.</span></div>
+<div class="path-row"><code>apps/booking/BookingAuth.tsx</code><span>Customer authentication inside the selected merchant context.</span></div>
+<div class="path-row"><code>apps/booking/SignUp.tsx</code><span>Current merchant/customer registration entry that requires product-flow clarification.</span></div>
+<div class="path-row"><code>components/booking/*</code><span>Merchant header, service card, sticky action, state screen, empty state and messages.</span></div>
+<div class="path-row"><code>services/bookingApi.ts</code><span>Public outlet, availability and booking-function boundary.</span></div>
+<div class="path-row"><code>services/bookingPathResolve.ts</code><span>Resolves outlet ID or booking slug.</span></div>
+<div class="path-row"><code>src/styles/tokens.css / utilities.css</code><span>Current local design tokens and utility system.</span></div>
+</div>
+<div class="warning"><strong>Legacy caution:</strong> older copies referenced an experimental <code>/book-v2</code> flow. The latest redesign manifest says obsolete experimental booking source and route references were removed. The live route remains the source of truth.</div>
+</section><section id="journey"><span class="section-number">03 · Canonical customer journey</span>
+<h2>Seven clear stages with persistent context.</h2>
+<div class="flow">
+<div class="flow-row"><span class="step">01</span><span class="purpose">Merchant storefront and service discovery</span><span class="proof">Identity, location, hours, categories, services</span></div>
+<div class="flow-row"><span class="step">02</span><span class="purpose">Service selection</span><span class="proof">Name, description, duration, price</span></div>
+<div class="flow-row"><span class="step">03</span><span class="purpose">Professional preference</span><span class="proof">Any available or qualified named professional</span></div>
+<div class="flow-row"><span class="step">04</span><span class="purpose">Date and time</span><span class="proof">Available dates, slots and alternatives</span></div>
+<div class="flow-row"><span class="step">05</span><span class="purpose">Customer details</span><span class="proof">Minimal contact, optional notes, account convenience</span></div>
+<div class="flow-row"><span class="step">06</span><span class="purpose">Review and confirm</span><span class="proof">Merchant, appointment, customer and price</span></div>
+<div class="flow-row"><span class="step">07</span><span class="purpose">Confirmation and management</span><span class="proof">Reference, calendar, directions, contact and future manage link</span></div>
+</div>
+<p>Customers may navigate backward without losing valid choices. A changed service may invalidate professional and slot; a changed professional may invalidate slot; changing contact details should not clear appointment choices.</p>
+</section><section id="routes"><span class="section-number">04 · Routes and direct-link behavior</span>
+<h2>The merchant link is the customer’s entry point.</h2>
+<table><thead><tr><th>Route</th><th>Purpose</th><th>Requirement</th></tr></thead><tbody>
+<tr><td><code>/book/:bookingPath</code></td><td>Live merchant storefront and booking</td><td><code>bookingPath</code> resolves a supported outlet ID or booking slug.</td></tr>
+<tr><td><code>/book/:bookingPath/auth</code></td><td>Customer login/signup</td><td>Return to the same merchant booking route after success.</td></tr>
+<tr><td><code>/signup</code></td><td>Public signup entry</td><td>Separate merchant signup intent from customer booking authentication.</td></tr>
+<tr><td><code>/login</code></td><td>Merchant login redirect</td><td>Send merchants to the dashboard domain explicitly.</td></tr>
+<tr><td><code>*</code></td><td>Platform landing</td><td>Reference A and Book 1 govern this experience.</td></tr>
+</tbody></table>
+<div class="note"><strong>No marketplace rule:</strong> Bookglow does not add routes for search, nearby merchants, categories across merchants or public ranking. Merchants distribute their own booking link through website, QR, social, chat or direct sharing.</div>
+</section><section id="storefront"><span class="section-number">05 · Merchant storefront specification</span>
+<h2>Merchant identity is useful context, not a giant decorative banner.</h2>
+<div class="screen-spec">
+<h3>Masthead</h3><div class="details"><div class="spec-cell"><strong>Show</strong>Cover, logo, merchant name and concise description.</div><div class="spec-cell"><strong>Actions</strong>Share, contact and directions when configured.</div><div class="spec-cell"><strong>Mobile</strong>Compact enough to expose services quickly.</div></div>
+</div>
+<div class="screen-spec">
+<h3>Trust context</h3><div class="details"><div class="spec-cell"><strong>Location</strong>Readable address and route action.</div><div class="spec-cell"><strong>Hours</strong>Current status plus full hours on demand.</div><div class="spec-cell"><strong>Reviews</strong>Only verified data; never a fake rating.</div></div>
+</div>
+<div class="screen-spec">
+<h3>Booking entry</h3><div class="details"><div class="spec-cell"><strong>Primary</strong>Categories and services appear within the first useful viewport.</div><div class="spec-cell"><strong>Attribution</strong>Subtle Powered by Bookglow.</div><div class="spec-cell"><strong>State</strong>Inactive/not found has a governed screen.</div></div>
+</div>
+<p><code>BookingMerchantHeader.tsx</code> is the current retrofit anchor. Refine it rather than duplicating merchant identity inside each step.</p>
+</section><section id="services"><span class="section-number">06 · Service discovery and selection</span>
+<h2>Compact, comparable and transparent.</h2>
+<table><thead><tr><th>Element</th><th>Requirement</th></tr></thead><tbody>
+<tr><td>Category navigation</td><td>Clear selected state, sticky where useful and no excessive vertical footprint.</td></tr>
+<tr><td>Search</td><td>Only when service volume justifies it; searches name, category and description.</td></tr>
+<tr><td>Service card/row</td><td>Name, concise description, duration, price, optional image/promotion and clear Select action.</td></tr>
+<tr><td>Selection</td><td>Visible selected state and immediate summary update.</td></tr>
+<tr><td>Unavailable service</td><td>Explain and offer other services without resetting merchant context.</td></tr>
+</tbody></table>
+<div class="grid-2">
+<div class="card"><h3>Desktop</h3><p>Full-width service rows or controlled two-column layout with a persistent booking summary.</p></div>
+<div class="card"><h3>Mobile</h3><p>Single-column dense rows that show several services per screen, with selected context in the sticky action.</p></div>
+</div>
+<p><code>BookingServiceCard.tsx</code> is the starting presentation component. Keep data and selection logic in the booking container or typed adapters.</p>
+</section><section id="professional"><span class="section-number">07 · Professional selection</span>
+<h2>Flexibility first, identity second.</h2>
+<div class="grid-3">
+<div class="card"><h3>Any available</h3><p>First, recommended option. Explain that Bookglow will assign a qualified available professional.</p></div>
+<div class="card"><h3>Named professional</h3><p>Photo/initial, name, role or concise descriptor, with a clear selected state.</p></div>
+<div class="card"><h3>Qualification</h3><p>Only professionals eligible for the chosen service appear. Do not expose internal qualification rules.</p></div>
+</div>
+<table><thead><tr><th>Change</th><th>Dependency behavior</th></tr></thead><tbody>
+<tr><td>Change service</td><td>Re-evaluate professionals and clear an invalid professional/slot.</td></tr>
+<tr><td>Change professional</td><td>Re-fetch/recalculate availability and clear an invalid slot.</td></tr>
+<tr><td>Select any available</td><td>Availability represents qualified staff pool and final assignment is server-safe in the backend phase.</td></tr>
+</tbody></table>
+</section><section id="datetime"><span class="section-number">08 · Date and time selection</span>
+<h2>Show real choices and useful alternatives.</h2>
+<table><thead><tr><th>Component</th><th>Specification</th></tr></thead><tbody>
+<tr><td>Date strip</td><td>Compact upcoming dates with selected state and availability indication.</td></tr>
+<tr><td>Full calendar</td><td>Opens on demand; unavailable dates are clear but not visually dominant.</td></tr>
+<tr><td>Time slots</td><td>At least 44 px target, readable format and clear selected state.</td></tr>
+<tr><td>Grouping</td><td>Morning/afternoon/evening only when it improves scanning.</td></tr>
+<tr><td>No availability</td><td>Nearby dates, next available, any professional or merchant contact.</td></tr>
+<tr><td>Loading</td><td>Keep selected service/professional and summary visible.</td></tr>
+</tbody></table>
+<div class="warning"><strong>Production boundary:</strong> the UI may be completed with the current booking API, but true qualified availability, safe “any professional” assignment and final conflict prevention remain backend gates before production trust is claimed.</div>
+</section><section id="details"><span class="section-number">09 · Customer details and authentication</span>
+<h2>Do not turn booking into an account-creation obstacle.</h2>
+<div class="grid-3">
+<div class="card"><h3>Required</h3><p>Name and the contact method Bookglow needs to confirm and operate the appointment.</p></div>
+<div class="card"><h3>Optional</h3><p>Email, notes and future convenience fields according to merchant policy.</p></div>
+<div class="card"><h3>Authentication</h3><p>Customer may log in or create a profile for convenience, but returns to the same merchant and retained booking context.</p></div>
+</div>
+<ul class="clean-list"><li>Visible labels and meaningful autocomplete.</li><li>Malaysia-friendly phone entry with country context.</li><li>Inline validation after interaction or submit.</li><li>Mobile keyboard never covers the primary action.</li><li>Privacy/support copy explains how contact details are used.</li><li>Customer role never redirects into the merchant portal.</li></ul>
+<p><code>BookingAuth.tsx</code> and booking-specific auth helpers remain distinct from merchant-oriented registration helpers.</p>
+</section><section id="review"><span class="section-number">10 · Review and confirmation submission</span>
+<h2>One controlled final action.</h2>
+<table><thead><tr><th>Review group</th><th>Content and edit behavior</th></tr></thead><tbody>
+<tr><td>Merchant</td><td>Name and outlet/location; returns to storefront context if needed.</td></tr>
+<tr><td>Appointment</td><td>Service, duration, professional preference, date and time; edit returns to the relevant stage.</td></tr>
+<tr><td>Customer</td><td>Name and confirmation contact; edit does not clear appointment.</td></tr>
+<tr><td>Price/policy</td><td>Price and any supported deposit/cancellation wording.</td></tr>
+</tbody></table>
+<ul class="clean-list"><li>Confirm button has a precise label and locks against duplicate clicks.</li><li>Submitting state preserves the full review.</li><li>Known failure returns a specific recovery path.</li><li>Unknown result does not invite immediate duplicate booking.</li><li>Slot conflict returns to time selection with other details preserved.</li></ul>
+</section><section id="confirmation"><span class="section-number">11 · Confirmation and aftercare</span>
+<h2>The customer must leave with proof and next steps.</h2>
+<div class="grid-3">
+<div class="card"><h3>Appointment proof</h3><p>Status, reference, merchant, service, professional, date, time, duration and price.</p></div>
+<div class="card"><h3>Useful actions</h3><p>Add to calendar, directions, contact merchant, book another and future manage booking.</p></div>
+<div class="card"><h3>Communication</h3><p>Where confirmation was sent and what to do if it does not arrive.</p></div>
+</div>
+<div class="note">Do not use a giant success icon as the page’s main content. Appointment details and next actions are the confirmation experience.</div>
+</section><section id="manage"><span class="section-number">12 · Booking management boundary</span>
+<h2>Management is part of the intended journey, but must be secure.</h2>
+<table><thead><tr><th>Capability</th><th>UX direction</th><th>Status</th></tr></thead><tbody>
+<tr><td>View booking</td><td>Secure token or authenticated ownership; show full appointment and merchant details.</td><td><span class="status-later">Later backend</span></td></tr>
+<tr><td>Cancel</td><td>Policy, reason, confirmation and resulting status.</td><td><span class="status-later">Later backend</span></td></tr>
+<tr><td>Reschedule</td><td>Reuse service/professional context, show new availability, atomic update.</td><td><span class="status-later">Later backend</span></td></tr>
+<tr><td>Contact merchant</td><td>Available now when contact data is configured.</td><td><span class="status-now">UI now</span></td></tr>
+</tbody></table>
+<p>Do not create a public appointment lookup based on guessable IDs. Until secure management exists, confirmation wording must not promise it.</p>
+</section><section id="states"><span class="section-number">13 · Governed booking states</span>
+<h2>Every failure and empty state protects customer confidence.</h2>
+<table><thead><tr><th>State</th><th>Required message and recovery</th></tr></thead><tbody>
+<tr><td>Merchant not found</td><td>The link may be invalid or expired; do not expose internal outlet identifiers.</td></tr>
+<tr><td>Merchant inactive</td><td>Online booking is unavailable; show contact only if configured.</td></tr>
+<tr><td>No services</td><td>Merchant has no online services; offer contact/retry.</td></tr>
+<tr><td>Service unavailable</td><td>Choose another service.</td></tr>
+<tr><td>No qualified professional</td><td>Choose another service or contact merchant.</td></tr>
+<tr><td>No slots</td><td>Nearby dates, next available or any professional.</td></tr>
+<tr><td>Load failure</td><td>Retry while retaining the merchant link.</td></tr>
+<tr><td>Submission failure</td><td>Specific retry or return path; retain all safe form state.</td></tr>
+<tr><td>Unknown submission</td><td>Check/reconcile before allowing another confirm.</td></tr>
+<tr><td>Missing image</td><td>Neutral branded fallback.</td></tr>
+</tbody></table>
+<p>Use <code>BookingStateScreen</code>, <code>BookingEmptyState</code> and centralised <code>bookingMessages.ts</code> to prevent inconsistent wording.</p>
+</section><section id="responsive"><span class="section-number">14 · Desktop, tablet and mobile layouts</span>
+<h2>Mobile is primary; desktop adds context.</h2>
+<table><thead><tr><th>Viewport</th><th>Layout</th><th>Primary behavior</th></tr></thead><tbody>
+<tr><td>320–430</td><td>Single-column storefront and staged selections</td><td>Sticky bottom action with selected summary and safe-area support.</td></tr>
+<tr><td>768</td><td>Wider content; summary may become sheet or side panel</td><td>Keep merchant identity and step context visible.</td></tr>
+<tr><td>1024+</td><td>Main discovery/journey column plus persistent summary rail</td><td>Avoid narrow mobile card floating in empty desktop space.</td></tr>
+<tr><td>1440+</td><td>Controlled max width and balanced columns</td><td>Do not expand card size merely to fill width.</td></tr>
+</tbody></table>
+<ul class="clean-list"><li>Cover/masthead never blocks service discovery.</li><li>Category tabs can scroll locally only when necessary.</li><li>Calendar and details forms remain within viewport width on iOS.</li><li>Summary rail is sticky within the content region, not fixed over the page.</li><li><code>BookingStickyAction.tsx</code> governs mobile CTA and selected context.</li></ul>
+</section><section id="theming"><span class="section-number">15 · Merchant theming and Bookglow governance</span>
+<h2>Merchant personality without broken accessibility.</h2>
+<table><thead><tr><th>Merchant controls</th><th>Bookglow controls</th></tr></thead><tbody>
+<tr><td>Cover, logo, business description, contact, service/staff images and a validated accent.</td><td>Layout, typography hierarchy, spacing, interaction, states, focus, contrast, status semantics and booking safety.</td></tr>
+</tbody></table>
+<ul class="clean-list"><li>One accent colour is normalised to accessible variants.</li><li>Merchant imagery has fallback, crop and aspect-ratio rules.</li><li>Merchant colour never changes success, warning or error meaning.</li><li>Powered by Bookglow remains subtle but present.</li></ul>
+</section><section id="accessibility"><span class="section-number">16 · Accessibility and trust</span>
+<h2>A booking flow must work without perfect vision, precision or connectivity.</h2>
+<ul class="clean-list"><li>WCAG 2.2 AA colour contrast and focus visibility.</li><li>44 px touch targets for primary controls and time slots.</li><li>Semantic buttons, inputs, headings and progress labels.</li><li>Screen-reader announcements for selection, loading and booking result.</li><li>Reduced-motion support.</li><li>Error text is associated with the correct field.</li><li>Time, date, currency and phone formats are understandable in the Malaysia launch context.</li><li>Back navigation and browser refresh do not produce unsafe duplicate actions.</li></ul>
+</section><section id="components"><span class="section-number">17 · Current and target component system</span>
+<h2>Complete the current component extraction around the live flow.</h2>
+<div class="file-map">
+<div class="file-row"><code>BookingMerchantHeader.tsx</code><p>Merchant masthead, identity and actions.</p><span class="status-now">Audit</span></div>
+<div class="file-row"><code>BookingServiceCard.tsx</code><p>Compact service discovery and selection.</p><span class="status-now">Audit</span></div>
+<div class="file-row"><code>BookingStickyAction.tsx</code><p>Mobile summary and progression action.</p><span class="status-now">Audit</span></div>
+<div class="file-row"><code>BookingStateScreen.tsx</code><p>Full-route loading/error/inactive states.</p><span class="status-now">Unify</span></div>
+<div class="file-row"><code>BookingEmptyState.tsx</code><p>Section-level empty states.</p><span class="status-now">Unify</span></div>
+<div class="file-row"><code>bookingMessages.ts</code><p>Central customer-safe wording.</p><span class="status-now">Expand</span></div>
+<div class="file-row"><code>BookingPage.tsx</code><p>Current flow state, API orchestration and remaining presentation.</p><span class="status-next">Extract UI only</span></div>
+<div class="file-row"><code>Suggested: ProfessionalOption</code><p>Any available and named professional card/row.</p><span class="status-next">Add if absent</span></div>
+<div class="file-row"><code>Suggested: DateStrip / TimeGrid</code><p>Reusable availability presentation.</p><span class="status-next">Add if absent</span></div>
+<div class="file-row"><code>Suggested: BookingSummary / ReviewPanel</code><p>Persistent selected context and final review.</p><span class="status-next">Add if absent</span></div>
+<div class="file-row"><code>Suggested: ConfirmationPanel</code><p>Appointment proof and aftercare.</p><span class="status-next">Add if absent</span></div>
+</div>
+<p class="small">Suggested names are conceptual. Claude must first inspect the latest <code>BookingPage.tsx</code> before adding files or duplicating existing local components.</p>
+</section><section id="logic"><span class="section-number">18 · Logic preservation and backend gates</span>
+<h2>Visual progress must not hide production-safety gaps.</h2>
+<table><thead><tr><th>Preserve during UI phase</th><th>Production backend gate later</th></tr></thead><tbody>
+<tr><td>Current outlet loading and booking-path resolution.</td><td>Reliable public outlet/service/staff contract.</td></tr>
+<tr><td>Current availability API boundary.</td><td>Qualified staff availability and correct outlet/staff overlap checks.</td></tr>
+<tr><td>Current booking selection and form state.</td><td>Atomic slot recheck and appointment creation.</td></tr>
+<tr><td>Current booking submission handler.</td><td>Idempotency and unknown-result reconciliation.</td></tr>
+<tr><td>Current authentication return flow.</td><td>Secure manage token, cancellation and rescheduling.</td></tr>
+</tbody></table>
+<div class="warning">Do not modify Firebase Functions, database schema or Supabase SQL during the booking UI implementation unless a separately approved backend task begins.</div>
+</section><section id="analytics"><span class="section-number">19 · Booking funnel measurement</span>
+<h2>Measure where customers lose confidence.</h2>
+<table><thead><tr><th>Stage</th><th>Events</th></tr></thead><tbody>
+<tr><td>Merchant load</td><td>Success, not found, inactive, load failure.</td></tr>
+<tr><td>Service</td><td>Category/search, service view/select.</td></tr>
+<tr><td>Professional</td><td>Any vs named professional selection.</td></tr>
+<tr><td>Availability</td><td>Date view, slot view/select, no availability.</td></tr>
+<tr><td>Details</td><td>Form start, validation issue, auth entry/return.</td></tr>
+<tr><td>Confirm</td><td>Review, submit, success, known failure, conflict, unknown result.</td></tr>
+</tbody></table>
+<p>Analytics must not collect sensitive notes or unnecessary personal details. Merchant reporting and platform funnel analytics remain distinct.</p>
+</section><section id="verification"><span class="section-number">20 · Booking verification matrix</span>
+<h2>Approval requires the full journey, not isolated screenshots.</h2>
+<table><thead><tr><th>Layer</th><th>Required cases</th></tr></thead><tbody>
+<tr><td>Merchant data</td><td>Valid slug/ID, not found, inactive, missing images, no services.</td></tr>
+<tr><td>Services</td><td>Many categories, long names, price variants, unavailable service.</td></tr>
+<tr><td>Professionals</td><td>Any available, one staff, many staff, no qualified staff.</td></tr>
+<tr><td>Availability</td><td>Many slots, no slots, loading, API failure and conflict after review.</td></tr>
+<tr><td>Details</td><td>Keyboard, validation, returning user and auth round trip.</td></tr>
+<tr><td>Submission</td><td>Success, known failure, unknown result and duplicate-click protection.</td></tr>
+<tr><td>Responsive</td><td>320, 375, 430, 768, 1024 and 1440 widths.</td></tr>
+<tr><td>Accessibility</td><td>Keyboard, focus, labels, announcements, contrast and reduced motion.</td></tr>
+</tbody></table>
+</section><section id="sequence"><span class="section-number">21 · Customer booking implementation sequence</span>
+<h2>Finish the live journey in reviewable stages.</h2>
+<div class="card" style="padding:0">
+<div class="phase"><span class="phase-id">C0</span><div><h3>Audit latest BookingPage</h3><p>Map state, API calls, handlers and existing extracted components.</p></div><span class="phase-gate">Logic lock</span></div>
+<div class="phase"><span class="phase-id">C1</span><div><h3>Storefront and services</h3><p>Merchant masthead, categories, dense services and governed route states.</p></div><span class="phase-gate">Visual review</span></div>
+<div class="phase"><span class="phase-id">C2</span><div><h3>Professional and availability</h3><p>Any/named professional, date strip, calendar, slots and alternatives.</p></div><span class="phase-gate">Selection regression</span></div>
+<div class="phase"><span class="phase-id">C3</span><div><h3>Details and review</h3><p>Customer form, auth return, persistent summary and edit behavior.</p></div><span class="phase-gate">State retention</span></div>
+<div class="phase"><span class="phase-id">C4</span><div><h3>Confirmation and states</h3><p>Proof, next actions, messages and safe submission feedback.</p></div><span class="phase-gate">E2E UI pass</span></div>
+<div class="phase"><span class="phase-id">C5</span><div><h3>Responsive and accessibility</h3><p>Phone/tablet/desktop, keyboard, focus and reduced motion.</p></div><span class="phase-gate">UI acceptance</span></div>
+<div class="phase"><span class="phase-id">C6</span><div><h3>Production booking backend</h3><p>Atomic booking, idempotency, qualified assignment and management.</p></div><span class="phase-gate">Production trust</span></div>
+</div>
+</section><section id="done"><span class="section-number">22 · Book 3 completion definition</span>
+<h2>The booking upgrade is complete when customers can finish confidently on any supported device.</h2>
+<ul class="clean-list"><li>The live <code>/book/:bookingPath</code> route is the only canonical booking journey.</li><li>Merchant context remains visible without delaying service discovery.</li><li>Service, professional, date/time, details, review and confirmation are coherent.</li><li>Mobile sticky action and desktop summary always reflect current valid selections.</li><li>Backward editing preserves compatible data and clears incompatible dependencies.</li><li>All loading, empty, inactive, conflict and failure states have safe recovery.</li><li>Customer auth returns to the same merchant journey.</li><li>No marketplace is introduced.</li><li>Firebase behavior is preserved during UI work; Supabase remains a later migration.</li></ul>
+</section>
+<div class="footer">
+  <span>Bookglow Books 1–3 · Upgrade Blueprint</span>
+  <span>17 July 2026</span>
+</div>
+</div>
+</main>
+</div></div>
+</body>
+</html>

@@ -1,3 +1,6 @@
+import type { StaffPermissions, StaffWeeklyHours } from './utils/staffExtras';
+
+export type { StaffPermissions, StaffWeeklyHours, StaffDayHours, StaffWeekday } from './utils/staffExtras';
 
 export enum TransactionType {
   SALE = 'SALE',
@@ -83,6 +86,10 @@ export interface Staff {
   photoURL?: string; // Download URL (same as profilePicture; stored for compatibility)
   /** List of service IDs this staff member is qualified to perform. If omitted/empty, treated as qualified for all services. */
   qualifiedServices?: string[];
+  /** Per-day working hours. Omitted/null = not configured. */
+  weeklyHours?: StaffWeeklyHours;
+  /** Capability flags for this staff profile (intent; portal locks still apply until user↔staff link). */
+  permissions?: StaffPermissions;
 }
 
 export interface Client {
@@ -129,7 +136,11 @@ export interface Appointment {
   sourceSaleId?: string;
   /** Optional: Same as sourceSaleId; stored in bookings collection for triggers and queries */
   saleId?: string;
+<<<<<<< HEAD
   /** Optional: origin marker (e.g. setmore sync writes "setmore") */
+=======
+  /** Optional: origin marker for imported/external appointments */
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
   source?: string;
 }
 

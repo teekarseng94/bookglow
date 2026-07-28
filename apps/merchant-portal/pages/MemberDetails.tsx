@@ -15,7 +15,11 @@ import {
   MemberHistorySection,
   MemberSummary,
 } from '../components/members';
+<<<<<<< HEAD
 import { Button } from '../components/ui/Button';
+=======
+import { Button, ConfirmationDialog, ModalLoadingFallback } from '../components/ui';
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 
 // Lazy load modals to avoid circular dependency
 const PointsHistoryModal = lazy(() => import('../components/PointsHistoryModal'));
@@ -373,15 +377,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
 
             {/* Sale detail side modal – visible directly from Sales view */}
             {selectedSale && client && (
-              <Suspense
-                fallback={
-                  <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center">
-                    <div className="bg-white rounded-2xl p-8">
-                      <div className="w-8 h-8 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
-                    </div>
-                  </div>
-                }
-              >
+              <Suspense fallback={<ModalLoadingFallback />}>
                 <TransactionDetailModal
                   transaction={selectedSale}
                   client={client}
@@ -646,54 +642,36 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
         <span className="sr-only">Actions</span>
       </MemberActionBar>
 
-      {/* Delete confirmation modal */}
-      {showDeleteConfirm && client && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-sm p-6 animate-fadeIn">
-            <h3 className="text-lg font-bold text-slate-800 mb-2">Delete Member</h3>
-            <p className="text-slate-600 text-sm mb-4">
-              Permanently delete <strong>{client.name}</strong>? This cannot be undone. Sales and appointment history will remain, but the member profile will be removed.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={async () => {
-                  setDeleteInProgress(true);
-                  try {
-                    await onDeleteClient(client.id);
-                    setShowDeleteConfirm(false);
-                    navigate('/member', { replace: true });
-                  } catch (err: any) {
-                    alert(err.message || 'Failed to delete member.');
-                  } finally {
-                    setDeleteInProgress(false);
-                  }
-                }}
-                disabled={deleteInProgress}
-                className="flex-1 py-2.5 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 disabled:opacity-50"
-              >
-                {deleteInProgress ? 'Deleting...' : 'Delete'}
-              </button>
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                disabled={deleteInProgress}
-                className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmationDialog
+        open={showDeleteConfirm && !!client}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={async () => {
+          if (!client) return;
+          setDeleteInProgress(true);
+          try {
+            await onDeleteClient(client.id);
+            setShowDeleteConfirm(false);
+            navigate('/member', { replace: true });
+          } catch (err: any) {
+            alert(err.message || 'Failed to delete member.');
+          } finally {
+            setDeleteInProgress(false);
+          }
+        }}
+        title="Delete Member"
+        description={
+          client
+            ? `Permanently delete ${client.name}? This cannot be undone. Sales and appointment history will remain, but the member profile will be removed.`
+            : undefined
+        }
+        confirmLabel="Delete"
+        tone="danger"
+        busy={deleteInProgress}
+      />
 
       {/* Points History Modal - Loaded dynamically to avoid circular dependency */}
       {showPointsModal && client && (
-        <Suspense fallback={
-          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center">
-            <div className="bg-white rounded-2xl p-8">
-              <div className="w-8 h-8 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
-            </div>
-          </div>
-        }>
+        <Suspense fallback={<ModalLoadingFallback />}>
           <PointsHistoryModal
             clientId={client.id}
             outletID={client.outletID}
@@ -706,13 +684,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
 
       {/* Credit Wallet Modal */}
       {showCreditModal && client && (
-        <Suspense fallback={
-          <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center">
-            <div className="bg-white rounded-2xl p-8">
-              <div className="w-8 h-8 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
-            </div>
-          </div>
-        }>
+        <Suspense fallback={<ModalLoadingFallback />}>
           <CreditWalletModal
             clientId={client.id}
             outletID={client.outletID}
@@ -729,15 +701,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
 
       {/* Outstanding History Modal */}
       {showOutstandingModal && client && (
-        <Suspense
-          fallback={
-            <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center">
-              <div className="bg-white rounded-2xl p-8">
-                <div className="w-8 h-8 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
-              </div>
-            </div>
-          }
-        >
+        <Suspense fallback={<ModalLoadingFallback />}>
           <OutstandingHistoryModal
             clientId={client.id}
             outletID={client.outletID}
@@ -750,15 +714,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
 
       {/* Sale detail side modal (transaction detail & void) */}
       {selectedSale && client && (
-        <Suspense
-          fallback={
-            <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center">
-              <div className="bg-white rounded-2xl p-8">
-                <div className="w-8 h-8 border-2 border-teal-600 border-t-transparent rounded-full animate-spin" />
-              </div>
-            </div>
-          }
-        >
+        <Suspense fallback={<ModalLoadingFallback />}>
           <TransactionDetailModal
             transaction={selectedSale}
             client={client}

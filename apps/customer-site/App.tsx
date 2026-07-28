@@ -1,17 +1,136 @@
 import React, { useState, useEffect } from 'react';
-import { Logo, NAV_ITEMS, PRIMARY_GREEN } from './constants';
+import { Logo, NAV_ITEMS, NAV_ITEMS_WITH_CHEVRON, PRIMARY_GREEN } from './constants';
 import { Button } from './components/Button';
 import { FloatingScreens } from './components/FloatingScreens';
 import { ProductPreviewPanel } from './components/ProductPreviewPanel';
+<<<<<<< HEAD
 import { register, getAuthErrorMessage } from './services/authService';
+=======
+import PricingHero from './components/pricing/PricingHero';
+import { LANDING_PRICING_PLANS } from './components/pricing/pricingData';
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 
 type ViewType = 'landing' | 'pricing' | 'integrations';
 
-const Navbar: React.FC<{ 
-  onNavigate: (view: ViewType) => void, 
-  currentView: ViewType 
+const TRUST_LOGOS = [
+  'The Face Place',
+  'IKIRVANA',
+  'ZENITH',
+  'LUSH LAB',
+  'CÉLESTE',
+  'GlowHaus',
+];
+
+const VALUE_CARDS = [
+  {
+    title: 'All-in-one platform',
+    description: 'Bookings, schedule, customers, and payments in one workspace.',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Grow your revenue',
+    description: 'Fill more slots with online booking and clearer follow-up.',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Save time daily',
+    description: 'Automate reminders and keep the front desk organised.',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Understand your business',
+    description: 'See sales, appointments, and customer activity at a glance.',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      </svg>
+    ),
+  },
+];
+
+const FEATURE_ITEMS = [
+  {
+    title: 'Online Booking 24/7',
+    description: 'Let customers book anytime from your public page.',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Smart Schedule',
+    description: 'Coordinate staff and appointments in one calendar.',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Client Management',
+    description: 'Keep member profiles, history, and notes together.',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Automated Reminders',
+    description: 'Cut no-shows with timely SMS and email nudges.',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Payments & POS',
+    description: 'Take payments at the counter and keep sales tidy.',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Reports & Insights',
+    description: 'Track revenue and daily performance with clear reports.',
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    ),
+  },
+];
+
+const PRICING_PLANS = LANDING_PRICING_PLANS;
+
+const Chevron = () => (
+  <svg className="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+  </svg>
+);
+
+const Navbar: React.FC<{
+  onNavigate: (view: ViewType) => void;
+  currentView: ViewType;
 }> = ({ onNavigate, currentView }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   const handleScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
     if (href === '#pricing') {
@@ -31,7 +150,7 @@ const Navbar: React.FC<{
         if (elem) {
           window.scrollTo({
             top: elem.offsetTop - 80,
-            behavior: 'smooth'
+            behavior: 'smooth',
           });
         }
       }, 100);
@@ -41,44 +160,40 @@ const Navbar: React.FC<{
       if (elem) {
         window.scrollTo({
           top: elem.offsetTop - 80,
-          behavior: 'smooth'
+          behavior: 'smooth',
         });
       }
     }
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 transition-colors">
-      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-        <div className="flex items-center gap-12">
-          <button onClick={() => onNavigate('landing')} className="hover:opacity-80 transition-opacity">
-            <Logo />
-          </button>
-          <div className="hidden md:flex items-center gap-8">
-            {NAV_ITEMS.map((item) => (
-              <a 
-                key={item.label} 
-                href={item.href} 
-                onClick={(e) => handleScroll(e, item.href)}
-                className={`text-slate-600 hover:text-slate-900 font-medium transition-colors text-sm ${
-                  (item.label === 'Pricing' && currentView === 'pricing') || 
-                  (item.label === 'Integrations' && currentView === 'integrations') 
-                  ? 'border-b-2 border-slate-900 pb-1' : ''
-                }`}
-              >
-                {item.label}
-              </a>
-            ))}
-          </div>
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-100 transition-colors">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-3">
+        <button onClick={() => onNavigate('landing')} className="hover:opacity-80 transition-opacity shrink-0">
+          <Logo />
+        </button>
+
+        <div className="hidden lg:flex items-center gap-7 absolute left-1/2 -translate-x-1/2">
+          {NAV_ITEMS.map((item) => (
+            <a
+              key={item.label}
+              href={item.href}
+              onClick={(e) => handleScroll(e, item.href)}
+              className={`inline-flex items-center gap-1 text-slate-600 hover:text-slate-900 font-medium transition-colors text-sm ${
+                (item.label === 'Pricing' && currentView === 'pricing') ||
+                (item.label === 'Resources' && currentView === 'integrations')
+                  ? 'text-slate-900'
+                  : ''
+              }`}
+            >
+              {item.label}
+              {NAV_ITEMS_WITH_CHEVRON.has(item.label) ? <Chevron /> : null}
+            </a>
+          ))}
         </div>
+
         {/* Desktop actions */}
-        <div className="hidden md:flex items-center gap-8">
-          <a
-            href="tel:+60169929123"
-            className="text-slate-700 font-medium text-sm hover:opacity-80 transition-opacity"
-          >
-            +60 169929123
-          </a>
+        <div className="hidden md:flex items-center gap-5 shrink-0">
           <a
             href="/login"
             target="_blank"
@@ -88,34 +203,41 @@ const Navbar: React.FC<{
             Login
           </a>
           <a href="/signup" className="inline-block">
-            <Button size="sm" className="rounded-md">
-              Start FREE
+            <Button size="sm" className="rounded-lg px-5">
+              Start free
             </Button>
           </a>
         </div>
 
-        {/* Mobile hamburger */}
-        <button
-          type="button"
-          aria-label="Open menu"
-          aria-expanded={mobileMenuOpen}
-          onClick={() => setMobileMenuOpen(true)}
-          className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg hover:bg-slate-50 text-slate-700 border border-slate-100"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
+        {/* Mobile: Log in + hamburger */}
+        <div className="flex md:hidden items-center gap-2 shrink-0">
+          <a
+            href="/login"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-sm text-slate-700 px-2 py-2"
+          >
+            Log in
+          </a>
+          <button
+            type="button"
+            aria-label="Open menu"
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen(true)}
+            className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-white"
+            style={{ backgroundColor: PRIMARY_GREEN }}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        </div>
       </div>
 
-      {/* Mobile slide-out menu */}
       {mobileMenuOpen && (
         <div className="md:hidden fixed inset-0 z-[60]">
-          <div
-            className="absolute inset-0 bg-slate-900/40"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-          <div className="absolute right-0 top-0 h-full w-80 bg-white border-l border-slate-100 shadow-xl p-6 flex flex-col">
+          <div className="absolute inset-0 bg-slate-900/40" onClick={() => setMobileMenuOpen(false)} />
+          <div className="absolute right-0 top-0 h-full w-[min(100%,20rem)] bg-white border-l border-slate-100 shadow-xl p-6 flex flex-col">
             <div className="flex items-center justify-between mb-6">
               <Logo />
               <button
@@ -139,7 +261,7 @@ const Navbar: React.FC<{
                     handleScroll(e, item.href);
                     setMobileMenuOpen(false);
                   }}
-                  className={`text-slate-700 font-medium transition-colors hover:text-slate-900`}
+                  className="text-slate-700 font-medium transition-colors hover:text-slate-900"
                 >
                   {item.label}
                 </a>
@@ -153,11 +275,11 @@ const Navbar: React.FC<{
                 rel="noopener noreferrer"
                 className="text-center px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 text-slate-800 font-medium hover:bg-slate-100 transition-colors"
               >
-                Login
+                Log in
               </a>
               <a href="/signup" className="text-center">
-                <Button size="lg" className="w-full rounded-md">
-                  Start FREE
+                <Button size="lg" className="w-full rounded-lg">
+                  Start free
                 </Button>
               </a>
             </div>
@@ -170,13 +292,28 @@ const Navbar: React.FC<{
 
 const IntegrationsView: React.FC = () => {
   const categories = [
-    "All Integrations", "Social media", "Payment", "Website booking", 
-    "Calendar sync", "Business", "Video meeting", "Marketing", "Sales and CRM"
+    'All Integrations',
+    'Social media',
+    'Payment',
+    'Website booking',
+    'Calendar sync',
+    'Business',
+    'Video meeting',
+    'Marketing',
+    'Sales and CRM',
   ];
 
-  const IntegrationCard = ({ icon, title, description }: { icon: string, title: string, description: string }) => (
+  const IntegrationCard = ({
+    icon,
+    title,
+    description,
+  }: {
+    icon: string;
+    title: string;
+    description: string;
+  }) => (
     <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-50 flex items-start gap-5 hover:shadow-md transition-all cursor-pointer">
-      <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 shadow-inner bg-slate-50`}>
+      <div className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 shadow-inner bg-slate-50">
         <img src={icon} alt={title} className="w-8 h-8 object-contain" />
       </div>
       <div>
@@ -190,33 +327,46 @@ const IntegrationsView: React.FC = () => {
     <div className="pt-24 pb-20 bg-[#f8fafc] min-h-screen">
       <section className="max-w-7xl mx-auto px-6 pt-16 pb-24 grid lg:grid-cols-2 gap-16 items-center">
         <div>
-          <h1 className="text-[52px] font-bold leading-tight mb-8 text-slate-900">
-            Integrate your favorite apps
-          </h1>
+          <h1 className="text-[52px] font-bold leading-tight mb-8 text-slate-900">Integrate your favorite apps</h1>
           <p className="text-slate-600 mb-6 leading-relaxed max-w-lg font-medium">
             Create connections that last by personalizing how you engage with your audience and vice versa.
           </p>
           <p className="text-slate-600 mb-10 leading-relaxed max-w-lg">
+<<<<<<< HEAD
             Using Bookglow's integrations, you can automate daily processes, book more appointments and offer top-tier customer service.
+=======
+            Using Bookglow&apos;s integrations, you can automate daily processes, book more appointments and offer top-tier
+            customer service.
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
           </p>
-          <Button size="lg" className="rounded-md px-10">
-            Get started for FREE
-          </Button>
+          <a href="/signup">
+            <Button size="lg" className="rounded-md px-10">
+              Get started for FREE
+            </Button>
+          </a>
         </div>
         <div className="relative h-[450px]">
           <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 gap-6 opacity-80">
             {[
-              "https://upload.wikimedia.org/wikipedia/commons/3/33/Square_Inc._logo.svg",
-              "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_Color_Icon.svg",
-              "https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg",
-              "https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg",
-              "https://upload.wikimedia.org/wikipedia/commons/d/df/Shopping_Cart_Icon.svg",
-              "https://upload.wikimedia.org/wikipedia/commons/b/b1/Wix.com_Logo.svg",
-              "https://upload.wikimedia.org/wikipedia/commons/c/c5/Shopify_logo2.svg",
-              "https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg",
-              "https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg"
+              'https://upload.wikimedia.org/wikipedia/commons/3/33/Square_Inc._logo.svg',
+              'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_Color_Icon.svg',
+              'https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg',
+              'https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg',
+              'https://upload.wikimedia.org/wikipedia/commons/d/df/Shopping_Cart_Icon.svg',
+              'https://upload.wikimedia.org/wikipedia/commons/b/b1/Wix.com_Logo.svg',
+              'https://upload.wikimedia.org/wikipedia/commons/c/c5/Shopify_logo2.svg',
+              'https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg',
+              'https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg',
             ].map((icon, i) => (
+<<<<<<< HEAD
               <div key={i} className="bg-white p-4 rounded-xl shadow-sm border border-slate-50 flex items-center justify-center" style={{ animationDelay: `${i * 150}ms` }}>
+=======
+              <div
+                key={i}
+                className="bg-white p-4 rounded-xl shadow-sm border border-slate-50 flex items-center justify-center"
+                style={{ animationDelay: `${i * 150}ms` }}
+              >
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
                 <img src={icon} className="h-8 w-8 object-contain grayscale hover:grayscale-0 transition-all" alt="App" />
               </div>
             ))}
@@ -239,18 +389,20 @@ const IntegrationsView: React.FC = () => {
         <div className="bg-white p-2 rounded-xl shadow-md border border-slate-100 flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap gap-2">
             {categories.map((cat, i) => (
-              <button 
-                key={i} 
-                className={`px-5 py-2.5 rounded-lg text-xs font-bold transition-colors ${i === 0 ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
+              <button
+                key={i}
+                className={`px-5 py-2.5 rounded-lg text-xs font-bold transition-colors ${
+                  i === 0 ? 'bg-slate-100 text-slate-900' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                }`}
               >
                 {cat}
               </button>
             ))}
           </div>
           <div className="relative flex-1 max-w-xs">
-            <input 
-              type="text" 
-              placeholder="Search for an integration" 
+            <input
+              type="text"
+              placeholder="Search for an integration"
               className="w-full pl-4 pr-10 py-2.5 bg-slate-50 rounded-lg text-xs outline-none border border-transparent focus:border-slate-200"
             />
             <svg className="absolute right-3 top-2.5 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -262,23 +414,25 @@ const IntegrationsView: React.FC = () => {
 
       <section className="max-w-7xl mx-auto px-6 mb-32">
         <div className="text-center mb-16">
-          <h2 className="text-[32px] font-bold mb-4" style={{ color: PRIMARY_GREEN }}>Social media integrations</h2>
+          <h2 className="text-[32px] font-bold mb-4" style={{ color: PRIMARY_GREEN }}>
+            Social media integrations
+          </h2>
           <p className="text-slate-600 text-sm max-w-lg mx-auto leading-relaxed">
             Enable your online fans to book appointments without leaving their social apps.
           </p>
         </div>
         <div className="grid md:grid-cols-3 gap-8">
-          <IntegrationCard 
+          <IntegrationCard
             icon="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png"
             title="Facebook"
             description="Get booked directly from your Facebook business profile."
           />
-          <IntegrationCard 
+          <IntegrationCard
             icon="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png"
             title="Instagram"
             description="Encourage new bookings by streaming posts to your Booking Page."
           />
-          <IntegrationCard 
+          <IntegrationCard
             icon="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png"
             title="Instagram booking"
             description="Let customers book appointments from your Instagram profile and ads."
@@ -288,28 +442,30 @@ const IntegrationsView: React.FC = () => {
 
       <section className="max-w-7xl mx-auto px-6 mb-32">
         <div className="text-center mb-16">
-          <h2 className="text-[32px] font-bold mb-4" style={{ color: PRIMARY_GREEN }}>Payment integrations</h2>
+          <h2 className="text-[32px] font-bold mb-4" style={{ color: PRIMARY_GREEN }}>
+            Payment integrations
+          </h2>
           <p className="text-slate-600 text-sm max-w-lg mx-auto leading-relaxed">
-            Accept secure online payments in advance, for any of your services. Less invoicing, more convenience. ⏳
+            Accept secure online payments in advance, for any of your services. Less invoicing, more convenience.
           </p>
         </div>
         <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-8">
-          <IntegrationCard 
+          <IntegrationCard
             icon="https://upload.wikimedia.org/wikipedia/commons/3/33/Square_Inc._logo.svg"
             title="Square"
             description="Get paid for your services with Square, Cash App and more."
           />
-          <IntegrationCard 
+          <IntegrationCard
             icon="https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg"
             title="Stripe"
             description="Collect debit or credit card payments on booking."
           />
-          <IntegrationCard 
+          <IntegrationCard
             icon="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg"
             title="PayPal"
             description="Let your customers pay online via their PayPal wallet."
           />
-          <IntegrationCard 
+          <IntegrationCard
             icon="https://upload.wikimedia.org/wikipedia/commons/4/4b/LawPay_Logo.svg"
             title="LawPay"
             description="Enable leads and clients to pay in advance through your Booking Page."
@@ -320,6 +476,7 @@ const IntegrationsView: React.FC = () => {
   );
 };
 
+<<<<<<< HEAD
 const PricingView: React.FC = () => {
   const [isAnnual, setIsAnnual] = useState(true);
 
@@ -498,36 +655,36 @@ const PricingView: React.FC = () => {
     </div>
   );
 };
+=======
+const PricingView: React.FC = () => <PricingHero />;
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 
 const Hero: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-    try {
-      await register({ email, password });
-    } catch (err) {
-      setError(getAuthErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <section id="learn" className="pt-32 pb-20 overflow-x-hidden scroll-mt-20">
-      <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center">
-        <div className="max-w-2xl">
-          <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-6xl xl:text-7xl font-bold tracking-tight mb-8 leading-[1.08] text-slate-900 text-balance">
-            Book your <br /> appointment
+    <section id="learn" className="pt-24 sm:pt-28 lg:pt-32 pb-12 sm:pb-16 lg:pb-20 overflow-x-hidden scroll-mt-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+        <div className="max-w-2xl mx-auto lg:mx-0 text-center lg:text-left">
+          <div className="inline-flex items-center rounded-full bg-[var(--brand-soft)] text-[var(--brand)] text-xs sm:text-sm font-semibold px-3.5 py-1.5 mb-5 sm:mb-6">
+            Built for beauty &amp; wellness businesses in Malaysia 🇲🇾
+          </div>
+
+          <h1 className="text-[1.75rem] leading-[1.15] sm:text-4xl md:text-5xl lg:text-[3.25rem] font-bold tracking-tight mb-5 sm:mb-6 text-slate-900 text-balance">
+            Run your appointments, schedule, customers, and payments{' '}
+            <span
+              className="bg-clip-text text-transparent"
+              style={{
+                backgroundImage: 'linear-gradient(90deg, #7656D6 0%, #6366F1 100%)',
+              }}
+            >
+              in one place
+            </span>
           </h1>
-          <p className="text-xl text-slate-500 mb-12 leading-relaxed max-w-lg">
-            Organize your business with 24/7 automated online booking, reminders, payments, and more.
+
+          <p className="text-base sm:text-lg text-slate-500 mb-7 sm:mb-8 leading-relaxed max-w-xl mx-auto lg:mx-0">
+            Bookglow is the all-in-one platform that helps you save time, reduce no-shows, and grow your business with
+            confidence.
           </p>
+<<<<<<< HEAD
           
           <form
             onSubmit={handleSignUp}
@@ -568,10 +725,76 @@ const Hero: React.FC = () => {
                 ))}
              </div>
              <p className="text-sm text-slate-600 font-medium">Built for salons, spas, and wellness teams</p>
+=======
+
+          <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-8 text-left max-w-xl mx-auto lg:mx-0">
+            {[
+              {
+                title: '24/7 Online Booking',
+                sub: 'Never miss a booking',
+                icon: (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                ),
+              },
+              {
+                title: 'Smart Reminders',
+                sub: 'Reduce no-shows',
+                icon: (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                ),
+              },
+              {
+                title: 'Secure Payments',
+                sub: 'Get paid faster',
+                icon: (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                ),
+              },
+            ].map((item) => (
+              <div key={item.title} className="flex flex-col items-start gap-2">
+                <span className="inline-flex w-8 h-8 rounded-lg bg-[var(--brand-soft)] text-[var(--brand)] items-center justify-center shrink-0">
+                  {item.icon}
+                </span>
+                <div>
+                  <p className="text-[11px] sm:text-sm font-bold text-slate-800 leading-snug">{item.title}</p>
+                  <p className="text-[10px] sm:text-xs text-slate-500 leading-snug">{item.sub}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start mb-5">
+            <a href="/signup" className="w-full sm:w-auto">
+              <Button size="lg" className="w-full sm:w-auto rounded-xl px-8">
+                Start free →
+              </Button>
+            </a>
+            <a
+              href="tel:+60169929123"
+              className="w-full sm:w-auto inline-flex items-center justify-center font-semibold rounded-xl px-8 py-4 text-lg border-2 transition-all duration-200 hover:bg-[var(--brand-soft)]"
+              style={{ borderColor: PRIMARY_GREEN, color: PRIMARY_GREEN }}
+            >
+              Book a demo
+            </a>
+          </div>
+
+          <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center lg:justify-start gap-2 sm:gap-4 text-xs sm:text-sm text-slate-500">
+            <span>✓ 14-day free trial</span>
+            <span className="hidden sm:inline text-slate-300">•</span>
+            <span>✓ No credit card required</span>
+            <span className="hidden sm:inline text-slate-300">•</span>
+            <span>✓ Setup in minutes</span>
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
           </div>
         </div>
 
-        <div className="relative">
+        <div className="relative w-full max-w-xl mx-auto lg:max-w-none">
           <FloatingScreens />
         </div>
       </div>
@@ -579,6 +802,7 @@ const Hero: React.FC = () => {
   );
 };
 
+<<<<<<< HEAD
 const Testimonials: React.FC = () => {
   const testimonials = [
     {
@@ -628,6 +852,150 @@ const Testimonials: React.FC = () => {
               <p className="text-slate-600 leading-relaxed text-sm italic">&ldquo;{t.quote}&rdquo;</p>
             </div>
           ))}
+=======
+const TrustStrip: React.FC = () => (
+  <section className="py-10 sm:py-14 border-y border-slate-100 bg-white/60 scroll-mt-20" id="industries">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center">
+      <p className="text-sm text-slate-500 mb-6 sm:mb-8">Trusted by beauty &amp; wellness businesses across Malaysia</p>
+      <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-4 sm:gap-x-12 opacity-50 grayscale">
+        {TRUST_LOGOS.map((name) => (
+          <span key={name} className="text-xs sm:text-sm font-bold tracking-wide text-slate-600 uppercase">
+            {name}
+          </span>
+        ))}
+      </div>
+    </div>
+  </section>
+);
+
+const ValueCards: React.FC = () => (
+  <section className="py-12 sm:py-16 lg:py-20">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        {VALUE_CARDS.map((card) => (
+          <div
+            key={card.title}
+            className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-[0_8px_24px_rgba(39,25,42,0.04)]"
+          >
+            <div className="w-10 h-10 rounded-xl bg-[var(--brand-soft)] text-[var(--brand)] flex items-center justify-center mb-4">
+              {card.icon}
+            </div>
+            <h3 className="text-base font-bold text-slate-900 mb-2">{card.title}</h3>
+            <p className="text-sm text-slate-500 leading-relaxed">{card.description}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+);
+
+const FeaturesAndPricing: React.FC<{ onExplorePricing: () => void }> = ({ onExplorePricing }) => {
+  const [isAnnual, setIsAnnual] = useState(true);
+
+  return (
+    <section id="features" className="pb-16 sm:pb-24 scroll-mt-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 grid lg:grid-cols-[1.15fr_0.85fr] gap-12 lg:gap-14 items-start">
+        {/* Features */}
+        <div>
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 mb-3 text-balance">
+            Everything you need to run your business.
+          </h2>
+          <p className="text-slate-500 mb-4 max-w-lg">
+            Powerful features designed for beauty &amp; wellness professionals.
+          </p>
+          <a
+            href="#features"
+            className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--brand)] hover:opacity-80 mb-8"
+          >
+            Explore all features →
+          </a>
+
+          <div className="grid grid-cols-2 gap-4 sm:gap-5">
+            {FEATURE_ITEMS.map((item) => (
+              <div key={item.title} className="rounded-xl border border-slate-100 bg-white/80 p-4 sm:p-5">
+                <div className="w-9 h-9 rounded-lg bg-[var(--brand-soft)] text-[var(--brand)] flex items-center justify-center mb-3">
+                  {item.icon}
+                </div>
+                <h3 className="text-sm sm:text-base font-bold text-slate-900 mb-1 leading-snug">{item.title}</h3>
+                <p className="text-xs sm:text-sm text-slate-500 leading-relaxed hidden sm:block">{item.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Pricing preview */}
+        <div id="pricing" className="scroll-mt-24 rounded-2xl border border-slate-100 bg-white p-5 sm:p-7 shadow-[0_18px_48px_rgba(39,25,42,0.06)]">
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">Simple, transparent pricing.</h2>
+          <p className="text-slate-500 mb-6">Start free. Upgrade when you&apos;re ready.</p>
+
+          <div className="flex flex-wrap items-center gap-3 mb-6">
+            <div className="inline-flex items-center rounded-full bg-slate-100 p-1">
+              <button
+                type="button"
+                onClick={() => setIsAnnual(false)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors ${
+                  !isAnnual ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsAnnual(true)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors ${
+                  isAnnual ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'
+                }`}
+              >
+                Annual
+              </button>
+            </div>
+            <span className="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold px-2.5 py-1">
+              Save up to 20%
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-3">
+            {PRICING_PLANS.map((plan) => (
+              <div
+                key={plan.name}
+                className={`relative rounded-xl border p-4 ${
+                  plan.popular
+                    ? 'border-[var(--brand)] bg-[var(--brand-soft)]/40 shadow-sm'
+                    : 'border-slate-200 bg-white'
+                }`}
+              >
+                {plan.popular ? (
+                  <span className="absolute -top-2.5 left-4 rounded-full bg-[var(--brand)] text-white text-[10px] font-bold px-2.5 py-0.5">
+                    Most popular
+                  </span>
+                ) : null}
+                <div className="flex items-end justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">{plan.name}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{plan.blurb}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-xl font-black text-slate-900 tabular-nums">
+                      <span className="text-sm font-bold text-slate-400 mr-0.5">RM</span>
+                      {plan.price}
+                    </p>
+                    <p className="text-[10px] text-slate-400 font-medium">
+                      /month{isAnnual && plan.price > 0 ? ' billed annually' : ''}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={onExplorePricing}
+            className="mt-5 w-full text-center text-sm font-semibold text-[var(--brand)] hover:opacity-80"
+          >
+            View detailed pricing →
+          </button>
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
         </div>
       </div>
     </section>
@@ -648,15 +1016,18 @@ const CookieBanner: React.FC = () => {
     <div className="fixed bottom-0 left-0 right-0 z-[60] p-4 animate-in slide-in-from-bottom duration-500">
       <div className="max-w-7xl mx-auto bg-white shadow-[0_-8px_32px_rgba(0,0,0,0.08)] rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 border border-slate-100">
         <div className="flex items-center gap-3">
-          <span className="text-2xl">🍪</span>
+          <span className="text-2xl" aria-hidden>
+            🍪
+          </span>
           <p className="text-slate-600 text-sm">
-            We want to provide you with the best experience. By using this site, you agree to our <a href="#" className="underline">cookie policy</a>.
+            We want to provide you with the best experience. By using this site, you agree to our{' '}
+            <a href="#" className="underline">
+              cookie policy
+            </a>
+            .
           </p>
         </div>
-        <button 
-          onClick={() => setVisible(false)}
-          className="text-blue-600 font-bold text-sm hover:underline"
-        >
+        <button onClick={() => setVisible(false)} className="text-blue-600 font-bold text-sm hover:underline">
           Got it
         </button>
       </div>
@@ -670,17 +1041,30 @@ const Footer: React.FC = () => {
       <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
         <Logo />
         <div className="flex gap-8 text-sm text-slate-400">
+<<<<<<< HEAD
            <a href="#" className="hover:text-slate-600 transition-colors">Privacy Policy</a>
            <a href="#" className="hover:text-slate-600 transition-colors">Terms of Service</a>
            <a href="#" className="hover:text-slate-600 transition-colors">Cookie Settings</a>
         </div>
         <div className="text-sm text-slate-400">
           © {new Date().getFullYear()} Bookglow Inc. All rights reserved.
+=======
+          <a href="#" className="hover:text-slate-600 transition-colors">
+            Privacy Policy
+          </a>
+          <a href="#" className="hover:text-slate-600 transition-colors">
+            Terms of Service
+          </a>
+          <a href="#" className="hover:text-slate-600 transition-colors">
+            Cookie Settings
+          </a>
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
         </div>
+        <div className="text-sm text-slate-400">© {new Date().getFullYear()} Bookglow Inc. All rights reserved.</div>
       </div>
     </footer>
   );
-}
+};
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewType>('landing');
@@ -689,64 +1073,16 @@ const App: React.FC = () => {
     window.scrollTo(0, 0);
   }, [view]);
 
-  // /book/* is handled by its own route in index.tsx; this App is for landing/marketing only
-
   return (
     <div className="bookglow-public-site min-h-screen gradient-bg transition-colors duration-300">
       <Navbar onNavigate={setView} currentView={view} />
-      
+
       {view === 'landing' && (
         <>
           <Hero />
-          
-          <div id="integrations" className="max-w-7xl mx-auto px-6 py-12 border-y border-slate-50 flex flex-wrap justify-center gap-12 lg:gap-24 opacity-30 grayscale items-center scroll-mt-24">
-             <img src="https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg" className="h-8" alt="Stripe" />
-             <img src="https://upload.wikimedia.org/wikipedia/commons/3/39/PayPal_logo.svg" className="h-8" alt="PayPal" />
-             <img src="https://upload.wikimedia.org/wikipedia/commons/0/01/LinkedIn_Logo.svg" className="h-8" alt="LinkedIn" />
-             <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" className="h-6" alt="Amazon" />
-          </div>
-
-          <section id="features" className="py-24 max-w-7xl mx-auto px-6 scroll-mt-20">
-             <div className="grid md:grid-cols-3 gap-12">
-                <div className="p-8 rounded-2xl hover:bg-slate-50 transition-colors group">
-                   <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-6 text-green-700 transition-colors">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                   </div>
-                   <h3 className="text-xl font-bold mb-4">Auto-Reminders</h3>
-                   <p className="text-slate-500 leading-relaxed">Reduce no-shows by up to 40% with automated text and email reminders sent directly to your clients.</p>
-                </div>
-                <div className="p-8 rounded-2xl hover:bg-slate-50 transition-colors group">
-                   <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-6 text-blue-700 transition-colors">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                   </div>
-                   <h3 className="text-xl font-bold mb-4">Online Payments</h3>
-                   <p className="text-slate-500 leading-relaxed">Securely accept deposits or full payments at the time of booking with integrated Square and Stripe support.</p>
-                </div>
-                <div className="p-8 rounded-2xl hover:bg-slate-50 transition-colors group">
-                   <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-6 text-purple-700 transition-colors">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                   </div>
-                   <h3 className="text-xl font-bold mb-4">Staff Management</h3>
-                   <p className="text-slate-500 leading-relaxed">Coordinate schedules for your entire team with individual logins, permissions, and syncable Google/Outlook calendars.</p>
-                </div>
-             </div>
-          </section>
-
-          <Testimonials />
-
-          <section id="pricing" className="py-24 bg-slate-900 text-white overflow-hidden relative scroll-mt-20">
-             <div className="absolute top-0 right-0 w-1/2 h-full opacity-10 pointer-events-none">
-                <svg viewBox="0 0 100 100" className="w-full h-full"><circle cx="100" cy="50" r="50" fill="white" /></svg>
-             </div>
-             <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
-                <h2 className="text-4xl md:text-5xl font-bold mb-8">Ready to grow your spa?</h2>
-                <p className="text-xl text-slate-400 mb-12 max-w-2xl mx-auto">Join the world's most successful wellness businesses today. Set up takes less than 2 minutes.</p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                   <Button size="lg" variant="primary" className="bg-white !text-slate-900 hover:bg-slate-100">Get Started for Free</Button>
-                   <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10" onClick={() => setView('pricing')}>View Detailed Pricing</Button>
-                </div>
-             </div>
-          </section>
+          <TrustStrip />
+          <ValueCards />
+          <FeaturesAndPricing onExplorePricing={() => setView('pricing')} />
         </>
       )}
 

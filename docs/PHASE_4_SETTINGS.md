@@ -15,7 +15,11 @@
 - Outlet mode, admin simulate, feature locks
 - Voucher redemption PIN (`voucherRedemptionPin`)
 - API key generate / regenerate / hash-only storage / copy / modal (never store raw key)
+<<<<<<< HEAD
 - Setmore / external integrations route link (`/settings/integrations`)
+=======
+- Chatbot API modal entry (`Settings` integrations section)
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 
 ## Presentational additions
 
@@ -41,7 +45,11 @@
 | 4 | `notifications` | Reminder enable / channel / timing |
 | 5 | `receipt-payment` | Payment methods + receipt layout + preview |
 | 6 | `access-permissions` | Outlet mode, admin simulate, feature locks |
+<<<<<<< HEAD
 | 7 | `integrations` | Setmore link + Chatbot API modal entry |
+=======
+| 7 | `integrations` | Chatbot API modal entry |
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 | 8 | `advanced` | Voucher redemption PIN |
 
 ## Layout outcomes

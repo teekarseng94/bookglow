@@ -10,8 +10,22 @@ import {
   MemberRow,
   MemberToolbar,
 } from '../components/members';
+<<<<<<< HEAD
 import { Button } from '../components/ui/Button';
 import { EmptyState } from '../components/ui/EmptyState';
+=======
+import {
+  AppModal,
+  Button,
+  ConfirmationDialog,
+  EmptyState,
+  Field,
+  fieldControlClassName,
+  FormSection,
+  IconButton,
+  ModalFooterActions,
+} from '../components/ui';
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 
 type SortFilter = 'Recent' | 'New' | 'Birthday' | 'Name';
 
@@ -866,614 +880,575 @@ const CRM: React.FC<CRMProps> = ({
       </MemberFilterSheet>
 
       {/* Edit Client Modal */}
-      {showEditClientModal && activeClient && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[80] flex items-center justify-center p-4">
-          <div className="bg-white rounded-[32px] w-full max-w-md shadow-2xl animate-scaleIn overflow-hidden">
-            <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-teal-600 text-white">
-              <h3 className="text-xl font-black">Edit Client Profile</h3>
-              <button onClick={() => setShowEditClientModal(false)} className="p-2 hover:bg-white/10 rounded-xl transition-all">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            <form onSubmit={handleUpdateClientSubmit} className="p-8 space-y-5">
-              <div>
-                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Full Name</label>
-                <input required type="text" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-bold shadow-inner" value={editClientData.name} onChange={e => setEditClientData({ ...editClientData, name: e.target.value })} />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Email</label>
-                  <input type="email" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-medium shadow-inner" value={editClientData.email} onChange={e => setEditClientData({ ...editClientData, email: e.target.value })} />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Phone</label>
-                  <input type="tel" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-medium shadow-inner" value={editClientData.phone} onChange={e => setEditClientData({ ...editClientData, phone: e.target.value })} />
-                </div>
-              </div>
-              <div>
-                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">Internal Notes</label>
-                <textarea rows={4} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 text-sm shadow-inner" value={editClientData.notes} onChange={e => setEditClientData({ ...editClientData, notes: e.target.value })}></textarea>
-              </div>
-              <div className="flex gap-3 pt-4">
-                <button type="button" onClick={() => setShowEditClientModal(false)} className="flex-1 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl">Cancel</button>
-                <button disabled={isSaving} type="submit" className="flex-[2] py-4 bg-teal-600 hover:bg-teal-700 text-white font-black rounded-2xl shadow-xl shadow-teal-100 transition-all">{isSaving ? 'Updating...' : 'Save Changes'}</button>
-              </div>
-            </form>
+      <AppModal
+        open={showEditClientModal && !!activeClient}
+        onClose={() => setShowEditClientModal(false)}
+        title="Edit Client Profile"
+        description="Update contact details and internal notes."
+        size="md"
+        zIndexClass="z-[80]"
+        busy={isSaving}
+        asForm
+        formId="edit-client-form"
+        onSubmit={handleUpdateClientSubmit}
+        footer={
+          <ModalFooterActions>
+            <Button variant="secondary" onClick={() => setShowEditClientModal(false)} disabled={isSaving}>
+              Cancel
+            </Button>
+            <Button type="submit" form="edit-client-form" disabled={isSaving}>
+              {isSaving ? 'Updating…' : 'Save Changes'}
+            </Button>
+          </ModalFooterActions>
+        }
+      >
+        <FormSection>
+          <Field id="edit-client-name" label="Full Name" required>
+            <input
+              id="edit-client-name"
+              required
+              type="text"
+              className={fieldControlClassName}
+              value={editClientData.name}
+              onChange={(e) => setEditClientData({ ...editClientData, name: e.target.value })}
+            />
+          </Field>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <Field id="edit-client-email" label="Email">
+              <input
+                id="edit-client-email"
+                type="email"
+                className={fieldControlClassName}
+                value={editClientData.email}
+                onChange={(e) => setEditClientData({ ...editClientData, email: e.target.value })}
+              />
+            </Field>
+            <Field id="edit-client-phone" label="Phone">
+              <input
+                id="edit-client-phone"
+                type="tel"
+                className={fieldControlClassName}
+                value={editClientData.phone}
+                onChange={(e) => setEditClientData({ ...editClientData, phone: e.target.value })}
+              />
+            </Field>
           </div>
-        </div>
-      )}
+          <Field id="edit-client-notes" label="Internal Notes">
+            <textarea
+              id="edit-client-notes"
+              rows={4}
+              className={`${fieldControlClassName} h-auto py-2`}
+              value={editClientData.notes}
+              onChange={(e) => setEditClientData({ ...editClientData, notes: e.target.value })}
+            />
+          </Field>
+        </FormSection>
+      </AppModal>
 
       {/* Reward Settings Modal */}
-      {showRewardsModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
-          <div className="bg-white rounded-[32px] w-full max-w-2xl shadow-2xl animate-scaleIn overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-900 text-white">
-              <div>
-                <h3 className="text-xl font-black">Loyalty Rewards Program</h3>
-                <p className="text-xs text-slate-400 font-medium">Define point-based gifts and benefits for your clients.</p>
-              </div>
-              <button onClick={() => { setShowRewardsModal(false); setEditingReward(null); }} className="p-2 hover:bg-white/10 rounded-xl transition-all">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-8 grid grid-cols-1 md:grid-cols-2 gap-8 scrollbar-thin">
-              <div className="space-y-6">
-                 <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
-                    <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-4">{editingReward ? 'Edit Reward Item' : 'Create New Reward Item'}</h4>
-                    <form onSubmit={handleSaveReward} className="space-y-4">
-                       <div className="flex gap-4">
-                          <div className="w-16">
-                            <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">Icon</label>
-                            <input type="text" maxLength={2} className="w-full p-3 bg-white border border-slate-200 rounded-xl text-center text-xl shadow-inner outline-none focus:ring-2 focus:ring-teal-500" value={rewardFormData.icon} onChange={e => setRewardFormData({ ...rewardFormData, icon: e.target.value })} />
-                          </div>
-                          <div className="flex-1">
-                            <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">Reward Name</label>
-                            <input required type="text" placeholder="e.g. Free Facial" className="w-full p-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-bold shadow-inner" value={rewardFormData.name} onChange={e => setRewardFormData({ ...rewardFormData, name: e.target.value })} />
-                          </div>
-                       </div>
-                       <div>
-                          <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">Point Cost</label>
-                          <input required type="number" min="1" placeholder="Points required" className="w-full p-3 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-black text-teal-600 shadow-inner" value={rewardFormData.cost || ''} onChange={e => setRewardFormData({ ...rewardFormData, cost: parseInt(e.target.value) || 0 })} />
-                       </div>
-                       <button 
-                         type="submit" 
-                         disabled={isSavingReward}
-                         className={`w-full py-3 text-white font-black rounded-xl shadow-lg shadow-teal-100 transition-all active:scale-95 flex items-center justify-center gap-2 ${
-                           isSavingReward 
-                             ? 'bg-teal-400 cursor-not-allowed' 
-                             : 'bg-teal-600 hover:bg-teal-700'
-                         }`}
-                       >
-                         {isSavingReward ? (
-                           <>
-                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                             <span>Saving...</span>
-                           </>
-                         ) : (
-                           <span>{editingReward ? 'Save Changes' : 'Add to Catalog'}</span>
-                         )}
-                       </button>
-                    </form>
-                 </div>
-              </div>
+      <AppModal
+        open={showRewardsModal}
+        onClose={() => {
+          setShowRewardsModal(false);
+          setEditingReward(null);
+        }}
+        title="Loyalty Rewards Program"
+        description="Define point-based gifts and benefits for your clients."
+        size="lg"
+        zIndexClass="z-[70]"
+        footer={
+          <ModalFooterActions>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowRewardsModal(false);
+                setEditingReward(null);
+              }}
+            >
+              Close
+            </Button>
+          </ModalFooterActions>
+        }
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="rounded-ui-md border border-[var(--line)] bg-[var(--bg-soft)] p-4">
+            <FormSection title={editingReward ? 'Edit Reward Item' : 'Create New Reward Item'}>
+              <form id="reward-form" onSubmit={handleSaveReward} className="space-y-3">
+                <div className="flex gap-3">
+                  <Field id="reward-icon" label="Icon" className="w-16 shrink-0">
+                    <input
+                      id="reward-icon"
+                      type="text"
+                      maxLength={2}
+                      className={`${fieldControlClassName} text-center text-xl`}
+                      value={rewardFormData.icon}
+                      onChange={(e) => setRewardFormData({ ...rewardFormData, icon: e.target.value })}
+                    />
+                  </Field>
+                  <Field id="reward-name" label="Reward Name" required className="flex-1">
+                    <input
+                      id="reward-name"
+                      required
+                      type="text"
+                      placeholder="e.g. Free Facial"
+                      className={fieldControlClassName}
+                      value={rewardFormData.name}
+                      onChange={(e) => setRewardFormData({ ...rewardFormData, name: e.target.value })}
+                    />
+                  </Field>
+                </div>
+                <Field id="reward-cost" label="Point Cost" required>
+                  <input
+                    id="reward-cost"
+                    required
+                    type="number"
+                    min="1"
+                    placeholder="Points required"
+                    className={`${fieldControlClassName} font-bold tabular-nums`}
+                    value={rewardFormData.cost || ''}
+                    onChange={(e) =>
+                      setRewardFormData({ ...rewardFormData, cost: parseInt(e.target.value) || 0 })
+                    }
+                  />
+                </Field>
+                <Button type="submit" fullWidth disabled={isSavingReward}>
+                  {isSavingReward ? 'Saving…' : editingReward ? 'Save Changes' : 'Add to Catalog'}
+                </Button>
+              </form>
+            </FormSection>
+          </div>
 
-              <div className="space-y-4">
-                 <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 flex items-center justify-between">
-                    <span>Program Catalog</span>
-                    <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-500">{rewards.length}</span>
-                 </h4>
-                 <div className="space-y-2">
-                    {rewards.map(reward => (
-                      <div key={reward.id} className="group p-4 bg-white border border-slate-200 rounded-2xl shadow-sm flex justify-between items-center">
-                         <div className="flex items-center gap-3">
-                            <span className="text-2xl">{reward.icon}</span>
-                            <div>
-                               <p className="text-sm font-black text-slate-800 leading-tight">{reward.name}</p>
-                               <p className="text-[10px] font-bold text-teal-600">{reward.cost} pts</p>
-                            </div>
-                         </div>
-                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => startEditReward(reward)} className="p-2 text-slate-400 hover:text-teal-600 transition-all"><Icons.Edit /></button>
-                            <button onClick={() => handleRemoveReward(reward.id)} className="p-2 text-slate-400 hover:text-rose-600 transition-all"><Icons.Trash /></button>
-                         </div>
-                      </div>
-                    ))}
-                 </div>
-              </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-app-label font-bold uppercase text-[var(--text-secondary)]">
+                Program Catalog
+              </p>
+              <span className="text-xs font-semibold text-[var(--text-muted)] bg-[var(--bg-soft)] px-2 py-0.5 rounded-ui-sm">
+                {rewards.length}
+              </span>
             </div>
-            
-            <div className="p-6 bg-slate-50 border-t border-slate-100">
-               <button onClick={() => setShowRewardsModal(false)} className="w-full py-3 bg-slate-900 text-white font-black rounded-xl">Close Program Manager</button>
+            <div className="space-y-2">
+              {rewards.map((reward) => (
+                <div
+                  key={reward.id}
+                  className="group flex items-center justify-between gap-3 px-3 py-2.5 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)]"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-2xl shrink-0">{reward.icon}</span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-[var(--text-primary)] truncate">{reward.name}</p>
+                      <p className="text-xs font-semibold text-[var(--brand)]">{reward.cost} pts</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <IconButton label="Edit reward" size="sm" onClick={() => startEditReward(reward)}>
+                      <Icons.Edit />
+                    </IconButton>
+                    <IconButton
+                      label="Remove reward"
+                      size="sm"
+                      onClick={() => handleRemoveReward(reward.id)}
+                    >
+                      <Icons.Trash />
+                    </IconButton>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
-      )}
+      </AppModal>
 
       {/* Adjust Points Modal */}
-      {showEditPointsModal && activeClient && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[90] flex items-center justify-center p-4">
-          <div className="bg-white rounded-[32px] w-full max-w-sm shadow-2xl animate-scaleIn overflow-hidden">
-            <div className="p-8 border-b border-slate-100 bg-teal-600 text-white text-center">
-              <h3 className="text-xl font-black w-full">Manual Balance Update</h3>
-            </div>
-            <form onSubmit={handleUpdatePointsSubmit} className="p-8 space-y-6">
-              <div className="text-center mb-4">
-                <p className="text-sm text-slate-500">Updating for <span className="font-bold text-slate-800">{activeClient.name}</span></p>
-              </div>
-              <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
-                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-4 text-center">New Points Total</label>
-                <input autoFocus required type="number" min="0" className="w-full bg-transparent border-none text-center text-4xl font-black text-teal-600 outline-none" value={editingPointsValue} onChange={e => setEditingPointsValue(parseInt(e.target.value) || 0)} />
-              </div>
-              <div className="flex gap-3">
-                <button type="button" onClick={() => setShowEditPointsModal(false)} className="flex-1 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl">Cancel</button>
-                <button type="submit" className="flex-[2] py-4 bg-teal-600 text-white font-black rounded-2xl shadow-xl shadow-teal-100">Confirm Update</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <AppModal
+        open={showEditPointsModal && !!activeClient}
+        onClose={() => setShowEditPointsModal(false)}
+        title="Manual Balance Update"
+        description={activeClient ? `Updating for ${activeClient.name}` : undefined}
+        size="sm"
+        zIndexClass="z-[90]"
+        asForm
+        formId="edit-points-form"
+        onSubmit={handleUpdatePointsSubmit}
+        footer={
+          <ModalFooterActions>
+            <Button variant="secondary" onClick={() => setShowEditPointsModal(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="edit-points-form">
+              Confirm Update
+            </Button>
+          </ModalFooterActions>
+        }
+      >
+        <FormSection>
+          <Field id="edit-points-total" label="New Points Total" required>
+            <input
+              id="edit-points-total"
+              autoFocus
+              required
+              type="number"
+              min="0"
+              className={`${fieldControlClassName} text-center text-3xl font-bold tabular-nums h-16`}
+              value={editingPointsValue}
+              onChange={(e) => setEditingPointsValue(parseInt(e.target.value) || 0)}
+            />
+          </Field>
+        </FormSection>
+      </AppModal>
 
-      {/* Export Confirmation */}
-      {showExportConfirm && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl animate-fadeIn overflow-hidden">
-            <div className="p-8 text-center">
-              <div className="w-16 h-16 bg-teal-50 text-teal-600 rounded-full flex items-center justify-center mx-auto mb-6"><Icons.Export /></div>
-              <h3 className="text-xl font-black text-slate-800 mb-2">Secure Export</h3>
-              <p className="text-sm text-slate-500 leading-relaxed mb-8">Download client records as CSV.</p>
-              <div className="flex flex-col gap-3">
-                <button onClick={executeExport} className="w-full py-4 bg-teal-600 text-white font-black rounded-2xl shadow-xl shadow-teal-100 transition-all">Download Now</button>
-                <button onClick={() => setShowExportConfirm(false)} className="w-full py-3 bg-slate-100 text-slate-500 font-bold rounded-xl">Cancel</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmationDialog
+        open={showExportConfirm}
+        onClose={() => setShowExportConfirm(false)}
+        onConfirm={executeExport}
+        title="Secure Export"
+        description="Download client records as CSV."
+        confirmLabel="Download Now"
+        cancelLabel="Cancel"
+        tone="primary"
+      />
 
       {/* Add Client Modal */}
-      {showAddClientModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-          <div className="bg-white rounded-[32px] w-full max-w-4xl shadow-2xl animate-scaleIn overflow-hidden">
-            <div className="p-6 md:p-8 border-b border-slate-100 flex justify-between items-center bg-teal-600 text-white">
-              <h3 className="text-lg md:text-xl font-black">Register New Client</h3>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowMemberFormSettings((prev) => !prev)}
-                  className="p-2 rounded-xl hover:bg-white/10 transition-all"
-                  title="Member Form Setting"
-                >
-                  <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l.7 2.148a1 1 0 00.95.69h2.262c.969 0 1.371 1.24.588 1.81l-1.833 1.333a1 1 0 00-.364 1.118l.7 2.148c.3.921-.755 1.688-1.54 1.118l-1.833-1.333a1 1 0 00-1.176 0l-1.833 1.333c-.784.57-1.838-.197-1.539-1.118l.7-2.148a1 1 0 00-.364-1.118L5.45 7.575c-.783-.57-.38-1.81.588-1.81H8.3a1 1 0 00.95-.69l.7-2.148z"
+      <AppModal
+        open={showAddClientModal}
+        onClose={() => setShowAddClientModal(false)}
+        title="Register New Client"
+        description="Create a new member profile for this outlet."
+        size="xl"
+        zIndexClass="z-[60]"
+        busy={isSaving}
+        asForm
+        formId="register-client-form"
+        onSubmit={handleSaveClient}
+        bodyClassName="!p-0"
+        headerActions={
+          <IconButton
+            label="Member Form Setting"
+            size="md"
+            onClick={() => setShowMemberFormSettings((prev) => !prev)}
+            className="min-w-[44px] min-h-[44px]"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l.7 2.148a1 1 0 00.95.69h2.262c.969 0 1.371 1.24.588 1.81l-1.833 1.333a1 1 0 00-.364 1.118l.7 2.148c.3.921-.755 1.688-1.54 1.118l-1.833-1.333a1 1 0 00-1.176 0l-1.833 1.333c-.784.57-1.838-.197-1.539-1.118l.7-2.148a1 1 0 00-.364-1.118L5.45 7.575c-.783-.57-.38-1.81.588-1.81H8.3a1 1 0 00.95-.69l.7-2.148z"
+              />
+            </svg>
+          </IconButton>
+        }
+        footer={
+          <ModalFooterActions>
+            <Button
+              variant="secondary"
+              onClick={() => setShowAddClientModal(false)}
+              disabled={isSaving}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="register-client-form"
+              disabled={isSaving || newClientHasDuplicate}
+            >
+              {isSaving
+                ? 'Registering…'
+                : newClientHasDuplicate
+                  ? 'Fix duplicate name or phone'
+                  : 'Complete Registration'}
+            </Button>
+          </ModalFooterActions>
+        }
+      >
+        <div className="flex flex-col md:flex-row min-h-0">
+          <div className="p-4 sm:p-5 space-y-3 md:w-1/2 border-b md:border-b-0 md:border-r border-[var(--line)]">
+            <FormSection>
+              <Field
+                id="new-client-name"
+                label="Full Name"
+                required
+                error={
+                  newClientNameDuplicate
+                    ? 'This name already exists. Please use a different name.'
+                    : undefined
+                }
+              >
+                <input
+                  id="new-client-name"
+                  required
+                  type="text"
+                  className={`${fieldControlClassName} ${newClientNameDuplicate ? 'border-[var(--danger)]' : ''}`}
+                  value={newClient.name}
+                  onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
+                />
+              </Field>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {memberFormSettings.fields.email && (
+                  <Field id="new-client-email" label="Email">
+                    <input
+                      id="new-client-email"
+                      type="email"
+                      className={fieldControlClassName}
+                      value={newClient.email}
+                      onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
                     />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => setShowAddClientModal(false)}
-                  className="p-2 hover:bg-white/10 rounded-xl transition-all"
+                  </Field>
+                )}
+                <Field
+                  id="new-client-phone"
+                  label="Phone"
+                  required
+                  error={
+                    newClientPhoneDuplicate
+                      ? 'This phone number already exists. Please use a different number.'
+                      : undefined
+                  }
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                  <input
+                    id="new-client-phone"
+                    required
+                    type="tel"
+                    className={`${fieldControlClassName} ${newClientPhoneDuplicate ? 'border-[var(--danger)]' : ''}`}
+                    value={newClient.phone}
+                    onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
+                  />
+                </Field>
+              </div>
+              {memberFormSettings.fields.birthday && (
+                <Field id="new-client-birthday" label="Birthday">
+                  <input
+                    id="new-client-birthday"
+                    type="date"
+                    className={fieldControlClassName}
+                    value={newClient.birthday || ''}
+                    onChange={(e) => setNewClient({ ...newClient, birthday: e.target.value })}
+                  />
+                </Field>
+              )}
+              {memberFormSettings.fields.gender && (
+                <Field id="new-client-gender" label="Gender">
+                  <div className="flex items-center gap-4 h-10">
+                    <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                      <input
+                        type="radio"
+                        name="newClientGender"
+                        value="Male"
+                        checked={newClient.gender === 'Male'}
+                        onChange={() => setNewClient({ ...newClient, gender: 'Male' })}
+                      />
+                      <span>Male</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                      <input
+                        type="radio"
+                        name="newClientGender"
+                        value="Female"
+                        checked={newClient.gender === 'Female'}
+                        onChange={() => setNewClient({ ...newClient, gender: 'Female' })}
+                      />
+                      <span>Female</span>
+                    </label>
+                  </div>
+                </Field>
+              )}
+              {memberFormSettings.fields.ic && (
+                <Field id="new-client-ic" label="IC">
+                  <input
+                    id="new-client-ic"
+                    type="text"
+                    className={fieldControlClassName}
+                    value={newClient.ic}
+                    onChange={(e) => setNewClient({ ...newClient, ic: e.target.value })}
+                  />
+                </Field>
+              )}
+              {memberFormSettings.fields.marital && (
+                <Field id="new-client-marital" label="Marital">
+                  <input
+                    id="new-client-marital"
+                    type="text"
+                    className={fieldControlClassName}
+                    value={newClient.marital}
+                    onChange={(e) => setNewClient({ ...newClient, marital: e.target.value })}
+                  />
+                </Field>
+              )}
+              {memberFormSettings.fields.tag && (
+                <Field id="new-client-tag" label="Tag">
+                  <input
+                    id="new-client-tag"
+                    type="text"
+                    className={fieldControlClassName}
+                    value={newClient.tag}
+                    onChange={(e) => setNewClient({ ...newClient, tag: e.target.value })}
+                  />
+                </Field>
+              )}
+              {memberFormSettings.fields.source && (
+                <Field id="new-client-source" label="Source">
+                  <input
+                    id="new-client-source"
+                    type="text"
+                    className={fieldControlClassName}
+                    value={newClient.source}
+                    onChange={(e) => setNewClient({ ...newClient, source: e.target.value })}
+                  />
+                </Field>
+              )}
+              {memberFormSettings.fields.ethnic && (
+                <Field id="new-client-ethnic" label="Ethnic">
+                  <input
+                    id="new-client-ethnic"
+                    type="text"
+                    className={fieldControlClassName}
+                    value={newClient.ethnic}
+                    onChange={(e) => setNewClient({ ...newClient, ethnic: e.target.value })}
+                  />
+                </Field>
+              )}
+              {memberFormSettings.fields.memberTier && (
+                <Field id="new-client-tier" label="Member Tier">
+                  <input
+                    id="new-client-tier"
+                    type="text"
+                    className={fieldControlClassName}
+                    value={newClient.memberTier}
+                    onChange={(e) => setNewClient({ ...newClient, memberTier: e.target.value })}
+                  />
+                </Field>
+              )}
+              <Field
+                id="new-client-join-date"
+                label="Join Date"
+                hint="Optional. If left empty, today's date will be used."
+              >
+                <input
+                  id="new-client-join-date"
+                  type="date"
+                  className={fieldControlClassName}
+                  value={newClient.createdAt || ''}
+                  onChange={(e) => setNewClient({ ...newClient, createdAt: e.target.value })}
+                />
+              </Field>
+              <Field id="new-client-notes" label="Internal Notes">
+                <textarea
+                  id="new-client-notes"
+                  rows={3}
+                  className={`${fieldControlClassName} h-auto py-2`}
+                  value={newClient.notes}
+                  onChange={(e) => setNewClient({ ...newClient, notes: e.target.value })}
+                />
+              </Field>
+            </FormSection>
+          </div>
+
+          {showMemberFormSettings && (
+            <div className="hidden md:flex flex-col md:w-1/2 bg-[var(--bg-soft)]">
+              <div className="px-5 py-3 border-b border-[var(--line)] flex items-center justify-between">
+                <h4 className="text-sm font-bold text-[var(--text-primary)]">Member Form Setting</h4>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowMemberFormSettings(false)}
+                >
+                  Save
+                </Button>
+              </div>
+              <div className="p-5 space-y-6">
+                <div>
+                  <p className="text-app-label font-bold uppercase text-[var(--text-secondary)] mb-2">
+                    Member
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <label className="flex items-center gap-2 text-[var(--text-primary)]">
+                      <input type="checkbox" checked disabled className="rounded" />
+                      <span>Mobile</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-[var(--text-primary)]">
+                      <input type="checkbox" checked disabled className="rounded" />
+                      <span>Name</span>
+                    </label>
+                    {(
+                      [
+                        ['birthday', 'Birthday'],
+                        ['gender', 'Gender'],
+                        ['ic', 'IC'],
+                        ['marital', 'Marital'],
+                        ['tag', 'Tag'],
+                        ['source', 'Source'],
+                        ['email', 'Email'],
+                        ['ethnic', 'Ethnic'],
+                        ['memberTier', 'Member Tier'],
+                      ] as const
+                    ).map(([key, label]) => (
+                      <label
+                        key={key}
+                        className="flex items-center gap-2 text-[var(--text-primary)]"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={memberFormSettings.fields[key]}
+                          onChange={(e) =>
+                            setMemberFormSettings((prev) => ({
+                              ...prev,
+                              fields: { ...prev.fields, [key]: e.target.checked },
+                            }))
+                          }
+                          className="rounded"
+                        />
+                        <span>{label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-app-label font-bold uppercase text-[var(--text-secondary)] mb-2">
+                    Preset Gender
+                  </p>
+                  <div className="flex items-center gap-6">
+                    <label className="flex items-center gap-2 text-sm text-[var(--text-primary)]">
+                      <input
+                        type="radio"
+                        name="presetGender"
+                        value="Male"
+                        checked={memberFormSettings.presetGender === 'Male'}
+                        onChange={() =>
+                          setMemberFormSettings((prev) => ({
+                            ...prev,
+                            presetGender: 'Male',
+                          }))
+                        }
+                      />
+                      <span>Male</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-[var(--text-primary)]">
+                      <input
+                        type="radio"
+                        name="presetGender"
+                        value="Female"
+                        checked={memberFormSettings.presetGender === 'Female'}
+                        onChange={() =>
+                          setMemberFormSettings((prev) => ({
+                            ...prev,
+                            presetGender: 'Female',
+                          }))
+                        }
+                      />
+                      <span>Female</span>
+                    </label>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="flex flex-col md:flex-row">
-              {/* New Member form */}
-              <form onSubmit={handleSaveClient} className="p-6 md:p-8 space-y-5 md:w-1/2 border-b md:border-b-0 md:border-r border-slate-100">
-                <div>
-                  <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
-                    Full Name
-                  </label>
-                  <input
-                    required
-                    type="text"
-                    className={`w-full p-4 bg-slate-50 border rounded-2xl outline-none focus:ring-2 font-bold shadow-inner ${newClientNameDuplicate ? 'border-red-400 focus:ring-red-500' : 'border-slate-200 focus:ring-teal-500'}`}
-                    value={newClient.name}
-                    onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
-                  />
-                  {newClientNameDuplicate && (
-                    <p className="mt-1 text-xs text-red-600 font-medium">This name already exists. Please use a different name.</p>
-                  )}
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {memberFormSettings.fields.email && (
-                    <div>
-                      <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
-                        Email
-                      </label>
-                      <input
-                        type="email"
-                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-medium shadow-inner"
-                        value={newClient.email}
-                        onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
-                      />
-                    </div>
-                  )}
-                  <div>
-                    <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
-                      Phone
-                    </label>
-                    <input
-                      required
-                      type="tel"
-                      className={`w-full p-4 bg-slate-50 border rounded-2xl outline-none focus:ring-2 font-medium shadow-inner ${newClientPhoneDuplicate ? 'border-red-400 focus:ring-red-500' : 'border-slate-200 focus:ring-teal-500'}`}
-                      value={newClient.phone}
-                      onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
-                    />
-                    {newClientPhoneDuplicate && (
-                      <p className="mt-1 text-xs text-red-600 font-medium">This phone number already exists. Please use a different number.</p>
-                    )}
-                  </div>
-                </div>
-                {memberFormSettings.fields.birthday && (
-                  <div>
-                    <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
-                      Birthday
-                    </label>
-                    <input
-                      type="date"
-                      className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-medium shadow-inner"
-                      value={newClient.birthday || ''}
-                      onChange={(e) => setNewClient({ ...newClient, birthday: e.target.value })}
-                    />
-                  </div>
-                )}
-                {memberFormSettings.fields.gender && (
-                  <div>
-                    <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
-                      Gender
-                    </label>
-                    <div className="flex items-center gap-4">
-                      <label className="flex items-center gap-2 text-sm text-slate-600">
-                        <input
-                          type="radio"
-                          name="newClientGender"
-                          value="Male"
-                          checked={newClient.gender === 'Male'}
-                          onChange={() => setNewClient({ ...newClient, gender: 'Male' })}
-                          className="text-teal-600 border-slate-300 focus:ring-teal-500"
-                        />
-                        <span>Male</span>
-                      </label>
-                      <label className="flex items-center gap-2 text-sm text-slate-600">
-                        <input
-                          type="radio"
-                          name="newClientGender"
-                          value="Female"
-                          checked={newClient.gender === 'Female'}
-                          onChange={() => setNewClient({ ...newClient, gender: 'Female' })}
-                          className="text-teal-600 border-slate-300 focus:ring-teal-500"
-                        />
-                        <span>Female</span>
-                      </label>
-                    </div>
-                  </div>
-                )}
-                {memberFormSettings.fields.ic && (
-                  <div>
-                    <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
-                      IC
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-medium shadow-inner"
-                      value={newClient.ic}
-                      onChange={(e) => setNewClient({ ...newClient, ic: e.target.value })}
-                    />
-                  </div>
-                )}
-                {memberFormSettings.fields.marital && (
-                  <div>
-                    <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
-                      Marital
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-medium shadow-inner"
-                      value={newClient.marital}
-                      onChange={(e) => setNewClient({ ...newClient, marital: e.target.value })}
-                    />
-                  </div>
-                )}
-                {memberFormSettings.fields.tag && (
-                  <div>
-                    <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
-                      Tag
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-medium shadow-inner"
-                      value={newClient.tag}
-                      onChange={(e) => setNewClient({ ...newClient, tag: e.target.value })}
-                    />
-                  </div>
-                )}
-                {memberFormSettings.fields.source && (
-                  <div>
-                    <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
-                      Source
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-medium shadow-inner"
-                      value={newClient.source}
-                      onChange={(e) => setNewClient({ ...newClient, source: e.target.value })}
-                    />
-                  </div>
-                )}
-                {memberFormSettings.fields.ethnic && (
-                  <div>
-                    <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
-                      Ethnic
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-medium shadow-inner"
-                      value={newClient.ethnic}
-                      onChange={(e) => setNewClient({ ...newClient, ethnic: e.target.value })}
-                    />
-                  </div>
-                )}
-                {memberFormSettings.fields.memberTier && (
-                  <div>
-                    <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
-                      Member Tier
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-medium shadow-inner"
-                      value={newClient.memberTier}
-                      onChange={(e) => setNewClient({ ...newClient, memberTier: e.target.value })}
-                    />
-                  </div>
-                )}
-                <div>
-                  <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
-                    Join Date
-                  </label>
-                  <input
-                    type="date"
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 font-medium shadow-inner"
-                    value={newClient.createdAt || ''}
-                    onChange={(e) => setNewClient({ ...newClient, createdAt: e.target.value })}
-                  />
-                  <p className="mt-1 text-[11px] text-slate-400">
-                    Optional. If left empty, today&apos;s date will be used.
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
-                    Internal Notes
-                  </label>
-                  <textarea
-                    rows={3}
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-teal-500 text-sm shadow-inner"
-                    value={newClient.notes}
-                    onChange={(e) => setNewClient({ ...newClient, notes: e.target.value })}
-                  ></textarea>
-                </div>
-                <button
-                  disabled={isSaving || newClientHasDuplicate}
-                  type="submit"
-                  className={`w-full py-5 text-white font-black rounded-2xl shadow-xl flex items-center justify-center gap-3 ${isSaving || newClientHasDuplicate ? 'bg-slate-400 cursor-not-allowed shadow-slate-200' : 'bg-teal-600 hover:bg-teal-700 shadow-teal-100'}`}
-                >
-                  {isSaving ? (
-                    <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                  ) : (
-                    <Icons.Add />
-                  )}
-                  <span>{isSaving ? 'Registering...' : newClientHasDuplicate ? 'Fix duplicate name or phone' : 'Complete Registration'}</span>
-                </button>
-              </form>
-
-              {/* Member Form Setting panel (like 1.png) */}
-              {showMemberFormSettings && (
-                <div className="hidden md:flex flex-col md:w-1/2 bg-slate-50/80">
-                  <div className="p-6 border-b border-slate-200 flex items-center justify-between">
-                    <h4 className="text-sm font-black text-slate-800">Member Form Setting</h4>
-                    <button
-                      type="button"
-                      className="text-xs font-semibold text-teal-600 hover:underline"
-                      onClick={() => setShowMemberFormSettings(false)}
-                    >
-                      Save
-                    </button>
-                  </div>
-                  <div className="p-6 space-y-6">
-                    <div>
-                      <p className="text-[11px] font-semibold text-slate-500 mb-2 uppercase tracking-widest">Member</p>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <label className="flex items-center gap-2 text-slate-700">
-                          <input type="checkbox" checked disabled className="rounded border-slate-300 text-teal-600" />
-                          <span>Mobile</span>
-                        </label>
-                        <label className="flex items-center gap-2 text-slate-700">
-                          <input type="checkbox" checked disabled className="rounded border-slate-300 text-teal-600" />
-                          <span>Name</span>
-                        </label>
-                        <label className="flex items-center gap-2 text-slate-700">
-                          <input
-                            type="checkbox"
-                            checked={memberFormSettings.fields.birthday}
-                            onChange={(e) =>
-                              setMemberFormSettings((prev) => ({
-                                ...prev,
-                                fields: { ...prev.fields, birthday: e.target.checked },
-                              }))
-                            }
-                            className="rounded border-slate-300 text-teal-600"
-                          />
-                          <span>Birthday</span>
-                        </label>
-                        <label className="flex items-center gap-2 text-slate-700">
-                          <input
-                            type="checkbox"
-                            checked={memberFormSettings.fields.gender}
-                            onChange={(e) =>
-                              setMemberFormSettings((prev) => ({
-                                ...prev,
-                                fields: { ...prev.fields, gender: e.target.checked },
-                              }))
-                            }
-                            className="rounded border-slate-300 text-teal-600"
-                          />
-                          <span>Gender</span>
-                        </label>
-                        <label className="flex items-center gap-2 text-slate-700">
-                          <input
-                            type="checkbox"
-                            checked={memberFormSettings.fields.ic}
-                            onChange={(e) =>
-                              setMemberFormSettings((prev) => ({
-                                ...prev,
-                                fields: { ...prev.fields, ic: e.target.checked },
-                              }))
-                            }
-                            className="rounded border-slate-300 text-teal-600"
-                          />
-                          <span>IC</span>
-                        </label>
-                        <label className="flex items-center gap-2 text-slate-700">
-                          <input
-                            type="checkbox"
-                            checked={memberFormSettings.fields.marital}
-                            onChange={(e) =>
-                              setMemberFormSettings((prev) => ({
-                                ...prev,
-                                fields: { ...prev.fields, marital: e.target.checked },
-                              }))
-                            }
-                            className="rounded border-slate-300 text-teal-600"
-                          />
-                          <span>Marital</span>
-                        </label>
-                        <label className="flex items-center gap-2 text-slate-700">
-                          <input
-                            type="checkbox"
-                            checked={memberFormSettings.fields.tag}
-                            onChange={(e) =>
-                              setMemberFormSettings((prev) => ({
-                                ...prev,
-                                fields: { ...prev.fields, tag: e.target.checked },
-                              }))
-                            }
-                            className="rounded border-slate-300 text-teal-600"
-                          />
-                          <span>Tag</span>
-                        </label>
-                        <label className="flex items-center gap-2 text-slate-700">
-                          <input
-                            type="checkbox"
-                            checked={memberFormSettings.fields.source}
-                            onChange={(e) =>
-                              setMemberFormSettings((prev) => ({
-                                ...prev,
-                                fields: { ...prev.fields, source: e.target.checked },
-                              }))
-                            }
-                            className="rounded border-slate-300 text-teal-600"
-                          />
-                          <span>Source</span>
-                        </label>
-                        <label className="flex items-center gap-2 text-slate-700">
-                          <input
-                            type="checkbox"
-                            checked={memberFormSettings.fields.email}
-                            onChange={(e) =>
-                              setMemberFormSettings((prev) => ({
-                                ...prev,
-                                fields: { ...prev.fields, email: e.target.checked },
-                              }))
-                            }
-                            className="rounded border-slate-300 text-teal-600"
-                          />
-                          <span>Email</span>
-                        </label>
-                        <label className="flex items-center gap-2 text-slate-700">
-                          <input
-                            type="checkbox"
-                            checked={memberFormSettings.fields.ethnic}
-                            onChange={(e) =>
-                              setMemberFormSettings((prev) => ({
-                                ...prev,
-                                fields: { ...prev.fields, ethnic: e.target.checked },
-                              }))
-                            }
-                            className="rounded border-slate-300 text-teal-600"
-                          />
-                          <span>Ethnic</span>
-                        </label>
-                        <label className="flex items-center gap-2 text-slate-700">
-                          <input
-                            type="checkbox"
-                            checked={memberFormSettings.fields.memberTier}
-                            onChange={(e) =>
-                              setMemberFormSettings((prev) => ({
-                                ...prev,
-                                fields: { ...prev.fields, memberTier: e.target.checked },
-                              }))
-                            }
-                            className="rounded border-slate-300 text-teal-600"
-                          />
-                          <span>Member Tier</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    <div>
-                      <p className="text-[11px] font-semibold text-slate-500 mb-2 uppercase tracking-widest">
-                        Preset Gender
-                      </p>
-                      <div className="flex items-center gap-6">
-                        <label className="flex items-center gap-2 text-sm text-slate-700">
-                          <input
-                            type="radio"
-                            name="presetGender"
-                            value="Male"
-                            checked={memberFormSettings.presetGender === 'Male'}
-                            onChange={() =>
-                              setMemberFormSettings((prev) => ({
-                                ...prev,
-                                presetGender: 'Male',
-                              }))
-                            }
-                            className="text-teal-600 border-slate-300 focus:ring-teal-500"
-                          />
-                          <span>Male</span>
-                        </label>
-                        <label className="flex items-center gap-2 text-sm text-slate-700">
-                          <input
-                            type="radio"
-                            name="presetGender"
-                            value="Female"
-                            checked={memberFormSettings.presetGender === 'Female'}
-                            onChange={() =>
-                              setMemberFormSettings((prev) => ({
-                                ...prev,
-                                presetGender: 'Female',
-                              }))
-                            }
-                            className="text-teal-600 border-slate-300 focus:ring-teal-500"
-                          />
-                          <span>Female</span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          )}
         </div>
-      )}
+      </AppModal>
     </div>
   );
 };
+
 
 export default CRM;

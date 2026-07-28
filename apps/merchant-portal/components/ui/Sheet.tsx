@@ -1,29 +1,53 @@
+<<<<<<< HEAD
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { cx } from './cx';
 import { IconButton } from './IconButton';
+=======
+import React from 'react';
+import { AppSheet } from './AppSheet';
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 
 export interface SheetProps {
   open: boolean;
   onClose: () => void;
   title?: React.ReactNode;
+<<<<<<< HEAD
+=======
+  description?: React.ReactNode;
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
   children: React.ReactNode;
   footer?: React.ReactNode;
   side?: 'bottom' | 'right';
   className?: string;
+<<<<<<< HEAD
 }
 
 /**
  * Presentational sheet/drawer. Parent owns open state and close behavior.
+=======
+  closeOnBackdrop?: boolean;
+  busy?: boolean;
+  zIndexClass?: string;
+}
+
+/**
+ * Presentational sheet — thin wrapper over AppSheet for backwards compatibility.
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
  */
 export const Sheet: React.FC<SheetProps> = ({
   open,
   onClose,
   title,
+<<<<<<< HEAD
+=======
+  description,
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
   children,
   footer,
   side = 'bottom',
   className,
+<<<<<<< HEAD
 }) => {
   useEffect(() => {
     if (!open) return;
@@ -79,5 +103,26 @@ export const Sheet: React.FC<SheetProps> = ({
     document.body,
   );
 };
+=======
+  closeOnBackdrop,
+  busy,
+  zIndexClass,
+}) => (
+  <AppSheet
+    open={open}
+    onClose={onClose}
+    title={title}
+    description={description}
+    footer={footer}
+    side={side}
+    className={className}
+    closeOnBackdrop={closeOnBackdrop}
+    busy={busy}
+    zIndexClass={zIndexClass}
+  >
+    {children}
+  </AppSheet>
+);
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 
 export default Sheet;

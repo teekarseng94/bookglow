@@ -176,7 +176,10 @@ Preserved by phase locks and route audit:
 - CRM search/CRUD/import-export / separate balance domains
 - Settings field names and localStorage keys
 - API key generate/regenerate SHA-256
+<<<<<<< HEAD
 - Setmore sync callable
+=======
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 - Live booking path `/book/:bookingPath` (Any available staff, friendly errors)
 
 **Known nav quirk (pre-existing / leftover):** Layout may expose a `report` item → `/report`, but `report` is not in `VALID_TAB_IDS` (falls through to dashboard). Not introduced as a new booking/API change.

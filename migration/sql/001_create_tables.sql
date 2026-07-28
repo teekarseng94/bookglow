@@ -84,6 +84,8 @@ CREATE TABLE IF NOT EXISTS staff (
   profile_picture TEXT,
   photo_url TEXT,
   qualified_services JSONB,
+  weekly_hours JSONB,
+  permissions JSONB,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 

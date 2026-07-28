@@ -13,8 +13,10 @@
     "verify": "npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
+    "@bookglow/database-contracts": "file:../../packages/database-contracts",
+    "@bookglow/shared-types": "file:../../packages/shared-types",
+    "@bookglow/supabase": "file:../../packages/supabase",
     "@google/genai": "^1.39.0",
-    "firebase": "^12.8.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router-dom": "^7.13.0"

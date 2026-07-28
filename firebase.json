@@ -50,14 +50,5 @@
         }
       ]
     }
-  ],
-  "firestore": {
-    "database": "(default)",
-    "location": "asia-southeast1",
-    "rules": "apps/merchant-portal/firestore.rules",
-    "indexes": "apps/merchant-portal/firestore.indexes.json"
-  },
-  "storage": {
-    "rules": "apps/merchant-portal/storage.rules"
-  }
+  ]
 }

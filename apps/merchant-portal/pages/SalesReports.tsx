@@ -1,8 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Transaction, TransactionType, Staff, Client } from '../types';
 import TransactionDetailModal from '../components/TransactionDetailModal';
+<<<<<<< HEAD
 import { collection, query, where, orderBy, Timestamp, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
+=======
+import { transactionService } from '../services/databaseService';
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 import {
   ReportDateRangeBar,
   ReportEmptyState,
@@ -67,7 +71,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
   const [collectionError, setCollectionError] = useState<string | null>(null);
   const [collectionLoading, setCollectionLoading] = useState<boolean>(true);
 
-  // Real-time Firestore query: transactions filtered by outletID and date range (startDate to endDate)
+  // Sales for date range: Supabase poll or Firestore realtime
   useEffect(() => {
     if (!outletID || !startDate || !endDate) {
       setDailySales([]);
@@ -79,72 +83,47 @@ const SalesReports: React.FC<SalesReportsProps> = ({
     setCollectionLoading(true);
     setCollectionError(null);
 
-    let unsubscribe: (() => void) | undefined;
+    const rangeStart = startDate <= endDate ? startDate : endDate;
+    const rangeEnd = startDate <= endDate ? endDate : startDate;
+    const startOfRange = new Date(rangeStart);
+    startOfRange.setHours(0, 0, 0, 0);
+    const endOfRange = new Date(rangeEnd);
+    endOfRange.setHours(23, 59, 59, 999);
 
-    try {
-      // Use startDate and endDate; ensure start <= end
-      const rangeStart = startDate <= endDate ? startDate : endDate;
-      const rangeEnd = startDate <= endDate ? endDate : startDate;
+    const filterNonVoidedSales = (list: Transaction[]) =>
+      list.filter((t) => {
+        if (t.type !== TransactionType.SALE) return false;
+        const status = (t.status ?? '').toString().toLowerCase();
+        const isVoided = (t as any).voided === true;
+        return status !== 'void' && status !== 'voided' && !isVoided;
+      });
 
-      const startOfRange = new Date(rangeStart);
-      startOfRange.setHours(0, 0, 0, 0);
-      const endOfRange = new Date(rangeEnd);
-      endOfRange.setHours(23, 59, 59, 999);
-
-      const transactionsRef = collection(db, 'transactions');
-      const collectionQuery = query(
-        transactionsRef,
-        where('outletID', '==', outletID),
-        where('type', '==', TransactionType.SALE),
-        where('date', '>=', Timestamp.fromDate(startOfRange)),
-        where('date', '<=', Timestamp.fromDate(endOfRange)),
-        orderBy('date', 'desc')
-      );
-
-      unsubscribe = onSnapshot(
-        collectionQuery,
-        (snapshot) => {
-          const list = snapshot.docs.map(doc => {
-            const raw = doc.data();
-            const date = raw.date instanceof Timestamp
-              ? raw.date.toDate().toISOString()
-              : (typeof raw.date === 'string' ? raw.date : raw.date?.toDate?.()?.toISOString?.() ?? '');
-            return { id: doc.id, ...raw, date } as Transaction;
-          });
-
-          const nonVoided = list.filter(t => {
-            const status = (t.status ?? '').toString().toLowerCase();
-            const isVoided = (t as any).voided === true;
-            return status !== 'void' && status !== 'voided' && !isVoided;
-          });
-
-          setDailySales(nonVoided);
-          setCollectionError(null);
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const all = await transactionService.getAll(outletID);
+        if (cancelled) return;
+        const inRange = all.filter((t) => {
+          if (!t.date) return false;
+          const d = new Date(t.date);
+          return d >= startOfRange && d <= endOfRange;
+        });
+        setDailySales(filterNonVoidedSales(inRange));
+        setCollectionError(null);
+        setCollectionLoading(false);
+      } catch (error: any) {
+        if (!cancelled) {
+          console.error('Error loading Supabase sales report:', error);
           setCollectionLoading(false);
-        },
-        (error: any) => {
-          console.error('Error in collection query:', error);
-          setCollectionLoading(false);
-
-          if (error?.code === 'failed-precondition' && error?.message?.includes('index')) {
-            setCollectionError('System is initializing reports. Please wait a moment...');
-            if (error.message.includes('https://console.firebase.google.com')) {
-              const linkMatch = error.message.match(/https:\/\/console\.firebase\.google\.com[^\s]+/);
-              if (linkMatch) console.log('🔗 Create composite index:', linkMatch[0]);
-            }
-          } else {
-            setCollectionError(error?.message || 'Failed to load report data.');
-          }
+          setCollectionError(error?.message || 'Failed to load report data.');
         }
-      );
-    } catch (error: any) {
-      console.error('Error setting up collection query:', error);
-      setCollectionLoading(false);
-      setCollectionError(error?.message || 'Failed to set up report query.');
-    }
-
+      }
+    };
+    void load();
+    const timer = window.setInterval(() => void load(), 15000);
     return () => {
-      if (typeof unsubscribe === 'function') unsubscribe();
+      cancelled = true;
+      window.clearInterval(timer);
     };
   }, [outletID, startDate, endDate]);
 

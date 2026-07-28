@@ -225,6 +225,60 @@ const POS: React.FC<POSProps> = ({
     [clients, selectedClient]
   );
 
+  /** Points already reserved by other redeemed lines (excludes `excludeLineId`). */
+  const pointsUsedByOtherRedemptions = (excludeLineId: string) =>
+    cart.reduce((sum, item) => {
+      const id = item.cartItemId ?? item.id;
+      if (id === excludeLineId) return sum;
+      if (!item.redeemedWithPoints || !item.redeemPoints) return sum;
+      return sum + item.redeemPoints * item.quantity;
+    }, 0);
+
+  /** Show redeem UI only when a member can afford this line (or it is already applied). */
+  const canShowRedeemControl = (item: CartItem, lineId: string): boolean => {
+    if (item.type !== 'service') return false;
+    if (!item.redeemPointsEnabled || !item.redeemPoints) return false;
+    if (!selectedClientData) return false;
+    if (item.redeemedWithPoints) return true;
+    const balance = selectedClientData.points ?? 0;
+    const needed = item.redeemPoints * item.quantity;
+    const usedElsewhere = pointsUsedByOtherRedemptions(lineId);
+    return balance - usedElsewhere >= needed;
+  };
+
+  // Clear stale redemptions when customer is cleared or no longer has enough points.
+  useEffect(() => {
+    setCart((prev) => {
+      let changed = false;
+      const next = prev.map((item) => {
+        if (!item.redeemedWithPoints) return item;
+        if (!selectedClientData) {
+          changed = true;
+          return { ...item, redeemedWithPoints: false };
+        }
+        return item;
+      });
+
+      if (!selectedClientData) {
+        return changed ? next : prev;
+      }
+
+      const balance = selectedClientData.points ?? 0;
+      let running = 0;
+      const validated = next.map((item) => {
+        if (!item.redeemedWithPoints || !item.redeemPoints) return item;
+        const cost = item.redeemPoints * item.quantity;
+        if (running + cost > balance) {
+          changed = true;
+          return { ...item, redeemedWithPoints: false };
+        }
+        running += cost;
+        return item;
+      });
+      return changed ? validated : prev;
+    });
+  }, [selectedClientData, cart]);
+
   // Customer autocomplete: filter by name (starts with or contains) or phone, limit for performance
   const customerSuggestions = useMemo(() => {
     const q = customerSearchQuery.trim().toLowerCase();
@@ -382,6 +436,35 @@ const POS: React.FC<POSProps> = ({
     setCart(prev => prev.filter(i => (i.cartItemId != null ? i.cartItemId !== lineId : i.id !== lineId)));
   };
 
+  const updateCartQuantity = (lineId: string, nextQty: number) => {
+    const qty = Math.max(1, Math.floor(nextQty));
+    setCart((prev) =>
+      prev.map((item) => {
+        const isThisLine = item.cartItemId != null ? item.cartItemId === lineId : item.id === lineId;
+        if (!isThisLine) return item;
+        const assignedStaff = item.staffId ? staff.find((s) => s.id === item.staffId) : undefined;
+        let commission = item.commissionEarned ?? 0;
+        if (item.type === 'service' && assignedStaff) {
+          const isCommissionable = services.find((s) => s.id === item.id)?.isCommissionable ?? false;
+          const roleRate = roleCommissions.find((rc) => rc.role === assignedStaff.role)?.rate || 0;
+          commission = isCommissionable ? item.price * qty * (roleRate / 100) : 0;
+        } else if (item.type === 'product' && assignedStaff) {
+          const product = products.find((p) => p.id === item.id);
+          commission = product?.fixedCommissionAmount ?? 0;
+        }
+        return { ...item, quantity: qty, commissionEarned: commission };
+      }),
+    );
+  };
+
+  const clearCart = () => {
+    if (cart.length === 0 && !saleComplete) return;
+    setCart([]);
+    setSaleComplete(false);
+    setLastSaleData(null);
+    setIsVoucherRedemptionMode(false);
+  };
+
   const handleCheckout = async () => {
     if (cart.length === 0 || isProcessing) return;
     const hasPackage = cart.some((item) => item.type === 'package');
@@ -524,6 +607,7 @@ const POS: React.FC<POSProps> = ({
   };
 
   return (
+<<<<<<< HEAD
     <div className="flex flex-col md:grid md:grid-cols-[2fr_1fr] md:gap-4 lg:gap-6 h-full pb-28 md:pb-0">
       <div className="md:col-span-2">
         <POSPageHeader
@@ -562,6 +646,44 @@ const POS: React.FC<POSProps> = ({
               title="Treatments"
               icon={<Icons.Services />}
               titleClassName="text-teal-700"
+=======
+    <div className="flex flex-col gap-4 md:gap-5 h-full min-h-0 pb-28 md:pb-0">
+      <POSPageHeader
+        shopName={outletSettings.shopName}
+        banner={
+          isVoucherRedemptionMode ? (
+            <div className="rounded-ui-md bg-sky-100 border border-sky-300 px-4 py-3 flex items-center gap-2 text-sky-800 text-sm font-medium">
+              <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+              </svg>
+              <span>
+                Voucher redemption — Add a service or package, assign therapist, then complete. Payment: $0
+                (Voucher).
+              </span>
+            </div>
+          ) : null
+        }
+      />
+
+      <div className="flex-1 min-h-0 flex flex-col md:flex-row md:items-start gap-4 lg:gap-5">
+        <div className="flex-1 min-w-0 space-y-4 md:overflow-y-auto md:max-h-[calc(100vh-8rem)] md:pr-1">
+        <POSCatalogueToolbar
+          search={globalSearch}
+          onSearchChange={setGlobalSearch}
+          activeCatalog={activeCatalog}
+          onCatalogChange={setActiveCatalog}
+          sortBy={posSortBy}
+          onSortChange={setPosSortBy}
+          categories={posCategories}
+          selectedCategory={posCategory}
+          onCategoryChange={setPosCategory}
+        />
+
+        <POSCatalogueList>
+          {(activeCatalog === 'all' || activeCatalog === 'services') && (
+            <POSCatalogueSection
+              title="Services"
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
               empty={filteredServices.length === 0}
               emptyMessage="No services found. Try a different category or search."
             >
@@ -571,9 +693,15 @@ const POS: React.FC<POSProps> = ({
                   name={service.name}
                   priceLabel={`$${service.price}`}
                   metaLeft={`${service.duration} mins`}
+<<<<<<< HEAD
                   metaRight={`+${service.points} PTS`}
                   onAdd={() => addToCart(service, 'service')}
                   accent="brand"
+=======
+                  metaRight={service.points ? `+${service.points} pts` : undefined}
+                  imageUrl={service.imageUrl}
+                  onAdd={() => addToCart(service, 'service')}
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
                 />
               ))}
             </POSCatalogueSection>
@@ -582,9 +710,13 @@ const POS: React.FC<POSProps> = ({
           {(activeCatalog === 'all' || activeCatalog === 'products') &&
             (filteredProducts.length > 0 || activeCatalog === 'products') && (
             <POSCatalogueSection
+<<<<<<< HEAD
               title="Retail Products"
               icon={<Icons.POS />}
               titleClassName="text-amber-700"
+=======
+              title="Products"
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
               empty={filteredProducts.length === 0}
               emptyMessage="No products found. Try a different category or search."
             >
@@ -595,7 +727,10 @@ const POS: React.FC<POSProps> = ({
                   priceLabel={`$${product.price}`}
                   metaLeft={`Stock: ${product.stock}`}
                   onAdd={() => addToCart(product, 'product')}
+<<<<<<< HEAD
                   accent="amber"
+=======
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
                 />
               ))}
             </POSCatalogueSection>
@@ -604,9 +739,13 @@ const POS: React.FC<POSProps> = ({
           {(activeCatalog === 'all' || activeCatalog === 'packages') &&
             (filteredPackages.length > 0 || activeCatalog === 'packages') && (
             <POSCatalogueSection
+<<<<<<< HEAD
               title="Bundled Packages"
               icon={<Icons.Package />}
               titleClassName="text-indigo-700"
+=======
+              title="Packages"
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
               empty={filteredPackages.length === 0}
               emptyMessage="No packages found. Try a different category or search."
             >
@@ -615,11 +754,18 @@ const POS: React.FC<POSProps> = ({
                   key={pkg.id}
                   name={pkg.name}
                   priceLabel={`$${pkg.price}`}
+<<<<<<< HEAD
                   metaRight={`+${pkg.points} PTS`}
                   accent="indigo"
                   onAdd={() => addToCart(pkg, 'package')}
                   chips={
                     <div className="flex flex-wrap gap-1 mb-3">
+=======
+                  metaRight={pkg.points ? `+${pkg.points} pts` : undefined}
+                  onAdd={() => addToCart(pkg, 'package')}
+                  chips={
+                    <div className="flex flex-wrap gap-1 mt-1">
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
                       {pkg.services.map((ps, idx) => {
                         const srv = services.find((s) => s.id === ps.serviceId);
                         return (
@@ -647,6 +793,7 @@ const POS: React.FC<POSProps> = ({
               </div>
             )}
         </POSCatalogueList>
+<<<<<<< HEAD
       </div>
 
       <POSStickyCartAction
@@ -656,19 +803,42 @@ const POS: React.FC<POSProps> = ({
       />
 
       <POSCartSheet
+=======
+        </div>
+
+        <POSCartSheet
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
         open={isCartOpen}
         onClose={() => setIsCartOpen(false)}
         clockLabel={currentTime.toLocaleTimeString([], {
           hour: '2-digit',
           minute: '2-digit',
+<<<<<<< HEAD
           second: '2-digit',
           hour12: false,
+=======
+          hour12: true,
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
         })}
         dateLabel={currentTime.toLocaleDateString('en-US', {
           month: 'short',
           day: 'numeric',
           year: 'numeric',
         })}
+<<<<<<< HEAD
+=======
+        headerRight={
+          <button
+            type="button"
+            onClick={clearCart}
+            disabled={cart.length === 0 && !saleComplete}
+            aria-label="Clear order"
+            className="w-9 h-9 inline-flex items-center justify-center rounded-ui-sm text-[var(--text-muted)] hover:text-[var(--danger)] hover:bg-[var(--danger-soft)] disabled:opacity-40 disabled:pointer-events-none"
+          >
+            <Icons.Trash />
+          </button>
+        }
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
         footer={
           saleComplete ? (
             <POSSaleCompleteActions onPrint={handlePrint} onNewSale={handleNewSale} />
@@ -704,7 +874,12 @@ const POS: React.FC<POSProps> = ({
                 }
               />
               <POSTotals
+<<<<<<< HEAD
                 totalLabel={`$${total}`}
+=======
+                totalLabel={`$${total.toFixed(2)}`}
+                subtotalLabel={`$${total.toFixed(2)}`}
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
                 warning={
                   cart.some((i) => i.type === 'package') && !selectedClient ? (
                     <p className="text-xs text-amber-600 font-medium">
@@ -732,6 +907,10 @@ const POS: React.FC<POSProps> = ({
                 ? `Member credit: RM ${memberCreditBalance.toFixed(2)}`
                 : null
             }
+<<<<<<< HEAD
+=======
+            onNewCustomer={() => navigate('/member')}
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
           >
             <div className="relative" ref={customerDropdownRef}>
               <input
@@ -830,16 +1009,38 @@ const POS: React.FC<POSProps> = ({
                   isVoucherRedemptionMode && idx === 0
                     ? `Voucher Redemption - ${item.quantity} ${item.name}`
                     : item.name;
-                const lineTotal = item.voucherRedemption ? 0 : item.price * item.quantity;
+                const lineTotal =
+                  item.voucherRedemption || item.redeemedWithPoints
+                    ? 0
+                    : item.price * item.quantity;
                 const showOriginalPrice = item.voucherRedemption && (item.originalPrice ?? 0) > 0;
+                const serviceMeta = item.type === 'service' ? services.find((s) => s.id === item.id) : undefined;
+                const qualifiedStaff = staff.filter((s) => {
+                  const qs = s.qualifiedServices;
+                  if (!qs || qs.length === 0) return true;
+                  return qs.includes(item.id);
+                });
+                const showRedeem = canShowRedeemControl(item, lineId);
                 return (
                   <POSCartItem
                     key={lineId}
                     displayName={displayName}
+<<<<<<< HEAD
+=======
+                    imageUrl={serviceMeta?.imageUrl}
+                    meta={
+                      serviceMeta?.duration != null ? (
+                        <span>{serviceMeta.duration} mins</span>
+                      ) : undefined
+                    }
+                    quantity={item.quantity}
+                    onQuantityChange={(next) => updateCartQuantity(lineId, next)}
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
                     qtyPriceLabel={
                       showOriginalPrice ? (
                         <p>
                           <span className="line-through">
+<<<<<<< HEAD
                             {item.quantity} x ${(item.originalPrice ?? 0).toFixed(2)}
                           </span>
                           <span className="ml-2 text-emerald-600">100% discount · $0</span>
@@ -860,6 +1061,37 @@ const POS: React.FC<POSProps> = ({
                             type="button"
                             onClick={() => toggleRedeemWithPoints(lineId)}
                             className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border transition-colors ${
+=======
+                            ${(item.originalPrice ?? 0).toFixed(2)} each
+                          </span>
+                          <span className="ml-2 text-emerald-600">100% discount · $0</span>
+                        </p>
+                      ) : item.redeemedWithPoints ? (
+                        <p className="text-emerald-600">Redeemed with points · $0</p>
+                      ) : (
+                        <p>${item.price.toFixed(2)} each</p>
+                      )
+                    }
+                    lineTotalLabel={`$${lineTotal.toFixed(2)}`}
+                    lineTotalEmphasized={!!item.voucherRedemption || !!item.redeemedWithPoints}
+                    onRemove={() => removeFromCart(lineId)}
+                    showStaffSelector={item.type === 'service'}
+                    staffId={item.staffId}
+                    staffOptions={qualifiedStaff.map((s) => ({
+                      id: s.id,
+                      name: s.name,
+                      photoURL: s.photoURL,
+                      profilePicture: s.profilePicture,
+                    }))}
+                    onStaffChange={(nextStaffId) => updateStaffAssignment(lineId, nextStaffId)}
+                    redeemControl={
+                      showRedeem ? (
+                        <div className="mt-2 flex items-center justify-between gap-2 pl-[2.75rem]">
+                          <button
+                            type="button"
+                            onClick={() => toggleRedeemWithPoints(lineId)}
+                            className={`min-h-[36px] px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wide border transition-colors focus-visible:shadow-ui-focus-strong ${
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
                               item.redeemedWithPoints
                                 ? 'bg-amber-500 border-amber-500 text-white'
                                 : 'bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100'
@@ -875,6 +1107,7 @@ const POS: React.FC<POSProps> = ({
                         </div>
                       ) : null
                     }
+<<<<<<< HEAD
                     staffControl={
                       item.type === 'service' ? (
                         <div className="pt-1.5 border-t border-[var(--line)] min-w-0">
@@ -906,6 +1139,8 @@ const POS: React.FC<POSProps> = ({
                         </div>
                       ) : null
                     }
+=======
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
                   />
                 );
               })}
@@ -928,7 +1163,18 @@ const POS: React.FC<POSProps> = ({
             </>
           )}
         </div>
+<<<<<<< HEAD
       </POSCartSheet>
+=======
+        </POSCartSheet>
+      </div>
+
+      <POSStickyCartAction
+        itemCount={cart.length}
+        totalLabel={`$${total.toFixed(2)}`}
+        onOpen={() => setIsCartOpen(true)}
+      />
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 
       {lastSaleData && <ReceiptTemplate data={lastSaleData} />}
     </div>

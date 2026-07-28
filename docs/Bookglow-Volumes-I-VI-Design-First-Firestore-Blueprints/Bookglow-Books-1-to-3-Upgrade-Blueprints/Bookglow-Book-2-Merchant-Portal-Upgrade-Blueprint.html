@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Bookglow Book 2: Merchant Portal Upgrade Blueprint">
+<title>Bookglow — Book 2: Merchant Portal Upgrade Blueprint</title>
+<style>
+:root{--ink:#19171d;--muted:#6c6872;--line:#e8e5e9;--canvas:#f7f7f5;--paper:#fff;--soft:#f4f2f6;--accent:#7054c7;--accent-dark:#453485;--accent-soft:#eeeafd;--rose:#c85c78;--success:#19705a;--warning:#94620d;--danger:#a04455;--shadow:0 18px 60px rgba(28,22,34,.09);--shadow-sm:0 6px 24px rgba(28,22,34,.05)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--ink);background:radial-gradient(circle at 2% 2%,rgba(112,84,199,.10),transparent 29rem),radial-gradient(circle at 98% 0%,rgba(200,92,120,.08),transparent 31rem),var(--canvas);font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.65;letter-spacing:-.005em}a{color:var(--accent-dark)}.shell{width:min(1480px,calc(100% - 32px));margin:24px auto 64px}.document{display:grid;grid-template-columns:292px minmax(0,1fr);background:rgba(255,255,255,.98);border:1px solid var(--line);border-radius:30px;overflow:clip;box-shadow:var(--shadow)}aside{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:30px 22px;border-right:1px solid var(--line);background:linear-gradient(180deg,#fff,#faf9fb)}.brand{display:flex;align-items:center;gap:11px;margin-bottom:27px;font-weight:820;font-size:19px;letter-spacing:-.03em}.brand-mark{display:grid;place-items:center;width:35px;height:35px;border-radius:12px;color:#fff;background:linear-gradient(135deg,var(--accent),var(--rose));font-size:15px;box-shadow:0 8px 20px rgba(112,84,199,.22)}.doc-label{margin:0 0 16px;color:var(--muted);font-size:11px;font-weight:820;letter-spacing:.14em;text-transform:uppercase}.toc{display:grid;gap:3px}.toc a{display:block;padding:8px 10px;border-radius:10px;text-decoration:none;color:#625e68;font-size:13px;line-height:1.35}.toc a:hover{color:var(--accent-dark);background:var(--accent-soft)}.side-note{margin-top:26px;padding:14px;border:1px solid #e3ddec;border-radius:15px;background:#fbf9fd;color:var(--muted);font-size:11px}main{min-width:0}.hero{position:relative;min-height:670px;padding:84px clamp(32px,7vw,94px) 68px;overflow:hidden;border-bottom:1px solid var(--line);background:linear-gradient(140deg,rgba(255,255,255,.94),rgba(249,247,250,.94)),radial-gradient(circle at 88% 13%,rgba(112,84,199,.22),transparent 25rem),radial-gradient(circle at 15% 92%,rgba(200,92,120,.12),transparent 27rem)}.eyebrow{display:inline-flex;align-items:center;gap:8px;padding:7px 11px;border:1px solid #ded7e6;border-radius:999px;color:var(--accent-dark);background:rgba(255,255,255,.78);font-size:11px;font-weight:820;letter-spacing:.11em;text-transform:uppercase}.dot{width:7px;height:7px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--rose))}h1{max-width:980px;margin:31px 0 21px;font-family:Georgia,"Times New Roman",serif;font-size:clamp(48px,7vw,94px);line-height:.99;letter-spacing:-.055em;font-weight:500}.hero-deck{max-width:830px;margin:0;color:#5f5a64;font-size:clamp(18px,2vw,24px);line-height:1.5}.hero-rule{display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,.68fr);gap:34px;align-items:end;margin-top:70px}.hero-quote{padding-left:22px;border-left:3px solid var(--accent);font-size:clamp(22px,3vw,34px);font-weight:720;line-height:1.28;letter-spacing:-.025em}.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.meta-card{padding:14px 15px;border:1px solid #ddd7e2;border-radius:16px;background:rgba(255,255,255,.8)}.meta-card span{display:block;color:var(--muted);font-size:10px;font-weight:820;letter-spacing:.12em;text-transform:uppercase}.meta-card strong{display:block;margin-top:5px;font-size:13px}.content{padding:40px clamp(28px,6vw,82px) 110px}section{scroll-margin-top:22px;padding:64px 0;border-bottom:1px solid var(--line)}section:last-child{border-bottom:0}.section-number{display:block;margin-bottom:10px;color:var(--accent);font-size:11px;font-weight:850;letter-spacing:.14em;text-transform:uppercase}h2{max-width:930px;margin:0 0 19px;font-family:Georgia,"Times New Roman",serif;font-size:clamp(34px,4.2vw,58px);line-height:1.09;letter-spacing:-.04em;font-weight:500}h3{margin:0 0 10px;font-size:20px;line-height:1.32;letter-spacing:-.025em}p{margin:0 0 16px}.lead{max-width:900px;color:#5e5963;font-size:19px}.small{font-size:12px;color:var(--muted)}.statement{margin:32px 0;padding:27px 29px;border:1px solid #e2dce7;border-radius:22px;background:linear-gradient(135deg,#faf8fd,#fff);font-size:clamp(22px,3vw,35px);line-height:1.32;letter-spacing:-.025em;font-weight:720}.statement em{font-family:Georgia,serif;color:var(--accent-dark);font-weight:500}.grid-2,.grid-3,.grid-4{display:grid;gap:18px;margin-top:25px}.grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}.card{padding:22px;border:1px solid var(--line);border-radius:19px;background:#fff;box-shadow:var(--shadow-sm)}.card p:last-child,.card ul:last-child{margin-bottom:0}.card-number{display:grid;place-items:center;width:32px;height:32px;margin-bottom:14px;border-radius:11px;background:var(--accent-soft);color:var(--accent-dark);font-size:12px;font-weight:900}.note,.success,.warning{margin:21px 0;padding:18px 20px;border-radius:16px;font-size:14px}.note{border:1px solid #ddd7e2;background:#faf8fb}.success{border:1px solid #cfe4dc;background:#eff9f5;color:#175b4b}.warning{border:1px solid #ead9b8;background:#fff8e7;color:#744b0b}ul,ol{margin:12px 0 18px;padding-left:21px}li{margin:7px 0}.clean-list{list-style:none;padding:0}.clean-list li{position:relative;padding-left:25px}.clean-list li:before{content:"✓";position:absolute;left:0;color:var(--success);font-weight:900}.no-list li:before{content:"×";color:var(--danger)}table{width:100%;margin:23px 0;border-collapse:separate;border-spacing:0;overflow:hidden;border:1px solid var(--line);border-radius:17px;background:#fff}th,td{padding:14px 15px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left;font-size:13px}th{background:#f7f5f8;color:#4e4854;font-size:10px;font-weight:850;letter-spacing:.1em;text-transform:uppercase}tr:last-child td{border-bottom:0}.flow{display:grid;gap:10px;margin-top:23px}.flow-row{display:grid;grid-template-columns:110px minmax(0,1fr) auto;gap:14px;align-items:center;padding:16px 18px;border:1px solid var(--line);border-radius:15px;background:#fff}.flow-row .step{color:var(--accent);font-size:10px;font-weight:850;letter-spacing:.1em;text-transform:uppercase}.flow-row .purpose{font-weight:760}.flow-row .proof{font-size:12px;color:var(--muted);text-align:right}.wireframe{margin-top:24px;padding:18px;border:1px solid var(--line);border-radius:22px;background:#faf8f5}.browser{overflow:hidden;border:1px solid #d9d4dc;border-radius:18px;background:#fff;box-shadow:var(--shadow-sm)}.browser-bar{display:flex;align-items:center;gap:7px;padding:11px 14px;border-bottom:1px solid var(--line);background:#f8f7f8}.browser-dot{width:8px;height:8px;border-radius:50%;background:#d7d3d8}.frame{padding:18px}.nav-demo{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:15px;border-bottom:1px solid var(--line)}.logo-demo{font-weight:850}.nav-links{display:flex;gap:15px;color:var(--muted);font-size:12px}.button-demo{padding:8px 12px;border-radius:999px;background:var(--ink);color:#fff;font-size:11px;font-weight:750}.hero-demo{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;align-items:center;padding:34px 0}.copy-lines{display:grid;gap:9px}.line{height:10px;border-radius:999px;background:#e9e6ea}.line.dark{height:22px;background:#2a272d}.w90{width:90%}.w75{width:75%}.w60{width:60%}.w45{width:45%}.product-demo{min-height:230px;padding:15px;border-radius:18px;background:#f4f1f7;display:grid;grid-template-columns:1fr .62fr;gap:10px}.panel-demo{border:1px solid var(--line);border-radius:13px;background:#fff}.panel-demo.big{padding:12px}.panel-list{display:grid;gap:8px;margin-top:10px}.mini-row{height:29px;border-radius:8px;background:#f4f2f5;border:1px solid #ece8ed}.section-demo{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:18px 0}.block-demo{min-height:90px;border:1px solid var(--line);border-radius:13px;background:#fff}.booking-shell{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:16px}.merchant-head{height:150px;border-radius:16px;background:linear-gradient(135deg,#e9e5ef,#f8f6f9);border:1px solid var(--line)}.category-strip{display:flex;gap:8px;margin:13px 0;flex-wrap:wrap}.category-pill{width:74px;height:27px;border-radius:999px;background:#f0edf3;border:1px solid var(--line)}.service-list{display:grid;gap:10px}.service-item{display:grid;grid-template-columns:1fr 78px;gap:12px;padding:13px;border:1px solid var(--line);border-radius:14px;background:#fff}.service-copy{display:grid;gap:7px}.service-img{border-radius:11px;background:#efecf1}.summary-demo{padding:15px;border:1px solid var(--line);border-radius:16px;background:#fff;height:max-content}.mobile-demo{width:min(350px,100%);margin:20px auto 0;border:1px solid #d9d4dc;border-radius:27px;padding:12px;background:#fff;box-shadow:var(--shadow-sm)}.mobile-screen{border-radius:19px;background:#fafafa;overflow:hidden}.mobile-cover{height:105px;background:linear-gradient(135deg,#e4e0e9,#f7f4f8)}.mobile-content{padding:12px}.sticky-demo{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px;border-top:1px solid var(--line);background:#fff}.source-list a{word-break:break-all}.footer{display:flex;justify-content:space-between;gap:24px;padding-top:28px;color:var(--muted);font-size:11px}
+@media(max-width:1050px){.document{grid-template-columns:1fr}aside{display:none}.hero{min-height:auto}.grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.shell{width:100%;margin:0}.document{border:0;border-radius:0}.hero{padding:54px 22px 46px}.hero-rule,.grid-2,.grid-3,.grid-4,.hero-demo,.booking-shell{grid-template-columns:1fr}.content{padding:22px 20px 70px}section{padding:50px 0}.meta-grid{margin-top:22px}.flow-row{grid-template-columns:1fr;gap:4px}.flow-row .proof{text-align:left}.nav-links{display:none}.section-demo{grid-template-columns:1fr}.footer{flex-direction:column}table{display:block;overflow-x:auto}}
+
+.portal-wireframe{margin-top:24px;padding:18px;border:1px solid var(--line);border-radius:22px;background:#faf8f5}
+.portal-browser{overflow:hidden;border:1px solid #d9d4dc;border-radius:18px;background:#fff;box-shadow:var(--shadow-sm)}
+.portal-topbar{display:flex;align-items:center;gap:7px;padding:11px 14px;border-bottom:1px solid var(--line);background:#f8f7f8}
+.portal-dot{width:8px;height:8px;border-radius:50%;background:#d7d3d8}
+.portal-app{display:grid;grid-template-columns:165px minmax(0,1fr);min-height:470px}
+.portal-sidebar{padding:14px;border-right:1px solid var(--line);background:#fbfafb}
+.portal-brand{height:28px;width:90px;border-radius:8px;background:#29262d;margin-bottom:18px}
+.portal-nav{display:grid;gap:7px}
+.portal-nav-item{height:29px;border-radius:8px;background:#f0edf2;border:1px solid #ece8ed}
+.portal-nav-item.active{background:#e9e4fa;border-color:#d8cff4}
+.portal-main{padding:16px;background:#fcfbfc}
+.portal-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+.portal-title{height:25px;width:165px;border-radius:8px;background:#29262d}
+.portal-action{height:32px;width:95px;border-radius:999px;background:#7054c7}
+.metric-grid-demo{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:12px}
+.metric-demo{height:75px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.portal-grid{display:grid;grid-template-columns:1.35fr .65fr;gap:10px}
+.portal-panel{min-height:210px;border:1px solid var(--line);border-radius:13px;background:#fff;padding:11px}
+.demo-row{height:31px;border-radius:8px;background:#f5f3f6;border:1px solid #ece8ed;margin-top:8px}
+.calendar-demo{display:grid;grid-template-columns:60px repeat(4,1fr);gap:4px;margin-top:10px}
+.calendar-cell{height:43px;border-radius:7px;background:#f4f2f5;border:1px solid #ebe7ec}
+.calendar-cell.booked{background:#e9e4fa;border-color:#d9d1f3}
+.pos-layout{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:10px}
+.product-grid-demo{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.product-tile{height:76px;border-radius:11px;background:#f5f3f6;border:1px solid #ebe7ec}
+.cart-demo{padding:11px;border:1px solid var(--line);border-radius:13px;background:#fff}
+.table-demo{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.table-head-demo{height:31px;background:#f4f2f5;border-bottom:1px solid var(--line)}
+.table-row-demo{height:38px;border-bottom:1px solid var(--line)}
+.table-row-demo:last-child{border-bottom:0}
+.portal-mobile{width:min(350px,100%);margin:20px auto 0;border:1px solid #d9d4dc;border-radius:27px;padding:12px;background:#fff;box-shadow:var(--shadow-sm)}
+.portal-mobile-screen{overflow:hidden;border-radius:19px;background:#fafafa}
+.mobile-app-bar{display:flex;align-items:center;justify-content:space-between;padding:12px;border-bottom:1px solid var(--line);background:#fff}
+.mobile-page{padding:12px}
+.mobile-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mobile-metric{height:68px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.mobile-list{display:grid;gap:8px;margin-top:10px}
+.mobile-list-item{height:65px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.mobile-bottom-nav{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:9px;border-top:1px solid var(--line);background:#fff}
+.mobile-nav-dot{height:28px;border-radius:8px;background:#f0edf2}
+.mobile-nav-dot.active{background:#e9e4fa}
+@media(max-width:760px){
+  .portal-app,.portal-grid,.pos-layout{grid-template-columns:1fr}
+  .portal-sidebar{display:none}
+  .metric-grid-demo{grid-template-columns:1fr 1fr}
+  .product-grid-demo{grid-template-columns:1fr 1fr}
+}
+
+.arch{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:25px 0}
+.arch-node{position:relative;padding:20px;border:1px solid var(--line);border-radius:18px;background:#fff;box-shadow:var(--shadow-sm)}
+.arch-node strong{display:block;margin-bottom:7px;font-size:16px}
+.arch-node span{color:var(--muted);font-size:12px}
+.arch-arrow{text-align:center;color:var(--accent);font-size:22px;font-weight:800;align-self:center}
+.path-map{display:grid;gap:8px;margin:20px 0}
+.path-row{display:grid;grid-template-columns:225px minmax(0,1fr);gap:14px;padding:13px 15px;border:1px solid var(--line);border-radius:13px;background:#fff}
+.path-row code{font-size:12px;word-break:break-all}
+.status-now,.status-next,.status-later,.status-no{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}
+.status-now{background:#eaf6f1;color:#17614f}
+.status-next{background:#eeeafd;color:#4a3985}
+.status-later{background:#fff4dd;color:#805610}
+.status-no{background:#f9e9ed;color:#963f54}
+.decision-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:22px}
+.decision{padding:18px;border:1px solid var(--line);border-radius:16px;background:#fff}
+.decision .answer{display:block;margin-top:8px;color:var(--accent-dark);font-weight:800}
+.phase{display:grid;grid-template-columns:80px minmax(0,1fr) 135px;gap:15px;align-items:start;padding:18px;border-bottom:1px solid var(--line)}
+.phase:last-child{border-bottom:0}
+.phase-id{color:var(--accent);font-size:11px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}
+.phase-gate{font-size:12px;color:var(--muted)}
+.screen-spec{display:grid;grid-template-columns:170px minmax(0,1fr);gap:16px;padding:17px 0;border-bottom:1px solid var(--line)}
+.screen-spec:last-child{border-bottom:0}
+.screen-spec h3{font-size:17px}
+.screen-spec .details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.spec-cell{padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:12px}
+.spec-cell strong{display:block;margin-bottom:4px;color:var(--ink)}
+.file-map{margin-top:20px}
+.file-row{display:grid;grid-template-columns:minmax(260px,.9fr) minmax(0,1.4fr) 110px;gap:12px;padding:13px 14px;border-bottom:1px solid var(--line);align-items:start}
+.file-row:first-child{border-top:1px solid var(--line)}
+.file-row code{word-break:break-all;font-size:11px}
+.file-row p{margin:0;font-size:12px}
+.pillbar{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}
+.pill{padding:7px 10px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:11px;font-weight:750}
+.callout-title{display:block;margin-bottom:7px;font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}
+@media(max-width:850px){
+  .arch,.decision-grid{grid-template-columns:1fr}
+  .path-row,.screen-spec,.file-row,.phase{grid-template-columns:1fr}
+  .screen-spec .details{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="shell"><div class="document">
+<aside>
+  <div class="brand"><span class="brand-mark">B</span> Bookglow</div>
+  <p class="doc-label">Upgrade Blueprint · Book 2</p>
+  <nav class="toc"><a href="#mandate">01 · Mandate and current portal truth</a>
+<a href="#source">02 · Active source map</a>
+<a href="#loop">03 · Daily operating loop</a>
+<a href="#shell">04 · Application shell and navigation</a>
+<a href="#roles">05 · Role and permission experience</a>
+<a href="#dashboard">06 · Dashboard screen specification</a>
+<a href="#schedule">07 · Schedule and appointment management</a>
+<a href="#pos">08 · POS and checkout</a>
+<a href="#members">09 · Members and CRM</a>
+<a href="#catalog">10 · Services, products, packages and inventory</a>
+<a href="#staff">11 · Staff and team</a>
+<a href="#reports">12 · Sales reports, transactions and finance</a>
+<a href="#marketing">13 · Marketing, vouchers and retention</a>
+<a href="#settings">14 · Settings and integrations</a>
+<a href="#admin">15 · Super admin and platform access</a>
+<a href="#mobile">16 · Mobile portal requirements</a>
+<a href="#states">17 · Operational state system</a>
+<a href="#components">18 · Shared component and token strategy</a>
+<a href="#logic">19 · Logic preservation rules</a>
+<a href="#verification">20 · Verification and acceptance</a>
+<a href="#sequence">21 · Merchant portal implementation sequence</a>
+<a href="#filemap">22 · Latest source-to-blueprint matrix</a>
+<a href="#done">23 · Book 2 completion definition</a></nav>
+  <div class="side-note">Source of truth: latest <strong>bookglow(5).rar</strong>, active project maps, approved product decisions, and UI Reference Packs A–C. Strategy: upgrade the existing monorepo in place.</div>
+</aside>
+<main>
+<header class="hero">
+  <div class="eyebrow"><span class="dot"></span> Book 2 · Existing-Project Upgrade</div>
+  <h1>Merchant Portal Upgrade Blueprint</h1>
+  <p class="hero-deck">The page-by-page operational blueprint for refining Bookglow’s existing merchant workspace across desktop, tablet and mobile while preserving all current business behavior.</p>
+  <div class="hero-rule">
+    <div class="hero-quote">Make the day understandable, keep context visible, and make every save, status and payment accountable.</div>
+    <div class="meta-grid">
+      <div class="meta-card"><span>Document</span><strong>Book 2 of 3</strong></div>
+      <div class="meta-card"><span>Version</span><strong>1.0 · 17 July 2026</strong></div>
+      <div class="meta-card"><span>Scope</span><strong>Merchant operations, roles and responsive UI</strong></div>
+      <div class="meta-card"><span>Implementation</span><strong>Retrofit, not rebuild</strong></div>
+    </div>
+  </div>
+</header>
+<div class="content">
+<section id="mandate"><span class="section-number">01 · Mandate and current portal truth</span>
+<h2>Upgrade the existing merchant portal page by page.</h2>
+<p class="lead">Book 2 governs the merchant operating workspace in <code>apps/merchant-portal</code>. The latest archive already contains redesigned shell and page components, so implementation begins with an audit of what is complete, what is partial and what remains visually inconsistent—not a blank-screen rebuild.</p>
+<div class="grid-3">
+<div class="card"><h3>Preserve</h3><p>Routes, Firebase services, Firestore subscriptions, page props, role behavior, POS/CRM/inventory/staff/reporting handlers and deployment targets.</p></div>
+<div class="card"><h3>Improve</h3><p>Hierarchy, density, mobile layouts, forms, drawers, sticky actions, loading/error states and shared component consistency.</p></div>
+<div class="card"><h3>Do later</h3><p>Supabase cutover, full provisioning, billing and any operational feature that does not already exist.</p></div>
+</div>
+<div class="statement">The merchant portal is not a dashboard gallery. It is the place where time, customers, staff, inventory and money become accountable records.</div>
+</section><section id="source"><span class="section-number">02 · Active source map</span>
+<h2>The portal already has a mature operational surface area.</h2>
+<div class="path-map">
+<div class="path-row"><code>App.tsx</code><span>Protected app routing, role gating, data orchestration and page composition.</span></div>
+<div class="path-row"><code>components/Layout.tsx</code><span>Desktop sidebar, utility context, mobile navigation and user controls.</span></div>
+<div class="path-row"><code>contexts/UserContext.tsx</code><span>Admin/cashier role and outlet assignment from the current user profile.</span></div>
+<div class="path-row"><code>hooks/useFirestoreData.ts</code><span>Primary live operational data orchestration.</span></div>
+<div class="path-row"><code>services/databaseService.ts</code><span>Explicit Firestore runtime provider boundary.</span></div>
+<div class="path-row"><code>pages/*.tsx</code><span>Operational pages: Dashboard, POS, AppointmentsCalendar, CRM, Services, Staff, SalesReports, Transactions, Finance, Marketing, Settings and admin.</span></div>
+<div class="path-row"><code>components/ui/*</code><span>Shared buttons, fields, sheets, modals, statuses, empty/error/loading states and sticky actions.</span></div>
+</div>
+<div class="warning"><strong>Current architecture characteristic:</strong> several page files remain large because presentation and business orchestration coexist. Refactor presentation progressively; do not move logic merely to make files smaller.</div>
+</section><section id="loop"><span class="section-number">03 · Daily operating loop</span>
+<h2>The navigation and page order follow daily work.</h2>
+<div class="flow">
+<div class="flow-row"><span class="step">Plan</span><span class="purpose">Review dashboard and schedule</span><span class="proof">Appointments, staff, attention</span></div>
+<div class="flow-row"><span class="step">Serve</span><span class="purpose">Open appointment and customer context</span><span class="proof">Service, notes, status</span></div>
+<div class="flow-row"><span class="step">Checkout</span><span class="purpose">Move appointment or walk-in to POS</span><span class="proof">Customer, staff, items, payment</span></div>
+<div class="flow-row"><span class="step">Retain</span><span class="purpose">Update CRM, points, credit and vouchers</span><span class="proof">Customer history</span></div>
+<div class="flow-row"><span class="step">Manage</span><span class="purpose">Maintain services, products, packages and team</span><span class="proof">Offer and capacity</span></div>
+<div class="flow-row"><span class="step">Understand</span><span class="purpose">Review sales, transactions, expenses and performance</span><span class="proof">Reports</span></div>
+</div>
+</section><section id="shell"><span class="section-number">04 · Application shell and navigation</span>
+<h2>Stable navigation, visible outlet context and role-aware access.</h2>
+<table><thead><tr><th>Area</th><th>Desktop</th><th>Mobile</th></tr></thead><tbody>
+<tr><td>Primary navigation</td><td>Persistent grouped sidebar</td><td>Compact bottom navigation for daily modules plus More sheet</td></tr>
+<tr><td>Outlet context</td><td>Visible in utility/header area</td><td>Visible in page header or account sheet</td></tr>
+<tr><td>Primary action</td><td>One action in page header</td><td>Header action or sticky action bar</td></tr>
+<tr><td>Detail</td><td>Right-side drawer preserves list/calendar</td><td>Full-height sheet or dedicated route</td></tr>
+<tr><td>Filters</td><td>Toolbar with progressive controls</td><td>Filter button opens sheet</td></tr>
+</tbody></table>
+<h3>Recommended groups</h3>
+<div class="pillbar"><span class="pill">Today: Dashboard · Schedule · POS</span><span class="pill">Customers: Members</span><span class="pill">Offer: Menu / Inventory</span><span class="pill">Team: Staff</span><span class="pill">Performance: Reports · Transactions · Finance</span><span class="pill">Growth: Marketing</span><span class="pill">System: Settings · Integrations</span></div>
+<div class="note">Current route IDs remain unchanged during the retrofit even when the visible navigation label becomes clearer.</div>
+</section><section id="roles"><span class="section-number">05 · Role and permission experience</span>
+<h2>Current roles are admin and cashier; staff is not yet a login role.</h2>
+<table><thead><tr><th>Role</th><th>Current access</th><th>UX rule</th></tr></thead><tbody>
+<tr><td>Admin</td><td>Full merchant navigation and configuration</td><td>Show all supported modules; dangerous actions still require confirmation.</td></tr>
+<tr><td>Cashier</td><td>POS, Member, Menu/Catalog and Sales Reports</td><td>Hide unavailable modules and redirect protected URLs safely to POS.</td></tr>
+<tr><td>Super admin</td><td>Platform-level workspace oversight</td><td>Clearly distinguish platform context from merchant context.</td></tr>
+<tr><td>Staff entity</td><td>Operational profile, services, schedule and commission</td><td>Do not imply that each staff record can log in until an access model exists.</td></tr>
+</tbody></table>
+<ul class="clean-list"><li>Permission errors explain the role limitation.</li><li>Never flash admin navigation before role resolution.</li><li>Remote-view or outlet override states are visibly labelled.</li><li>Future permissions should extend the current boundary rather than bypassing it in page code.</li></ul>
+</section><section id="dashboard"><span class="section-number">06 · Dashboard screen specification</span>
+<h2>Today first, performance second.</h2>
+<div class="screen-spec">
+<h3>Header</h3><div class="details"><div class="spec-cell"><strong>Show</strong>Today/date, outlet and greeting/context.</div><div class="spec-cell"><strong>Action</strong>Add booking or open schedule.</div><div class="spec-cell"><strong>Avoid</strong>Large welcome banner.</div></div>
+</div>
+<div class="screen-spec">
+<h3>Summary</h3><div class="details"><div class="spec-cell"><strong>Maximum</strong>Four reliable metrics.</div><div class="spec-cell"><strong>Examples</strong>Appointments, completed, sales, attention count.</div><div class="spec-cell"><strong>Rule</strong>No placeholder revenue.</div></div>
+</div>
+<div class="screen-spec">
+<h3>Operational body</h3><div class="details"><div class="spec-cell"><strong>Primary</strong>Upcoming appointments.</div><div class="spec-cell"><strong>Secondary</strong>Attention and operational status.</div><div class="spec-cell"><strong>Supporting</strong>Customer activity and sales snapshot.</div></div>
+</div>
+<p>Current supporting components include <code>TodayHeader</code>, <code>TodaySummary</code>, <code>UpcomingAppointments</code>, <code>AttentionList</code>, <code>OperationalStatus</code>, <code>CustomerActivity</code>, <code>SalesSnapshot</code> and <code>DashboardChartSection</code>. Audit these before introducing replacements.</p>
+</section><section id="schedule"><span class="section-number">07 · Schedule and appointment management</span>
+<h2>The schedule must remain readable while the merchant edits.</h2>
+<table><thead><tr><th>Element</th><th>Requirement</th></tr></thead><tbody>
+<tr><td>Date control</td><td>Sticky/easy to reach; compact mobile strip plus calendar access.</td></tr>
+<tr><td>View</td><td>Agenda/list is primary on phone; calendar/staff view on wider screens where useful.</td></tr>
+<tr><td>Booking card</td><td>Time, customer, service, staff and status within a compact footprint.</td></tr>
+<tr><td>Detail panel</td><td>Customer/service/time/status, reminder, POS handoff and edit actions without losing date context.</td></tr>
+<tr><td>States</td><td>Loading, no bookings, filter-empty, sync error, update failure and conflict.</td></tr>
+<tr><td>External sync</td><td>Setmore sync status and failure are explicit; imported data is distinguishable when needed.</td></tr>
+</tbody></table>
+<div class="file-map">
+<div class="file-row"><code>pages/AppointmentsCalendar.tsx</code><p>Current schedule container and handlers.</p><span class="status-now">Preserve</span></div>
+<div class="file-row"><code>components/schedule/ScheduleDateStrip.tsx</code><p>Responsive date navigation.</p><span class="status-now">Reuse</span></div>
+<div class="file-row"><code>ScheduleBookingList / ScheduleBookingCard</code><p>Dense mobile/agenda representation.</p><span class="status-now">Audit</span></div>
+<div class="file-row"><code>ScheduleBookingDetailPanel.tsx</code><p>Appointment context and actions.</p><span class="status-next">Refine</span></div>
+<div class="file-row"><code>ScheduleToolbar / EmptyState / LoadingState</code><p>Controls and governed states.</p><span class="status-next">Unify</span></div>
+</div>
+</section><section id="pos"><span class="section-number">08 · POS and checkout</span>
+<h2>Selection is fast; totals and side effects are explicit.</h2>
+<div class="grid-3">
+<div class="card"><h3>Catalogue</h3><p>Search and category filtering across services, products and packages. Use compact cards/rows and clear stock/availability status.</p></div>
+<div class="card"><h3>Cart</h3><p>Customer, items, quantity, assigned staff, discounts, points, credit, notes and total remain reviewable.</p></div>
+<div class="card"><h3>Payment</h3><p>Payment method, amount, outstanding result and receipt follow one controlled completion action.</p></div>
+</div>
+<table><thead><tr><th>Desktop</th><th>Mobile</th></tr></thead><tbody>
+<tr><td>Catalogue and persistent cart side by side.</td><td>Catalogue first; sticky cart action opens a full-height cart sheet.</td></tr>
+<tr><td>Member summary stays visible in cart.</td><td>Customer context remains at top of cart sheet.</td></tr>
+<tr><td>Payment section expands only when ready.</td><td>Checkout becomes a clear final step, not an overcrowded bottom panel.</td></tr>
+</tbody></table>
+<p>Current components already separate <code>POSCatalogueToolbar</code>, <code>POSCatalogueList</code>, <code>POSItemCard</code>, <code>POSCartSheet</code>, <code>POSCartItem</code>, <code>POSMemberSummary</code>, <code>POSTotals</code>, <code>POSPaymentSection</code> and <code>POSStickyCartAction</code>. Strengthen this composition rather than rebuilding the POS state machine.</p>
+</section><section id="members"><span class="section-number">09 · Members and CRM</span>
+<h2>Search quickly, then understand the whole customer relationship.</h2>
+<div class="screen-spec">
+<h3>Member list</h3><div class="details"><div class="spec-cell"><strong>Desktop</strong>Searchable compact table/list.</div><div class="spec-cell"><strong>Mobile</strong>Dense rows with name, contact and key account context.</div><div class="spec-cell"><strong>Actions</strong>Add, import/export and filters.</div></div>
+</div>
+<div class="screen-spec">
+<h3>Member profile</h3><div class="details"><div class="spec-cell"><strong>Summary</strong>Identity, contact, balance and last visit.</div><div class="spec-cell"><strong>History</strong>Appointments, sales, points, credit and outstanding.</div><div class="spec-cell"><strong>Actions</strong>Book, sell, edit and governed adjustments.</div></div>
+</div>
+<ul class="clean-list"><li>Points, credit and outstanding balance use different labels and audit-aware actions.</li><li>Long histories are grouped/timeline-based rather than rendered as one enormous table.</li><li>Import reports invalid and skipped rows before claiming completion.</li><li>Mobile actions remain reachable without a wide toolbar.</li></ul>
+<p>Use the existing <code>MemberRow</code>, <code>MemberSummary</code>, <code>MemberBalanceSection</code>, <code>MemberHistorySection</code>, <code>MemberToolbar</code>, filter sheet and action bar as the starting system.</p>
+</section><section id="catalog"><span class="section-number">10 · Services, products, packages and inventory</span>
+<h2>Compact listings with focused edit panels.</h2>
+<table><thead><tr><th>Entity</th><th>Critical fields</th><th>Customer-booking impact</th></tr></thead><tbody>
+<tr><td>Service</td><td>Name, category, description, duration, price, visibility, image, staff qualification</td><td>Appears in direct booking and availability.</td></tr>
+<tr><td>Product</td><td>Name, category, price, SKU/barcode, stock, visibility, points rules</td><td>POS and inventory; not automatically bookable.</td></tr>
+<tr><td>Package</td><td>Included value, price, validity, redemption and visibility</td><td>POS/customer value depending on support.</td></tr>
+<tr><td>Category</td><td>Name, type, order and visibility</td><td>Controls service discovery grouping.</td></tr>
+</tbody></table>
+<h3>Mobile listing density</h3>
+<div class="grid-3">
+<div class="card"><h3>Row 1</h3><p>Name plus active/visibility status.</p></div>
+<div class="card"><h3>Row 2</h3><p>Category with duration or stock context.</p></div>
+<div class="card"><h3>Row 3</h3><p>Price/SKU and compact actions.</p></div>
+</div>
+<div class="warning">Do not return to oversized cards that expose only two listings per phone screen. Current inventory components such as <code>InventoryEntityCard</code>, tabs, toolbar, filter sheet, edit panel and save bar should be evaluated against this density target.</div>
+</section><section id="staff"><span class="section-number">11 · Staff and team</span>
+<h2>One editor for identity, work and access context.</h2>
+<div class="grid-3">
+<div class="card"><h3>Roster</h3><p>Photo/initial, name, role/status, service context and compact edit action.</p></div>
+<div class="card"><h3>Editor</h3><p>Profile, services, schedule, commission, permission context and save state in grouped sections.</p></div>
+<div class="card"><h3>Public impact</h3><p>Qualified services and booking visibility determine which professionals customers can select.</p></div>
+</div>
+<table><thead><tr><th>Current component</th><th>Use</th></tr></thead><tbody>
+<tr><td><code>StaffRoster / StaffCard</code></td><td>Responsive list and selection.</td></tr>
+<tr><td><code>StaffEditor</code></td><td>Container for grouped edit sections.</td></tr>
+<tr><td><code>StaffProfileSection</code></td><td>Identity and customer-facing profile.</td></tr>
+<tr><td><code>StaffServicesSection</code></td><td>Service qualification.</td></tr>
+<tr><td><code>StaffScheduleSection</code></td><td>Working availability.</td></tr>
+<tr><td><code>StaffCommissionSection</code></td><td>Commission configuration.</td></tr>
+<tr><td><code>StaffPermissionSection</code></td><td>Access context; do not imply staff login unless supported.</td></tr>
+<tr><td><code>StaffSaveBar</code></td><td>Visible save/progress/failure.</td></tr>
+</tbody></table>
+</section><section id="reports"><span class="section-number">12 · Sales reports, transactions and finance</span>
+<h2>Summary, filter, detail and export.</h2>
+<div class="grid-3">
+<div class="card"><h3>Sales reports</h3><p>Date-led summary, trends and grouped performance.</p></div>
+<div class="card"><h3>Transactions</h3><p>Searchable ledger with customer, method, staff, total, status and detail.</p></div>
+<div class="card"><h3>Finance</h3><p>Expenses and operational financial context kept distinct from sales history.</p></div>
+</div>
+<table><thead><tr><th>Responsive rule</th><th>Requirement</th></tr></thead><tbody>
+<tr><td>Desktop</td><td>Filter toolbar, up to four summary metrics, focused table and detail drawer.</td></tr>
+<tr><td>Tablet</td><td>Filters collapse progressively; table retains only decision-critical columns.</td></tr>
+<tr><td>Mobile</td><td>Summary cards plus expandable transaction/report rows; no mandatory horizontal scroll.</td></tr>
+</tbody></table>
+<p>Consolidate patterns through the current report component set: <code>ReportDateRangeBar</code>, summary strip, filter toolbar/sheet, transaction card, detail sheet and empty state. Similar report pages should not invent separate filter and mobile-row systems.</p>
+</section><section id="marketing"><span class="section-number">13 · Marketing, vouchers and retention</span>
+<h2>Make the existing voucher lifecycle understandable.</h2>
+<table><thead><tr><th>Lifecycle</th><th>UI requirement</th></tr></thead><tbody>
+<tr><td>Create</td><td>Name/code, value, validity, eligibility, limits and preview.</td></tr>
+<tr><td>Share / sell</td><td>Public link/QR or POS context only where supported.</td></tr>
+<tr><td>Confirm</td><td>Clear sale/activation state.</td></tr>
+<tr><td>Redeem</td><td>Eligibility, value remaining and confirmation.</td></tr>
+<tr><td>Reset/void</td><td>Restricted action with consequence and audit context.</td></tr>
+</tbody></table>
+<div class="note">Do not add campaign dashboards, email/SMS automation or marketplace promotion merely because Fresha has them. Bookglow marketing UI remains limited to implemented vouchers, points, credit and retention tools.</div>
+</section><section id="settings"><span class="section-number">14 · Settings and integrations</span>
+<h2>Group configuration by business meaning, not code ownership.</h2>
+<div class="grid-3">
+<div class="card"><h3>Business</h3><p>Outlet identity, contact, address, currency/locale and operating hours.</p></div>
+<div class="card"><h3>Booking</h3><p>Booking path, public profile, services/team visibility, operating rules and preview.</p></div>
+<div class="card"><h3>Operations</h3><p>Payment methods, receipt, points/credit, appointment behavior and other portal settings.</p></div>
+<div class="card"><h3>Access</h3><p>Role and team controls where currently supported.</p></div>
+<div class="card"><h3>Integrations</h3><p>Setmore sync, API keys, webhooks and external connection status.</p></div>
+<div class="card"><h3>Danger</h3><p>Disable/archive/destructive actions with exact consequences.</p></div>
+</div>
+<h3>Mobile requirements</h3>
+<ul class="clean-list"><li>Operating hours use one compact row per day: day, start–end and open/closed.</li><li>Settings sections save independently when safe.</li><li>Saving, saved and failed states remain visible.</li><li>Booking settings link to a real customer-site preview.</li><li>Integration cards show status, last sync/error and reconnect/disconnect action.</li></ul>
+<p>The current settings components already include navigation, section wrappers, operating-hour rows, save bar and save status. Align the large <code>Settings.tsx</code> container around them.</p>
+</section><section id="admin"><span class="section-number">15 · Super admin and platform access</span>
+<h2>Separate platform governance from merchant operations.</h2>
+<table><thead><tr><th>Screen</th><th>Purpose</th><th>Language</th></tr></thead><tbody>
+<tr><td>Platform dashboard</td><td>Internal overview and attention</td><td>Do not show fabricated revenue or subscriber metrics.</td></tr>
+<tr><td>Outlets/workspaces</td><td>List, inspect and govern portal access</td><td>Prefer Outlets, Workspaces or Access over Subscribers until billing exists.</td></tr>
+<tr><td>Remote view</td><td>Inspect a specific outlet where supported</td><td>Persistent banner and clear exit action.</td></tr>
+<tr><td>Enable/disable</td><td>Control merchant access</td><td>Confirmation, reason and visible resulting status.</td></tr>
+</tbody></table>
+<p>Use <code>SuperAdminLayout</code>, <code>PlatformBanner</code> and <code>PlatformPageHeader</code> to make platform context unmistakable.</p>
+</section><section id="mobile"><span class="section-number">16 · Mobile portal requirements</span>
+<h2>Mobile supports real work, not every desktop pixel.</h2>
+<table><thead><tr><th>Page</th><th>Primary mobile pattern</th></tr></thead><tbody>
+<tr><td>Dashboard</td><td>Two-column metrics, upcoming/attention list, compact action.</td></tr>
+<tr><td>Schedule</td><td>Sticky date, agenda cards and full-height detail.</td></tr>
+<tr><td>POS</td><td>Catalogue + sticky cart; cart/payment sheet.</td></tr>
+<tr><td>Members</td><td>Search, dense rows, grouped profile and action bar.</td></tr>
+<tr><td>Inventory</td><td>Type tabs, toolbar/filter sheet, dense cards and edit sheet.</td></tr>
+<tr><td>Staff</td><td>Roster, focused editor and sticky save.</td></tr>
+<tr><td>Reports</td><td>Summary, filters sheet, expandable detail cards.</td></tr>
+<tr><td>Settings</td><td>Section navigation, compact rows and visible save state.</td></tr>
+</tbody></table>
+<ul class="clean-list"><li>No page-level horizontal scrolling for routine use.</li><li>Dialogs become sheets where space or keyboard requires it.</li><li>Sticky bars respect safe-area insets.</li><li>Page titles and headers do not consume excessive vertical space.</li><li>Primary action remains thumb-reachable.</li></ul>
+</section><section id="states"><span class="section-number">17 · Operational state system</span>
+<h2>Use the same state grammar across all pages.</h2>
+<table><thead><tr><th>State</th><th>Pattern</th></tr></thead><tbody>
+<tr><td>Initial loading</td><td>Layout-preserving skeleton and current context.</td></tr>
+<tr><td>Refreshing</td><td>Keep existing data visible and show non-blocking progress.</td></tr>
+<tr><td>Empty</td><td>Explain why and provide the correct first action.</td></tr>
+<tr><td>Filtered empty</td><td>Clear filters or change date; do not suggest creating duplicate data.</td></tr>
+<tr><td>Save in progress</td><td>Disable duplicate action and retain form context.</td></tr>
+<tr><td>Save failure</td><td>Specific error and retry; do not close editor.</td></tr>
+<tr><td>Permission block</td><td>Explain role limitation.</td></tr>
+<tr><td>Conflict</td><td>Preserve work and show safe reconciliation.</td></tr>
+<tr><td>Unknown result</td><td>Do not invite duplicate sale/booking submission.</td></tr>
+</tbody></table>
+<p>Standardise through current shared UI primitives: <code>LoadingSkeleton</code>, <code>EmptyState</code>, <code>ErrorState</code>, <code>Alert</code>, <code>SaveStatus</code>, <code>ConfirmationDialog</code>, <code>Toast</code> and <code>ErrorBoundary</code>.</p>
+</section><section id="components"><span class="section-number">18 · Shared component and token strategy</span>
+<h2>Converge the existing component families before creating more.</h2>
+<div class="grid-4">
+<div class="card"><h3>Page structure</h3><p>PageHeader, SectionHeader, PlatformPageHeader.</p></div>
+<div class="card"><h3>Actions</h3><p>Button, IconButton, StickyActionBar.</p></div>
+<div class="card"><h3>Forms</h3><p>Field, SelectField, form sections and save status.</p></div>
+<div class="card"><h3>Overlays</h3><p>Modal, Sheet, ConfirmationDialog and detail drawers.</p></div>
+<div class="card"><h3>Data display</h3><p>DenseEntityRow, StatusBadge and module-specific cards.</p></div>
+<div class="card"><h3>Filtering</h3><p>FilterToolbar with module-specific sheets.</p></div>
+<div class="card"><h3>States</h3><p>Loading, empty, error and attention patterns.</p></div>
+<div class="card"><h3>Module systems</h3><p>Schedule, POS, member, inventory, report, settings and staff families.</p></div>
+</div>
+<div class="note">Before extracting a monorepo-wide design package, stabilise the portal primitives and identify which are also suitable for the customer site. Consumer and operational components should not be forced into one visual density.</div>
+</section><section id="logic"><span class="section-number">19 · Logic preservation rules</span>
+<h2>No visual task may silently change business behavior.</h2>
+<ul class="clean-list"><li>Keep <code>useFirestoreData</code> subscriptions and update handlers unless the task explicitly targets data logic.</li><li>Keep appointment-to-POS handoff and transaction completion behavior.</li><li>Keep customer points, credit and outstanding transaction services intact.</li><li>Keep staff commissions and role locks intact.</li><li>Keep voucher service behavior intact.</li><li>Keep Setmore sync and external integration contracts intact.</li><li>Keep Firebase identifiers, outlet scoping and role resolution intact.</li><li>Do not replace a page wholesale without first mapping callbacks, local state and side effects.</li></ul>
+<div class="warning"><strong>Large-file rule:</strong> extracting visual components is encouraged; moving or rewriting business logic only to achieve a cleaner folder is prohibited during the UI phase.</div>
+</section><section id="verification"><span class="section-number">20 · Verification and acceptance</span>
+<h2>Every module requires visual and behavioral proof.</h2>
+<table><thead><tr><th>Verification layer</th><th>Required checks</th></tr></thead><tbody>
+<tr><td>Build</td><td>Root build plus merchant portal build; known pre-existing issues documented separately.</td></tr>
+<tr><td>Routes</td><td>Direct load, navigation, refresh and role redirect for every active route.</td></tr>
+<tr><td>Responsive</td><td>320, 375, 430, 768, 1024 and 1440 widths.</td></tr>
+<tr><td>Roles</td><td>Admin, cashier, super admin and outlet-less/error cases.</td></tr>
+<tr><td>Data states</td><td>Loading, empty, populated, failure, save failure and conflict.</td></tr>
+<tr><td>Core workflows</td><td>Appointment → POS, member lookup, sale, inventory edit, staff edit, report detail, settings save.</td></tr>
+<tr><td>Accessibility</td><td>Keyboard, focus, labels, contrast, reduced motion and screen-reader status feedback.</td></tr>
+</tbody></table>
+</section><section id="sequence"><span class="section-number">21 · Merchant portal implementation sequence</span>
+<h2>Upgrade by frequency, risk and shared leverage.</h2>
+<div class="card" style="padding:0">
+<div class="phase"><span class="phase-id">B0</span><div><h3>Audit current retrofit</h3><p>Compare every existing page and component against Reference B and this Book.</p></div><span class="phase-gate">Gap register</span></div>
+<div class="phase"><span class="phase-id">B1</span><div><h3>Shell and primitives</h3><p>Navigation, page headers, sheets, status, save and state grammar.</p></div><span class="phase-gate">All routes stable</span></div>
+<div class="phase"><span class="phase-id">B2</span><div><h3>Schedule</h3><p>Daily agenda, date behavior and detail panel.</p></div><span class="phase-gate">Booking regression</span></div>
+<div class="phase"><span class="phase-id">B3</span><div><h3>POS</h3><p>Catalogue, cart and checkout responsiveness.</p></div><span class="phase-gate">Sale regression</span></div>
+<div class="phase"><span class="phase-id">B4</span><div><h3>Members</h3><p>List, profile, balances and histories.</p></div><span class="phase-gate">CRM regression</span></div>
+<div class="phase"><span class="phase-id">B5</span><div><h3>Catalog and staff</h3><p>Dense listings and focused editors.</p></div><span class="phase-gate">Booking config intact</span></div>
+<div class="phase"><span class="phase-id">B6</span><div><h3>Reports and finance</h3><p>Shared filters, summaries and mobile details.</p></div><span class="phase-gate">Totals verified</span></div>
+<div class="phase"><span class="phase-id">B7</span><div><h3>Settings and integrations</h3><p>Grouped configuration and save/sync feedback.</p></div><span class="phase-gate">Config regression</span></div>
+<div class="phase"><span class="phase-id">B8</span><div><h3>Dashboard, marketing and admin</h3><p>Final cross-module summaries and governance.</p></div><span class="phase-gate">Portal acceptance</span></div>
+</div>
+</section><section id="filemap"><span class="section-number">22 · Latest source-to-blueprint matrix</span>
+<h2>Primary implementation anchors from the latest archive.</h2>
+<div class="file-map">
+<div class="file-row"><code>components/Layout.tsx</code><p>App shell, role-aware navigation, mobile menus and account context.</p><span class="status-next">Foundation</span></div>
+<div class="file-row"><code>pages/Dashboard.tsx + components/dashboard/*</code><p>Today view and operational summaries.</p><span class="status-next">Module</span></div>
+<div class="file-row"><code>pages/AppointmentsCalendar.tsx + components/schedule/*</code><p>Schedule and appointment detail system.</p><span class="status-next">Module</span></div>
+<div class="file-row"><code>pages/POS.tsx + components/pos/*</code><p>Catalogue, cart, totals and payment.</p><span class="status-next">Module</span></div>
+<div class="file-row"><code>pages/CRM.tsx, MemberDetails.tsx + components/members/*</code><p>Member discovery, profile and balances.</p><span class="status-next">Module</span></div>
+<div class="file-row"><code>pages/Services.tsx + components/inventory/*</code><p>Services/products/packages/categories and editing.</p><span class="status-next">Module</span></div>
+<div class="file-row"><code>pages/Staff.tsx + components/staff/*</code><p>Roster, profile, schedule, service and commission editing.</p><span class="status-next">Module</span></div>
+<div class="file-row"><code>SalesReports.tsx, Transactions.tsx, ReportPage.tsx, Finance.tsx + components/reports/*</code><p>Performance and financial detail.</p><span class="status-next">Module</span></div>
+<div class="file-row"><code>pages/Settings.tsx + components/settings/*</code><p>Business and operational configuration.</p><span class="status-next">Module</span></div>
+<div class="file-row"><code>ExternalIntegrations.tsx, ApiIntegrationManagement.tsx</code><p>External connection and API settings.</p><span class="status-next">Module</span></div>
+<div class="file-row"><code>SuperAdminDashboard.tsx, SuperAdminSubscribers.tsx + components/admin/*</code><p>Platform access governance.</p><span class="status-next">Module</span></div>
+<div class="file-row"><code>components/ui/*</code><p>Shared portal UI and state primitives.</p><span class="status-now">Converge</span></div>
+</div>
+</section><section id="done"><span class="section-number">23 · Book 2 completion definition</span>
+<h2>The portal upgrade is accepted when merchants can work faster without relearning the product.</h2>
+<ul class="clean-list"><li>Every existing operational route retains its behavior.</li><li>Admin and cashier experiences are correct and visibly distinct.</li><li>Schedule, POS, CRM, catalog, staff and reports work at phone widths.</li><li>No routine page requires horizontal scrolling.</li><li>All edits have visible save/progress/failure states.</li><li>States and statuses use one shared grammar.</li><li>Real Bookglow records—not demo screenshots—drive product proof for the platform site.</li><li>No Supabase or new Firebase architecture is introduced during visual implementation.</li></ul>
+</section>
+<div class="footer">
+  <span>Bookglow Books 1–3 · Upgrade Blueprint</span>
+  <span>17 July 2026</span>
+</div>
+</div>
+</main>
+</div></div>
+</body>
+</html>

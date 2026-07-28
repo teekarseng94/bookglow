@@ -1,15 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import { doc, updateDoc, deleteField, serverTimestamp } from 'firebase/firestore';
 import { OutletSettings, Outlet, ApiIntegration } from '../types';
 import { Icons } from '../constants';
 import { useUserContext } from '../contexts/UserContext';
 import { outletService, apiIntegrationService } from '../services/databaseService';
 import { generateApiKey, sha256Hex } from '../utils/apiKeyHash';
 import { shopNameToBookingSlug, isValidBookingSlug } from '../utils/bookingSlug';
+<<<<<<< HEAD
 import { db } from '../firebase';
 import { Button } from '../components/ui/Button';
+=======
+import {
+  AppModal,
+  Button,
+  Field,
+  fieldControlClassName,
+  FormSection,
+  ModalFooterActions,
+} from '../components/ui';
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 import {
   OperatingHoursRow,
   SettingsNavigation,
@@ -20,9 +30,9 @@ import {
 } from '../components/settings';
 
 const BOOKING_BASE_URL = 'https://bookglow-83fb3.web.app/book';
-// Cloud Function endpoint used by MyChatBot to verify API key for this outlet
+// Supabase Edge Function (Firestore retired). Old Firebase CF URL still proxies here.
 const CHATBOT_WEBHOOK_URL =
-  'https://asia-southeast1-bookglow-83fb3.cloudfunctions.net/chatbotWebhook';
+  'https://uecphpjymbgtttrizhgy.supabase.co/functions/v1/chatbot-webhook';
 
 const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
 
@@ -74,7 +84,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
   const [copyField, setCopyField] = useState<'outlet' | 'key' | 'webhook' | null>(null);
   const [activeSection, setActiveSection] = useState<SettingsSectionId>('business-profile');
 
-  // Load outlet data from Firestore using outletId
+  // Load outlet data using outletId
   useEffect(() => {
     if (!effectiveOutletId) {
       setOutletLoading(false);
@@ -86,11 +96,23 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       setAddressDisplay(propOutlet.addressDisplay || '');
       setPhoneNumber(propOutlet.phoneNumber || '');
       setBusinessHours(propOutlet.businessHours || {});
-      setBookingSlug(
-        (propOutlet.bookingSlug && propOutlet.bookingSlug.trim()) ||
-          shopNameToBookingSlug(propOutlet.name || '')
-      );
+      const derived = shopNameToBookingSlug(propOutlet.name || '');
+      const existing = (propOutlet.bookingSlug && propOutlet.bookingSlug.trim()) || '';
+      setBookingSlug(existing || derived);
       setOutletLoading(false);
+
+      if (!existing && derived && isValidBookingSlug(derived) && effectiveOutletId) {
+        outletService
+          .getByBookingSlug(derived)
+          .then(async (taken) => {
+            if (!taken || taken.outletID === effectiveOutletId) {
+              await outletService.update(effectiveOutletId, { bookingSlug: derived });
+            }
+          })
+          .catch((persistErr) => {
+            console.warn('Could not auto-persist bookingSlug:', persistErr);
+          });
+      }
       return;
     }
 
@@ -101,16 +123,27 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
     const timeoutId = setTimeout(() => setOutletLoading(false), 10000);
 
     outletService.getById(effectiveOutletId)
-      .then((outletData) => {
+      .then(async (outletData) => {
         clearTimeout(timeoutId);
         if (outletData) {
           setAddressDisplay(outletData.addressDisplay || '');
           setPhoneNumber(outletData.phoneNumber || '');
           setBusinessHours(outletData.businessHours || {});
-          setBookingSlug(
-            (outletData.bookingSlug && outletData.bookingSlug.trim()) ||
-              shopNameToBookingSlug(outletData.name || '')
-          );
+          const derived = shopNameToBookingSlug(outletData.name || '');
+          const existing = (outletData.bookingSlug && outletData.bookingSlug.trim()) || '';
+          setBookingSlug(existing || derived);
+
+          // Persist derived slug when Settings showed a URL that was never saved to Firestore.
+          if (!existing && derived && isValidBookingSlug(derived)) {
+            try {
+              const taken = await outletService.getByBookingSlug(derived);
+              if (!taken || taken.outletID === effectiveOutletId) {
+                await outletService.update(effectiveOutletId, { bookingSlug: derived });
+              }
+            } catch (persistErr) {
+              console.warn('Could not auto-persist bookingSlug:', persistErr);
+            }
+          }
         } else {
           // Outlet doesn't exist yet - initialize with empty values
           setAddressDisplay('');
@@ -175,11 +208,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       if (slugRaw) {
         await outletService.update(effectiveOutletId, { ...payload, bookingSlug: slugRaw });
       } else {
-        await outletService.update(effectiveOutletId, payload);
-        await updateDoc(doc(db, 'outlets', effectiveOutletId), {
-          bookingSlug: deleteField(),
-          updatedAt: serverTimestamp(),
-        });
+        await outletService.update(effectiveOutletId, { ...payload, bookingSlug: '' });
       }
 
       if (onUpdateOutlet) {
@@ -344,6 +373,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       <SettingsPageHeader
         actions={
           <div className="flex flex-wrap gap-2">
+<<<<<<< HEAD
             <Link
               to="/settings/integrations"
               className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 rounded-ui-sm border border-sky-200 bg-sky-50 text-sky-700 font-bold text-xs sm:text-sm hover:bg-sky-100 transition-colors"
@@ -352,6 +382,8 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
               <span className="hidden sm:inline">External Integrations</span>
               <span className="sm:hidden">Setmore</span>
             </Link>
+=======
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
             <Button variant="secondary" size="sm" onClick={handleOpenApiModal}>
               API Integration
             </Button>
@@ -359,7 +391,11 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         }
       />
 
+<<<<<<< HEAD
       <div className="mt-4 lg:mt-6 flex gap-6 items-start max-w-6xl mx-auto">
+=======
+      <div className="mt-4 lg:mt-6 flex gap-6 items-start">
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
         <SettingsNavigation activeId={activeSection} onSelect={scrollToSection} />
 
         <div className="min-w-0 flex-1 max-w-3xl space-y-4 sm:space-y-5">
@@ -651,6 +687,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                     </div>
                   ))}
                 </div>
+<<<<<<< HEAD
               </div>
 
               <div className="space-y-4">
@@ -905,153 +942,387 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                 <p className="text-xs text-slate-500 mt-1">
                   Use these details to connect MyChatBot (or other bots) to this outlet.
                 </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowApiModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200"
-                aria-label="Close"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="p-5 space-y-5">
-              {apiError && (
-                <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-                  {apiError}
-                </div>
-              )}
-
-              {/* Outlet ID */}
-              <div>
-                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
-                  Outlet ID
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={effectiveOutletId}
-                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono text-slate-700"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleCopyField(effectiveOutletId, 'outlet')}
-                    className="px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800"
-                  >
-                    {copyField === 'outlet' ? 'Copied' : 'Copy'}
-                  </button>
-                </div>
+=======
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
               </div>
 
-              {/* API Access Key */}
-              <div>
-                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
-                  API Access Key
-                </label>
-                <p className="text-[11px] text-slate-500 mb-2">
-                  Use this in the <code className="bg-slate-100 px-1 rounded">X-API-Key</code> header. We never store the raw key,
-                  only its hash. You can generate a new key below.
-                </p>
-                <div className="flex flex-col gap-2">
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      readOnly
-                      value={
-                        apiRevealedKey ||
-                        apiIntegration?.keyPrefix ||
-                        (apiLoading ? 'Loading…' : 'No key generated yet.')
-                      }
-                      className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono text-slate-700"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => apiRevealedKey && handleCopyField(apiRevealedKey, 'key')}
-                      disabled={!apiRevealedKey}
-                      className="px-3 py-2 rounded-xl bg-teal-600 text-white text-xs font-semibold hover:bg-teal-700 disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      {copyField === 'key' ? 'Copied' : 'Copy'}
-                    </button>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={handleGenerateOrRegenerateKey}
-                      disabled={apiLoading}
-                      className="px-4 py-2 rounded-xl bg-teal-600 text-white text-xs font-semibold hover:bg-teal-700 disabled:opacity-50"
-                    >
-                      {apiIntegration?.apiKeyHash
-                        ? apiLoading
-                          ? 'Regenerating…'
-                          : 'Regenerate Key'
-                        : apiLoading
-                        ? 'Generating…'
-                        : 'Generate API Key'}
-                    </button>
-                    {apiIntegration?.keyPrefix && !apiRevealedKey && (
-                      <p className="text-[11px] text-slate-500 flex-1">
-                        Current key prefix: <span className="font-mono">{apiIntegration.keyPrefix}</span>. The full key is only
-                        shown right after generation.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Webhook URL */}
-              <div>
-                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
-                  Webhook URL
-                </label>
-                <p className="text-[11px] text-slate-500 mb-2">
-                  MyChatBot can call this Cloud Function to verify the key and talk to your POS.
-                </p>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={CHATBOT_WEBHOOK_URL}
-                    className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-700"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleCopyField(CHATBOT_WEBHOOK_URL, 'webhook')}
-                    className="px-3 py-2 rounded-xl bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800"
-                  >
-                    {copyField === 'webhook' ? 'Copied' : 'Copy'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Setup guide */}
-              <div className="mt-2 rounded-xl bg-slate-50 border border-slate-200 p-3 text-[11px] text-slate-600 space-y-1">
-                <p className="font-semibold text-slate-700">Setup Guide (MyChatBot)</p>
-                <ul className="list-disc list-inside space-y-0.5">
-                  <li>Paste the <span className="font-mono">Outlet ID</span> into the bot&apos;s outlet / location field.</li>
-                  <li>
-                    Paste the <span className="font-mono">API Access Key</span> into the bot&apos;s API key field. This is used as
-                    the <span className="font-mono">X-API-Key</span> header.
-                  </li>
-                  <li>
-                    Use the <span className="font-mono">Webhook URL</span> where MyChatBot should send verification or booking
-                    requests.
-                  </li>
-                  <li>
-                    For advanced options or to change the outbound webhook URL, open the full{' '}
-                    <Link to="/settings/api-integration" className="text-teal-600 underline">
-                      API Integration Management
-                    </Link>{' '}
-                    page.
-                  </li>
-                </ul>
+              <div className="space-y-4">
+                <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest">Add New Method</label>
+                <form onSubmit={addPaymentMethod} className="flex gap-2">
+                  <input type="text" placeholder="e.g. PayPal, Apple Pay..." className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm font-medium" value={newMethodName} onChange={(e) => setNewMethodName(e.target.value)} />
+                  <button type="submit" className="px-5 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 shadow-sm">Add</button>
+                </form>
               </div>
             </div>
           </div>
+
+          <div className="border-t border-slate-100 pt-6">
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">Receipt layout</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Header Title</label>
+                <input
+                  type="text"
+                  value={settings.receiptHeaderTitle || 'Tax Invoice'}
+                  onChange={(e) => handleReceiptLayoutChange('receiptHeaderTitle', e.target.value)}
+                  className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  placeholder="Tax Invoice"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Company Name</label>
+                <input
+                  type="text"
+                  value={settings.receiptCompanyName || settings.shopName || ''}
+                  onChange={(e) => handleReceiptLayoutChange('receiptCompanyName', e.target.value)}
+                  className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  placeholder="Bookglow Spa"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Company Phone</label>
+                <input
+                  type="text"
+                  value={settings.receiptPhone || ''}
+                  onChange={(e) => handleReceiptLayoutChange('receiptPhone', e.target.value)}
+                  className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  placeholder="+60 12-345 6789"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Company Address</label>
+                <input
+                  type="text"
+                  value={settings.receiptAddress || ''}
+                  onChange={(e) => handleReceiptLayoutChange('receiptAddress', e.target.value)}
+                  className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  placeholder="Outlet address for receipt"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1.5">Footer Note</label>
+                <input
+                  type="text"
+                  value={settings.receiptFooterNote || 'Thank you for your visit!'}
+                  onChange={(e) => handleReceiptLayoutChange('receiptFooterNote', e.target.value)}
+                  className="w-full h-11 px-3 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                  placeholder="Thank you for your visit!"
+                />
+              </div>
+            </div>
+            <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">Live Receipt Preview</p>
+              <div className="mx-auto w-full max-w-[340px] bg-white border border-slate-300 rounded-lg p-4 font-mono text-[11px] text-slate-700 space-y-1">
+                <div className="text-center border-b border-dashed border-slate-300 pb-2 mb-2">
+                  <p className="font-bold text-sm">{settings.receiptCompanyName || settings.shopName || 'Bookglow Spa'}</p>
+                  <p>{settings.receiptHeaderTitle || 'Tax Invoice'}</p>
+                  {(settings.receiptPhone || '').trim() && <p>Phone: {settings.receiptPhone}</p>}
+                  {(settings.receiptAddress || '').trim() && <p>{settings.receiptAddress}</p>}
+                  <p>{new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</p>
+                  <p>Customer: Jane Doe</p>
+                </div>
+                <div className="flex justify-between"><span>Swedish Massage</span><span>1 x RM 80.00</span></div>
+                <div className="flex justify-between"><span>Aroma Oil</span><span>1 x RM 20.00</span></div>
+                <div className="border-t border-dashed border-slate-300 pt-1 mt-1 flex justify-between font-bold text-slate-900">
+                  <span>Total</span><span>RM 100.00</span>
+                </div>
+                <p className="pt-1">Payment: Cash</p>
+                <div className="text-center border-t border-dashed border-slate-300 pt-2 mt-2">
+                  <p>{settings.receiptFooterNote || 'Thank you for your visit!'}</p>
+                </div>
+              </div>
+            </div>
+            <p className="text-[10px] text-slate-400 mt-3">Receipt layout values are stored in outlet settings and used by POS when user clicks Print Receipt.</p>
+          </div>
         </div>
-      )}
+      </SettingsSection>
+
+      {/* 6. Access & permissions */}
+      <div id="settings-access-permissions" className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 scroll-mt-4">
+        <SettingsSection
+          className="h-fit"
+          iconWrap="bg-teal-50 text-teal-600"
+          title="Outlet Environment"
+          description={'Toggle "restricted mode" for shared terminals.'}
+          icon={<Icons.Dashboard />}
+        >
+          <div className="space-y-6">
+          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-slate-700">Enable Outlet Mode</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Active restrictions for non-admins</span>
+            </div>
+            <button 
+              onClick={toggleOutletMode}
+              className={`w-12 h-6 rounded-full transition-colors relative ${settings.isOutletModeEnabled ? 'bg-teal-600' : 'bg-slate-300'}`}
+            >
+              <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settings.isOutletModeEnabled ? 'left-7' : 'left-1'}`}></div>
+            </button>
+          </div>
+
+          <div className={`p-4 rounded-xl border transition-all ${settings.isAdminAuthenticated ? 'bg-teal-50 border-teal-200' : 'bg-rose-50 border-rose-200'}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${settings.isAdminAuthenticated ? 'bg-teal-600 text-white' : 'bg-rose-600 text-white'}`}>
+                  {settings.isAdminAuthenticated ? <Icons.Dashboard /> : <Icons.Lock />}
+                </div>
+                <div>
+                  <span className="block text-sm font-black uppercase text-slate-800">
+                    {settings.isAdminAuthenticated ? 'Admin Authenticated' : 'Restricted Access'}
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-bold">Currently in {settings.isAdminAuthenticated ? 'Manager' : 'Staff'} View</span>
+                </div>
+              </div>
+              <button 
+                onClick={toggleAdminAuth}
+                className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest shadow-sm transition-all ${
+                  settings.isAdminAuthenticated 
+                    ? 'bg-white text-rose-600 hover:bg-rose-50' 
+                    : 'bg-teal-600 text-white hover:bg-teal-700'
+                }`}
+              >
+                {settings.isAdminAuthenticated ? 'Logout Admin' : 'Simulate Admin'}
+              </button>
+            </div>
+          </div>
+          </div>
+        </SettingsSection>
+
+        <SettingsSection
+          className="h-fit"
+          iconWrap="bg-amber-50 text-amber-600"
+          title="Feature Permissions"
+          description="Control which features require admin elevation."
+          icon={<Icons.Lock />}
+        >
+          <div className={`space-y-4 ${!settings.isOutletModeEnabled ? 'opacity-30 pointer-events-none grayscale' : ''}`}>
+            {permissionList.map(perm => (
+              <div 
+                key={perm.id} 
+                onClick={() => toggleFeatureLock(perm.id)}
+                className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between group ${
+                  settings.lockedFeatures.includes(perm.id) 
+                    ? 'bg-slate-900 border-slate-900 text-white shadow-lg translate-x-1' 
+                    : 'bg-slate-50 border-slate-100 text-slate-800 hover:bg-white hover:border-slate-300'
+                }`}
+              >
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold">{perm.label}</span>
+                    {settings.lockedFeatures.includes(perm.id) && <span className="text-amber-400"><Icons.Lock /></span>}
+                  </div>
+                  <p className={`text-[10px] mt-1 text-slate-400`}>{perm.description}</p>
+                </div>
+                <div className={`w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center ${
+                  settings.lockedFeatures.includes(perm.id) ? 'border-teal-500 bg-teal-500' : 'border-slate-300 bg-transparent'
+                }`}>
+                  {settings.lockedFeatures.includes(perm.id) && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </SettingsSection>
+      </div>
+
+      {/* 7. Integrations */}
+      <SettingsSection
+        id="settings-integrations"
+        iconWrap="bg-sky-50 text-sky-600"
+        title="Integrations"
+        description="Chatbot API access for this outlet."
+        icon={<Icons.Calendar />}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={handleOpenApiModal}
+            className="flex items-start gap-3 p-4 rounded-xl border border-teal-200 bg-teal-50 hover:bg-teal-100 transition-colors text-left"
+          >
+            <svg className="w-5 h-5 text-teal-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+            <div>
+              <p className="text-sm font-bold text-slate-900">Chatbot API Integration</p>
+              <p className="text-xs text-slate-500 mt-0.5">Outlet ID, API key, and webhook URL</p>
+            </div>
+          </button>
+        </div>
+      </SettingsSection>
+
+      {/* 8. Advanced */}
+      <SettingsSection
+        id="settings-advanced"
+        iconWrap="bg-rose-50 text-rose-600"
+        title="Advanced settings"
+        description="Voucher redemption security and other advanced outlet controls."
+        icon={<Icons.Lock />}
+      >
+        <div className="max-w-md space-y-2">
+          <label className="block text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5">
+            Voucher Redemption PIN
+          </label>
+          <input
+            type="password"
+            value={settings.voucherRedemptionPin || ''}
+            onChange={(e) =>
+              onUpdateSettings({
+                ...settings,
+                voucherRedemptionPin: e.target.value,
+              })
+            }
+            placeholder="e.g. 1234"
+            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-rose-500 text-sm font-medium"
+          />
+          <p className="text-[10px] text-slate-400">
+            Leave blank to disable PIN checking and use confirmation checkbox only.
+          </p>
+        </div>
+      </SettingsSection>
+        </div>
+      </div>
+
+      <AppModal
+        open={showApiModal}
+        onClose={() => setShowApiModal(false)}
+        title="Chatbot API Integration"
+        description="Use these details to connect MyChatBot (or other bots) to this outlet."
+        size="md"
+        busy={apiLoading}
+        footer={
+          <ModalFooterActions>
+            <Button variant="secondary" onClick={() => setShowApiModal(false)}>
+              Close
+            </Button>
+            <Button onClick={handleGenerateOrRegenerateKey} disabled={apiLoading}>
+              {apiIntegration?.apiKeyHash
+                ? apiLoading
+                  ? 'Regenerating…'
+                  : 'Regenerate Key'
+                : apiLoading
+                  ? 'Generating…'
+                  : 'Generate API Key'}
+            </Button>
+          </ModalFooterActions>
+        }
+      >
+        {apiError && (
+          <div className="rounded-ui-md border border-[var(--danger)]/30 bg-red-50 px-3 py-2 text-xs text-[var(--danger)]">
+            {apiError}
+          </div>
+        )}
+
+        <FormSection>
+          <Field id="chatbot-outlet-id" label="Outlet ID">
+            <div className="flex gap-2">
+              <input
+                id="chatbot-outlet-id"
+                type="text"
+                readOnly
+                value={effectiveOutletId}
+                className={`${fieldControlClassName} flex-1 font-mono`}
+              />
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleCopyField(effectiveOutletId, 'outlet')}
+              >
+                {copyField === 'outlet' ? 'Copied' : 'Copy'}
+              </Button>
+            </div>
+          </Field>
+
+          <Field
+            id="chatbot-api-key"
+            label="API Access Key"
+            hint={
+              <>
+                Use this in the <code className="bg-[var(--bg-soft)] px-1 rounded">X-API-Key</code>{' '}
+                header. We never store the raw key, only its hash.
+              </>
+            }
+          >
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <input
+                  id="chatbot-api-key"
+                  type="text"
+                  readOnly
+                  value={
+                    apiRevealedKey ||
+                    apiIntegration?.keyPrefix ||
+                    (apiLoading ? 'Loading…' : 'No key generated yet.')
+                  }
+                  className={`${fieldControlClassName} flex-1 font-mono`}
+                />
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => apiRevealedKey && handleCopyField(apiRevealedKey, 'key')}
+                  disabled={!apiRevealedKey}
+                >
+                  {copyField === 'key' ? 'Copied' : 'Copy'}
+                </Button>
+              </div>
+              {apiIntegration?.keyPrefix && !apiRevealedKey && (
+                <p className="text-xs text-[var(--text-muted)]">
+                  Current key prefix:{' '}
+                  <span className="font-mono">{apiIntegration.keyPrefix}</span>. The full key is
+                  only shown right after generation.
+                </p>
+              )}
+            </div>
+          </Field>
+
+          <Field
+            id="chatbot-webhook-url"
+            label="Webhook URL"
+            hint="MyChatBot can call this endpoint to verify the key and talk to your POS."
+          >
+            <div className="flex gap-2">
+              <input
+                id="chatbot-webhook-url"
+                type="text"
+                readOnly
+                value={CHATBOT_WEBHOOK_URL}
+                className={`${fieldControlClassName} flex-1 font-mono text-xs`}
+              />
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => handleCopyField(CHATBOT_WEBHOOK_URL, 'webhook')}
+              >
+                {copyField === 'webhook' ? 'Copied' : 'Copy'}
+              </Button>
+            </div>
+          </Field>
+        </FormSection>
+
+        <div className="rounded-ui-md bg-[var(--bg-soft)] border border-[var(--line)] p-3 text-xs text-[var(--text-secondary)] space-y-1">
+          <p className="font-semibold text-[var(--text-primary)]">Setup Guide (MyChatBot)</p>
+          <ul className="list-disc list-inside space-y-0.5">
+            <li>
+              Paste the <span className="font-mono">Outlet ID</span> into the bot&apos;s outlet /
+              location field.
+            </li>
+            <li>
+              Paste the <span className="font-mono">API Access Key</span> into the bot&apos;s API
+              key field. This is used as the <span className="font-mono">X-API-Key</span> header.
+            </li>
+            <li>
+              Use the <span className="font-mono">Webhook URL</span> where MyChatBot should send
+              verification or booking requests.
+            </li>
+            <li>
+              For advanced options or to change the outbound webhook URL, open the full{' '}
+              <Link
+                to="/settings/api-integration"
+                className="text-[var(--brand)] underline"
+              >
+                API Integration Management
+              </Link>{' '}
+              page.
+            </li>
+          </ul>
+        </div>
+      </AppModal>
     </div>
   );
 };

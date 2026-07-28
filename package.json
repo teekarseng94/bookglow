@@ -1,9 +1,14 @@
 {
   "name": "bookglow",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "devDependencies": {
     "concurrently": "^9.1.0",
-    "firebase-tools": "^13.35.0"
+    "firebase-tools": "^13.35.0",
+    "supabase": "^2.26.9",
+    "typescript": "~5.8.2"
   },
   "scripts": {
     "dev": "concurrently -n merchant,customer -c blue,magenta \"npm run dev:merchant\" \"npm run dev:customer\"",
@@ -12,8 +17,14 @@
     "build": "npm run build:merchant && npm run build:customer",
     "build:merchant": "npm --prefix apps/merchant-portal run build -- --outDir ../../dist-dashboard",
     "build:customer": "npm --prefix apps/customer-site run build -- --outDir ../../dist-booking",
+    "typecheck:packages": "npm run typecheck -w @bookglow/database-contracts && npm run typecheck -w @bookglow/supabase && npm run typecheck -w @bookglow/shared-types",
+    "typecheck": "npm run typecheck:packages && npm --prefix apps/merchant-portal run typecheck && npm --prefix apps/customer-site run typecheck",
     "deploy": "deploy-all.bat",
     "deploy:hosting": "firebase deploy --only hosting",
-    "deploy:firestore": "firebase deploy --only firestore"
+    "supabase:status": "npx supabase status",
+    "supabase:start": "npx supabase start",
+    "supabase:stop": "npx supabase stop",
+    "supabase:reset": "npx supabase db reset",
+    "supabase:types": "node scripts/generate-supabase-types.mjs"
   }
 }

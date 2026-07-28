@@ -1,16 +1,16 @@
 {
   "name": "zenflow-functions",
+<<<<<<< HEAD
   "description": "Cloud Functions for Bookglow (image upload proxy to avoid CORS)",
+=======
+  "description": "Bookglow Cloud Functions — chatbot proxy + retired Firestore stubs",
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
   "main": "index.js",
   "type": "commonjs",
   "engines": {
     "node": "20"
   },
   "dependencies": {
-    "axios": "^1.6.0",
-    "firebase-admin": "^12.0.0",
-    "firebase-functions": "^4.6.0",
-    "node-ical": "^0.16.0",
-    "zenflow-spa-manager": "file:.."
+    "firebase-functions": "^4.6.0"
   }
 }

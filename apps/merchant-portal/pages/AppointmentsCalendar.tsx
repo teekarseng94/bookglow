@@ -8,11 +8,26 @@ import {
   ScheduleBookingList,
   ScheduleDateStrip,
   ScheduleEmptyState,
+<<<<<<< HEAD
   ScheduleLoadingState,
+=======
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
   SchedulePageHeader,
   ScheduleToolbar,
   type ScheduleBookingDaySection,
 } from '../components/schedule';
+<<<<<<< HEAD
+=======
+import {
+  AppModal,
+  AppDrawer,
+  Button,
+  Field,
+  fieldControlClassName,
+  FormSection,
+  ModalFooterActions,
+} from '../components/ui';
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 
 interface AppointmentsCalendarProps {
   appointments: Appointment[];
@@ -26,8 +41,6 @@ interface AppointmentsCalendarProps {
   onDeleteAppointment: (id: string) => Promise<void>;
   onStartPOSSale: (appointment: Appointment) => void;
   onMarkReminderSent: (id: string) => void;
-  /** Called once when the page opens to sync Setmore appointments (Cloud Function). */
-  onSyncSetmore?: () => void | Promise<void>;
 }
 
 type ViewMode = 'day' | 'week' | 'month';
@@ -108,7 +121,6 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
   onDeleteAppointment,
   onStartPOSSale,
   onMarkReminderSent,
-  onSyncSetmore
 }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('day');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -118,8 +130,6 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [isSendingReminder, setIsSendingReminder] = useState(false);
-  const [isSyncingSetmore, setIsSyncingSetmore] = useState(false);
-  const syncRunOnce = useRef(false);
   const agendaLoadMoreRef = useRef<HTMLDivElement | null>(null);
   const dateStripScrollRef = useRef<HTMLDivElement | null>(null);
   const dateStripLeftRef = useRef<HTMLDivElement | null>(null);
@@ -147,17 +157,6 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
     serviceId: '',
     date: ''
   });
-
-  // Auto-sync Setmore appointments once when the Appointment page is opened (run only on mount)
-  useEffect(() => {
-    if (!onSyncSetmore || syncRunOnce.current) return;
-    syncRunOnce.current = true;
-    setIsSyncingSetmore(true);
-    Promise.resolve(onSyncSetmore())
-      .catch((err) => console.warn('Setmore auto-sync on open:', err))
-      .finally(() => setIsSyncingSetmore(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- run only once on mount
-  }, []);
 
   // Active appointments: hide cancelled and any legacy On Duty (app_onduty_) — only render real bookings (yellow-circle style).
   const activeAppointments = useMemo(
@@ -642,6 +641,7 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
 
   return (
     <div className="animate-fadeIn md:space-y-4 md:pb-24">
+<<<<<<< HEAD
       {isSyncingSetmore && <ScheduleLoadingState />}
 
       <SchedulePageHeader
@@ -660,6 +660,24 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
         onDateChange={setSelectedDate}
       />
 
+=======
+      <SchedulePageHeader
+        dateLabel={desktopDateLabel}
+        viewLabel={`${viewMode} view`}
+        onNewBooking={handleQuickAddBooking}
+      />
+
+      <ScheduleToolbar
+        viewMode={viewMode}
+        selectedDate={selectedDate}
+        onViewModeChange={setViewMode}
+        onPrev={() => navigate('prev')}
+        onNext={() => navigate('next')}
+        onToday={setToday}
+        onDateChange={setSelectedDate}
+      />
+
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
       <div className="bg-[var(--bg-surface)] md:rounded-ui-lg md:border md:border-[var(--line)] md:shadow-ui-xs md:overflow-hidden md:min-h-[600px] flex flex-col">
         {viewMode === 'day' && (
           <>
@@ -800,141 +818,228 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
         </>
       )}
 
-      {/* Booking Modal */}
-      {isBookingModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-[32px] w-full max-w-md shadow-2xl animate-scaleIn overflow-hidden">
-            <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-teal-600 text-white">
-              <h3 className="text-xl font-black">Schedule Treatment</h3>
-              <button onClick={() => setIsBookingModalOpen(false)} className="p-2 hover:bg-white/10 rounded-xl transition-all"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
-            </div>
-            <form onSubmit={handleBookingSubmit} className="p-8 space-y-6">
-              <div className="p-5 bg-teal-50 rounded-[24px] border border-teal-100 shadow-inner flex flex-col gap-1">
-                <span className="text-[10px] font-black text-teal-600 uppercase tracking-widest">Appointment Summary</span>
-                <p className="text-lg font-black text-slate-800">{new Date(bookingData.date).toLocaleDateString('default', { weekday: 'long', month: 'short', day: 'numeric' })}</p>
-                <div className="flex items-center gap-2 text-sm font-bold text-teal-700"><Icons.Calendar /> {bookingData.time} — Provider: {staff.find(s => s.id === bookingData.staffId)?.name}</div>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-[10px] font-black uppercase text-slate-500 mb-1.5 tracking-widest">Select Client</label>
-                  <select className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-sm shadow-sm" value={bookingData.clientId} onChange={e => setBookingData({ ...bookingData, clientId: e.target.value })}>
-                    <option value="guest">Walk-in / Guest</option>
-                    {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black uppercase text-slate-500 mb-1.5 tracking-widest">Select Treatment</label>
-                  <select className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-sm shadow-sm" value={bookingData.serviceId} onChange={e => setBookingData({ ...bookingData, serviceId: e.target.value })}>
-                    {services.map(s => <option key={s.id} value={s.id}>{s.name} (${s.price})</option>)}
-                  </select>
-                </div>
-              </div>
-              <div className="pt-4 space-y-3">
-                <button type="submit" className="w-full py-5 bg-teal-600 text-white font-black rounded-2xl shadow-xl shadow-teal-100 transition-all hover:bg-teal-700 active:scale-95">Save to Calendar</button>
-              </div>
-            </form>
-          </div>
+      <AppModal
+        open={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+        title="Schedule Treatment"
+        description="Confirm client and treatment for this slot."
+        size="md"
+        zIndexClass="z-[100]"
+        asForm
+        formId="schedule-booking-form"
+        onSubmit={handleBookingSubmit}
+        footer={
+          <ModalFooterActions>
+            <Button variant="secondary" onClick={() => setIsBookingModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="schedule-booking-form">
+              Save to Calendar
+            </Button>
+          </ModalFooterActions>
+        }
+      >
+        <div className="rounded-ui-md border border-[var(--line)] bg-[var(--brand-soft)] px-4 py-3 space-y-1">
+          <p className="text-app-label font-bold uppercase text-[var(--brand)]">Appointment Summary</p>
+          <p className="text-base font-bold text-[var(--text-primary)]">
+            {new Date(bookingData.date).toLocaleDateString('default', {
+              weekday: 'long',
+              month: 'short',
+              day: 'numeric',
+            })}
+          </p>
+          <p className="text-sm font-semibold text-[var(--brand-deep)] flex items-center gap-2">
+            <Icons.Calendar /> {bookingData.time} —{' '}
+            {staff.find((s) => s.id === bookingData.staffId)?.name}
+          </p>
         </div>
-      )}
+        <FormSection>
+          <Field id="booking-client" label="Select Client" required>
+            <select
+              id="booking-client"
+              className={fieldControlClassName}
+              value={bookingData.clientId}
+              onChange={(e) => setBookingData({ ...bookingData, clientId: e.target.value })}
+            >
+              <option value="guest">Walk-in / Guest</option>
+              {clients.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field id="booking-service" label="Select Treatment" required>
+            <select
+              id="booking-service"
+              className={fieldControlClassName}
+              value={bookingData.serviceId}
+              onChange={(e) => setBookingData({ ...bookingData, serviceId: e.target.value })}
+            >
+              {services.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} (${s.price})
+                </option>
+              ))}
+            </select>
+          </Field>
+        </FormSection>
+      </AppModal>
 
-      {/* Status Modal */}
-      {isStatusModalOpen && selectedAppointment && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-          <div className="bg-white rounded-[32px] w-full max-w-sm shadow-2xl animate-scaleIn overflow-hidden">
-            <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-800 text-white">
-              <h3 className="text-xl font-black">Manage Booking</h3>
-              <button onClick={() => setIsStatusModalOpen(false)} className="p-2 hover:bg-white/10 rounded-xl transition-all"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
-            </div>
-            <div className="p-8 space-y-3">
-              <div className="mb-6 flex justify-between items-center">
-                 <div>
-                   <p className="text-[10px] font-black uppercase text-slate-400 mb-1">Status</p>
-                   <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${selectedAppointment.status === 'completed' ? 'bg-teal-100 text-teal-700' : 'bg-amber-100 text-amber-700'}`}>{selectedAppointment.status}</span>
-                 </div>
-                 {outletSettings.reminderEnabled && selectedAppointment.status === 'scheduled' && (
-                    <button 
-                      onClick={handleSendManualReminder}
-                      disabled={isSendingReminder}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${selectedAppointment.reminderSent ? 'bg-amber-50 text-amber-600 border border-amber-200' : 'bg-indigo-600 text-white shadow-lg shadow-indigo-100 hover:bg-indigo-700'}`}
-                    >
-                      {isSendingReminder ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>}
-                      {selectedAppointment.reminderSent ? 'Resend Reminder' : 'Send Reminder'}
-                    </button>
-                 )}
-              </div>
-              <button onClick={() => onUpdateStatus('scheduled')} className={`w-full py-4 rounded-2xl font-black transition-all ${selectedAppointment.status === 'scheduled' ? 'bg-teal-600 text-white shadow-lg' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}>Mark Scheduled</button>
-              <button onClick={() => onUpdateStatus('completed')} className={`w-full py-4 rounded-2xl font-black transition-all ${selectedAppointment.status === 'completed' ? 'bg-teal-600 text-white shadow-lg' : 'bg-slate-50 text-slate-600 hover:bg-slate-100'}`}>Mark Completed</button>
-              <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-slate-50">
-                 <button onClick={() => onUpdateStatus('no-show')} className="py-4 bg-orange-50 text-orange-600 rounded-2xl font-black text-xs hover:bg-orange-100">No-Show</button>
-                 <button onClick={() => onUpdateStatus('cancelled')} className="py-4 bg-rose-50 text-rose-600 rounded-2xl font-black text-xs hover:bg-rose-100">Cancel</button>
-              </div>
-              <div className="mt-4 pt-4 border-t border-slate-100">
-                <button 
-                  type="button"
-                  onClick={() => selectedAppointment?.id && handleDeleteAppointment(selectedAppointment.id)} 
-                  disabled={!selectedAppointment?.id}
-                  className="w-full py-4 bg-red-600 text-white rounded-2xl font-black text-sm hover:bg-red-700 transition-all shadow-lg shadow-red-100 disabled:opacity-50 disabled:cursor-not-allowed"
+      <AppModal
+        open={isStatusModalOpen && !!selectedAppointment}
+        onClose={() => setIsStatusModalOpen(false)}
+        title="Manage Booking"
+        description="Update status, send a reminder, or remove this appointment."
+        size="sm"
+        zIndexClass="z-[100]"
+        footer={
+          <ModalFooterActions>
+            <Button variant="secondary" onClick={() => setIsStatusModalOpen(false)}>
+              Close
+            </Button>
+          </ModalFooterActions>
+        }
+      >
+        {selectedAppointment ? (
+          <div className="space-y-3">
+            <div className="flex justify-between items-start gap-3">
+              <div>
+                <p className="text-app-label font-bold uppercase text-[var(--text-muted)] mb-1">Status</p>
+                <span
+                  className={`inline-flex px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${
+                    selectedAppointment.status === 'completed'
+                      ? 'bg-[var(--brand-soft)] text-[var(--brand-deep)]'
+                      : 'bg-amber-50 text-amber-700'
+                  }`}
                 >
-                  Delete Appointment
-                </button>
+                  {selectedAppointment.status}
+                </span>
               </div>
+              {outletSettings.reminderEnabled && selectedAppointment.status === 'scheduled' && (
+                <Button
+                  size="sm"
+                  variant={selectedAppointment.reminderSent ? 'outline' : 'primary'}
+                  onClick={handleSendManualReminder}
+                  disabled={isSendingReminder}
+                >
+                  {isSendingReminder
+                    ? 'Sending…'
+                    : selectedAppointment.reminderSent
+                      ? 'Resend Reminder'
+                      : 'Send Reminder'}
+                </Button>
+              )}
+            </div>
+            <Button
+              fullWidth
+              variant={selectedAppointment.status === 'scheduled' ? 'primary' : 'secondary'}
+              onClick={() => onUpdateStatus('scheduled')}
+            >
+              Mark Scheduled
+            </Button>
+            <Button
+              fullWidth
+              variant={selectedAppointment.status === 'completed' ? 'primary' : 'secondary'}
+              onClick={() => onUpdateStatus('completed')}
+            >
+              Mark Completed
+            </Button>
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[var(--line)]">
+              <Button variant="outline" onClick={() => onUpdateStatus('no-show')}>
+                No-Show
+              </Button>
+              <Button variant="outline" onClick={() => onUpdateStatus('cancelled')}>
+                Cancel Booking
+              </Button>
+            </div>
+            <div className="pt-2 border-t border-[var(--line)]">
+              <Button
+                fullWidth
+                variant="danger"
+                onClick={() => selectedAppointment?.id && handleDeleteAppointment(selectedAppointment.id)}
+                disabled={!selectedAppointment?.id}
+              >
+                Delete Appointment
+              </Button>
             </div>
           </div>
-        </div>
-      )}
+        ) : null}
+      </AppModal>
 
-      {/* ===== Mobile full-month calendar ===== */}
-      {monthPickerOpen && (
-        <div className="md:hidden fixed inset-0 z-[80] bg-white flex flex-col">
-          <div className="flex items-center justify-between px-2 h-14 border-b border-slate-100 flex-shrink-0">
+      <AppDrawer
+        open={monthPickerOpen}
+        onClose={() => setMonthPickerOpen(false)}
+        title={monthLabel(pickerMonth)}
+        variant="fullscreen"
+        zIndexClass="z-[80] md:hidden"
+        headerActions={
+          <>
             <button
               type="button"
-              onClick={() => { const d = new Date(pickerMonth); d.setUTCMonth(d.getUTCMonth() - 1, 1); setPickerMonth(toISO(d)); }}
-              className="w-11 h-11 grid place-items-center rounded-lg text-slate-500 active:bg-slate-100"
+              onClick={() => {
+                const d = new Date(pickerMonth);
+                d.setUTCMonth(d.getUTCMonth() - 1, 1);
+                setPickerMonth(toISO(d));
+              }}
+              className="min-w-[44px] min-h-[44px] grid place-items-center rounded-ui-sm text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]"
               aria-label="Previous month"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+              </svg>
             </button>
             <button
               type="button"
-              onClick={() => setMonthPickerOpen(false)}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg active:bg-slate-100"
-              aria-label="Collapse calendar"
-            >
-              <span className="text-[26px] leading-none font-semibold tracking-tight text-slate-900">{monthLabel(pickerMonth)}</span>
-              <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" /></svg>
-            </button>
-            <button
-              type="button"
-              onClick={() => { const d = new Date(pickerMonth); d.setUTCMonth(d.getUTCMonth() + 1, 1); setPickerMonth(toISO(d)); }}
-              className="w-11 h-11 grid place-items-center rounded-lg text-slate-500 active:bg-slate-100"
+              onClick={() => {
+                const d = new Date(pickerMonth);
+                d.setUTCMonth(d.getUTCMonth() + 1, 1);
+                setPickerMonth(toISO(d));
+              }}
+              className="min-w-[44px] min-h-[44px] grid place-items-center rounded-ui-sm text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]"
               aria-label="Next month"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+              </svg>
             </button>
-          </div>
-          <div className="grid grid-cols-7 px-2 pt-3 pb-1">
-            {MON_INITIALS.map((m, i) => (
-              <div key={i} className="text-center text-[13px] font-medium text-slate-400">{m}</div>
-            ))}
-          </div>
-          <div className="grid grid-cols-7 px-2">
-            {monthMatrix(pickerMonth).map((cell) => {
-              const isSel = cell.iso === visibleDate;
-              const isToday = cell.iso === todayIso;
-              return (
-                <button key={cell.iso} type="button" onClick={() => goToDate(cell.iso)} className="flex justify-center py-1.5">
-                  <span className={`w-10 h-10 rounded-xl flex items-center justify-center text-[17px] font-medium transition-colors ${
-                    isSel ? 'bg-slate-900 text-white' : !cell.inMonth ? 'text-slate-300' : isToday ? 'text-teal-600 font-bold' : 'text-slate-700'
-                  }`}>
-                    {cell.date}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          </>
+        }
+      >
+        <div className="grid grid-cols-7 gap-y-1">
+          {MON_INITIALS.map((m, i) => (
+            <div key={i} className="text-center text-xs font-semibold text-[var(--text-muted)]">
+              {m}
+            </div>
+          ))}
+          {monthMatrix(pickerMonth).map((cell) => {
+            const isSel = cell.iso === visibleDate;
+            const isToday = cell.iso === todayIso;
+            return (
+              <button
+                key={cell.iso}
+                type="button"
+                onClick={() => goToDate(cell.iso)}
+                className="flex justify-center py-1"
+              >
+                <span
+                  className={`w-10 h-10 rounded-ui-sm flex items-center justify-center text-base font-medium transition-colors ${
+                    isSel
+                      ? 'bg-[var(--brand)] text-white'
+                      : !cell.inMonth
+                        ? 'text-[var(--text-muted)]'
+                        : isToday
+                          ? 'text-[var(--brand)] font-bold'
+                          : 'text-[var(--text-primary)]'
+                  }`}
+                >
+                  {cell.date}
+                </span>
+              </button>
+            );
+          })}
         </div>
-      )}
+      </AppDrawer>
 
       {/* ===== Mobile full-screen booking detail (Overview) ===== */}
       {selectedAppointment && (() => {

@@ -1,16 +1,15 @@
 /**
  * Public Booking Portal: /book/:bookingPath
- * bookingPath is either the Firestore outlet id (e.g. outlet_001) or outlets.bookingSlug (e.g. baliWellness).
- * Two-column layout: left = Services, Team, Good to know, Reviews, Address + map; right = sticky sidebar with name, Book, Open/Closed, hours, address.
- * Real-time Firestore listener for outlets/{resolvedOutletId} to sync addressDisplay, phoneNumber, businessHours.
+ * bookingPath is either the outlet id (e.g. outlet_001) or outlets.booking_slug (e.g. baliWellness).
+ * Two-column layout: left = Services, Team, Good to know, Reviews, Address + map; right = sticky sidebar.
+ * Data and auth via Supabase (outlets, services, staff, slots, bookings, frontend_customers).
  */
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { collection, doc, getDoc, onSnapshot, orderBy, query, where } from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
-import { db, auth, FRONTEND_CUSTOMER_COLLECTION } from "../../services/firebase";
 import { resolveOutletIdFromBookingPath } from "../../services/bookingPathResolve";
+import type { PublicService, PublicOutlet, PublicTeamMember } from "../../services/bookingApi";
 import {
+<<<<<<< HEAD
   getPublicOutletData,
   createPublicBooking,
   getAvailableSlots,
@@ -18,6 +17,17 @@ import {
   PublicOutlet,
   PublicTeamMember,
 } from "../../services/bookingApi";
+=======
+  getPublicOutletFromSupabase,
+  listVisibleServicesFromSupabase,
+  listStaffFromSupabase,
+  getAvailableSlotsFromSupabase,
+  createPublicBookingFromSupabase,
+  submitPublicReviewFromSupabase,
+  upsertFrontendCustomerProfileFromSupabase,
+} from "../../services/supabasePublicBooking";
+import { createBrowserSupabaseClient } from "@bookglow/supabase";
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 import {
   ANY_AVAILABLE_STAFF,
   BookingEmptyState,
@@ -179,6 +189,16 @@ export function BookingPage() {
   const [shareLoading, setShareLoading] = useState(false);
   const [shareToast, setShareToast] = useState<string | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+  const [isSignedIn, setIsSignedIn] = useState(false);
+  /** Preferred therapist from “Meet the team”; applied when services are selected. */
+  const [preferredStaffId, setPreferredStaffId] = useState<string | null>(null);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewAuthor, setReviewAuthor] = useState("");
+  const [reviewText, setReviewText] = useState("");
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [reviewSuccess, setReviewSuccess] = useState<string | null>(null);
 
   // Map /book/:segment → real outlet document id (legacy id or bookingSlug)
   useEffect(() => {
@@ -283,24 +303,43 @@ export function BookingPage() {
     return final;
   }, [services, outlet?.serviceCategories]);
 
-  // Watch Firebase Auth state so we can show the signed-in email in the header
+  // Watch Supabase auth session for header email + review gate
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        setCurrentUserEmail(null);
-        return;
-      }
+    const env = import.meta.env as unknown as Record<string, string | undefined>;
+    const sb = createBrowserSupabaseClient(env);
+    let cancelled = false;
 
-      // Booking-site profiles live in frontend_customer/{uid}; staff accounts only have users/{uid}.
-      const primary = await getDoc(doc(db, FRONTEND_CUSTOMER_COLLECTION, user.uid));
-      if (primary.exists()) {
-        setCurrentUserEmail(user.email ?? null);
+    const applyUser = async (email: string | null, userId: string | null) => {
+      if (cancelled) return;
+      if (!userId) {
+        setCurrentUserEmail(null);
+        setIsSignedIn(false);
         return;
       }
-      const legacy = await getDoc(doc(db, "customers", user.uid));
-      setCurrentUserEmail(legacy.exists() ? user.email ?? null : null);
+      try {
+        await upsertFrontendCustomerProfileFromSupabase({ email });
+      } catch (err) {
+        console.warn("upsertFrontendCustomerProfileFromSupabase:", err);
+      }
+      if (cancelled) return;
+      setCurrentUserEmail(email);
+      setIsSignedIn(true);
+    };
+
+    sb.auth.getSession().then(({ data }) => {
+      const user = data.session?.user;
+      void applyUser(user?.email ?? null, user?.id ?? null);
     });
-    return unsubscribe;
+
+    const { data: sub } = sb.auth.onAuthStateChange((_event, session) => {
+      const user = session?.user;
+      void applyUser(user?.email ?? null, user?.id ?? null);
+    });
+
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   // Filter services by selected category and search by name
@@ -368,19 +407,15 @@ export function BookingPage() {
       }
       try {
         setSlotsLoading(true);
-        // If teamMemberId is provided and not empty, filter slots by that member's availability
-        // Otherwise, show all available slots
-        const payload: any = {
+        const payload = {
           outletId,
           serviceId: service.id,
           date: targetDate,
+          staffId:
+            teamMemberId && teamMemberId.trim().length > 0 ? teamMemberId.trim() : undefined,
         };
-        // Only include staffId if it's a non-empty string
-        if (teamMemberId && teamMemberId.trim().length > 0) {
-          payload.staffId = teamMemberId.trim();
-        }
-        
-        const { slots } = await getAvailableSlots(payload);
+
+        const slots = await getAvailableSlotsFromSupabase(payload);
         setAvailableSlots(Array.isArray(slots) ? slots : []);
       } catch (err) {
         console.error("fetchAvailableSlots error:", err);
@@ -401,7 +436,7 @@ export function BookingPage() {
     setSelectedServices((prev) => [...prev, { selectionId, service }]);
     setServiceTeamMembers((prev) => ({
       ...prev,
-      [selectionId]: null,
+      [selectionId]: preferredStaffId,
     }));
   };
 
@@ -416,25 +451,87 @@ export function BookingPage() {
 
   // Set therapist for a specific selected service row
   const setServiceTeamMember = (selectionId: string, teamMemberId: string | null) => {
-    
-    // Find team member name for logging
     const teamMember = teamMemberId ? team.find((t) => t.id === teamMemberId) : null;
     const sel = selectedServices.find((s) => s.selectionId === selectionId);
     console.log(`[Team Selection] Service: ${sel?.service?.name || selectionId}, Selected: ${teamMember?.name || teamMemberId || 'None'}`);
-    
-    setServiceTeamMembers({
-      ...serviceTeamMembers,
+
+    setServiceTeamMembers((prev) => ({
+      ...prev,
       [selectionId]: teamMemberId,
+    }));
+  };
+
+  /** Prefer a therapist from the People section; apply to all selected services. */
+  const handleTeamCardClick = (memberId: string) => {
+    const next = preferredStaffId === memberId ? null : memberId;
+    setPreferredStaffId(next);
+    if (selectedServices.length === 0) {
+      document.getElementById("services")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    setServiceTeamMembers((prev) => {
+      const updated = { ...prev };
+      for (const sel of selectedServices) {
+        updated[sel.selectionId] = next;
+      }
+      return updated;
     });
   };
 
-  // Real-time listener: PRIMARY source for outlet data (addressDisplay, businessHours, etc.)
-  // This listener runs immediately on mount and keeps data in sync with Firestore
+  const handleSubmitReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!outletId) return;
+    setReviewError(null);
+    setReviewSuccess(null);
+    const author = reviewAuthor.trim() || currentUserEmail?.split("@")[0] || "Guest";
+    const text = reviewText.trim();
+    if (text.length < 3) {
+      setReviewError("Please write a short review.");
+      return;
+    }
+    if (!isSignedIn) {
+      setReviewError("Sign in to leave a review.");
+      navigate(`/book/${pathSegment}/auth?return=${encodeURIComponent(`/book/${pathSegment}#reviews`)}`);
+      return;
+    }
+    setReviewSubmitting(true);
+    try {
+      await submitPublicReviewFromSupabase({
+        outletId,
+        author,
+        text,
+        rating: reviewRating,
+      });
+      setOutlet((prev) =>
+        prev
+          ? {
+              ...prev,
+              reviews: [
+                ...(prev.reviews || []),
+                { author, text, rating: reviewRating },
+              ],
+            }
+          : prev
+      );
+      setReviewText("");
+      setReviewAuthor("");
+      setReviewRating(5);
+      setShowReviewForm(false);
+      setReviewSuccess("Thanks — your review was submitted.");
+    } catch (err) {
+      setReviewError(friendlyBookingError(err, "Could not submit review."));
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
+  // Outlet load from Supabase
   useEffect(() => {
     if (!pathResolveDone || !resolvedOutletId) {
       return;
     }
 
+<<<<<<< HEAD
     let hasReceivedData = false;
     const outletRef = doc(db, "outlets", resolvedOutletId);
     const unsubscribe = onSnapshot(
@@ -460,31 +557,26 @@ export function BookingPage() {
               });
           }
           return;
+=======
+    let cancelled = false;
+    getPublicOutletFromSupabase(resolvedOutletId)
+      .then((o) => {
+        if (cancelled) return;
+        if (o) {
+          setOutlet(o);
+          setLoading(false);
+          setError(null);
+        } else {
+          setError("Outlet not found");
+          setLoading(false);
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
         }
-
-        hasReceivedData = true;
-        const data = snapshot.data();
-        const businessHours = (data.businessHours && typeof data.businessHours === "object" && Object.keys(data.businessHours).length > 0) 
-          ? data.businessHours 
-          : {};
-        
-        setOutlet({
-          id: snapshot.id,
-          name: data.name || "Spa",
-          addressDisplay: data.addressDisplay || "",
-          phoneNumber: data.phoneNumber || data.phone || "",
-          businessHours,
-          timezone: data.timezone || "Asia/Kuala_Lumpur",
-          reviews: data.reviews || [],
-          serviceCategories: Array.isArray(data.serviceCategories)
-            ? data.serviceCategories
-            : [],
-          bookingSlug:
-            typeof data.bookingSlug === "string" && data.bookingSlug.trim() !== ""
-              ? data.bookingSlug.trim()
-              : undefined,
-        });
+      })
+      .catch((e: unknown) => {
+        if (cancelled) return;
+        setError(friendlyBookingError(e, "Could not load this shop."));
         setLoading(false);
+<<<<<<< HEAD
         setError(null);
       },
       (err) => {
@@ -511,79 +603,46 @@ export function BookingPage() {
     );
 
     return () => unsubscribe();
+=======
+      });
+    return () => {
+      cancelled = true;
+    };
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
   }, [pathResolveDone, resolvedOutletId]);
 
-  // Real-time listener: services for this outlet (keeps booking list in sync with backend Services)
+  // Services load from Supabase
   useEffect(() => {
     if (!outletId) return;
 
-    const servicesRef = collection(db, "services");
-    const servicesQuery = query(
-      servicesRef,
-      where("outletID", "==", outletId),
-      orderBy("name", "asc")
-    );
-
-    const unsubscribe = onSnapshot(
-      servicesQuery,
-      (snapshot) => {
-        const nextServices: PublicService[] = snapshot.docs
-          .map((d) => {
-            const data = d.data() as Record<string, unknown>;
-            return {
-              doc: d,
-              data: {
-                id: d.id,
-                name: (data.name as string) || "",
-                price: (data.price as number) ?? 0,
-                duration: (data.duration as number) ?? 60,
-                category: (data.category as string) || "",
-                isPromotion: (data.isPromotion as boolean) ?? false,
-              },
-              isVisible: data.isVisible !== false,
-            };
-          })
-          .filter((item) => item.isVisible)
-          .map((item) => item.data);
-        setServices(nextServices);
-      },
-      (err) => {
-        console.error("Firestore listener error for services:", err);
-      }
-    );
-
-    return () => unsubscribe();
+    let cancelled = false;
+    listVisibleServicesFromSupabase(outletId)
+      .then((svc) => {
+        if (!cancelled) setServices(svc);
+      })
+      .catch((err) => {
+        console.error("Supabase services fetch error:", err);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [outletId]);
 
-  // Real-time listener: team for this outlet
+  // Team load from Supabase
   useEffect(() => {
     if (!outletId) return;
 
-    const staffRef = collection(db, "staff");
-    const staffQuery = query(staffRef, where("outletID", "==", outletId));
-
-    const unsubscribe = onSnapshot(
-      staffQuery,
-      (snapshot) => {
-        const nextTeam: PublicTeamMember[] = snapshot.docs.map((d) => {
-          const data = d.data() as any;
-          return {
-            id: d.id,
-            name: data.name || "",
-            profilePicture: data.profilePicture || data.photoURL || "",
-            qualifiedServices: Array.isArray(data.qualifiedServices)
-              ? data.qualifiedServices
-              : undefined,
-          };
-        });
-        setTeam(nextTeam);
-      },
-      (err) => {
-        console.error("Firestore listener error for team:", err);
-      }
-    );
-
-    return () => unsubscribe();
+    let cancelled = false;
+    listStaffFromSupabase(outletId)
+      .then((nextTeam) => {
+        if (!cancelled) setTeam(nextTeam);
+      })
+      .catch((err) => {
+        console.error("Supabase staff fetch error:", err);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [outletId]);
 
   // Date/time constraints: prevent booking in the past (local time)
@@ -670,6 +729,7 @@ export function BookingPage() {
         const teamMemberId = serviceTeamMembers[sel.selectionId] || null;
         if (!teamMemberId) continue;
 
+<<<<<<< HEAD
         if (teamMemberId === ANY_AVAILABLE_STAFF) {
           bookingPromises.push(
             createPublicBooking({
@@ -682,6 +742,20 @@ export function BookingPage() {
               email: email.trim() || undefined,
             })
           );
+=======
+        const basePayload = {
+          outletId,
+          serviceId: service.id,
+          date: selectedDate,
+          time: selectedTime,
+          customerName: customerName.trim(),
+          phone: phone.trim(),
+          email: email.trim() || undefined,
+        };
+
+        if (teamMemberId === ANY_AVAILABLE_STAFF) {
+          bookingPromises.push(createPublicBookingFromSupabase(basePayload));
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
           continue;
         }
 
@@ -693,6 +767,7 @@ export function BookingPage() {
         }
 
         bookingPromises.push(
+<<<<<<< HEAD
           createPublicBooking({
             outletId,
             serviceId: service.id,
@@ -703,6 +778,9 @@ export function BookingPage() {
             email: email.trim() || undefined,
             staffId: teamMemberId,
           })
+=======
+          createPublicBookingFromSupabase({ ...basePayload, staffId: teamMemberId })
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
         );
       }
       const results = await Promise.all(bookingPromises);
@@ -939,6 +1017,7 @@ export function BookingPage() {
 
           {/* Team */}
           <section id="team" className="booking-section">
+<<<<<<< HEAD
             <div className="booking-section__header"><div><span className="booking-section__eyebrow">People</span><h2>Meet the team</h2></div></div>
             {team.length === 0 ? (
               <p className="text-slate-500 py-2">No team members listed.</p>
@@ -958,6 +1037,51 @@ export function BookingPage() {
                   </div>
                 ))}
               </div>
+=======
+            <div className="booking-section__header">
+              <div>
+                <span className="booking-section__eyebrow">People</span>
+                <h2>Meet the team</h2>
+              </div>
+            </div>
+            {team.length === 0 ? (
+              <p className="text-slate-500 py-2">No team members listed.</p>
+            ) : (
+              <>
+                <p className="text-sm text-slate-500 mb-3">
+                  Tap a therapist to prefer them for your booking
+                  {preferredStaffId
+                    ? ` · ${team.find((t) => t.id === preferredStaffId)?.name || "Selected"}`
+                    : ""}
+                  .
+                </p>
+                <div className="booking-team-grid">
+                  {team.map((m) => {
+                    const selected = preferredStaffId === m.id;
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => handleTeamCardClick(m.id)}
+                        className={`booking-team-card text-left w-full ${
+                          selected ? "booking-team-card--selected" : ""
+                        }`}
+                        aria-pressed={selected}
+                      >
+                        <div className="booking-team-card__avatar">
+                          {m.profilePicture ? (
+                            <img src={m.profilePicture} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            m.name.charAt(0).toUpperCase()
+                          )}
+                        </div>
+                        <span className="font-medium text-slate-800">{m.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
             )}
           </section>
 
@@ -972,11 +1096,114 @@ export function BookingPage() {
 
           {/* Reviews */}
           <section id="reviews" className="booking-section">
+<<<<<<< HEAD
             <div className="booking-section__header"><div><span className="booking-section__eyebrow">Customer feedback</span><h2>Reviews</h2></div></div>
             <p className="text-slate-500 text-sm mb-4">Be the first to review us and share insights about your experience.</p>
             <button type="button" className="px-4 py-2 rounded-lg border border-slate-300 text-slate-800 font-medium text-sm hover:bg-slate-50">
               Write a review
             </button>
+=======
+            <div className="booking-section__header">
+              <div>
+                <span className="booking-section__eyebrow">Customer feedback</span>
+                <h2>Reviews</h2>
+              </div>
+            </div>
+            {(outlet?.reviews?.length ?? 0) > 0 ? (
+              <ul className="space-y-3 mb-4">
+                {(outlet?.reviews || []).map((r, i) => (
+                  <li key={`${r.author || "r"}-${i}`} className="rounded-xl border border-slate-100 bg-slate-50/80 p-3">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <p className="text-sm font-bold text-slate-800">{r.author || "Guest"}</p>
+                      {typeof r.rating === "number" ? (
+                        <span className="text-xs font-semibold text-amber-600" aria-label={`${r.rating} of 5 stars`}>
+                          {"★".repeat(Math.max(1, Math.min(5, Math.round(r.rating))))}
+                          {"☆".repeat(Math.max(0, 5 - Math.min(5, Math.round(r.rating))))}
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="text-sm text-slate-600 leading-relaxed">{r.text}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-slate-500 text-sm mb-4">
+                Be the first to review us and share insights about your experience.
+              </p>
+            )}
+            {reviewSuccess ? <p className="text-sm text-emerald-700 mb-3">{reviewSuccess}</p> : null}
+            {!showReviewForm ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setShowReviewForm(true);
+                  setReviewError(null);
+                  setReviewSuccess(null);
+                  if (currentUserEmail && !reviewAuthor) {
+                    setReviewAuthor(currentUserEmail.split("@")[0] || "");
+                  }
+                }}
+                className="px-4 py-2 rounded-lg border border-slate-300 text-slate-800 font-medium text-sm hover:bg-slate-50"
+              >
+                Write a review
+              </button>
+            ) : (
+              <form onSubmit={handleSubmitReview} className="space-y-3 rounded-xl border border-slate-200 bg-white p-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Your name</label>
+                  <input
+                    type="text"
+                    value={reviewAuthor}
+                    onChange={(e) => setReviewAuthor(e.target.value)}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    placeholder="Name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Rating</label>
+                  <select
+                    value={reviewRating}
+                    onChange={(e) => setReviewRating(Number(e.target.value))}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  >
+                    {[5, 4, 3, 2, 1].map((n) => (
+                      <option key={n} value={n}>
+                        {n} star{n === 1 ? "" : "s"}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Review</label>
+                  <textarea
+                    value={reviewText}
+                    onChange={(e) => setReviewText(e.target.value)}
+                    rows={3}
+                    required
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    placeholder="Share your experience…"
+                  />
+                </div>
+                {reviewError ? <p className="text-sm text-red-600">{reviewError}</p> : null}
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="submit"
+                    disabled={reviewSubmitting}
+                    className="px-4 py-2 rounded-lg bg-[var(--brand)] text-white font-semibold text-sm disabled:opacity-60"
+                  >
+                    {reviewSubmitting ? "Submitting…" : "Submit review"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowReviewForm(false)}
+                    className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 text-sm font-medium"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
           </section>
 
           {/* Address + Map */}

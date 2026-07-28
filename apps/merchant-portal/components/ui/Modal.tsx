@@ -1,12 +1,18 @@
+<<<<<<< HEAD
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { cx } from './cx';
 import { IconButton } from './IconButton';
+=======
+import React from 'react';
+import { AppModal, type AppModalSize } from './AppModal';
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 
 export interface ModalProps {
   open: boolean;
   onClose: () => void;
   title?: React.ReactNode;
+<<<<<<< HEAD
   children: React.ReactNode;
   footer?: React.ReactNode;
   size?: 'sm' | 'md' | 'lg';
@@ -21,15 +27,35 @@ const sizeClass = {
 
 /**
  * Presentational modal. Parent owns open state; no save/delete logic here.
+=======
+  description?: React.ReactNode;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+  size?: AppModalSize;
+  className?: string;
+  closeOnBackdrop?: boolean;
+  busy?: boolean;
+  zIndexClass?: string;
+}
+
+/**
+ * Presentational modal — thin wrapper over AppModal for backwards compatibility.
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
  */
 export const Modal: React.FC<ModalProps> = ({
   open,
   onClose,
+<<<<<<< HEAD
   title,
+=======
+  title = '',
+  description,
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
   children,
   footer,
   size = 'md',
   className,
+<<<<<<< HEAD
 }) => {
   useEffect(() => {
     if (!open) return;
@@ -84,5 +110,26 @@ export const Modal: React.FC<ModalProps> = ({
     document.body,
   );
 };
+=======
+  closeOnBackdrop,
+  busy,
+  zIndexClass,
+}) => (
+  <AppModal
+    open={open}
+    onClose={onClose}
+    title={title}
+    description={description}
+    footer={footer}
+    size={size}
+    className={className}
+    closeOnBackdrop={closeOnBackdrop}
+    busy={busy}
+    zIndexClass={zIndexClass}
+  >
+    {children}
+  </AppModal>
+);
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 
 export default Modal;

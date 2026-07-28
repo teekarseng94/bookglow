@@ -2,19 +2,19 @@
  * Auth + UserContext + RootRoutes. Lazy-loaded from index so the entry
  * does not pull in Firebase (avoids OOM during build).
  */
-import React from 'react';
-import { UserContextProvider } from './contexts/UserContext';
-import { onAuthStateChange } from './services/authService';
+import React from "react";
+import { UserContextProvider } from "./contexts/UserContext";
+import { onAuthStateChange, type PortalAuthUser } from "./services/authService";
 
-const RootRoutes = React.lazy(() => import('./RootRoutes'));
+const RootRoutes = React.lazy(() => import("./RootRoutes"));
 
 const AppBootstrap: React.FC = () => {
-  const [firebaseUser, setFirebaseUser] = React.useState<any>(null);
+  const [authUser, setAuthUser] = React.useState<PortalAuthUser | null>(null);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
     const unsubscribe = onAuthStateChange((user) => {
-      setFirebaseUser(user);
+      setAuthUser(user);
       setLoading(false);
     });
     return () => unsubscribe();
@@ -32,7 +32,7 @@ const AppBootstrap: React.FC = () => {
   }
 
   return (
-    <UserContextProvider firebaseUser={firebaseUser}>
+    <UserContextProvider firebaseUser={authUser}>
       <React.Suspense
         fallback={
           <div className="min-h-screen flex items-center justify-center bg-slate-50">

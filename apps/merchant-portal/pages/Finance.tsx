@@ -4,7 +4,18 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Transaction, TransactionType } from '../types';
 import { Icons } from '../constants';
 import { ReportEmptyState, ReportPageHeader, ReportTxnCard } from '../components/reports';
+<<<<<<< HEAD
 import { Button } from '../components/ui/Button';
+=======
+import {
+  AppModal,
+  Button,
+  Field,
+  fieldControlClassName,
+  FormSection,
+  ModalFooterActions,
+} from '../components/ui';
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
 
 interface FinanceProps {
   transactions: Transaction[];
@@ -257,6 +268,7 @@ const Finance: React.FC<FinanceProps> = ({
         </div>
       </div>
 
+<<<<<<< HEAD
       {/* Record Expense Modal */}
       {showExpenseModal && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -387,13 +399,128 @@ const Finance: React.FC<FinanceProps> = ({
                <button 
                 onClick={() => setShowCategoryModal(false)}
                 className="px-6 py-2.5 bg-slate-900 text-white font-bold rounded-xl"
+=======
+      <AppModal
+        open={showExpenseModal}
+        onClose={() => setShowExpenseModal(false)}
+        title="Record New Expense"
+        description="Add an expense to the ledger."
+        size="md"
+        asForm
+        formId="record-expense-form"
+        onSubmit={handleSubmitExpense}
+        footer={
+          <ModalFooterActions>
+            <Button variant="secondary" onClick={() => setShowExpenseModal(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="record-expense-form">
+              Confirm & Deduct
+            </Button>
+          </ModalFooterActions>
+        }
+      >
+        <FormSection>
+          <Field id="expense-description" label="Description" required>
+            <input
+              id="expense-description"
+              required
+              type="text"
+              placeholder="e.g. Monthly Rent, Cleaning Supplies..."
+              className={fieldControlClassName}
+              value={newExpense.description}
+              onChange={(e) => setNewExpense({ ...newExpense, description: e.target.value })}
+            />
+          </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field id="expense-category" label="Category" required>
+              <select
+                id="expense-category"
+                required
+                className={fieldControlClassName}
+                value={newExpense.category}
+                onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value })}
+>>>>>>> 27312fa3951009f3285eb2f65a1e2fd20d5a8dda
               >
-                Close
+                {expenseCategories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field id="expense-amount" label="Amount ($)" required>
+              <input
+                id="expense-amount"
+                required
+                type="number"
+                min="0.01"
+                step="0.01"
+                className={`${fieldControlClassName} font-bold tabular-nums text-[var(--danger)]`}
+                value={newExpense.amount}
+                onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
+              />
+            </Field>
+          </div>
+          <Field id="expense-date" label="Transaction Date" required>
+            <input
+              id="expense-date"
+              required
+              type="date"
+              className={fieldControlClassName}
+              value={newExpense.date}
+              onChange={(e) => setNewExpense({ ...newExpense, date: e.target.value })}
+            />
+          </Field>
+        </FormSection>
+      </AppModal>
+
+      <AppModal
+        open={showCategoryModal}
+        onClose={() => setShowCategoryModal(false)}
+        title="Manage Expense Categories"
+        description="Add or remove categories used when recording expenses."
+        size="md"
+        footer={
+          <ModalFooterActions>
+            <Button variant="secondary" onClick={() => setShowCategoryModal(false)}>
+              Close
+            </Button>
+          </ModalFooterActions>
+        }
+      >
+        <form onSubmit={handleAddCategory} className="flex gap-2">
+          <input
+            required
+            type="text"
+            placeholder="New category name..."
+            className={`${fieldControlClassName} flex-1`}
+            value={newCategoryName}
+            onChange={(e) => setNewCategoryName(e.target.value)}
+          />
+          <Button type="submit" aria-label="Add category">
+            <Icons.Add />
+          </Button>
+        </form>
+        <div className="space-y-2 mt-4">
+          {expenseCategories.map((cat) => (
+            <div
+              key={cat}
+              className="flex items-center justify-between px-3 py-2.5 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-soft)] group"
+            >
+              <span className="text-sm font-semibold text-[var(--text-primary)]">{cat}</span>
+              <button
+                type="button"
+                onClick={() => onDeleteCategory(cat)}
+                className="p-1.5 text-[var(--text-muted)] hover:text-[var(--danger)] opacity-0 group-hover:opacity-100 transition-all"
+                aria-label={`Delete ${cat}`}
+              >
+                <Icons.Trash />
               </button>
             </div>
-          </div>
+          ))}
         </div>
-      )}
+      </AppModal>
     </div>
   );
 };

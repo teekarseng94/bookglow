@@ -221,6 +221,8 @@ export interface OutletSettings {
   setmoreFeedUrl?: string;
   /** ISO timestamp of last successful Setmore sync */
   setmoreLastSyncedAt?: string;
+  /** Allow new accounts registration flag for platform administration */
+  allowNewAccounts?: boolean;
 }
 
 /** Daily operating hours for booking page (e.g. "8:00" - "17:00") */

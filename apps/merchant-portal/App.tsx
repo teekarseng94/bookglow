@@ -6,9 +6,10 @@ import { INITIAL_SERVICES, INITIAL_PRODUCTS, INITIAL_PACKAGES, INITIAL_EXPENSE_C
 import Layout from './components/Layout';
 import { useAuth } from './hooks/useAuth';
 import { useFirestoreData } from './hooks/useFirestoreData';
-import { useUserContext } from './contexts/UserContext';
+import { useUserContext, UserRole } from './contexts/UserContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { outletService } from './services/databaseService';
+import { isTabAllowed } from './utils/permissions';
 
 // Lazy-load pages to reduce build memory (each page becomes a separate chunk)
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
@@ -215,7 +216,7 @@ const VALID_TAB_IDS = ['dashboard', 'pos', 'schedule', 'appointments', 'member',
 interface AppContentProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  role: 'admin' | 'cashier' | null;
+  role: UserRole | null;
   activeAppointmentForSale: Appointment | null;
   setActiveAppointmentForSale: (app: Appointment | null) => void;
   currentOutletID: string;
@@ -342,11 +343,12 @@ const AppContent: React.FC<AppContentProps> = ({
     setActiveTab(tab);
   }, [location.pathname]);
 
-  // Redirect cashiers away from admin-only tabs (including Dashboard) to POS
+  // Redirect users away from unauthorized tabs based on permissions
   useEffect(() => {
-    if (role === 'cashier' && activeTab && ADMIN_ONLY_TABS.includes(activeTab as any)) {
-      setActiveTab('pos');
-      navigate('/pos', { replace: true });
+    if (role && activeTab && !isTabAllowed(role, activeTab)) {
+      const fallbackTab = role === 'cashier' ? 'pos' : 'schedule';
+      setActiveTab(fallbackTab);
+      navigate(`/${fallbackTab}`, { replace: true });
     }
   }, [role, activeTab, setActiveTab, navigate]);
 
@@ -675,7 +677,7 @@ const AppContent: React.FC<AppContentProps> = ({
       case 'settings':
         return <Settings settings={outletSettings} onUpdateSettings={handleUpdateOutletSettings} outletId={currentOutletID} />;
       case 'marketing':
-        return <Marketing outletID={currentOutletID} services={services} role={role} />;
+        return <Marketing outletID={currentOutletID} services={services} role={role as any} />;
       case 'report':
         return <ReportPage transactions={transactions} outletID={currentOutletID} staff={staff} />;
       default:

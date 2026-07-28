@@ -8,8 +8,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import type { PortalAuthUser } from "../services/authService";
 import { fetchPortalUserProfile } from "../services/supabaseMerchant";
+import { outletService } from "../services/databaseService";
 
-export type UserRole = "admin" | "cashier";
+export type UserRole = "admin" | "manager" | "cashier";
 
 export interface UserData {
   uid: string;
@@ -90,9 +91,19 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = ({
           "Your user profile does not have an outlet assigned (public.users.outlet_id)."
         );
       }
+      if (outletId) {
+        const outlet = await outletService.getById(outletId);
+        if (outlet && outlet.isActive === false) {
+          throw new Error("This merchant workspace has been suspended. Please contact platform support.");
+        }
+      }
       const rawRole = (profile.role || "cashier").toLowerCase();
       const role: UserRole =
-        rawRole === "admin" || rawRole === "platform_admin" ? "admin" : "cashier";
+        rawRole === "admin" || rawRole === "platform_admin"
+          ? "admin"
+          : rawRole === "manager"
+          ? "manager"
+          : "cashier";
       setUserData({
         uid: profile.uid,
         email: profile.email || user.email,

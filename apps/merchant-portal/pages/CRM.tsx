@@ -227,9 +227,9 @@ const CRM: React.FC<CRMProps> = ({
     return list;
   }, [filteredClients, sortFilter, clientLatestSale]);
 
-  const maskPhone = (phone: string) => {
-    if (!phone || phone.length < 4) return '—';
-    return '.......' + phone.slice(-4);
+  const displayPhone = (phone?: string) => {
+    const value = (phone || '').trim();
+    return value || '—';
   };
 
   const formatLatestActivity = (clientId: string) => {
@@ -683,12 +683,12 @@ const CRM: React.FC<CRMProps> = ({
   };
 
   return (
-    <div className="space-y-4 sm:space-y-5 md:space-y-6 animate-fadeIn m-body md:text-base pb-24 sm:pb-6">
+    <div className="space-y-3 sm:space-y-5 md:space-y-6 animate-fadeIn m-body md:text-base m-member-page pb-[calc(72px+env(safe-area-inset-bottom,0px)+12px)] sm:pb-6">
       <div className="hidden sm:block">
         <MemberPageHeader clientCount={clients.length} />
       </div>
       <div className="sm:hidden -mt-1 flex items-baseline justify-between gap-2">
-        <h1 className="text-app-page font-bold tracking-tight text-[var(--text-primary)]">Members</h1>
+        <h1 className="m-member-page-title font-bold tracking-tight text-[var(--text-primary)]">Members</h1>
         <span className="flex-shrink-0 text-xs font-medium text-[var(--text-muted)] tabular-nums">
           {clients.length.toLocaleString()} clients
         </span>
@@ -772,12 +772,12 @@ const CRM: React.FC<CRMProps> = ({
           </>
         }
         sortTabs={
-          <div className="flex gap-1 p-1 bg-slate-100 rounded-xl w-full sm:w-fit overflow-x-auto">
+          <div className="m-member-sort-tabs flex gap-1 p-1 bg-slate-100 rounded-xl w-full sm:w-fit overflow-x-auto">
             {(['Recent', 'New', 'Birthday', 'Name'] as SortFilter[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setSortFilter(tab)}
-                className={`flex-1 sm:flex-none whitespace-nowrap px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-xs md:text-sm font-medium transition-colors ${
+                className={`m-member-sort-tab flex-1 sm:flex-none whitespace-nowrap px-3 md:px-4 rounded-lg text-xs md:text-sm font-medium transition-colors ${
                   sortFilter === tab ? 'bg-[var(--bg-surface)] text-[var(--brand)] shadow-ui-xs' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
                 }`}
               >
@@ -788,8 +788,8 @@ const CRM: React.FC<CRMProps> = ({
         }
       />
 
-      {/* Client list — compact rows */}
-      <div className="space-y-2 sm:space-y-3 max-h-[calc(100vh-20rem)] overflow-y-auto scrollbar-thin">
+      {/* Client list — natural page scroll (no nested max-height viewport) */}
+      <div className="m-member-list space-y-2.5 sm:space-y-3">
         {sortedClients.map((client) => {
           const latest = formatLatestActivity(client.id);
           const vouchers = client.voucherCount ?? 0;
@@ -807,7 +807,7 @@ const CRM: React.FC<CRMProps> = ({
             <MemberRow
               key={client.id}
               name={client.name}
-              phoneOrId={maskPhone(client.phone)}
+              phoneOrId={displayPhone(client.phone)}
               membershipLabel={hasTier ? tier : undefined}
               balanceOrActivity={`${client.points.toLocaleString()} pts`}
               secondaryMeta={secondary}
@@ -820,46 +820,50 @@ const CRM: React.FC<CRMProps> = ({
         {sortedClients.length === 0 && (
           <EmptyState
             title="No members found."
-            description={search ? 'Try another search or add a new member.' : 'Add your first member to get started.'}
+            description={
+              search
+                ? 'Try clearing search or changing the sort filter.'
+                : 'Add your first member to get started.'
+            }
+            action={
+              search ? (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  className="mt-3 text-sm font-semibold text-[var(--brand)] hover:underline"
+                >
+                  Clear search
+                </button>
+              ) : undefined
+            }
           />
         )}
       </div>
 
-      {/* Bottom bar: Total + Delete All + Add */}
-      <div className="m-sticky-bar flex items-center justify-between py-4 px-2 border-t border-[var(--line)] bg-[var(--bg-soft)]/50 rounded-xl">
-        <div className="flex items-center gap-2 text-[var(--text-secondary)]">
-          <Icons.Clients />
-          <span className="font-semibold">Total {sortedClients.length}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleDeleteAllClients}
-            disabled={deleteAllInProgress || sortedClients.length === 0}
-            className="m-btn m-btn--md py-2.5 px-4 rounded-ui-sm text-sm font-semibold text-[var(--danger)] bg-[var(--danger-soft)] border border-[var(--danger-border)] hover:brightness-95 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
-            title="Delete all members"
-          >
-            {deleteAllInProgress ? (
-              <span className="flex items-center gap-1.5">
-                <span className="w-4 h-4 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
-                Deleting...
-              </span>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                Delete All
-              </>
-            )}
-          </button>
-          <button
-            onClick={() => setShowAddClientModal(true)}
-            className="m-schedule-fab bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white w-12 h-12 rounded-full flex items-center justify-center shadow-ui-md transition-colors"
-            aria-label="Add member"
-          >
-            <Icons.Add />
-          </button>
-        </div>
+      {/* Compact footer: quiet total — Add FAB on mobile; Delete All in Actions (mobile) / desktop row */}
+      <div className="m-member-list-footer flex items-center justify-between pt-1 pb-1 gap-3">
+        <p className="text-sm text-[var(--text-muted)] tabular-nums">
+          Total {sortedClients.length.toLocaleString()}
+          {search || sortFilter !== 'Recent' ? ' shown' : ' members'}
+        </p>
+        <button
+          type="button"
+          onClick={() => void handleDeleteAllClients()}
+          disabled={deleteAllInProgress || sortedClients.length === 0}
+          className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--danger)] hover:underline disabled:opacity-50"
+        >
+          {deleteAllInProgress ? 'Deleting…' : 'Delete all members'}
+        </button>
       </div>
+
+      <button
+        type="button"
+        onClick={() => setShowAddClientModal(true)}
+        className="m-member-fab sm:hidden"
+        aria-label="Add member"
+      >
+        <Icons.Add />
+      </button>
 
       <MemberFilterSheet open={showMobileActions} onClose={() => setShowMobileActions(false)}>
         <div className="space-y-1.5">
@@ -887,6 +891,20 @@ const CRM: React.FC<CRMProps> = ({
             className="w-full flex items-center gap-3 p-3.5 rounded-ui-md bg-[var(--bg-soft)] hover:bg-[var(--bg-selection)] text-[var(--text-secondary)] font-semibold text-sm transition-colors"
           >
             <span className="text-teal-600"><Icons.Settings /></span> Loyalty Program
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setShowMobileActions(false);
+              void handleDeleteAllClients();
+            }}
+            disabled={deleteAllInProgress || sortedClients.length === 0}
+            className="w-full flex items-center gap-3 p-3.5 rounded-ui-md bg-[var(--danger-soft)] text-[var(--danger)] font-semibold text-sm transition-colors disabled:opacity-50 border border-[var(--danger-border)]"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            {deleteAllInProgress ? 'Deleting…' : `Delete all members (${sortedClients.length})`}
           </button>
         </div>
       </MemberFilterSheet>

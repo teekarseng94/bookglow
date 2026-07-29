@@ -104,27 +104,23 @@ export const StaffCard: React.FC<StaffCardProps> = ({
           </div>
 
           {hasStats ? (
-            <div className="mt-2.5 grid grid-cols-3 gap-2 pt-2 border-t border-[var(--line)]">
-              <div className="min-w-0">
-                <p className="m-staff-stat-label">
-                  Today
-                </p>
+            <div className="mt-2.5 grid grid-cols-3 gap-1.5 sm:gap-2 pt-2 border-t border-[var(--line)]">
+              <div className="min-w-0 overflow-hidden">
+                <p className="m-staff-stat-label truncate">Today</p>
                 <p className="m-staff-stat-value text-[var(--text-primary)] truncate">
                   {shiftLabel ?? '—'}
                 </p>
               </div>
-              <div className="min-w-0">
-                <p className="m-staff-stat-label">
-                  Commission
+              <div className="min-w-0 overflow-hidden">
+                <p className="m-staff-stat-label truncate" title="Commission">
+                  Comm.
                 </p>
                 <p className="m-staff-stat-value tabular-nums text-[var(--brand)] truncate">
                   {commissionLabel ?? revenueLabel ?? '—'}
                 </p>
               </div>
-              <div className="min-w-0 flex flex-col items-start gap-0.5">
-                <p className="m-staff-stat-label">
-                  Status
-                </p>
+              <div className="min-w-0 overflow-hidden flex flex-col items-start gap-0.5">
+                <p className="m-staff-stat-label truncate">Status</p>
                 <StaffStatusBadge status={status} />
               </div>
             </div>

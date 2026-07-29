@@ -23,11 +23,15 @@ export const MemberToolbar: React.FC<MemberToolbarProps> = ({
   sortTabs,
   className,
 }) => (
-  <div className={cx('space-y-3', className)}>
+  <div className={cx('m-member-toolbar space-y-2 sm:space-y-3', className)}>
     <FilterToolbar
       search={
         <div className="relative">
+          <label className="sr-only" htmlFor="member-search">
+            Search members
+          </label>
           <input
+            id="member-search"
             type="search"
             placeholder="Search members..."
             value={search}
@@ -46,13 +50,26 @@ export const MemberToolbar: React.FC<MemberToolbarProps> = ({
         </div>
       }
       actions={
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           {onOpenFilters ? (
-            <Button type="button" variant="secondary" size="sm" className="sm:hidden m-add-customer-row px-4" onClick={onOpenFilters}>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="sm:hidden m-add-customer-row flex-1"
+              onClick={onOpenFilters}
+            >
               Actions
             </Button>
           ) : null}
-          <Button type="button" variant="primary" size="sm" className="sm:hidden m-add-customer-row px-5" onClick={onAddMember} aria-label="Add member">
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            className="sm:hidden m-add-customer-row flex-1"
+            onClick={onAddMember}
+            aria-label="Add member"
+          >
             + Add
           </Button>
           <div className="hidden sm:flex flex-wrap items-center gap-2">{desktopActions}</div>

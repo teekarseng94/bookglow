@@ -15,12 +15,16 @@ export interface StaffSummaryCardsProps {
   className?: string;
 }
 
-/** Outlet-level KPI strip — horizontal scroll on mobile, 5-col grid on xl. */
+/**
+ * Outlet-level KPI cards.
+ * Mobile: 1 card per row (compact). Tablet: 2-col. Desktop xl: 5-col.
+ */
 export const StaffSummaryCards: React.FC<StaffSummaryCardsProps> = ({ cards, className }) => (
   <div
     className={cx(
-      'flex gap-2.5 overflow-x-auto pb-1 -mx-1 px-1 snap-x snap-mandatory',
-      'xl:grid xl:grid-cols-5 xl:gap-3 xl:overflow-visible xl:pb-0 xl:mx-0 xl:px-0 xl:snap-none',
+      'grid grid-cols-1 gap-2',
+      'sm:grid-cols-2 sm:gap-2.5',
+      'xl:grid-cols-5 xl:gap-3',
       className,
     )}
   >
@@ -28,12 +32,12 @@ export const StaffSummaryCards: React.FC<StaffSummaryCardsProps> = ({ cards, cla
       <div
         key={card.id}
         className={cx(
-          'snap-start shrink-0 w-[9.5rem] sm:w-[11rem] xl:w-auto',
-          'rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)]',
-          'px-3 py-3 xl:px-4 xl:py-3.5 shadow-ui-xs',
+          'min-w-0',
+          'rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] shadow-ui-xs',
+          'px-3 py-2.5 xl:px-4 xl:py-3.5',
         )}
       >
-        <div className="flex items-start gap-2.5">
+        <div className="flex items-center gap-2.5 min-w-0">
           <div
             className={cx(
               'w-8 h-8 xl:w-9 xl:h-9 rounded-full flex items-center justify-center shrink-0',
@@ -44,16 +48,14 @@ export const StaffSummaryCards: React.FC<StaffSummaryCardsProps> = ({ cards, cla
           >
             {card.icon}
           </div>
-          <div className="min-w-0">
-            <p className="m-staff-kpi-label">
-              {card.label}
-            </p>
-            <p className="m-staff-kpi-value xl:text-xl tabular-nums text-[var(--text-primary)] mt-0.5">
-              {card.value}
-            </p>
-            <p className="m-staff-kpi-hint mt-0.5 truncate">
-              {card.hint}
-            </p>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline justify-between gap-2 min-w-0">
+              <p className="m-staff-kpi-label truncate">{card.label}</p>
+              <p className="m-staff-kpi-value xl:text-xl tabular-nums text-[var(--text-primary)] shrink-0">
+                {card.value}
+              </p>
+            </div>
+            <p className="m-staff-kpi-hint mt-0.5 truncate">{card.hint}</p>
           </div>
         </div>
       </div>

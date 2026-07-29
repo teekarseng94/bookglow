@@ -10,7 +10,6 @@ import { ShoppingCart, Trash2 } from 'lucide-react';
 import { Client, Transaction, TransactionType, Appointment, CartItem, Staff, Service } from '../types';
 import { useMemberDetailsData } from '../hooks/useMemberDetailsData';
 import {
-  MemberActionBar,
   MemberBalanceSection,
   MemberHistorySection,
   MemberSummary,
@@ -78,6 +77,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
   const [showOutstandingModal, setShowOutstandingModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteInProgress, setDeleteInProgress] = useState(false);
+  const [showOverflowMenu, setShowOverflowMenu] = useState(false);
   const [currentPointsBalance, setCurrentPointsBalance] = useState(0);
   const [creditBalance, setCreditBalance] = useState(0);
   const [currentOutstandingBalance, setCurrentOutstandingBalance] = useState(0);
@@ -232,7 +232,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
   };
 
   const showMemberLoading = memberDataLoading && clientSales.length === 0 && clientAppointments.length === 0;
-  const bgClass = 'bg-[var(--bg-canvas)] min-h-[60vh]';
+  const bgClass = 'bg-[var(--bg-canvas)]';
 
   if (!client) {
     return (
@@ -466,7 +466,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
 
   // —— Summary view (default)
   return (
-    <div className={`space-y-6 animate-fadeIn max-w-2xl mx-auto ${bgClass} p-4`}>
+    <div className={`m-member-details-page space-y-3 sm:space-y-6 animate-fadeIn max-w-2xl mx-auto ${bgClass} p-3 sm:p-4 pb-[calc(72px+env(safe-area-inset-bottom,0px)+12px)] sm:pb-8`}>
       {memberDataError && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
           <p className="font-medium">Could not load member activity in real time.</p>
@@ -479,23 +479,53 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
           <div className="w-8 h-8 border-2 border-[var(--brand)] border-t-transparent rounded-full animate-spin" />
         </div>
       )}
-      <div className="m-member-details-header flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4 min-w-0">
+      <div className="m-member-details-header flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           <button onClick={() => navigate(-1)} className="m-member-details-back grid place-items-center hover:bg-[var(--bg-surface)]/80 text-[var(--text-secondary)] transition-colors shrink-0" aria-label="Back">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           </button>
           <h2 className="m-member-details-title text-[var(--text-primary)] truncate">Member Details</h2>
         </div>
-        <Button
-          type="button"
-          variant="primary"
-          size="sm"
-          onClick={() => navigate('/pos', { state: { selectedMember: { id: client.id, name: client.name, phone: client.phone || '' } } })}
-          title="Quick POS – start sale with this member"
-        >
-          <ShoppingCart className="w-5 h-5" />
-          <span className="hidden sm:inline">Quick POS</span>
-        </Button>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            onClick={() => navigate('/pos', { state: { selectedMember: { id: client.id, name: client.name, phone: client.phone || '' } } })}
+            title="Quick POS – start sale with this member"
+            aria-label="Quick POS"
+          >
+            <ShoppingCart className="w-5 h-5" />
+            <span className="hidden sm:inline">Quick POS</span>
+          </Button>
+          <div className="relative sm:hidden">
+            <button
+              type="button"
+              className="m-member-details-back grid place-items-center text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]"
+              aria-label="More actions"
+              aria-expanded={showOverflowMenu}
+              onClick={() => setShowOverflowMenu((open) => !open)}
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+              </svg>
+            </button>
+            {showOverflowMenu ? (
+              <div className="absolute right-0 top-full mt-1 z-20 min-w-[160px] rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] shadow-ui-sm p-1">
+                <button
+                  type="button"
+                  className="w-full text-left px-3 py-2.5 rounded-ui-sm text-sm font-semibold text-[var(--danger)] hover:bg-[var(--danger-soft)]"
+                  onClick={() => {
+                    setShowOverflowMenu(false);
+                    setShowDeleteConfirm(true);
+                  }}
+                >
+                  Delete member
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
       </div>
 
       {/* 1. Identity */}
@@ -514,7 +544,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
             label: 'Credit',
             value: credit.toFixed(2),
             toneClass: 'bg-blue-100 text-blue-600',
-            icon: <span className="text-lg font-bold">$</span>,
+            icon: <span className="text-sm font-bold">$</span>,
             onClick: () => setShowCreditModal(true),
           },
           {
@@ -523,7 +553,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
             value: currentPointsBalance.toLocaleString('en-US', { minimumFractionDigits: 2 }),
             toneClass: 'bg-[var(--success-soft)] text-[var(--success)]',
             icon: (
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
               </svg>
             ),
@@ -535,7 +565,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
             value: String(vouchers),
             toneClass: 'bg-sky-100 text-sky-600',
             icon: (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
               </svg>
             ),
@@ -556,7 +586,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
             label: 'Outstanding',
             value: currentOutstandingBalance.toFixed(2),
             toneClass: 'bg-[#ffedeb] text-[#f44336]',
-            icon: <span className="text-lg font-bold">$</span>,
+            icon: <span className="text-sm font-bold">$</span>,
             onClick: () => setShowOutstandingModal(true),
           },
         ]}
@@ -596,47 +626,78 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
         />
       </div>
 
-      {/* 8. Notes / media */}
-      <MemberHistorySection title="Photos" description="Member media and notes">
-        <div className="grid grid-cols-4 gap-3">
-          <button type="button" className="aspect-square rounded-xl border-2 border-dashed border-[var(--line)] bg-[var(--bg-soft)] flex items-center justify-center text-[var(--text-muted)] hover:border-[var(--brand)] hover:bg-[var(--brand-soft)] transition-colors">
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-          </button>
+      {/* Secondary tools — collapsed on mobile to reduce scroll */}
+      <details className="sm:hidden m-member-more rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)]">
+        <summary className="m-member-history-row cursor-pointer list-none flex items-center justify-between gap-3 p-3 font-semibold text-[15px] text-[var(--text-primary)]">
+          More
+          <svg className="w-5 h-5 text-[var(--text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </summary>
+        <div className="px-3 pb-3 space-y-3">
+          <MemberHistorySection title="Photos" description="Member media and notes">
+            <div className="grid grid-cols-4 gap-2">
+              <button type="button" className="aspect-square rounded-xl border-2 border-dashed border-[var(--line)] bg-[var(--bg-soft)] flex items-center justify-center text-[var(--text-muted)] hover:border-[var(--brand)] hover:bg-[var(--brand-soft)] transition-colors">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+              </button>
+            </div>
+          </MemberHistorySection>
+          <div className="bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] p-3">
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { label: 'Breakdown', icon: '⏱', color: 'bg-pink-100 text-pink-600' },
+                { label: 'Remarks', icon: '📋', color: 'bg-amber-100 text-amber-600' },
+                { label: 'Checklist', icon: '✓', color: 'bg-[var(--brand-soft)] text-[var(--brand)]' },
+                { label: 'Referral', icon: '👥', color: 'bg-amber-200/80 text-amber-800' }
+              ].map((item) => (
+                <button key={item.label} type="button" className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-[var(--bg-soft)] transition-colors">
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-base font-bold ${item.color}`}>{item.icon}</div>
+                  <span className="m-caption font-medium text-[var(--text-secondary)] text-center text-[10px]">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-      </MemberHistorySection>
+      </details>
 
-      <div className="bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs p-6">
-        <div className="grid grid-cols-4 gap-4">
-          {[
-            { label: 'Breakdown', icon: '⏱', color: 'bg-pink-100 text-pink-600' },
-            { label: 'Remarks', icon: '📋', color: 'bg-amber-100 text-amber-600' },
-            { label: 'Checklist', icon: '✓', color: 'bg-[var(--brand-soft)] text-[var(--brand)]' },
-            { label: 'Referral', icon: '👥', color: 'bg-amber-200/80 text-amber-800' }
-          ].map((item) => (
-            <button key={item.label} type="button" className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-[var(--bg-soft)] transition-colors">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold ${item.color}`}>{item.icon}</div>
-              <span className="m-caption font-medium text-[var(--text-secondary)] text-center">{item.label}</span>
+      <div className="hidden sm:block space-y-6">
+        <MemberHistorySection title="Photos" description="Member media and notes">
+          <div className="grid grid-cols-4 gap-3">
+            <button type="button" className="aspect-square rounded-xl border-2 border-dashed border-[var(--line)] bg-[var(--bg-soft)] flex items-center justify-center text-[var(--text-muted)] hover:border-[var(--brand)] hover:bg-[var(--brand-soft)] transition-colors">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
             </button>
-          ))}
+          </div>
+        </MemberHistorySection>
+
+        <div className="bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs p-6">
+          <div className="grid grid-cols-4 gap-4">
+            {[
+              { label: 'Breakdown', icon: '⏱', color: 'bg-pink-100 text-pink-600' },
+              { label: 'Remarks', icon: '📋', color: 'bg-amber-100 text-amber-600' },
+              { label: 'Checklist', icon: '✓', color: 'bg-[var(--brand-soft)] text-[var(--brand)]' },
+              { label: 'Referral', icon: '👥', color: 'bg-amber-200/80 text-amber-800' }
+            ].map((item) => (
+              <button key={item.label} type="button" className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-[var(--bg-soft)] transition-colors">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold ${item.color}`}>{item.icon}</div>
+                <span className="m-caption font-medium text-[var(--text-secondary)] text-center">{item.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Actions — delete remains visible */}
-      <MemberActionBar
-        className="static border-0 bg-transparent px-0 pb-8 backdrop-blur-none shadow-none !justify-stretch [&>div]:w-full [&>div:last-child]:hidden"
-        leading={
-          <button
-            type="button"
-            onClick={() => setShowDeleteConfirm(true)}
-            className="m-member-delete-btn w-full flex items-center justify-center gap-2 bg-[var(--danger)] text-white hover:opacity-90 active:scale-[0.98] transition-all shadow-ui-xs"
-          >
-            <Trash2 className="w-5 h-5" />
-            Delete Member
-          </button>
-        }
-      >
-        <span className="sr-only">Actions</span>
-      </MemberActionBar>
+      {/* Danger zone — not the primary CTA */}
+      <section className="m-member-danger-zone mt-2 pt-3 border-t border-[var(--line)]">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">Danger zone</p>
+        <button
+          type="button"
+          onClick={() => setShowDeleteConfirm(true)}
+          className="m-member-delete-btn w-full flex items-center justify-center gap-2 bg-[var(--bg-surface)] text-[var(--danger)] border border-[var(--danger-border)] hover:bg-[var(--danger-soft)] active:scale-[0.99] transition-all"
+        >
+          <Trash2 className="w-4 h-4" />
+          Delete member
+        </button>
+      </section>
 
       <ConfirmationDialog
         open={showDeleteConfirm && !!client}
@@ -657,7 +718,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
         title="Delete Member"
         description={
           client
-            ? `Permanently delete ${client.name}? This cannot be undone. Sales and appointment history will remain, but the member profile will be removed.`
+            ? `Permanently delete ${client.name}${client.phone ? ` (${client.phone})` : ''}? This cannot be undone. Sales and appointment history will remain, but the member profile will be removed.`
             : undefined
         }
         confirmLabel="Delete"

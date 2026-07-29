@@ -59,13 +59,13 @@ export interface StaffDetailPanelProps {
   className?: string;
 }
 
-const TABS: { id: StaffDetailTab; label: string }[] = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'schedule', label: 'Schedule' },
-  { id: 'services', label: 'Services' },
-  { id: 'performance', label: 'Performance' },
-  { id: 'permissions', label: 'Permissions' },
-  { id: 'payroll', label: 'Payroll & Commission' },
+const TABS: { id: StaffDetailTab; label: string; shortLabel: string }[] = [
+  { id: 'overview', label: 'Overview', shortLabel: 'Overview' },
+  { id: 'schedule', label: 'Schedule', shortLabel: 'Hours' },
+  { id: 'services', label: 'Services', shortLabel: 'Skills' },
+  { id: 'performance', label: 'Performance', shortLabel: 'Stats' },
+  { id: 'permissions', label: 'Permissions', shortLabel: 'Access' },
+  { id: 'payroll', label: 'Payroll & Commission', shortLabel: 'Payroll' },
 ];
 
 function HistoryTable({ history }: { history: StaffHistoryLine[] }) {
@@ -250,21 +250,28 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
         </div>
       </div>
 
-      <div className="px-3 sm:px-5 xl:px-6 border-b border-[var(--line)] overflow-x-auto">
-        <nav className="flex gap-0.5 min-w-max" aria-label="Staff profile sections">
+      <div className="px-3 sm:px-5 xl:px-6 border-b border-[var(--line)]">
+        <nav
+          className="grid grid-cols-2 sm:flex sm:flex-wrap sm:gap-0.5 sm:min-w-0"
+          aria-label="Staff profile sections"
+        >
           {TABS.map((t) => (
             <button
               key={t.id}
               type="button"
               onClick={() => onTabChange(t.id)}
+              aria-label={t.label}
+              title={t.label}
               className={cx(
-                'm-staff-tab sm:px-3 sm:py-3 sm:text-xs whitespace-nowrap border-b-2 transition-colors',
+                'm-staff-tab px-2 py-2.5 text-center sm:px-3 sm:py-3 sm:text-xs sm:text-left',
+                'border-b-2 transition-colors min-w-0',
                 tab === t.id
                   ? 'border-[var(--brand)] text-[var(--brand)]'
                   : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]',
               )}
             >
-              {t.label}
+              <span className="sm:hidden truncate block">{t.shortLabel}</span>
+              <span className="hidden sm:inline whitespace-nowrap">{t.label}</span>
             </button>
           ))}
         </nav>
@@ -297,20 +304,22 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
               <h4 className="m-staff-section-title">
                 Performance snapshot
               </h4>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="rounded-ui-sm bg-[var(--bg-soft)] p-3 text-center">
-                  <p className="m-staff-kpi-label">Services</p>
-                  <p className="m-staff-kpi-value tabular-nums mt-0.5">{member.totalServices}</p>
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                <div className="min-w-0 overflow-hidden rounded-ui-sm bg-[var(--bg-soft)] p-2 sm:p-3 text-center">
+                  <p className="m-staff-kpi-label truncate">Services</p>
+                  <p className="m-staff-kpi-value tabular-nums mt-0.5 truncate">{member.totalServices}</p>
                 </div>
-                <div className="rounded-ui-sm bg-[var(--bg-soft)] p-3 text-center">
-                  <p className="m-staff-kpi-label">Revenue</p>
-                  <p className="m-staff-kpi-value tabular-nums mt-0.5">
+                <div className="min-w-0 overflow-hidden rounded-ui-sm bg-[var(--bg-soft)] p-2 sm:p-3 text-center">
+                  <p className="m-staff-kpi-label truncate">Revenue</p>
+                  <p className="m-staff-kpi-value tabular-nums mt-0.5 truncate">
                     ${member.totalRevenue.toLocaleString()}
                   </p>
                 </div>
-                <div className="rounded-ui-sm bg-[var(--brand-soft)] p-3 text-center">
-                  <p className="m-staff-kpi-label text-[var(--brand)]">Commission</p>
-                  <p className="m-staff-kpi-value tabular-nums text-[var(--brand)] mt-0.5">
+                <div className="min-w-0 overflow-hidden rounded-ui-sm bg-[var(--brand-soft)] p-2 sm:p-3 text-center">
+                  <p className="m-staff-kpi-label text-[var(--brand)] truncate" title="Commission">
+                    Comm.
+                  </p>
+                  <p className="m-staff-kpi-value tabular-nums text-[var(--brand)] mt-0.5 truncate">
                     ${member.totalCommission.toLocaleString()}
                   </p>
                 </div>
@@ -406,28 +415,26 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
         {tab === 'performance' && (
           <div className="space-y-4">
             {periodControls ? <div className="flex flex-wrap items-center gap-2">{periodControls}</div> : null}
-            <div className="grid grid-cols-3 gap-2 sm:gap-3">
-              <div className="rounded-ui-md border border-[var(--line)] p-3 sm:p-4">
-                <p className="m-staff-kpi-label">
-                  Total Rev.
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
+              <div className="min-w-0 overflow-hidden rounded-ui-md border border-[var(--line)] p-2.5 sm:p-4">
+                <p className="m-staff-kpi-label truncate" title="Total revenue">
+                  Rev.
                 </p>
-                <p className="m-staff-kpi-value sm:text-xl tabular-nums mt-1">
+                <p className="m-staff-kpi-value sm:text-xl tabular-nums mt-1 truncate">
                   ${member.totalRevenue.toLocaleString()}
                 </p>
               </div>
-              <div className="rounded-ui-md bg-[var(--brand)] p-3 sm:p-4 text-white">
-                <p className="m-staff-kpi-label text-white/80">
-                  Commission
+              <div className="min-w-0 overflow-hidden rounded-ui-md bg-[var(--brand)] p-2.5 sm:p-4 text-white">
+                <p className="m-staff-kpi-label text-white/80 truncate" title="Commission">
+                  Comm.
                 </p>
-                <p className="m-staff-kpi-value sm:text-xl tabular-nums mt-1">
+                <p className="m-staff-kpi-value sm:text-xl tabular-nums mt-1 truncate">
                   ${member.totalCommission.toLocaleString()}
                 </p>
               </div>
-              <div className="rounded-ui-md border border-[var(--line)] p-3 sm:p-4">
-                <p className="m-staff-kpi-label">
-                  Services
-                </p>
-                <p className="m-staff-kpi-value sm:text-xl tabular-nums mt-1">{member.totalServices}</p>
+              <div className="min-w-0 overflow-hidden rounded-ui-md border border-[var(--line)] p-2.5 sm:p-4">
+                <p className="m-staff-kpi-label truncate">Services</p>
+                <p className="m-staff-kpi-value sm:text-xl tabular-nums mt-1 truncate">{member.totalServices}</p>
               </div>
             </div>
             <HistoryTable history={member.history} />

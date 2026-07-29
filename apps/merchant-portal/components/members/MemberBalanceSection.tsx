@@ -29,16 +29,17 @@ export const MemberBalanceSection: React.FC<MemberBalanceSectionProps> = ({
 }) => (
   <section
     className={cx(
-      'm-member-balance bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs p-4 sm:p-6',
+      'm-member-balance bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs',
+      'p-3 sm:p-6',
       className,
     )}
   >
     {title ? (
-      <h4 className="m-member-balance__title uppercase tracking-widest text-[var(--text-muted)] mb-3">
+      <h4 className="m-member-balance__title uppercase tracking-widest text-[var(--text-muted)] mb-2 sm:mb-3">
         {title}
       </h4>
     ) : null}
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+    <div className="m-member-balance__grid grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
       {items.map((item) => (
         <button
           key={item.id}
@@ -46,20 +47,27 @@ export const MemberBalanceSection: React.FC<MemberBalanceSectionProps> = ({
           disabled={item.disabled}
           onClick={item.onClick}
           className={cx(
-            'text-center rounded-ui-sm p-2 transition-colors',
+            'm-member-balance__cell text-left sm:text-center rounded-ui-sm transition-colors',
+            'p-2.5 sm:p-2',
             item.onClick && !item.disabled ? 'cursor-pointer hover:bg-[var(--bg-soft)]' : 'cursor-default',
             item.disabled && 'opacity-60',
           )}
         >
           {item.icon ? (
-            <div className={cx('inline-flex items-center justify-center w-10 h-10 rounded-ui-sm mb-2', item.toneClass)}>
+            <div
+              className={cx(
+                'm-member-balance__icon inline-flex items-center justify-center rounded-ui-sm mb-1.5 sm:mb-2',
+                'w-8 h-8 sm:w-10 sm:h-10',
+                item.toneClass,
+              )}
+            >
               {item.icon}
             </div>
           ) : null}
-          <p className="m-member-balance__label text-xs font-medium text-[var(--text-muted)] uppercase">
+          <p className="m-member-balance__label text-[11px] sm:text-xs font-medium text-[var(--text-muted)] uppercase tracking-wide">
             {item.label}
           </p>
-          <p className="m-member-balance__value text-lg font-bold text-[var(--text-primary)] tabular-nums">
+          <p className="m-member-balance__value text-base sm:text-lg font-semibold sm:font-bold text-[var(--text-primary)] tabular-nums leading-tight">
             {item.value}
           </p>
           {item.hint ? (

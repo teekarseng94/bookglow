@@ -1,21 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Logo, NAV_ITEMS, NAV_ITEMS_WITH_CHEVRON, PRIMARY_GREEN } from './constants';
+import { Logo, PRIMARY_GREEN } from './constants';
 import { Button } from './components/Button';
-import { FloatingScreens } from './components/FloatingScreens';
 import { ProductPreviewPanel } from './components/ProductPreviewPanel';
 import PricingHero from './components/pricing/PricingHero';
 import { LANDING_PRICING_PLANS } from './components/pricing/pricingData';
+import { LandingNavbar, Hero, IndustryStrip, type LandingView } from './components/landing';
 
-type ViewType = 'landing' | 'pricing' | 'integrations';
-
-const TRUST_LOGOS = [
-  'The Face Place',
-  'IKIRVANA',
-  'ZENITH',
-  'LUSH LAB',
-  'CÉLESTE',
-  'GlowHaus',
-];
+type ViewType = LandingView;
 
 const VALUE_CARDS = [
   {
@@ -114,177 +105,6 @@ const FEATURE_ITEMS = [
 ];
 
 const PRICING_PLANS = LANDING_PRICING_PLANS;
-
-const Chevron = () => (
-  <svg className="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-  </svg>
-);
-
-const Navbar: React.FC<{
-  onNavigate: (view: ViewType) => void;
-  currentView: ViewType;
-}> = ({ onNavigate, currentView }) => {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const handleScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault();
-    if (href === '#pricing') {
-      onNavigate('pricing');
-      return;
-    }
-    if (href === '#integrations') {
-      onNavigate('integrations');
-      return;
-    }
-
-    if (currentView !== 'landing') {
-      onNavigate('landing');
-      setTimeout(() => {
-        const targetId = href.replace('#', '');
-        const elem = document.getElementById(targetId);
-        if (elem) {
-          window.scrollTo({
-            top: elem.offsetTop - 80,
-            behavior: 'smooth',
-          });
-        }
-      }, 100);
-    } else {
-      const targetId = href.replace('#', '');
-      const elem = document.getElementById(targetId);
-      if (elem) {
-        window.scrollTo({
-          top: elem.offsetTop - 80,
-          behavior: 'smooth',
-        });
-      }
-    }
-  };
-
-  return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-100 transition-colors">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between gap-3">
-        <button onClick={() => onNavigate('landing')} className="hover:opacity-80 transition-opacity shrink-0">
-          <Logo />
-        </button>
-
-        <div className="hidden lg:flex items-center gap-7 absolute left-1/2 -translate-x-1/2">
-          {NAV_ITEMS.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              onClick={(e) => handleScroll(e, item.href)}
-              className={`inline-flex items-center gap-1 text-slate-600 hover:text-slate-900 font-medium transition-colors text-sm ${
-                (item.label === 'Pricing' && currentView === 'pricing') ||
-                (item.label === 'Resources' && currentView === 'integrations')
-                  ? 'text-slate-900'
-                  : ''
-              }`}
-            >
-              {item.label}
-              {NAV_ITEMS_WITH_CHEVRON.has(item.label) ? <Chevron /> : null}
-            </a>
-          ))}
-        </div>
-
-        {/* Desktop actions */}
-        <div className="hidden md:flex items-center gap-5 shrink-0">
-          <a
-            href="/login"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-medium text-sm text-slate-700 hover:text-slate-900 transition-colors"
-          >
-            Login
-          </a>
-          <a href="/signup" className="inline-block">
-            <Button size="sm" className="rounded-lg px-5">
-              Start free
-            </Button>
-          </a>
-        </div>
-
-        {/* Mobile: Log in + hamburger */}
-        <div className="flex md:hidden items-center gap-2 shrink-0">
-          <a
-            href="/login"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-medium text-sm text-slate-700 px-2 py-2"
-          >
-            Log in
-          </a>
-          <button
-            type="button"
-            aria-label="Open menu"
-            aria-expanded={mobileMenuOpen}
-            onClick={() => setMobileMenuOpen(true)}
-            className="inline-flex items-center justify-center w-10 h-10 rounded-lg text-white"
-            style={{ backgroundColor: PRIMARY_GREEN }}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-[60]">
-          <div className="absolute inset-0 bg-slate-900/40" onClick={() => setMobileMenuOpen(false)} />
-          <div className="absolute right-0 top-0 h-full w-[min(100%,20rem)] bg-white border-l border-slate-100 shadow-xl p-6 flex flex-col">
-            <div className="flex items-center justify-between mb-6">
-              <Logo />
-              <button
-                type="button"
-                aria-label="Close menu"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-10 h-10 rounded-lg hover:bg-slate-50 border border-slate-100 text-slate-700 flex items-center justify-center"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="flex flex-col gap-4">
-              {NAV_ITEMS.map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  onClick={(e) => {
-                    handleScroll(e, item.href);
-                    setMobileMenuOpen(false);
-                  }}
-                  className="text-slate-700 font-medium transition-colors hover:text-slate-900"
-                >
-                  {item.label}
-                </a>
-              ))}
-            </div>
-
-            <div className="mt-auto pt-8 flex flex-col gap-3">
-              <a
-                href="/login"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-center px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 text-slate-800 font-medium hover:bg-slate-100 transition-colors"
-              >
-                Log in
-              </a>
-              <a href="/signup" className="text-center">
-                <Button size="lg" className="w-full rounded-lg">
-                  Start free
-                </Button>
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
-    </nav>
-  );
-};
 
 const IntegrationsView: React.FC = () => {
   const categories = [
@@ -465,121 +285,6 @@ const IntegrationsView: React.FC = () => {
 };
 
 const PricingView: React.FC = () => <PricingHero />;
-
-const Hero: React.FC = () => {
-  return (
-    <section id="learn" className="pt-24 sm:pt-28 lg:pt-32 pb-12 sm:pb-16 lg:pb-20 overflow-x-hidden scroll-mt-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
-        <div className="max-w-2xl mx-auto lg:mx-0 text-center lg:text-left">
-          <div className="inline-flex items-center rounded-full bg-[var(--brand-soft)] text-[var(--brand)] text-xs sm:text-sm font-semibold px-3.5 py-1.5 mb-5 sm:mb-6">
-            Built for beauty &amp; wellness businesses in Malaysia 🇲🇾
-          </div>
-
-          <h1 className="text-[1.75rem] leading-[1.15] sm:text-4xl md:text-5xl lg:text-[3.25rem] font-bold tracking-tight mb-5 sm:mb-6 text-slate-900 text-balance">
-            Run your appointments, schedule, customers, and payments{' '}
-            <span
-              className="bg-clip-text text-transparent"
-              style={{
-                backgroundImage: 'linear-gradient(90deg, #7656D6 0%, #6366F1 100%)',
-              }}
-            >
-              in one place
-            </span>
-          </h1>
-
-          <p className="text-base sm:text-lg text-slate-500 mb-7 sm:mb-8 leading-relaxed max-w-xl mx-auto lg:mx-0">
-            Bookglow is the all-in-one platform that helps you save time, reduce no-shows, and grow your business with
-            confidence.
-          </p>
-
-          <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-8 text-left max-w-xl mx-auto lg:mx-0">
-            {[
-              {
-                title: '24/7 Online Booking',
-                sub: 'Never miss a booking',
-                icon: (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                ),
-              },
-              {
-                title: 'Smart Reminders',
-                sub: 'Reduce no-shows',
-                icon: (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
-                ),
-              },
-              {
-                title: 'Secure Payments',
-                sub: 'Get paid faster',
-                icon: (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                  </svg>
-                ),
-              },
-            ].map((item) => (
-              <div key={item.title} className="flex flex-col items-start gap-2">
-                <span className="inline-flex w-8 h-8 rounded-lg bg-[var(--brand-soft)] text-[var(--brand)] items-center justify-center shrink-0">
-                  {item.icon}
-                </span>
-                <div>
-                  <p className="text-[11px] sm:text-sm font-bold text-slate-800 leading-snug">{item.title}</p>
-                  <p className="text-[10px] sm:text-xs text-slate-500 leading-snug">{item.sub}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start mb-5">
-            <a href="/signup" className="w-full sm:w-auto">
-              <Button size="lg" className="w-full sm:w-auto rounded-xl px-8">
-                Start free →
-              </Button>
-            </a>
-            <a
-              href="tel:+60169929123"
-              className="w-full sm:w-auto inline-flex items-center justify-center font-semibold rounded-xl px-8 py-4 text-lg border-2 transition-all duration-200 hover:bg-[var(--brand-soft)]"
-              style={{ borderColor: PRIMARY_GREEN, color: PRIMARY_GREEN }}
-            >
-              Book a demo
-            </a>
-          </div>
-
-          <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center lg:justify-start gap-2 sm:gap-4 text-xs sm:text-sm text-slate-500">
-            <span>✓ 14-day free trial</span>
-            <span className="hidden sm:inline text-slate-300">•</span>
-            <span>✓ No credit card required</span>
-            <span className="hidden sm:inline text-slate-300">•</span>
-            <span>✓ Setup in minutes</span>
-          </div>
-        </div>
-
-        <div className="relative w-full max-w-xl mx-auto lg:max-w-none">
-          <FloatingScreens />
-        </div>
-      </div>
-    </section>
-  );
-};
-
-const TrustStrip: React.FC = () => (
-  <section className="py-10 sm:py-14 border-y border-slate-100 bg-white/60 scroll-mt-20" id="industries">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center">
-      <p className="text-sm text-slate-500 mb-6 sm:mb-8">Trusted by beauty &amp; wellness businesses across Malaysia</p>
-      <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-4 sm:gap-x-12 opacity-50 grayscale">
-        {TRUST_LOGOS.map((name) => (
-          <span key={name} className="text-xs sm:text-sm font-bold tracking-wide text-slate-600 uppercase">
-            {name}
-          </span>
-        ))}
-      </div>
-    </div>
-  </section>
-);
 
 const ValueCards: React.FC = () => (
   <section className="py-12 sm:py-16 lg:py-20">
@@ -778,12 +483,12 @@ const App: React.FC = () => {
 
   return (
     <div className="bookglow-public-site min-h-screen gradient-bg transition-colors duration-300">
-      <Navbar onNavigate={setView} currentView={view} />
+      <LandingNavbar onNavigate={setView} currentView={view} />
 
       {view === 'landing' && (
         <>
           <Hero />
-          <TrustStrip />
+          <IndustryStrip />
           <ValueCards />
           <FeaturesAndPricing onExplorePricing={() => setView('pricing')} />
         </>

@@ -30,7 +30,7 @@ const Sparkline: React.FC<{ points: number[]; strokeClassName: string }> = ({ po
     .map((p, i) => `${i === 0 ? 'M' : 'L'} ${(i * step).toFixed(1)} ${(height - ((p - min) / range) * height).toFixed(1)}`)
     .join(' ');
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="w-16 h-7 shrink-0" aria-hidden>
+    <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="w-12 h-6 sm:w-16 sm:h-7 shrink-0" aria-hidden>
       <path d={path} fill="none" className={strokeClassName} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
@@ -39,8 +39,8 @@ const Sparkline: React.FC<{ points: number[]; strokeClassName: string }> = ({ po
 export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({ cards, className }) => (
   <div
     className={cx(
-      'flex gap-3 overflow-x-auto snap-x snap-mandatory pb-1 -mx-1 px-1',
-      'lg:grid lg:grid-cols-4 lg:overflow-visible lg:pb-0 lg:mx-0 lg:px-0',
+      'grid grid-cols-2 gap-2.5 sm:gap-3',
+      'lg:grid-cols-4',
       className,
     )}
     aria-label="Business performance"
@@ -49,24 +49,37 @@ export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({ cards, cla
       <div
         key={card.id}
         className={cx(
-          'min-w-[72%] sm:min-w-[46%] lg:min-w-0 snap-start',
-          'bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs p-4 flex flex-col gap-1.5',
+          'min-w-0',
+          'bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs',
+          'p-3 sm:p-4 flex flex-col gap-1 sm:gap-1.5',
         )}
       >
         <div className="flex items-center gap-1.5">
           <span className="text-xs font-semibold text-[var(--text-muted)]">{card.label}</span>
-          <Info className="w-3.5 h-3.5 text-[var(--text-muted)]/70" aria-hidden />
+          <Info className="w-3.5 h-3.5 text-[var(--text-muted)]/70 shrink-0" aria-hidden />
         </div>
-        <div className="flex items-end justify-between gap-2">
-          <p className={cx('text-xl font-bold tabular-nums leading-tight break-words', card.valueToneClass || 'text-[var(--text-primary)]')}>
+        <div className="flex items-end justify-between gap-2 min-w-0">
+          <p
+            className={cx(
+              'text-base sm:text-xl font-bold tabular-nums leading-tight break-words min-w-0',
+              card.valueToneClass || 'text-[var(--text-primary)]',
+            )}
+          >
             {card.value}
           </p>
           {card.sparkline ? (
-            <Sparkline points={card.sparkline} strokeClassName={card.valueToneClass ? card.valueToneClass.replace('text-', 'stroke-') : 'stroke-[var(--brand)]'} />
+            <Sparkline
+              points={card.sparkline}
+              strokeClassName={
+                card.valueToneClass ? card.valueToneClass.replace('text-', 'stroke-') : 'stroke-[var(--brand)]'
+              }
+            />
           ) : null}
         </div>
         {card.secondary ? (
-          <p className={cx('text-xs', card.secondaryToneClass || 'text-[var(--text-muted)]')}>{card.secondary}</p>
+          <p className={cx('text-[11px] sm:text-xs leading-snug', card.secondaryToneClass || 'text-[var(--text-muted)]')}>
+            {card.secondary}
+          </p>
         ) : null}
       </div>
     ))}

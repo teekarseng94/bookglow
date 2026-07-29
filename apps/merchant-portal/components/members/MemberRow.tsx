@@ -16,7 +16,8 @@ export interface MemberRowProps {
 }
 
 /**
- * Compact member list row: name, phone/id, membership/status, one useful balance/activity value.
+ * Compact member list row: avatar | name + full phone | points + chevron.
+ * Whole row is tappable.
  */
 export const MemberRow: React.FC<MemberRowProps> = ({
   name,
@@ -43,7 +44,7 @@ export const MemberRow: React.FC<MemberRowProps> = ({
       'w-full flex items-center text-left cursor-pointer transition-colors',
       'focus-visible:shadow-ui-focus-strong',
       'm-member-row',
-      'md:rounded-ui-md md:border md:shadow-ui-xs md:p-3 md:gap-3',
+      'md:rounded-ui-md md:border md:shadow-ui-xs md:p-3 md:gap-3 md:min-h-0',
       highlighted
         ? 'bg-amber-50/80 border border-amber-300 hover:bg-amber-100/80'
         : 'bg-[var(--bg-surface)] border border-[var(--line)] hover:bg-[var(--bg-soft)]',
@@ -54,39 +55,52 @@ export const MemberRow: React.FC<MemberRowProps> = ({
       className={cx(
         'm-member-avatar rounded-full flex items-center justify-center font-semibold border-2 border-white shadow-sm shrink-0',
         'md:w-10 md:h-10 md:text-sm md:font-bold',
-        highlighted ? 'bg-amber-200 text-amber-800' : 'bg-[var(--bg-soft)] text-[var(--text-secondary)]',
+        highlighted ? 'bg-amber-200 text-amber-800' : 'bg-[var(--brand-soft)] text-[var(--brand)]',
       )}
     >
       {(name || '?').charAt(0)}
     </div>
+
     <div className="min-w-0 flex-1">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 min-w-0">
-          <p className="m-member-name truncate md:font-bold md:text-sm text-[var(--text-primary)]">{name}</p>
-          {membershipLabel ? (
-            <StatusBadge tone="warning" className="shrink-0">
-              {membershipLabel}
-            </StatusBadge>
-          ) : null}
-        </div>
-        <span className="m-member-points shrink-0 text-sm md:text-xs font-semibold text-[var(--success)] tabular-nums">
-          {balanceOrActivity}
-        </span>
-      </div>
-      <div className="flex items-center gap-1.5 mt-0.5 m-caption text-[var(--text-muted)] min-w-0">
-        <span className="shrink-0">{phoneOrId}</span>
-        {secondaryMeta ? (
-          <span className="truncate hidden sm:inline">· {secondaryMeta}</span>
+      <div className="flex items-center gap-1.5 min-w-0">
+        <p className="m-member-name truncate text-[var(--text-primary)]">{name}</p>
+        {membershipLabel ? (
+          <StatusBadge tone="warning" className="shrink-0">
+            {membershipLabel}
+          </StatusBadge>
         ) : null}
       </div>
+      <p className="m-member-phone text-[var(--text-muted)] truncate" title={phoneOrId}>
+        {phoneOrId || '—'}
+      </p>
+      {secondaryMeta ? (
+        <p className="m-caption text-[var(--text-muted)] truncate hidden sm:block mt-0.5">
+          {secondaryMeta}
+        </p>
+      ) : null}
     </div>
-    {onEdit ? (
-      <div className="hidden sm:block" onClick={(e) => e.stopPropagation()}>
-        <IconButton label={`Edit ${name}`} size="sm" onClick={onEdit}>
-          ✎
-        </IconButton>
-      </div>
-    ) : null}
+
+    <div className="shrink-0 flex items-center gap-1 pl-2">
+      <span className="m-member-points text-[var(--success)] tabular-nums whitespace-nowrap">
+        {balanceOrActivity}
+      </span>
+      <svg
+        className="m-member-chevron text-[var(--text-muted)] sm:hidden"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+      </svg>
+      {onEdit ? (
+        <div className="hidden sm:block" onClick={(e) => e.stopPropagation()}>
+          <IconButton label={`Edit ${name}`} size="sm" onClick={onEdit}>
+            ✎
+          </IconButton>
+        </div>
+      ) : null}
+    </div>
   </div>
 );
 

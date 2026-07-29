@@ -557,6 +557,11 @@ const Dashboard: React.FC<DashboardProps> = ({
     month: 'long',
     year: 'numeric',
   });
+  const compactDateLabel = new Date().toLocaleDateString('en-GB', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
 
   const maxDay = Math.max(...dashboardData.chartData.map((d) => d.sales), 0);
   const todayIdx = (new Date().getDay() + 6) % 7;
@@ -570,7 +575,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const marginPct = dashboardData.stats.revenue > 0 ? (dashboardData.stats.profit / dashboardData.stats.revenue) * 100 : null;
 
   return (
-    <div className="space-y-5 animate-fadeIn">
+    <div className="dashboard-today space-y-5 animate-fadeIn pb-6">
       {/* 1. Greeting + top actions */}
       <TodayHeader
         title={<>{greeting} <span aria-hidden>👋</span></>}
@@ -580,9 +585,10 @@ const Dashboard: React.FC<DashboardProps> = ({
           <>
             <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-ui-sm bg-[var(--bg-surface)] border border-[var(--line)] text-sm font-semibold text-[var(--text-secondary)]">
               <Calendar className="w-4 h-4" />
-              {dateLabel}
+              <span className="sm:hidden">{compactDateLabel}</span>
+              <span className="hidden sm:inline">{dateLabel}</span>
             </span>
-            <Button type="button" variant="secondary" size="sm" onClick={() => navigate('/sales-reports')}>
+            <Button type="button" className="hidden lg:inline-flex" variant="secondary" size="sm" onClick={() => navigate('/sales-reports')}>
               <Download className="w-4 h-4" /> Export
             </Button>
             <Button type="button" variant="primary" size="sm" onClick={() => navigate('/schedule')}>
@@ -590,6 +596,17 @@ const Dashboard: React.FC<DashboardProps> = ({
             </Button>
           </>
         }
+      />
+
+      <OperationalStatus
+        className="lg:hidden"
+        title="Quick actions"
+        actions={[
+          { id: 'pos', label: 'New Sale', icon: '💳', onClick: () => navigate('/pos') },
+          { id: 'booking', label: 'Booking', icon: '📅', onClick: () => navigate('/schedule') },
+          { id: 'member', label: 'Member', icon: '👤', onClick: () => navigate('/member') },
+          { id: 'expense', label: 'Expense', icon: '📊', onClick: () => navigate('/finance') },
+        ]}
       />
 
       {/* 2. Four KPI cards — replaces the old full-width revenue banner */}
@@ -631,7 +648,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       />
 
       {/* 3. Main row: Today's Appointments | Needs Attention | Sales Snapshot */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1.1fr_1fr] gap-6 lg:gap-8 items-start">
+      <div className="dashboard-primary grid grid-cols-1 lg:grid-cols-[1.5fr_1.1fr_1fr] gap-5 lg:gap-8 items-start">
         <UpcomingAppointments
           rows={todayApps.map((app) => {
             const clientName = clients.find((c) => c.id === app.clientId)?.name || 'Guest';
@@ -687,8 +704,9 @@ const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       {/* 4. Bottom row: Customer Activity | Booking link promo */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1.85fr_1fr] gap-6 lg:gap-8 items-start">
+      <div className="dashboard-secondary grid grid-cols-1 lg:grid-cols-[1.85fr_1fr] gap-5 lg:gap-8 items-start">
         <CustomerActivity
+          className="hidden lg:block"
           metrics={[
             {
               id: 'new-clients',
@@ -708,10 +726,11 @@ const Dashboard: React.FC<DashboardProps> = ({
         <BookingLinkCard outletId={outletID} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+      <div className="dashboard-detail grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
         <div className="lg:col-span-2 space-y-6 lg:space-y-8">
           {/* 6. Staff / operational status */}
           <OperationalStatus
+            className="hidden lg:block"
             title="Operational status"
             actions={[
               { id: 'pos', label: 'New Sale', icon: '💳', onClick: () => navigate('/pos') },
@@ -799,6 +818,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
           {/* 7. Secondary charts and trends */}
           <DashboardChartSection
+            className="hidden lg:block"
             totalLabel={formatRM(dashboardData.totalSalesThisWeek)}
             txnCountLabel={`${dashboardData.weekTxnCount} txn${dashboardData.weekTxnCount !== 1 ? 's' : ''}`}
             empty={weekEmpty}
@@ -848,7 +868,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             }
           />
 
-          <div className="bg-[var(--bg-surface)] p-6 rounded-ui-lg border border-[var(--line)] shadow-ui-xs">
+          <div className="hidden lg:block bg-[var(--bg-surface)] p-6 rounded-ui-lg border border-[var(--line)] shadow-ui-xs">
             <h3 className="text-xl font-bold tracking-tight text-[var(--text-primary)] mb-4">Top Selling</h3>
             <div className="flex gap-1 p-1 bg-[var(--bg-soft)] rounded-ui-md mb-4">
               {(['service', 'product', 'package', 'discount'] as const).map((tab) => (
@@ -914,7 +934,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {/* 5. Top customers (by spend this month) + payment */}
-        <div className="space-y-6 lg:space-y-8">
+        <div className="hidden lg:block space-y-6 lg:space-y-8">
           <section className="space-y-3">
             <div className="flex items-center justify-between gap-2">
               <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Top Customers</h3>

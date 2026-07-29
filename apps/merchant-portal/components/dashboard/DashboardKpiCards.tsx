@@ -37,18 +37,28 @@ const Sparkline: React.FC<{ points: number[]; strokeClassName: string }> = ({ po
 };
 
 export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({ cards, className }) => (
-  <div className={cx('grid grid-cols-2 lg:grid-cols-4 gap-3', className)}>
+  <div
+    className={cx(
+      'flex gap-3 overflow-x-auto snap-x snap-mandatory pb-1 -mx-1 px-1',
+      'lg:grid lg:grid-cols-4 lg:overflow-visible lg:pb-0 lg:mx-0 lg:px-0',
+      className,
+    )}
+    aria-label="Business performance"
+  >
     {cards.map((card) => (
       <div
         key={card.id}
-        className="bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs p-4 flex flex-col gap-1.5"
+        className={cx(
+          'min-w-[72%] sm:min-w-[46%] lg:min-w-0 snap-start',
+          'bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs p-4 flex flex-col gap-1.5',
+        )}
       >
         <div className="flex items-center gap-1.5">
           <span className="text-xs font-semibold text-[var(--text-muted)]">{card.label}</span>
           <Info className="w-3.5 h-3.5 text-[var(--text-muted)]/70" aria-hidden />
         </div>
         <div className="flex items-end justify-between gap-2">
-          <p className={cx('text-xl font-bold tabular-nums leading-tight', card.valueToneClass || 'text-[var(--text-primary)]')}>
+          <p className={cx('text-xl font-bold tabular-nums leading-tight break-words', card.valueToneClass || 'text-[var(--text-primary)]')}>
             {card.value}
           </p>
           {card.sparkline ? (

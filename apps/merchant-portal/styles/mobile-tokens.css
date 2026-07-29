@@ -1514,6 +1514,31 @@
     font-weight: var(--mobile-font-semibold) !important;
   }
 
+  @media (max-width: 479px) {
+    .m-hours-row {
+      flex-wrap: nowrap !important;
+      gap: 4px;
+    }
+
+    .m-hours-row__day {
+      width: 32px !important;
+      font-size: 12px !important;
+    }
+
+    .m-hours-row__time {
+      min-width: 0 !important;
+      padding-left: 4px !important;
+      padding-right: 2px !important;
+      font-size: 11px !important;
+    }
+
+    .m-hours-row__status {
+      width: 38px !important;
+      font-size: 10px !important;
+      letter-spacing: 0 !important;
+    }
+  }
+
   .m-inventory-tab {
     min-height: 36px;
     padding: 6px var(--mobile-space-3);

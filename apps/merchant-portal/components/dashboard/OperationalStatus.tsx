@@ -47,7 +47,7 @@ export const OperationalStatus: React.FC<OperationalStatusProps> = ({
         ))}
       </div>
     ) : null}
-    <div className="bg-[var(--bg-surface)] p-4 sm:p-6 rounded-ui-lg border border-[var(--line)] shadow-ui-xs">
+    <div className="hidden lg:block bg-[var(--bg-surface)] p-4 sm:p-6 rounded-ui-lg border border-[var(--line)] shadow-ui-xs">
       {calendarHeader}
       {children}
     </div>

@@ -39,6 +39,7 @@ export const OperatingHoursRow: React.FC<OperatingHoursRowProps> = ({
   className,
 }) => {
   const dayLabel = day.charAt(0).toUpperCase() + day.slice(1);
+  const compactDayLabel = dayLabel.slice(0, 3);
   const rangeLabel = isOpen
     ? `${formatTime12(openTime)} – ${formatTime12(closeTime)}`
     : 'Closed';
@@ -51,8 +52,13 @@ export const OperatingHoursRow: React.FC<OperatingHoursRowProps> = ({
         className,
       )}
     >
-      <span className="m-hours-row__day w-[72px] sm:w-24 flex-shrink-0 text-sm font-semibold text-[var(--text-primary)] capitalize">
-        {dayLabel}
+      <span
+        className="m-hours-row__day w-[72px] sm:w-24 flex-shrink-0 text-sm font-semibold text-[var(--text-primary)] capitalize"
+        title={dayLabel}
+        aria-label={dayLabel}
+      >
+        <span className="sm:hidden" aria-hidden>{compactDayLabel}</span>
+        <span className="hidden sm:inline" aria-hidden>{dayLabel}</span>
       </span>
       <span className="hidden sm:inline text-[var(--text-muted)] flex-shrink-0" aria-hidden>
         |

@@ -118,6 +118,10 @@ export interface Client {
   outstanding?: number;
   /** Set during CSV import; used to undo a batch via Undo Import */
   lastImportId?: string;
+  marketingEmailConsent?: boolean;
+  marketingSmsConsent?: boolean;
+  marketingWhatsappConsent?: boolean;
+  marketingUnsubscribedAt?: string;
 }
 
 export interface Appointment {

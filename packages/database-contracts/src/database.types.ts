@@ -285,6 +285,10 @@ export type Database = {
           ethnic: string | null;
           member_tier: string | null;
           last_import_id: string | null;
+          marketing_email_consent: boolean;
+          marketing_sms_consent: boolean;
+          marketing_whatsapp_consent: boolean;
+          marketing_unsubscribed_at: string | null;
           created_at: string | null;
         };
         Insert: {
@@ -307,6 +311,10 @@ export type Database = {
           ethnic?: string | null;
           member_tier?: string | null;
           last_import_id?: string | null;
+          marketing_email_consent?: boolean;
+          marketing_sms_consent?: boolean;
+          marketing_whatsapp_consent?: boolean;
+          marketing_unsubscribed_at?: string | null;
           created_at?: string | null;
         };
         Update: {
@@ -329,6 +337,10 @@ export type Database = {
           ethnic?: string | null;
           member_tier?: string | null;
           last_import_id?: string | null;
+          marketing_email_consent?: boolean;
+          marketing_sms_consent?: boolean;
+          marketing_whatsapp_consent?: boolean;
+          marketing_unsubscribed_at?: string | null;
           created_at?: string | null;
         };
         Relationships: [
@@ -834,6 +846,60 @@ export type Database = {
           scheduled_at?: string | null;
           created_by?: string | null;
           created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      marketing_campaign_deliveries: {
+        Row: {
+          id: string;
+          outlet_id: string;
+          campaign_id: string;
+          client_id: string;
+          channel: string;
+          recipient_masked: string | null;
+          status: string;
+          provider: string | null;
+          provider_message_id: string | null;
+          attempt_count: number;
+          last_error: string | null;
+          queued_at: string;
+          processed_at: string | null;
+          sent_at: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          outlet_id: string;
+          campaign_id: string;
+          client_id: string;
+          channel: string;
+          recipient_masked?: string | null;
+          status?: string;
+          provider?: string | null;
+          provider_message_id?: string | null;
+          attempt_count?: number;
+          last_error?: string | null;
+          queued_at?: string;
+          processed_at?: string | null;
+          sent_at?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          outlet_id?: string;
+          campaign_id?: string;
+          client_id?: string;
+          channel?: string;
+          recipient_masked?: string | null;
+          status?: string;
+          provider?: string | null;
+          provider_message_id?: string | null;
+          attempt_count?: number;
+          last_error?: string | null;
+          queued_at?: string;
+          processed_at?: string | null;
+          sent_at?: string | null;
           updated_at?: string;
         };
         Relationships: [];

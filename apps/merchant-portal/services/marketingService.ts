@@ -44,6 +44,23 @@ export interface MarketingCampaign {
   updatedAt: string;
 }
 
+export interface CampaignDeliverySummary {
+  campaignID: string;
+  queued: number;
+  sent: number;
+  failed: number;
+  skipped: number;
+}
+
+export interface CampaignDispatchResult {
+  campaignId: string;
+  queued: number;
+  skipped: number;
+  sent: number;
+  failed: number;
+  manual?: boolean;
+}
+
 const db = () => {
   const supabase = getSupabaseBrowserClientOrNull();
   if (!supabase) throw new Error('Marketing storage is unavailable.');
@@ -90,7 +107,12 @@ export const audienceMatchesClient = (criteria: AudienceCriteria, client: Client
     case 'voucher_holders':
       return Number(client.voucherCount || 0) > 0;
     case 'contactable':
-      return criteria.value === 'email' ? !!client.email : !!client.phone;
+      if (client.marketingUnsubscribedAt) return false;
+      if (criteria.value === 'email') return !!client.email && Boolean(client.marketingEmailConsent);
+      if (criteria.value === 'whatsapp') {
+        return !!client.phone && Boolean(client.marketingWhatsappConsent);
+      }
+      return !!client.phone && Boolean(client.marketingSmsConsent);
     default:
       return true;
   }
@@ -160,5 +182,38 @@ export const marketingService = {
     if (error) throw error;
     return mapCampaign(data as Record<string, unknown>);
   },
-};
 
+  listDeliverySummaries: async (outletID: string): Promise<CampaignDeliverySummary[]> => {
+    const { data, error } = await db()
+      .from('marketing_campaign_deliveries')
+      .select('campaign_id,status')
+      .eq('outlet_id', outletID);
+    if (error) throw error;
+    const summaries = new Map<string, CampaignDeliverySummary>();
+    for (const row of data || []) {
+      const campaignID = String(row.campaign_id);
+      const current = summaries.get(campaignID) || {
+        campaignID,
+        queued: 0,
+        sent: 0,
+        failed: 0,
+        skipped: 0,
+      };
+      if (row.status === 'queued' || row.status === 'processing') current.queued += 1;
+      else if (row.status === 'sent') current.sent += 1;
+      else if (row.status === 'failed') current.failed += 1;
+      else if (row.status === 'skipped') current.skipped += 1;
+      summaries.set(campaignID, current);
+    }
+    return [...summaries.values()];
+  },
+
+  dispatchCampaign: async (campaignId: string): Promise<CampaignDispatchResult> => {
+    const { data, error } = await db().functions.invoke('marketing-dispatch', {
+      body: { action: 'launch', campaignId },
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(String(data.error));
+    return data as CampaignDispatchResult;
+  },
+};

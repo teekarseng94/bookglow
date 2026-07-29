@@ -15,6 +15,9 @@ const client = {
   memberTier: 'Gold',
   tag: 'VIP',
   voucherCount: 2,
+  marketingEmailConsent: true,
+  marketingSmsConsent: true,
+  marketingWhatsappConsent: true,
 } satisfies Client;
 
 describe('audienceMatchesClient', () => {
@@ -28,11 +31,18 @@ describe('audienceMatchesClient', () => {
 
   it('evaluates communication eligibility from existing customer data', () => {
     expect(audienceMatchesClient({ type: 'contactable', value: 'email' }, client)).toBe(true);
-    expect(audienceMatchesClient({ type: 'contactable', value: 'phone' }, client)).toBe(true);
+    expect(audienceMatchesClient({ type: 'contactable', value: 'sms' }, client)).toBe(true);
+    expect(audienceMatchesClient({ type: 'contactable', value: 'whatsapp' }, client)).toBe(true);
     expect(
       audienceMatchesClient(
         { type: 'contactable', value: 'email' },
         { ...client, email: '' },
+      ),
+    ).toBe(false);
+    expect(
+      audienceMatchesClient(
+        { type: 'contactable', value: 'sms' },
+        { ...client, marketingSmsConsent: false },
       ),
     ).toBe(false);
   });

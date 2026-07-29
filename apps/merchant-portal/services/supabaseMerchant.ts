@@ -588,6 +588,10 @@ function mapClient(row: Record<string, unknown>): Client {
     credit: Number(row.credit ?? 0),
     outstanding: Number(row.outstanding ?? 0),
     lastImportId: (row.last_import_id as string) || undefined,
+    marketingEmailConsent: Boolean(row.marketing_email_consent),
+    marketingSmsConsent: Boolean(row.marketing_sms_consent),
+    marketingWhatsappConsent: Boolean(row.marketing_whatsapp_consent),
+    marketingUnsubscribedAt: (row.marketing_unsubscribed_at as string) || undefined,
   };
 }
 
@@ -645,6 +649,10 @@ export const clientService = {
       ethnic: member.ethnic || null,
       member_tier: member.memberTier || null,
       last_import_id: member.lastImportId || null,
+      marketing_email_consent: Boolean(member.marketingEmailConsent),
+      marketing_sms_consent: Boolean(member.marketingSmsConsent),
+      marketing_whatsapp_consent: Boolean(member.marketingWhatsappConsent),
+      marketing_unsubscribed_at: member.marketingUnsubscribedAt || null,
       created_at: createdAt,
     });
     if (error) throw error;
@@ -675,6 +683,10 @@ export const clientService = {
     if (updates.credit !== undefined) patch.credit = updates.credit;
     if (updates.outstanding !== undefined) patch.outstanding = updates.outstanding;
     if (updates.lastImportId !== undefined) patch.last_import_id = updates.lastImportId;
+    if (updates.marketingEmailConsent !== undefined) patch.marketing_email_consent = updates.marketingEmailConsent;
+    if (updates.marketingSmsConsent !== undefined) patch.marketing_sms_consent = updates.marketingSmsConsent;
+    if (updates.marketingWhatsappConsent !== undefined) patch.marketing_whatsapp_consent = updates.marketingWhatsappConsent;
+    if (updates.marketingUnsubscribedAt !== undefined) patch.marketing_unsubscribed_at = updates.marketingUnsubscribedAt;
     if (updates.createdAt !== undefined) patch.created_at = updates.createdAt;
     const { error } = await client()
       .from("clients")

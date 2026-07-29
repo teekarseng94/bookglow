@@ -16,6 +16,7 @@ import {
 import type { Client } from '../../types';
 import {
   AudienceCriteria,
+  CampaignDeliverySummary,
   CampaignChannel,
   MarketingAudience,
   MarketingCampaign,
@@ -67,24 +68,28 @@ export const MarketingGrowthWorkspace: React.FC<MarketingGrowthWorkspaceProps> =
   const [clients, setClients] = useState<Client[]>([]);
   const [audiences, setAudiences] = useState<MarketingAudience[]>([]);
   const [campaigns, setCampaigns] = useState<MarketingCampaign[]>([]);
+  const [deliverySummaries, setDeliverySummaries] = useState<CampaignDeliverySummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [audienceEditorOpen, setAudienceEditorOpen] = useState(false);
   const [campaignEditorOpen, setCampaignEditorOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [dispatchingCampaignID, setDispatchingCampaignID] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [customerRows, audienceRows, campaignRows] = await Promise.all([
+      const [customerRows, audienceRows, campaignRows, deliveryRows] = await Promise.all([
         marketingService.getClients(outletID),
         marketingService.listAudiences(outletID),
         marketingService.listCampaigns(outletID),
+        marketingService.listDeliverySummaries(outletID),
       ]);
       setClients(customerRows);
       setAudiences(audienceRows);
       setCampaigns(campaignRows);
+      setDeliverySummaries(deliveryRows);
       setError(null);
     } catch (loadError) {
       setError(errorMessage(loadError));
@@ -107,6 +112,29 @@ export const MarketingGrowthWorkspace: React.FC<MarketingGrowthWorkspaceProps> =
       ),
     [audiences, clients],
   );
+
+  const deliverySummaryMap = useMemo(
+    () => new Map(deliverySummaries.map((summary) => [summary.campaignID, summary])),
+    [deliverySummaries],
+  );
+
+  const dispatchCampaign = async (campaign: MarketingCampaign) => {
+    setDispatchingCampaignID(campaign.id);
+    setError(null);
+    try {
+      const result = await marketingService.dispatchCampaign(campaign.id);
+      await load();
+      setSuccess(
+        result.manual
+          ? `${campaign.name} is ready to share manually.`
+          : `${result.sent} messages sent. ${result.skipped} customers were excluded by consent or missing contact details.`,
+      );
+    } catch (dispatchError) {
+      setError(errorMessage(dispatchError));
+    } finally {
+      setDispatchingCampaignID(null);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -207,6 +235,7 @@ export const MarketingGrowthWorkspace: React.FC<MarketingGrowthWorkspaceProps> =
               {campaigns.map((campaign) => {
                 const Icon = channelIcons[campaign.channel];
                 const audience = audiences.find((item) => item.id === campaign.audienceID);
+                const delivery = deliverySummaryMap.get(campaign.id);
                 return (
                   <article
                     key={campaign.id}
@@ -232,15 +261,35 @@ export const MarketingGrowthWorkspace: React.FC<MarketingGrowthWorkspaceProps> =
                         </p>
                       </div>
                     </div>
-                    <div className="text-sm text-[var(--text-muted)]">
-                      {campaign.scheduledAt ? (
-                        <span className="inline-flex items-center gap-2">
-                          <CalendarClock size={15} />
-                          {new Date(campaign.scheduledAt).toLocaleString()}
-                        </span>
-                      ) : (
-                        'Not scheduled'
-                      )}
+                    <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+                      <div className="text-right text-xs text-[var(--text-muted)]">
+                        {campaign.scheduledAt ? (
+                          <span className="inline-flex items-center gap-2">
+                            <CalendarClock size={15} />
+                            {new Date(campaign.scheduledAt).toLocaleString()}
+                          </span>
+                        ) : (
+                          <span>
+                            {delivery
+                              ? `${delivery.sent} sent · ${delivery.failed} failed`
+                              : 'Not launched'}
+                          </span>
+                        )}
+                      </div>
+                      {campaign.status === 'draft' || campaign.status === 'paused' ? (
+                        <Button
+                          size="sm"
+                          disabled={dispatchingCampaignID === campaign.id}
+                          onClick={() => void dispatchCampaign(campaign)}
+                        >
+                          <Send size={14} />
+                          {dispatchingCampaignID === campaign.id
+                            ? 'Sending…'
+                            : campaign.channel === 'share_link'
+                              ? 'Mark ready'
+                              : 'Send now'}
+                        </Button>
+                      ) : null}
                     </div>
                   </article>
                 );
@@ -427,7 +476,8 @@ const AudienceEditor: React.FC<AudienceEditorProps> = ({ open, clients, busy, on
             <select value={value} onChange={(event) => setValue(event.target.value)}>
               <option value="">Select channel</option>
               <option value="email">Email</option>
-              <option value="phone">Phone / messaging</option>
+              <option value="sms">SMS</option>
+              <option value="whatsapp">WhatsApp</option>
             </select>
           </Field>
         ) : null}

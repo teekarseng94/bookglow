@@ -121,8 +121,19 @@ const CRM: React.FC<CRMProps> = ({
     tag: '',
     ethnic: '',
     memberTier: '',
+    marketingEmailConsent: false,
+    marketingSmsConsent: false,
+    marketingWhatsappConsent: false,
   });
-  const [editClientData, setEditClientData] = useState({ name: '', email: '', phone: '', notes: '' });
+  const [editClientData, setEditClientData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    notes: '',
+    marketingEmailConsent: false,
+    marketingSmsConsent: false,
+    marketingWhatsappConsent: false,
+  });
   const [editingReward, setEditingReward] = useState<Reward | null>(null);
   const [rewardFormData, setRewardFormData] = useState<Partial<Reward>>({ name: '', cost: 0, icon: '🎁' });
   const [editingPointsValue, setEditingPointsValue] = useState<number>(0);
@@ -318,6 +329,9 @@ const CRM: React.FC<CRMProps> = ({
         tag: '',
         ethnic: '',
         memberTier: '',
+        marketingEmailConsent: false,
+        marketingSmsConsent: false,
+        marketingWhatsappConsent: false,
       });
       setShowAddClientModal(false);
     } catch (err) {
@@ -434,7 +448,10 @@ const CRM: React.FC<CRMProps> = ({
       name: client.name,
       email: client.email,
       phone: client.phone,
-      notes: client.notes
+      notes: client.notes,
+      marketingEmailConsent: Boolean(client.marketingEmailConsent),
+      marketingSmsConsent: Boolean(client.marketingSmsConsent),
+      marketingWhatsappConsent: Boolean(client.marketingWhatsappConsent),
     });
     setShowEditClientModal(true);
   };
@@ -937,6 +954,33 @@ const CRM: React.FC<CRMProps> = ({
               onChange={(e) => setEditClientData({ ...editClientData, notes: e.target.value })}
             />
           </Field>
+          <fieldset className="rounded-ui-md border border-[var(--line)] p-4">
+            <legend className="px-1 text-sm font-semibold text-[var(--text-primary)]">
+              Marketing consent
+            </legend>
+            <p className="mb-3 text-xs text-[var(--text-muted)]">
+              Enable only the channels this customer has explicitly agreed to receive.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                ['marketingEmailConsent', 'Email'],
+                ['marketingSmsConsent', 'SMS'],
+                ['marketingWhatsappConsent', 'WhatsApp'],
+              ].map(([key, label]) => (
+                <label key={key} className="flex min-h-11 items-center gap-2 rounded-ui-sm bg-[var(--bg-soft)] px-3 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(editClientData[key as keyof typeof editClientData])}
+                    onChange={(event) =>
+                      setEditClientData({ ...editClientData, [key]: event.target.checked })
+                    }
+                    className="h-4 w-4 accent-[var(--brand)]"
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
         </FormSection>
       </AppModal>
 
@@ -1335,6 +1379,33 @@ const CRM: React.FC<CRMProps> = ({
                   onChange={(e) => setNewClient({ ...newClient, notes: e.target.value })}
                 />
               </Field>
+              <fieldset className="rounded-ui-md border border-[var(--line)] p-4">
+                <legend className="px-1 text-sm font-semibold text-[var(--text-primary)]">
+                  Marketing consent
+                </legend>
+                <p className="mb-3 text-xs text-[var(--text-muted)]">
+                  Select only channels the customer explicitly agrees to receive.
+                </p>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {[
+                    ['marketingEmailConsent', 'Email'],
+                    ['marketingSmsConsent', 'SMS'],
+                    ['marketingWhatsappConsent', 'WhatsApp'],
+                  ].map(([key, label]) => (
+                    <label key={key} className="flex min-h-11 items-center gap-2 rounded-ui-sm bg-[var(--bg-soft)] px-3 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(newClient[key as keyof typeof newClient])}
+                        onChange={(event) =>
+                          setNewClient({ ...newClient, [key]: event.target.checked })
+                        }
+                        className="h-4 w-4 accent-[var(--brand)]"
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
             </FormSection>
           </div>
 

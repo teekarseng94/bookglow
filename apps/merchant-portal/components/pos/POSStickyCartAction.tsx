@@ -8,7 +8,7 @@ export interface POSStickyCartActionProps {
   className?: string;
 }
 
-/** Mobile sticky cart summary — checkout opens the cart sheet; does not create a new lock. */
+/** Phone + tablet sticky cart — desktop (lg+) uses the persistent order rail. */
 export const POSStickyCartAction: React.FC<POSStickyCartActionProps> = ({
   itemCount,
   totalLabel,
@@ -17,7 +17,7 @@ export const POSStickyCartAction: React.FC<POSStickyCartActionProps> = ({
 }) => (
   <div
     className={cx(
-      'm-pos-sticky-cart md:hidden fixed bottom-[calc(72px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-[45]',
+      'm-pos-sticky-cart lg:hidden fixed bottom-[calc(72px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-[45]',
       'bg-[var(--bg-surface)] shadow-[0_-4px_12px_rgba(15,23,42,0.12)]',
       className,
     )}

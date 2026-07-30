@@ -17,7 +17,7 @@ export const POSMemberSummary: React.FC<POSMemberSummaryProps> = ({
   className,
   onNewCustomer,
 }) => (
-  <div className={cx('space-y-2', className)}>
+  <div className={cx('space-y-1.5 lg:space-y-2', className)}>
     {quickPOSMemberName ? (
       <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-ui-sm bg-[var(--brand-soft)] border border-[var(--brand)]/30">
         <span className="m-secondary text-xs font-semibold text-[var(--brand-deep)]">
@@ -31,14 +31,14 @@ export const POSMemberSummary: React.FC<POSMemberSummaryProps> = ({
       </div>
     ) : null}
     <div className="flex items-center justify-between gap-2">
-      <label className="m-pos-label uppercase text-[var(--text-muted)] tracking-wider">
+      <label className="m-pos-label uppercase text-[var(--text-muted)] tracking-wider text-[10px] lg:text-[inherit]">
         Customer
       </label>
       {onNewCustomer ? (
         <button
           type="button"
           onClick={onNewCustomer}
-          className="text-xs font-semibold text-[var(--brand)] hover:underline"
+          className="text-[12px] lg:text-xs font-semibold text-[var(--brand)] hover:underline"
         >
           + New Customer
         </button>

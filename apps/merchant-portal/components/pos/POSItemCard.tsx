@@ -16,8 +16,8 @@ export interface POSItemCardProps {
 
 /**
  * Catalogue card.
- * Mobile: existing full-width row.
- * Desktop: [64 thumb] [title → duration → points → price] [+ aligned to price].
+ * Phone + tablet (<1024): full-width readable row.
+ * Desktop (lg+): [thumb] [title → duration → points → price + add].
  */
 export const POSItemCard: React.FC<POSItemCardProps> = ({
   name,
@@ -69,62 +69,62 @@ export const POSItemCard: React.FC<POSItemCardProps> = ({
     <div className={cx('relative', className)}>
       {badge ? <div className="absolute top-2 right-2 z-[1]">{badge}</div> : null}
 
-      {/* Mobile (<640px): full-width horizontal row — media | details | price/action */}
-      <div className="sm:hidden m-pos-mobile-card flex items-center bg-[var(--bg-surface)] border border-[var(--line)]">
-        <div className="m-pos-mobile-card__thumb shrink-0 overflow-hidden bg-[var(--brand-soft)] flex items-center justify-center">
+      {/* Phone + tablet (<1024): full-width horizontal row — titles stay readable on iPad */}
+      <div className="lg:hidden m-pos-mobile-card flex items-center gap-3 bg-[var(--bg-surface)] border border-[var(--line)] rounded-ui-md p-3 min-h-[96px]">
+        <div className="m-pos-mobile-card__thumb w-14 h-14 sm:w-16 sm:h-16 rounded-xl shrink-0 overflow-hidden bg-[var(--brand-soft)] flex items-center justify-center">
           {thumb}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="m-pos-mobile-card__title text-[var(--text-primary)] leading-snug whitespace-normal break-words">
+          <p className="m-pos-mobile-card__title text-[var(--text-primary)] leading-snug whitespace-normal break-words text-[15px] sm:text-base font-semibold">
             {displayName}
           </p>
           {metaLeft || metaRight ? (
-            <div className="flex items-center gap-2 mt-0.5">
+            <div className="flex items-center gap-2 mt-0.5 min-w-0">
               {metaLeft ? (
-                <span className="m-pos-mobile-card__meta text-[var(--text-muted)] truncate">{metaLeft}</span>
+                <span className="m-pos-mobile-card__meta text-[12px] sm:text-[13px] text-[var(--text-muted)] truncate">{metaLeft}</span>
               ) : null}
               {metaRight ? (
-                <span className="m-pos-mobile-card__meta font-semibold text-[var(--warning)] truncate">{metaRight}</span>
+                <span className="m-pos-mobile-card__meta text-[12px] sm:text-[13px] font-semibold text-[var(--warning)] truncate">{metaRight}</span>
               ) : null}
             </div>
           ) : null}
           {chips}
         </div>
-        <div className="flex flex-col items-end gap-1.5 shrink-0">
-          <span className="m-pos-mobile-card__price text-[var(--success)] tabular-nums">{priceLabel}</span>
-          {addButton('m-pos-mobile-card__add')}
+        <div className="flex flex-col items-end gap-1.5 shrink-0 pl-2">
+          <span className="m-pos-mobile-card__price text-[14px] sm:text-[15px] font-semibold text-[var(--success)] tabular-nums">{priceLabel}</span>
+          {addButton('m-pos-mobile-card__add w-10 h-10 min-w-[40px] min-h-[40px]')}
         </div>
       </div>
 
-      {/* Desktop/tablet: thumb | content (title uses full width); price + add share bottom row */}
+      {/* Desktop (lg+): thumb | content stack with price + add */}
       <div
         className={cx(
-          'hidden sm:flex items-stretch',
+          'hidden lg:flex items-stretch',
           'bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)]',
           'hover:border-[var(--brand)] hover:shadow-ui-sm transition-all',
-          'p-2.5 gap-3 min-h-[88px] h-full',
+          'p-4 gap-4 min-h-[104px] h-full',
         )}
       >
-        <div className="w-16 h-16 rounded-ui-sm overflow-hidden shrink-0 self-center bg-[var(--brand-soft)] flex items-center justify-center">
+        <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 self-center bg-[var(--brand-soft)] flex items-center justify-center">
           {thumb}
         </div>
 
         <div className="min-w-0 flex-1 flex flex-col justify-center gap-0.5">
-          <p className="w-full text-[13px] font-semibold text-[var(--text-primary)] leading-snug line-clamp-2">
+          <p className="w-full text-[15px] font-semibold text-[var(--text-primary)] leading-snug whitespace-normal break-words">
             {displayName}
           </p>
           {metaLeft ? (
-            <p className="text-[11px] text-[var(--text-muted)] leading-snug truncate">{metaLeft}</p>
+            <p className="text-[13px] text-[var(--text-muted)] leading-snug truncate">{metaLeft}</p>
           ) : null}
           {metaRight ? (
-            <p className="text-[10px] font-semibold text-[var(--warning)] leading-snug truncate">{metaRight}</p>
+            <p className="text-[12px] font-semibold text-[var(--warning)] leading-snug truncate">{metaRight}</p>
           ) : null}
           {chips}
           <div className="mt-1 flex items-center justify-between gap-3 min-w-0">
-            <span className="min-w-0 text-[13px] font-bold text-[var(--success)] tabular-nums leading-none truncate">
+            <span className="min-w-0 text-lg font-semibold text-[var(--success)] tabular-nums leading-none truncate">
               {priceLabel}
             </span>
-            {addButton('w-7 h-7 min-w-[28px] min-h-[28px] shrink-0')}
+            {addButton('w-11 h-11 min-w-[44px] min-h-[44px] shrink-0')}
           </div>
         </div>
       </div>

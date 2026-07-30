@@ -1230,41 +1230,41 @@
     font-weight: var(--mobile-font-bold);
   }
 
-  /* POS cart sheet */
+  /* POS cart sheet — compact mobile Order Summary */
   .m-pos-cart-sheet {
     border-top-left-radius: var(--mobile-radius-lg);
     border-top-right-radius: var(--mobile-radius-lg);
   }
 
   .m-pos-cart-header {
-    padding: var(--mobile-space-3) var(--mobile-page-padding-compact);
+    padding: 0;
   }
 
   .m-pos-cart-title {
-    font-size: var(--mobile-text-section-title);
-    font-weight: var(--mobile-font-semibold);
-    line-height: var(--mobile-leading-title);
+    font-size: 15px;
+    font-weight: var(--mobile-font-bold);
+    line-height: 1.25;
   }
 
   .m-pos-cart-meta {
-    font-size: var(--mobile-text-secondary);
-    font-weight: var(--mobile-font-semibold);
+    font-size: 12px;
+    font-weight: var(--mobile-font-medium);
   }
 
   .m-pos-cart-body {
-    padding: var(--mobile-space-3) var(--mobile-page-padding-compact);
-    gap: var(--mobile-space-3);
+    padding: 10px 12px;
+    gap: 8px;
   }
 
   .m-pos-cart-footer {
-    padding: var(--mobile-space-4);
-    gap: var(--mobile-space-3);
+    padding: 10px 12px max(10px, var(--safe-bottom));
+    gap: 8px;
   }
 
   .m-pos-cart-item {
-    padding: var(--mobile-space-3);
-    border-radius: var(--mobile-radius-md);
-    gap: var(--mobile-space-3);
+    padding: 0;
+    border-radius: 0;
+    gap: 0;
   }
 
   .m-pos-cart-item__thumb {
@@ -1274,16 +1274,17 @@
   }
 
   .m-pos-cart-item__name {
-    font-size: var(--mobile-text-body);
-    font-weight: var(--mobile-font-semibold);
-    line-height: var(--mobile-leading-title);
+    font-size: 13px;
+    font-weight: var(--mobile-font-bold);
+    line-height: 1.3;
   }
 
   .m-pos-cart-item__price {
-    font-size: var(--mobile-text-body);
+    font-size: 13px;
     font-weight: var(--mobile-font-bold);
   }
 
+  /* Desktop qty buttons keep touch target; mobile compact steppers use inline sizes */
   .m-pos-cart-item__qty-btn {
     width: 40px !important;
     height: 40px !important;
@@ -1292,29 +1293,39 @@
   }
 
   .m-pos-label {
-    font-size: var(--mobile-text-caption);
+    font-size: 10px;
     font-weight: var(--mobile-font-medium);
-    letter-spacing: 0.02em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--text-muted);
   }
 
   .m-pos-control {
-    min-height: var(--mobile-control-md) !important;
+    min-height: 36px !important;
     font-size: var(--mobile-text-body);
     border-radius: var(--mobile-radius-md);
   }
 
+  .m-pos-customer-search {
+    min-height: 36px !important;
+  }
+
+  .m-pos-payment-select {
+    min-height: 32px !important;
+    height: 32px !important;
+    font-size: 12px !important;
+  }
+
   .m-pos-totals-total {
-    font-size: var(--mobile-text-header-title) !important;
+    font-size: 18px !important;
     font-weight: var(--mobile-font-bold) !important;
   }
 
   .m-pos-checkout-btn {
-    min-height: var(--mobile-control-lg) !important;
-    padding: var(--mobile-space-3) var(--mobile-space-4);
+    min-height: 44px !important;
+    padding: 10px 14px;
     border-radius: var(--mobile-radius-md);
-    font-size: var(--mobile-text-list-title) !important;
+    font-size: 14px !important;
     font-weight: var(--mobile-font-semibold) !important;
   }
 

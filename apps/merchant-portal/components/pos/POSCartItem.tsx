@@ -19,7 +19,6 @@ export interface POSCartItemProps {
   redeemControl?: React.ReactNode;
   meta?: React.ReactNode;
   imageUrl?: string;
-  /** Inline staff selector (services). Prefer this over a separate full-width block. */
   showStaffSelector?: boolean;
   staffId?: string;
   staffOptions?: POSCartStaffOption[];
@@ -52,34 +51,45 @@ export const POSCartItem: React.FC<POSCartItemProps> = ({
     <div
       className={cx(
         'm-pos-cart-item bg-[var(--bg-surface)] animate-fadeIn',
-        'py-2 border-b border-[var(--line)] last:border-b-0',
-        'lg:py-3 lg:border-b-0',
+        'border-b border-[var(--line)] py-2 last:border-b-0',
+        /* Tablet: card-like rows in the persistent rail */
+        'sm:mb-2 sm:rounded-ui-md sm:border sm:border-[var(--line)] sm:p-2.5 sm:last:border-b sm:shadow-ui-xs',
+        'posd:mb-0 posd:rounded-none posd:border-0 posd:border-b-0 posd:p-0 posd:py-3 posd:shadow-none',
         className,
       )}
     >
-      {/* —— Mobile row (mockup): qty badge | name/duration | price | remove —— */}
-      <div className="lg:hidden flex items-start gap-2">
+      {/* —— Phone + tablet compact row —— */}
+      <div className="flex items-start gap-2 posd:hidden">
         <div
-          className="m-pos-cart-item__qty-badge w-7 h-7 rounded-md bg-[var(--brand-soft)] text-[var(--brand)] flex items-center justify-center shrink-0 text-xs font-bold tabular-nums"
+          className="m-pos-cart-item__qty-badge flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[var(--brand-soft)] text-xs font-bold tabular-nums text-[var(--brand)]"
           aria-hidden
         >
           {typeof quantity === 'number' ? quantity : initial}
         </div>
 
+        {/* Tablet: small service thumb beside qty */}
+        <div className="hidden h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[var(--brand-soft)] sm:flex posd:hidden">
+          {imageUrl ? (
+            <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <span className="text-xs font-bold text-[var(--brand)]">{initial}</span>
+          )}
+        </div>
+
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-1.5">
             <div className="min-w-0 flex-1">
-              <p className="m-pos-cart-item__name text-[13px] font-bold text-[var(--text-primary)] leading-snug line-clamp-2">
+              <p className="m-pos-cart-item__name line-clamp-2 text-[13px] font-bold leading-snug text-[var(--text-primary)]">
                 {displayName}
               </p>
               {meta ? (
-                <div className="text-[11px] text-[var(--text-muted)] mt-0.5 leading-snug">{meta}</div>
+                <div className="mt-0.5 text-[11px] leading-snug text-[var(--text-muted)]">{meta}</div>
               ) : null}
             </div>
-            <div className="flex items-start gap-0.5 shrink-0">
+            <div className="flex shrink-0 items-start gap-0.5">
               <span
                 className={cx(
-                  'm-pos-cart-item__price text-[13px] font-bold tabular-nums text-[var(--success)] pt-0.5',
+                  'm-pos-cart-item__price pt-0.5 text-[13px] font-bold tabular-nums text-[var(--success)]',
                   lineTotalEmphasized && 'opacity-90',
                 )}
               >
@@ -88,25 +98,24 @@ export const POSCartItem: React.FC<POSCartItemProps> = ({
               <button
                 type="button"
                 onClick={onRemove}
-                className="inline-flex items-center justify-center w-7 h-7 rounded-md text-[var(--text-muted)] hover:text-[var(--danger)] hover:bg-[var(--danger-soft)] focus-visible:shadow-ui-focus-strong"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-muted)] hover:bg-[var(--danger-soft)] hover:text-[var(--danger)] focus-visible:shadow-ui-focus-strong"
                 aria-label="Remove item"
               >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
           </div>
 
-          {/* Compact qty + staff on one row */}
           {(typeof quantity === 'number' && onQuantityChange) || showStaffSelector ? (
-            <div className="mt-1.5 flex items-center gap-1.5 min-w-0">
+            <div className="mt-1.5 flex min-w-0 items-center gap-1.5">
               {typeof quantity === 'number' && onQuantityChange ? (
-                <div className="inline-flex items-center h-7 rounded-md border border-[var(--line)] bg-[var(--bg-surface)] overflow-hidden shrink-0">
+                <div className="inline-flex h-7 shrink-0 items-center overflow-hidden rounded-md border border-[var(--line)] bg-[var(--bg-surface)]">
                   <button
                     type="button"
                     aria-label="Decrease quantity"
-                    className="w-7 h-7 inline-flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] text-sm font-bold focus-visible:shadow-ui-focus-strong"
+                    className="inline-flex h-7 w-7 items-center justify-center text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] focus-visible:shadow-ui-focus-strong"
                     onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
                   >
                     −
@@ -115,7 +124,7 @@ export const POSCartItem: React.FC<POSCartItemProps> = ({
                   <button
                     type="button"
                     aria-label="Increase quantity"
-                    className="w-7 h-7 inline-flex items-center justify-center text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] text-sm font-bold focus-visible:shadow-ui-focus-strong"
+                    className="inline-flex h-7 w-7 items-center justify-center text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] focus-visible:shadow-ui-focus-strong"
                     onClick={() => onQuantityChange(quantity + 1)}
                   >
                     +
@@ -129,7 +138,7 @@ export const POSCartItem: React.FC<POSCartItemProps> = ({
                     Assign staff for {displayName}
                   </label>
                   <svg
-                    className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)]"
+                    className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-muted)]"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -140,11 +149,11 @@ export const POSCartItem: React.FC<POSCartItemProps> = ({
                   <select
                     id={staffSelectId}
                     className={cx(
-                      'w-full h-7 pl-7 pr-6 text-[11px] rounded-md border outline-none font-semibold appearance-none',
-                      'bg-[var(--bg-surface)] focus-visible:shadow-ui-focus-strong truncate',
+                      'h-7 w-full truncate appearance-none rounded-md border bg-[var(--bg-surface)] pl-7 pr-6 text-[11px] font-semibold outline-none',
+                      'focus-visible:shadow-ui-focus-strong',
                       selectedStaff
                         ? 'border-[var(--line)] text-[var(--text-primary)]'
-                        : 'border-[var(--danger)]/25 text-[var(--danger)] bg-[var(--danger-soft)]',
+                        : 'border-[var(--danger)]/25 bg-[var(--danger-soft)] text-[var(--danger)]',
                     )}
                     value={staffId || ''}
                     onChange={(e) => onStaffChange(e.target.value)}
@@ -157,7 +166,7 @@ export const POSCartItem: React.FC<POSCartItemProps> = ({
                     ))}
                   </select>
                   <svg
-                    className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-[var(--text-muted)]"
+                    className="pointer-events-none absolute right-1.5 top-1/2 h-3 w-3 -translate-y-1/2 text-[var(--text-muted)]"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -174,31 +183,31 @@ export const POSCartItem: React.FC<POSCartItemProps> = ({
         </div>
       </div>
 
-      {/* —— Desktop row (preserved) —— */}
-      <div className="hidden lg:block">
+      {/* —— Desktop row (1200+) —— */}
+      <div className="hidden posd:block">
         <div className="flex items-start gap-2.5">
-          <div className="m-pos-cart-item__thumb w-11 h-11 rounded-ui-sm overflow-hidden shrink-0 bg-[var(--brand-soft)] flex items-center justify-center">
+          <div className="m-pos-cart-item__thumb flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-ui-sm bg-[var(--brand-soft)]">
             {imageUrl ? (
-              <img src={imageUrl} alt="" className="w-full h-full object-cover" />
+              <img src={imageUrl} alt="" className="h-full w-full object-cover" />
             ) : (
               <span className="text-sm font-bold text-[var(--brand)]">{initial}</span>
             )}
           </div>
 
           <div className="min-w-0 flex-1">
-            <p className="m-pos-cart-item__name text-sm font-bold text-[var(--text-primary)] leading-snug line-clamp-2">
+            <p className="m-pos-cart-item__name line-clamp-2 text-sm font-bold leading-snug text-[var(--text-primary)]">
               {displayName}
             </p>
-            {meta ? <div className="text-xs text-[var(--text-muted)] mt-0.5">{meta}</div> : null}
+            {meta ? <div className="mt-0.5 text-xs text-[var(--text-muted)]">{meta}</div> : null}
             {qtyPriceLabel ? (
-              <div className="text-xs text-[var(--text-muted)] font-medium mt-0.5">{qtyPriceLabel}</div>
+              <div className="mt-0.5 text-xs font-medium text-[var(--text-muted)]">{qtyPriceLabel}</div>
             ) : null}
           </div>
 
-          <div className="flex items-start gap-0.5 shrink-0">
+          <div className="flex shrink-0 items-start gap-0.5">
             <span
               className={cx(
-                'm-pos-cart-item__price font-bold text-sm tabular-nums pt-0.5 text-[var(--success)]',
+                'm-pos-cart-item__price pt-0.5 text-sm font-bold tabular-nums text-[var(--success)]',
                 lineTotalEmphasized && 'opacity-90',
               )}
             >
@@ -207,10 +216,10 @@ export const POSCartItem: React.FC<POSCartItemProps> = ({
             <button
               type="button"
               onClick={onRemove}
-              className="m-pos-cart-item__qty-btn inline-flex items-center justify-center rounded-ui-sm text-[var(--text-muted)] hover:text-[var(--danger)] hover:bg-[var(--danger-soft)] focus-visible:shadow-ui-focus-strong"
+              className="m-pos-cart-item__qty-btn inline-flex items-center justify-center rounded-ui-sm text-[var(--text-muted)] hover:bg-[var(--danger-soft)] hover:text-[var(--danger)] focus-visible:shadow-ui-focus-strong"
               aria-label="Remove item"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -220,11 +229,11 @@ export const POSCartItem: React.FC<POSCartItemProps> = ({
         {(typeof quantity === 'number' && onQuantityChange) || showStaffSelector ? (
           <div className="mt-2 flex flex-wrap items-center gap-2 pl-[2.75rem]">
             {typeof quantity === 'number' && onQuantityChange ? (
-              <div className="inline-flex items-center rounded-ui-sm border border-[var(--line)] bg-[var(--bg-soft)] overflow-hidden">
+              <div className="inline-flex items-center overflow-hidden rounded-ui-sm border border-[var(--line)] bg-[var(--bg-soft)]">
                 <button
                   type="button"
                   aria-label="Decrease quantity"
-                  className="m-pos-cart-item__qty-btn text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] font-bold focus-visible:shadow-ui-focus-strong"
+                  className="m-pos-cart-item__qty-btn font-bold text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] focus-visible:shadow-ui-focus-strong"
                   onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
                 >
                   −
@@ -233,7 +242,7 @@ export const POSCartItem: React.FC<POSCartItemProps> = ({
                 <button
                   type="button"
                   aria-label="Increase quantity"
-                  className="m-pos-cart-item__qty-btn text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] font-bold focus-visible:shadow-ui-focus-strong"
+                  className="m-pos-cart-item__qty-btn font-bold text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] focus-visible:shadow-ui-focus-strong"
                   onClick={() => onQuantityChange(quantity + 1)}
                 >
                   +
@@ -242,18 +251,18 @@ export const POSCartItem: React.FC<POSCartItemProps> = ({
             ) : null}
 
             {showStaffSelector && onStaffChange ? (
-              <div className="relative min-w-0 flex-1 sm:flex-none sm:min-w-[148px] max-w-full">
+              <div className="relative max-w-full min-w-0 flex-1 sm:min-w-[148px] sm:flex-none">
                 <label htmlFor={`${staffSelectId}-desktop`} className="sr-only">
                   Assign staff for {displayName}
                 </label>
                 <select
                   id={`${staffSelectId}-desktop`}
                   className={cx(
-                    'm-pos-control w-full min-h-[44px] h-11 pl-3 pr-7 text-sm rounded-ui-sm border outline-none font-semibold appearance-none',
-                    'bg-[var(--bg-soft)] focus-visible:shadow-ui-focus-strong truncate',
+                    'm-pos-control h-11 min-h-[44px] w-full appearance-none truncate rounded-ui-sm border bg-[var(--bg-soft)] pl-3 pr-7 text-sm font-semibold outline-none',
+                    'focus-visible:shadow-ui-focus-strong',
                     selectedStaff
                       ? 'border-[var(--line)] text-[var(--text-primary)]'
-                      : 'border-[var(--danger)]/20 text-[var(--danger)] bg-[var(--danger-soft)]',
+                      : 'border-[var(--danger)]/20 bg-[var(--danger-soft)] text-[var(--danger)]',
                   )}
                   value={staffId || ''}
                   onChange={(e) => onStaffChange(e.target.value)}
@@ -266,7 +275,7 @@ export const POSCartItem: React.FC<POSCartItemProps> = ({
                   ))}
                 </select>
                 <svg
-                  className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--text-muted)]"
+                  className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-muted)]"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

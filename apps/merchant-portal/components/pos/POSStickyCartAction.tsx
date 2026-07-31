@@ -8,7 +8,7 @@ export interface POSStickyCartActionProps {
   className?: string;
 }
 
-/** Phone + tablet sticky cart — desktop (lg+) uses the persistent order rail. */
+/** Phone-only sticky cart — tablet/desktop use the persistent order rail. */
 export const POSStickyCartAction: React.FC<POSStickyCartActionProps> = ({
   itemCount,
   totalLabel,
@@ -17,7 +17,7 @@ export const POSStickyCartAction: React.FC<POSStickyCartActionProps> = ({
 }) => (
   <div
     className={cx(
-      'm-pos-sticky-cart lg:hidden fixed bottom-[calc(72px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-[45]',
+      'm-pos-sticky-cart fixed bottom-[calc(72px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-[45] sm:hidden',
       'bg-[var(--bg-surface)] shadow-[0_-4px_12px_rgba(15,23,42,0.12)]',
       className,
     )}
@@ -25,19 +25,19 @@ export const POSStickyCartAction: React.FC<POSStickyCartActionProps> = ({
     <button
       type="button"
       onClick={onOpen}
-      className="m-pos-sticky-cart__btn w-full flex items-center justify-between"
+      className="m-pos-sticky-cart__btn flex w-full items-center justify-between"
     >
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex min-w-0 items-center gap-3">
         <span className="m-pos-sticky-cart__count inline-flex items-center justify-center bg-[var(--brand-soft)] text-[var(--brand-deep)] tabular-nums">
           {itemCount}
         </span>
-        <span className="m-pos-sticky-cart__total text-[var(--text-primary)] tabular-nums truncate">
+        <span className="m-pos-sticky-cart__total truncate tabular-nums text-[var(--text-primary)]">
           {itemCount} item{itemCount === 1 ? '' : 's'} · {totalLabel}
         </span>
       </div>
       <span
         className={cx(
-          'm-pos-sticky-cart__cta inline-flex items-center gap-1.5 transition-all shrink-0',
+          'm-pos-sticky-cart__cta inline-flex shrink-0 items-center gap-1.5 transition-all',
           itemCount > 0
             ? 'bg-[var(--brand)] text-white shadow-ui-sm active:scale-95'
             : 'bg-[var(--bg-soft)] text-[var(--text-muted)]',
@@ -45,7 +45,7 @@ export const POSStickyCartAction: React.FC<POSStickyCartActionProps> = ({
       >
         {itemCount > 0 ? 'Review order' : 'No items'}
         {itemCount > 0 ? (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         ) : null}

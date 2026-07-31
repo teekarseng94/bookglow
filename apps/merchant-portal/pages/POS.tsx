@@ -607,7 +607,7 @@ const POS: React.FC<POSProps> = ({
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-4 pb-[calc(72px+56px+16px+env(safe-area-inset-bottom,0px))] md:gap-4 md:pb-0">
+    <div className="flex h-full min-h-0 flex-col gap-4 pb-[calc(72px+56px+16px+env(safe-area-inset-bottom,0px))] sm:pb-[calc(72px+env(safe-area-inset-bottom,0px))] lg:pb-0">
       <POSPageHeader
         shopName={outletSettings.shopName}
         banner={
@@ -625,8 +625,9 @@ const POS: React.FC<POSProps> = ({
         }
       />
 
-      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row lg:items-start lg:gap-5">
-        <div className="min-w-0 flex-1 space-y-4 lg:max-h-[calc(100vh-7.5rem)] lg:overflow-y-auto lg:pr-1">
+      {/* Phone: stacked. Tablet 640–1199: split. Desktop 1200+: split with desktop rail. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-4 sm:flex-row sm:items-start sm:gap-3 posd:gap-5">
+        <div className="min-w-0 flex-1 space-y-4 sm:max-h-[calc(100vh-8.75rem)] sm:overflow-y-auto sm:pr-1 lg:max-h-[calc(100vh-7.5rem)]">
         <POSCatalogueToolbar
           search={globalSearch}
           onSearchChange={setGlobalSearch}
@@ -744,7 +745,7 @@ const POS: React.FC<POSProps> = ({
             onClick={clearCart}
             disabled={cart.length === 0 && !saleComplete}
             aria-label="Clear order"
-            className="w-8 h-8 lg:w-9 lg:h-9 inline-flex items-center justify-center rounded-ui-sm text-[var(--text-muted)] hover:text-[var(--danger)] hover:bg-[var(--danger-soft)] disabled:opacity-40 disabled:pointer-events-none"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-ui-sm text-[var(--text-muted)] hover:bg-[var(--danger-soft)] hover:text-[var(--danger)] disabled:pointer-events-none disabled:opacity-40 posd:h-9 posd:w-9"
           >
             <Icons.Trash />
           </button>
@@ -830,7 +831,7 @@ const POS: React.FC<POSProps> = ({
                 type="text"
                 placeholder="Search by name or phone..."
                 autoComplete="off"
-                className="m-pos-control m-pos-customer-search w-full min-h-[36px] lg:min-h-[40px] py-2 pl-9 pr-3 bg-[var(--bg-surface)] border border-[var(--line)] rounded-ui-md outline-none focus-visible:shadow-ui-focus-strong text-sm font-medium box-border"
+                className="m-pos-control m-pos-customer-search box-border w-full min-h-[36px] rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] py-2 pl-9 pr-3 text-sm font-medium outline-none focus-visible:shadow-ui-focus-strong posd:min-h-[40px]"
                 value={selectedClientData ? selectedClientData.name : customerSearchQuery}
                 onChange={(e) => {
                   setCustomerSearchQuery(e.target.value);
@@ -897,7 +898,7 @@ const POS: React.FC<POSProps> = ({
           </POSMemberSummary>
         )}
 
-        <div className="space-y-0 lg:space-y-2">
+        <div className="space-y-0 posd:space-y-2">
           {saleComplete ? (
             <div className="flex flex-col items-center justify-center py-6 animate-fadeIn">
               <div className="w-16 h-16 rounded-full bg-[var(--success-soft)] flex items-center justify-center mb-4">
@@ -973,7 +974,7 @@ const POS: React.FC<POSProps> = ({
                     onStaffChange={(nextStaffId) => updateStaffAssignment(lineId, nextStaffId)}
                     redeemControl={
                       showRedeem ? (
-                        <div className="mt-1.5 lg:mt-2 flex items-center justify-between gap-2 lg:pl-[2.75rem]">
+                        <div className="mt-1.5 flex items-center justify-between gap-2 posd:mt-2 posd:pl-[2.75rem]">
                           <button
                             type="button"
                             onClick={() => toggleRedeemWithPoints(lineId)}

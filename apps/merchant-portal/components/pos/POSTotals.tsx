@@ -26,17 +26,17 @@ export const POSTotals: React.FC<POSTotalsProps> = ({
   hasRedemptions,
   className,
 }) => (
-  <div className={cx('space-y-2 lg:space-y-3', className)}>
+  <div className={cx('space-y-2 posd:space-y-3', className)}>
     {subtotalLabel ? (
-      <div className="flex justify-between text-xs lg:text-sm text-[var(--text-secondary)]">
+      <div className="flex justify-between text-xs text-[var(--text-secondary)] posd:text-sm">
         <span>Subtotal</span>
-        <span className="tabular-nums font-medium text-[var(--text-primary)]">{subtotalLabel}</span>
+        <span className="font-medium tabular-nums text-[var(--text-primary)]">{subtotalLabel}</span>
       </div>
     ) : null}
     <div className="border-t border-[var(--line)]" />
-    <div className="flex justify-between items-baseline text-[var(--text-primary)]">
-      <span className="text-sm lg:text-base font-bold">Total</span>
-      <span className="m-pos-totals-total text-lg lg:text-xl font-bold tabular-nums text-[var(--brand)]">
+    <div className="flex items-baseline justify-between text-[var(--text-primary)]">
+      <span className="text-sm font-bold posd:text-base">Total</span>
+      <span className="m-pos-totals-total text-lg font-bold tabular-nums text-[var(--brand)] posd:text-xl">
         {totalLabel}
       </span>
     </div>
@@ -46,8 +46,8 @@ export const POSTotals: React.FC<POSTotalsProps> = ({
       disabled={checkoutDisabled || isProcessing}
       onClick={onCheckout}
       className={cx(
-        'm-pos-checkout-btn w-full py-2.5 lg:py-3 px-3.5 lg:px-4 rounded-ui-md font-semibold shadow-ui-xs transition-all',
-        'flex items-center justify-between gap-2 min-h-[44px] lg:min-h-[48px] text-sm',
+        'm-pos-checkout-btn w-full rounded-ui-md px-3.5 py-2.5 font-semibold shadow-ui-xs transition-all posd:px-4 posd:py-3',
+        'flex min-h-[44px] items-center justify-between gap-2 text-sm posd:min-h-[48px]',
         checkoutDisabled
           ? 'bg-[var(--bg-soft)] text-[var(--text-muted)] cursor-not-allowed'
           : isProcessing

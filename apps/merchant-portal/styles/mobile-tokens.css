@@ -1869,3 +1869,93 @@
     line-height: var(--mobile-leading-caption);
   }
 }
+
+/* ——— Tablet / iPad POS split (640–1199) ——— */
+@media (min-width: 640px) and (max-width: 1199.98px) {
+  .m-pos-cart-sheet {
+    border-radius: var(--mobile-radius-lg);
+  }
+
+  .m-pos-cart-header {
+    padding: 0;
+  }
+
+  .m-pos-cart-title {
+    font-size: 15px;
+    font-weight: var(--mobile-font-bold);
+    line-height: 1.25;
+  }
+
+  .m-pos-cart-meta {
+    font-size: 12px;
+    font-weight: var(--mobile-font-medium);
+  }
+
+  .m-pos-cart-body {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .m-pos-cart-footer {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .m-pos-cart-item {
+    padding: 0;
+  }
+
+  .m-pos-cart-item__name {
+    font-size: 13px;
+    font-weight: var(--mobile-font-bold);
+  }
+
+  .m-pos-cart-item__price {
+    font-size: 13px;
+    font-weight: var(--mobile-font-bold);
+  }
+
+  .m-pos-label {
+    font-size: 10px;
+    font-weight: var(--mobile-font-medium);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .m-pos-control {
+    min-height: 36px !important;
+    font-size: var(--mobile-text-body);
+  }
+
+  .m-pos-payment-select {
+    min-height: 32px !important;
+    height: 32px !important;
+    font-size: 12px !important;
+  }
+
+  .m-pos-totals-total {
+    font-size: 18px !important;
+    font-weight: var(--mobile-font-bold) !important;
+  }
+
+  .m-pos-checkout-btn {
+    min-height: 44px !important;
+    padding: 10px 14px;
+    font-size: 14px !important;
+  }
+
+  .m-pos-mobile-card__title {
+    font-size: 13px;
+    font-weight: var(--mobile-font-bold);
+  }
+
+  .m-pos-mobile-card__meta {
+    font-size: 11px;
+  }
+
+  .m-pos-mobile-card__price {
+    font-size: 13px;
+    font-weight: var(--mobile-font-bold);
+  }
+}

@@ -17,28 +17,28 @@ export const POSMemberSummary: React.FC<POSMemberSummaryProps> = ({
   className,
   onNewCustomer,
 }) => (
-  <div className={cx('space-y-1.5 lg:space-y-2', className)}>
+  <div className={cx('space-y-1.5 posd:space-y-2', className)}>
     {quickPOSMemberName ? (
-      <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-ui-sm bg-[var(--brand-soft)] border border-[var(--brand)]/30">
+      <div className="flex items-center gap-2 rounded-ui-sm border border-[var(--brand)]/30 bg-[var(--brand-soft)] px-2.5 py-1.5">
         <span className="m-secondary text-xs font-semibold text-[var(--brand-deep)]">
           Customer: {quickPOSMemberName} selected.
         </span>
       </div>
     ) : null}
     {creditLabel ? (
-      <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-ui-sm bg-[var(--info-soft)] border border-[var(--info)]/20">
+      <div className="flex items-center gap-2 rounded-ui-sm border border-[var(--info)]/20 bg-[var(--info-soft)] px-2.5 py-1.5">
         <span className="m-secondary text-xs font-semibold text-[var(--info)]">{creditLabel}</span>
       </div>
     ) : null}
     <div className="flex items-center justify-between gap-2">
-      <label className="m-pos-label uppercase text-[var(--text-muted)] tracking-wider text-[10px] lg:text-[inherit]">
+      <label className="m-pos-label text-[10px] uppercase tracking-wider text-[var(--text-muted)] posd:text-[inherit]">
         Customer
       </label>
       {onNewCustomer ? (
         <button
           type="button"
           onClick={onNewCustomer}
-          className="text-[12px] lg:text-xs font-semibold text-[var(--brand)] hover:underline"
+          className="text-[12px] font-semibold text-[var(--brand)] hover:underline posd:text-xs"
         >
           + New Customer
         </button>

@@ -18,7 +18,7 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
   retryLabel = 'Try again',
   className,
 }) => (
-  <div className={cx('space-y-3', className)}>
+  <div className={cx('m-error-state space-y-3', className)} role="alert">
     <Alert tone="danger" title={title}>
       {message}
     </Alert>

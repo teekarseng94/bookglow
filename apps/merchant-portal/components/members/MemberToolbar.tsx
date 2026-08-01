@@ -1,6 +1,6 @@
 import React from 'react';
-import { Button } from '../ui/Button';
 import { FilterToolbar } from '../ui/FilterToolbar';
+import { IconButton } from '../ui/IconButton';
 import { cx } from '../ui/cx';
 
 export interface MemberToolbarProps {
@@ -17,7 +17,6 @@ export interface MemberToolbarProps {
 export const MemberToolbar: React.FC<MemberToolbarProps> = ({
   search,
   onSearchChange,
-  onAddMember,
   onOpenFilters,
   desktopActions,
   sortTabs,
@@ -49,34 +48,28 @@ export const MemberToolbar: React.FC<MemberToolbarProps> = ({
           </svg>
         </div>
       }
-      actions={
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          {onOpenFilters ? (
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="sm:hidden m-add-customer-row flex-1"
-              onClick={onOpenFilters}
-            >
-              Actions
-            </Button>
-          ) : null}
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            className="sm:hidden m-add-customer-row flex-1"
-            onClick={onAddMember}
-            aria-label="Add member"
+      filters={
+        onOpenFilters ? (
+          <IconButton
+            label="Member actions and filters"
+            variant="outline"
+            className="sm:hidden"
+            onClick={onOpenFilters}
           >
-            + Add
-          </Button>
-          <div className="hidden sm:flex flex-wrap items-center gap-2">{desktopActions}</div>
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h18M6 12h12M10 19h4" />
+            </svg>
+          </IconButton>
+        ) : undefined
+      }
+      actions={
+        <div className="hidden sm:flex flex-wrap items-center gap-2">
+          {desktopActions}
         </div>
       }
+      chips={sortTabs}
+      active={Boolean(search)}
     />
-    {sortTabs}
   </div>
 );
 

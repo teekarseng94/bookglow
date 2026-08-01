@@ -28,7 +28,7 @@ export const StaffPageHeader: React.FC<StaffPageHeaderProps> = ({
 }) => (
   <div className={cx(className)}>
     <PageHeader
-      className="m-page-header--compact !pb-3 sm:!pb-4"
+      className="m-page-header--compact m-page-header--app-owned !pb-3 sm:!pb-4"
       title={
         <span className="inline-flex flex-wrap items-center gap-2">
           <span>{title}</span>

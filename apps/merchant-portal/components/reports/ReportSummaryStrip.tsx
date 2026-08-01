@@ -22,7 +22,7 @@ const toneClass: Record<NonNullable<ReportSummaryItem['tone']>, string> = {
 
 /** Compact totals strip — tabular numerals; parent supplies already-formatted values. */
 export const ReportSummaryStrip: React.FC<ReportSummaryStripProps> = ({ items, className }) => (
-  <div className={cx('grid overflow-hidden rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)]', items.length === 3 ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-4', className)}>
+  <div className={cx('m-card !p-0 grid overflow-hidden rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)]', items.length === 3 ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-4', className)}>
     {items.map((item) => (
       <div
         key={item.label}

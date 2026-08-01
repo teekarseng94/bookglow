@@ -20,7 +20,7 @@ export const StickyActionBar: React.FC<StickyActionBarProps> = ({
       'm-sticky-bar sticky bottom-0 z-20',
       'flex items-center justify-between gap-3',
       'px-4 py-3 border-t border-[var(--line)]',
-      'bg-[var(--bg-surface)]/95 backdrop-blur-sm',
+      'bg-[var(--bg-surface)]/95 backdrop-blur-sm shadow-[0_-6px_18px_rgba(39,25,42,0.06)]',
       'pb-[calc(var(--space-3)+var(--safe-bottom))]',
       className,
     )}

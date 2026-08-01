@@ -765,14 +765,14 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
       {/* Mobile income bar (above bottom nav) + floating add button */}
       {!mobileDetailOpen && (
         <>
-          <div className="m-schedule-income-bar md:hidden fixed left-0 right-0 bottom-[calc(72px+var(--safe-bottom))] z-40 border-t border-[var(--line)] bg-[var(--bg-surface)] flex items-center justify-between">
+          <div className="m-schedule-income-bar md:hidden fixed left-0 right-0 bottom-[calc(var(--mobile-bottom-nav-height)+var(--mobile-safe-area-bottom))] z-40 border-t border-[var(--line)] bg-[var(--bg-surface)] flex items-center justify-between">
             <span className="m-schedule-income-label">This week&apos;s income</span>
             <span className="m-schedule-income-value">RM{thisWeekIncome.toFixed(0)}</span>
           </div>
           <button
             type="button"
             onClick={handleQuickAddBooking}
-            className="m-schedule-fab md:hidden fixed bottom-[calc(128px+var(--safe-bottom))] right-4 z-50 w-14 h-14 rounded-full bg-[var(--brand)] text-white shadow-ui-md flex items-center justify-center active:scale-95 transition-transform"
+            className="m-fab m-fab--above-sticky m-schedule-fab md:hidden z-50 active:scale-95 transition-transform"
             aria-label="Quick add booking"
           >
             <span className="m-schedule-fab__plus leading-none" aria-hidden>

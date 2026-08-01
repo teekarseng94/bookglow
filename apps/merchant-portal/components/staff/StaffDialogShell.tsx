@@ -12,6 +12,7 @@ export interface StaffDialogShellProps {
   className?: string;
   /** When false, backdrop click does not close (e.g. while saving). */
   closeOnBackdrop?: boolean;
+  mobileFullscreen?: boolean;
 }
 
 /**
@@ -26,6 +27,7 @@ export const StaffDialogShell: React.FC<StaffDialogShellProps> = ({
   zIndexClass = 'z-[70]',
   className,
   closeOnBackdrop = true,
+  mobileFullscreen = false,
 }) => (
   <AppModal
     open={open}
@@ -36,6 +38,7 @@ export const StaffDialogShell: React.FC<StaffDialogShellProps> = ({
     zIndexClass={zIndexClass}
     className={className}
     closeOnBackdrop={closeOnBackdrop}
+    mobileFullscreen={mobileFullscreen}
   >
     {children}
   </AppModal>

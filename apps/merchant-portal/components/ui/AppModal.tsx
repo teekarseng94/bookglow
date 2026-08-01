@@ -28,6 +28,8 @@ export interface AppModalProps {
   formId?: string;
   onSubmit?: React.FormEventHandler;
   bodyClassName?: string;
+  /** Present complex forms as a full-screen view below the mobile breakpoint. */
+  mobileFullscreen?: boolean;
 }
 
 const sizeClass: Record<AppModalSize, string> = {
@@ -58,6 +60,7 @@ export const AppModal: React.FC<AppModalProps> = ({
   formId,
   onSubmit,
   bodyClassName,
+  mobileFullscreen = false,
 }) => {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
@@ -79,6 +82,7 @@ export const AppModal: React.FC<AppModalProps> = ({
         'pb-[max(0.75rem,env(safe-area-inset-bottom))]',
         'pl-[max(0.75rem,env(safe-area-inset-left))]',
         'pr-[max(0.75rem,env(safe-area-inset-right))]',
+        mobileFullscreen && 'm-modal-overlay--fullscreen',
         zIndexClass,
       )}
     >
@@ -106,6 +110,7 @@ export const AppModal: React.FC<AppModalProps> = ({
           'grid overflow-hidden',
           footer ? 'grid-rows-[auto_minmax(0,1fr)_auto]' : 'grid-rows-[auto_minmax(0,1fr)]',
           'm-modal-panel bg-[var(--bg-surface)] border border-[var(--line)] rounded-ui-lg shadow-ui-lg',
+          mobileFullscreen && 'm-modal-panel--fullscreen',
           className,
         )}
       >

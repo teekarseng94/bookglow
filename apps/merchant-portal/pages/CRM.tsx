@@ -683,14 +683,13 @@ const CRM: React.FC<CRMProps> = ({
   };
 
   return (
-    <div className="space-y-3 sm:space-y-5 md:space-y-6 animate-fadeIn m-body md:text-base m-member-page pb-[calc(72px+env(safe-area-inset-bottom,0px)+12px)] sm:pb-6">
+    <div className="m-page-with-bottom-nav space-y-3 sm:space-y-5 md:space-y-6 animate-fadeIn m-body md:text-base m-member-page sm:pb-6">
       <div className="hidden sm:block">
         <MemberPageHeader clientCount={clients.length} />
       </div>
-      <div className="sm:hidden -mt-1 flex items-baseline justify-between gap-2">
-        <h1 className="m-member-page-title font-bold tracking-tight text-[var(--text-primary)]">Members</h1>
-        <span className="flex-shrink-0 text-xs font-medium text-[var(--text-muted)] tabular-nums">
-          {clients.length.toLocaleString()} clients
+      <div className="sm:hidden -mt-1 flex items-center justify-end">
+        <span className="m-caption flex-shrink-0 font-medium text-[var(--text-muted)] tabular-nums">
+          {clients.length.toLocaleString()} members
         </span>
       </div>
       {/* Recent import toast: show last import count + Undo button */}
@@ -859,7 +858,7 @@ const CRM: React.FC<CRMProps> = ({
       <button
         type="button"
         onClick={() => setShowAddClientModal(true)}
-        className="m-member-fab sm:hidden"
+        className="m-fab m-member-fab sm:hidden"
         aria-label="Add member"
       >
         <Icons.Add />
@@ -912,6 +911,7 @@ const CRM: React.FC<CRMProps> = ({
       {/* Edit Client Modal */}
       <AppModal
         open={showEditClientModal && !!activeClient}
+        mobileFullscreen
         onClose={() => setShowEditClientModal(false)}
         title="Edit Client Profile"
         description="Update contact details and internal notes."
@@ -1005,6 +1005,7 @@ const CRM: React.FC<CRMProps> = ({
       {/* Reward Settings Modal */}
       <AppModal
         open={showRewardsModal}
+        mobileFullscreen
         onClose={() => {
           setShowRewardsModal(false);
           setEditingReward(null);
@@ -1168,6 +1169,7 @@ const CRM: React.FC<CRMProps> = ({
       {/* Add Client Modal */}
       <AppModal
         open={showAddClientModal}
+        mobileFullscreen
         onClose={() => setShowAddClientModal(false)}
         title="Register New Client"
         description="Create a new member profile for this outlet."

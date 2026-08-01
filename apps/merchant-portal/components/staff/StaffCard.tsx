@@ -56,10 +56,10 @@ export const StaffCard: React.FC<StaffCardProps> = ({
           : undefined
       }
       className={cx(
-        'm-staff-card px-3.5 py-3.5 rounded-ui-md border cursor-pointer transition-all',
+        'm-staff-card m-card m-entity-row !p-3.5 rounded-ui-md border cursor-pointer transition-all',
         selected
           ? 'bg-[var(--brand-soft)] border-[var(--brand)] shadow-ui-xs ring-1 ring-[var(--brand)]/20'
-          : 'bg-[var(--bg-surface)] border-[var(--line)] hover:border-[var(--brand-border)] shadow-ui-xs xl:shadow-none',
+          : 'm-card-interactive bg-[var(--bg-surface)] border-[var(--line)] hover:border-[var(--brand-border)] shadow-ui-xs xl:shadow-none',
         className,
       )}
     >

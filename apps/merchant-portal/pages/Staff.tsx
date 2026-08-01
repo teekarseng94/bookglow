@@ -674,7 +674,7 @@ const StaffPage: React.FC<StaffProps> = ({
   };
 
   return (
-    <div className="space-y-4 xl:space-y-5 animate-fadeIn">
+    <div className="m-page-with-bottom-nav space-y-4 xl:space-y-5 animate-fadeIn">
       {successMessage && (
         <div className="fixed top-16 lg:top-6 left-1/2 -translate-x-1/2 z-[80] flex items-center gap-2 px-4 py-2.5 rounded-ui-md bg-[var(--brand)] text-white text-sm font-bold shadow-ui-lg animate-fadeIn">
           <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -33,11 +33,11 @@ export const ScheduleBookingCard: React.FC<ScheduleBookingCardProps> = ({
     onClick={onClick}
     style={{ borderLeftColor: 'var(--brand)' }}
     className={cx(
-      'w-full text-left border border-[var(--line)] border-l-4',
+      'm-appointment-row m-card-interactive w-full text-left border border-[var(--line)] border-l-4',
       'bg-[var(--brand-soft)] space-y-1',
       'm-booking-card',
       'md:rounded-ui-sm md:px-3 md:py-2.5 md:min-h-0',
-      'active:scale-[0.99] transition-transform',
+      'transition-transform',
       className,
     )}
   >

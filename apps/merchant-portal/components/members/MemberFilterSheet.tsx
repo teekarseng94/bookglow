@@ -13,7 +13,7 @@ export interface MemberFilterSheetProps {
 export const MemberFilterSheet: React.FC<MemberFilterSheetProps> = ({
   open,
   onClose,
-  title = 'Member Actions',
+  title = 'Member actions',
   children,
 }) => (
   <Sheet

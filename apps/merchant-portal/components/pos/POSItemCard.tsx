@@ -73,7 +73,7 @@ export const POSItemCard: React.FC<POSItemCardProps> = ({
       {/* Phone + tablet horizontal card */}
       <div
         className={cx(
-          'm-pos-mobile-card flex h-full items-center gap-3 border border-[var(--line)] bg-[var(--bg-surface)]',
+          'm-pos-mobile-card m-card m-card-interactive flex h-full items-center gap-3 border border-[var(--line)] bg-[var(--bg-surface)]',
           'rounded-ui-md p-3 min-h-[96px]',
           'sm:min-h-[88px] sm:gap-2.5 sm:p-2.5 sm:shadow-ui-xs',
           'posd:hidden',

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Button } from '../ui/Button';
+import { SlidersHorizontal } from 'lucide-react';
+import { IconButton } from '../ui/IconButton';
 import { FilterToolbar } from '../ui/FilterToolbar';
 import { cx } from '../ui/cx';
 
@@ -49,19 +50,19 @@ export const ReportFilterToolbar: React.FC<ReportFilterToolbarProps> = ({
           </svg>
         </div>
       }
+      chips={chips ? <div className="m-filter-chips flex gap-2 overflow-x-auto min-w-0 pb-0.5">{chips}</div> : undefined}
       filters={
         <div className="flex items-center gap-2 w-full min-w-0">
-          {chips ? <div className="flex gap-2 overflow-x-auto flex-1 min-w-0 pb-0.5">{chips}</div> : null}
           {showMobileFiltersButton && onOpenFilters ? (
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
+            <IconButton
+              variant="outline"
+              size="md"
+              label={filtersLabel}
               className="sm:hidden shrink-0"
               onClick={onOpenFilters}
             >
-              {filtersLabel}
-            </Button>
+              <SlidersHorizontal className="h-4 w-4" aria-hidden />
+            </IconButton>
           ) : null}
           {desktopSort ? <div className="hidden sm:flex items-center gap-2 shrink-0">{desktopSort}</div> : null}
         </div>

@@ -32,7 +32,7 @@ export const ScheduleDateStrip: React.FC<ScheduleDateStripProps> = ({
       className,
     )}
   >
-    <div className="flex items-center justify-between px-3 h-[3.75rem]">
+    <div className="flex min-h-[var(--mobile-min-touch-target)] items-center justify-between px-[var(--mobile-page-padding-compact)] h-[3.75rem]">
       <button
         type="button"
         onClick={onOpenMenu}
@@ -69,7 +69,7 @@ export const ScheduleDateStrip: React.FC<ScheduleDateStripProps> = ({
             role="option"
             aria-selected={isSel}
             onClick={() => onSelectDate(iso)}
-            className="flex flex-col items-center gap-1.5 py-1"
+            className="flex min-h-[var(--mobile-min-touch-target)] flex-col items-center gap-1.5 py-1"
           >
             <span className="m-schedule-weekday text-[var(--text-muted)]">{dayInitials[i]}</span>
             <span

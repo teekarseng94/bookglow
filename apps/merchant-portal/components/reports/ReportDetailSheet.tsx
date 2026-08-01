@@ -44,6 +44,7 @@ export const ReportDetailSheet: React.FC<ReportDetailSheetProps> = ({
     onClose={onClose}
     title={title}
     side="bottom"
+    mobileMode="full-screen"
     className={cx('md:hidden', className)}
     footer={
       primaryAction || dangerAction ? (

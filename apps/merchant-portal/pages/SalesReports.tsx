@@ -217,7 +217,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
           .no-print { display: none !important; }
         }
       `}</style>
-      <div className="space-y-4 sales-report-print-area">
+      <div className="m-page-with-bottom-nav space-y-4 sales-report-print-area">
       <div className="no-print">
         <ReportPageHeader
           title="Sales Reports"

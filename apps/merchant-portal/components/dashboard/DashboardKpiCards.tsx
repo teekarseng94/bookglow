@@ -50,12 +50,12 @@ export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({ cards, cla
         key={card.id}
         className={cx(
           'min-w-0',
-          'bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs',
+          'm-card bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs',
           'p-3 sm:p-4 flex flex-col gap-1 sm:gap-1.5',
         )}
       >
         <div className="flex items-center gap-1.5">
-          <span className="text-xs font-semibold text-[var(--text-muted)]">{card.label}</span>
+          <span className="m-caption font-semibold text-[var(--text-muted)]">{card.label}</span>
           <Info className="w-3.5 h-3.5 text-[var(--text-muted)]/70 shrink-0" aria-hidden />
         </div>
         <div className="flex items-end justify-between gap-2 min-w-0">
@@ -77,7 +77,7 @@ export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({ cards, cla
           ) : null}
         </div>
         {card.secondary ? (
-          <p className={cx('text-[11px] sm:text-xs leading-snug', card.secondaryToneClass || 'text-[var(--text-muted)]')}>
+          <p className={cx('m-caption leading-snug', card.secondaryToneClass || 'text-[var(--text-muted)]')}>
             {card.secondary}
           </p>
         ) : null}

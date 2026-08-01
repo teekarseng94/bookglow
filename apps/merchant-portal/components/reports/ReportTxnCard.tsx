@@ -52,8 +52,8 @@ export const ReportTxnCard: React.FC<ReportTxnCardProps> = ({
         : undefined
     }
     className={cx(
-      'm-txn-card bg-[var(--bg-surface)] border border-[var(--line)] shadow-ui-xs',
-      onClick && 'cursor-pointer active:scale-[0.99] transition-transform',
+      'm-txn-card m-card m-entity-row !p-3 bg-[var(--bg-surface)] border border-[var(--line)] shadow-ui-xs',
+      onClick && 'm-card-interactive cursor-pointer active:scale-[0.99] transition-transform',
       className,
     )}
   >

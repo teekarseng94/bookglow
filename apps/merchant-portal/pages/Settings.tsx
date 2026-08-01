@@ -364,7 +364,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           : 'idle';
 
   return (
-    <div className="animate-fadeIn pb-[calc(6rem+var(--safe-bottom))] sm:pb-20">
+    <div className="m-page-with-bottom-nav animate-fadeIn sm:pb-20">
       <SettingsPageHeader
         actions={
           <div className="flex flex-wrap gap-2">
@@ -908,6 +908,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         title="Chatbot API Integration"
         description="Use these details to connect MyChatBot (or other bots) to this outlet."
         size="md"
+        mobileFullscreen
         busy={apiLoading}
         footer={
           <ModalFooterActions>

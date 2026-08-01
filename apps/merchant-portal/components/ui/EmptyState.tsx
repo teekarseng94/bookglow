@@ -24,7 +24,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       className,
     )}
   >
-    {icon ? <div className="text-[var(--text-muted)]">{icon}</div> : null}
+    {icon ? <div className="m-empty-state-icon">{icon}</div> : null}
     <div className="space-y-1 max-w-md">
       <h3 className="m-empty-title text-base font-semibold text-[var(--text-primary)]">{title}</h3>
       {description ? (

@@ -34,7 +34,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
     <section
       id={id}
       className={cx(
-        'bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs scroll-mt-4',
+        'm-card !p-0 bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs scroll-mt-4',
         className,
       )}
     >

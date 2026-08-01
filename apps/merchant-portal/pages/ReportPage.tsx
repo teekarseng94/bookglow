@@ -454,7 +454,7 @@ function MonthlySummaryCard({ data, monthLabel }: { data: MonthlySummaryData; mo
   const hasMoreStaff = staffList.length > STAFF_SALES_COLLAPSED_COUNT;
 
   return (
-    <div className="m-report-detail-card bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs overflow-hidden">
+    <div className="m-report-detail-card m-card !p-0 bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs overflow-hidden">
       <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--line)]">
         <h3 className="text-app-section font-bold text-[var(--text-primary)]">{monthLabel}</h3>
         <button type="button" className="p-2 rounded-ui-sm hover:bg-[var(--bg-soft)] text-[var(--text-muted)]" aria-label="Print">
@@ -763,7 +763,7 @@ const ReportPage: React.FC<ReportPageProps> = ({ transactions, outletID, staff }
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-auto">
+      <main className="m-page-with-bottom-nav flex-1 flex flex-col min-w-0 overflow-auto">
         <div className="flex-shrink-0 px-4 sm:px-6 py-4 bg-[var(--bg-surface)] border-b border-[var(--line)]">
           <ReportPageHeader
             title="Monthly Summary"

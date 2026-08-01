@@ -2,6 +2,7 @@ import React from 'react';
 import { ScheduleBookingCard } from './ScheduleBookingCard';
 import { ScheduleEmptyState } from './ScheduleEmptyState';
 import { cx } from '../ui/cx';
+import { SectionHeader } from '../ui/SectionHeader';
 
 export interface ScheduleBookingListItem {
   id: string;
@@ -33,15 +34,13 @@ export const ScheduleBookingList: React.FC<ScheduleBookingListProps> = ({
 }) => (
   <div
     className={cx(
-      'md:hidden bg-[var(--bg-surface)] m-page-pad-compact pt-4 pb-[calc(8.5rem+var(--safe-bottom))] space-y-5',
+      'md:hidden bg-[var(--bg-surface)] m-page-pad-compact m-page-with-sticky-action pt-4 space-y-5',
       className,
     )}
   >
     {days.map((day) => (
       <section key={day.date} data-agenda-date={day.date} className="space-y-2 scroll-mt-[116px]">
-        <h4 className="m-schedule-day-heading m-section-title text-[var(--text-primary)]">
-          {day.heading}
-        </h4>
+        <SectionHeader title={day.heading} count={day.bookings.length || undefined} />
         {day.bookings.length === 0 ? (
           <ScheduleEmptyState compact title="Nothing planned" />
         ) : (

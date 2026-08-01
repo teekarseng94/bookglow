@@ -1,5 +1,7 @@
 import React from 'react';
 import { cx } from '../ui/cx';
+import { EmptyState } from '../ui/EmptyState';
+import { SectionHeader } from '../ui/SectionHeader';
 
 export interface POSCatalogueSectionProps {
   title: string;
@@ -21,17 +23,12 @@ export const POSCatalogueSection: React.FC<POSCatalogueSectionProps> = ({
   className,
 }) => (
   <section className={cx('animate-fadeIn', className)}>
-    <h3
-      className={cx(
-        'm-pos-section-title mb-3 flex items-center gap-2',
-        titleClassName || 'text-[var(--brand)]',
-      )}
-    >
-      {icon}
-      {title}
-    </h3>
+    <SectionHeader
+      className={cx('m-pos-section-title mb-3', titleClassName || 'text-[var(--brand)]')}
+      title={<span className="flex items-center gap-2">{icon}{title}</span>}
+    />
     {empty ? (
-      <div className="py-10 text-center text-[var(--text-muted)] text-sm">{emptyMessage}</div>
+      <EmptyState className="border-0" title={emptyMessage || 'No items found'} />
     ) : (
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-1 md:grid-cols-2 posd:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {children}

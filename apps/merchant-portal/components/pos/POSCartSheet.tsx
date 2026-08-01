@@ -48,7 +48,7 @@ export const POSCartSheet: React.FC<POSCartSheetProps> = ({
         'm-pos-cart-sheet relative flex h-full w-full flex-col overflow-hidden border border-[var(--line)] bg-[var(--bg-surface)] shadow-ui-sm',
         'rounded-t-ui-lg sm:rounded-ui-lg',
         'max-h-[92vh] sm:h-full sm:max-h-none',
-        'mb-[calc(72px+env(safe-area-inset-bottom,0px))] sm:mb-0',
+        'mb-[calc(var(--mobile-bottom-nav-height)+var(--mobile-safe-area-bottom))] sm:mb-0',
       )}
     >
       {/* —— Phone + tablet compact header —— */}

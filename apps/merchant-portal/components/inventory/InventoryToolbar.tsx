@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowUpDown, Filter, Search } from 'lucide-react';
 import { FilterToolbar } from '../ui/FilterToolbar';
-import { Button } from '../ui/Button';
+import { IconButton } from '../ui/IconButton';
 import { cx } from '../ui/cx';
 import type { InventoryCatalogTab } from './InventoryTypeTabs';
 
@@ -74,26 +74,26 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
           />
         </div>
         {onOpenFiltersSheet ? (
-          <button
-            type="button"
-            className="m-inventory-tool-btn focus-visible:shadow-ui-focus-strong"
+          <IconButton
+            variant="outline"
+            size="md"
+            label="Filter inventory"
+            className={cx(statusFilter !== 'all' || visibilityFilter !== 'all' || selectedCategory !== 'All' ? 'border-[var(--brand)] text-[var(--brand)] bg-[var(--brand-soft)]' : undefined)}
             onClick={onOpenFiltersSheet}
-            aria-label="Filter"
           >
             <Filter className="h-4 w-4 shrink-0" aria-hidden />
-            <span>Filter</span>
-          </button>
+          </IconButton>
         ) : null}
         {onOpenSortSheet ? (
-          <button
-            type="button"
-            className="m-inventory-tool-btn focus-visible:shadow-ui-focus-strong"
+          <IconButton
+            variant="outline"
+            size="md"
+            label="Sort inventory"
+            className={cx(sortBy !== 'a-z' ? 'border-[var(--brand)] text-[var(--brand)] bg-[var(--brand-soft)]' : undefined)}
             onClick={onOpenSortSheet}
-            aria-label="Sort"
           >
             <ArrowUpDown className="h-4 w-4 shrink-0" aria-hidden />
-            <span>Sort</span>
-          </button>
+          </IconButton>
         ) : null}
       </div>
 

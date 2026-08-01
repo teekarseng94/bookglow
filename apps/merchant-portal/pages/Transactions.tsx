@@ -204,7 +204,7 @@ const Transactions: React.FC<TransactionsProps> = ({
   };
 
   return (
-    <div className="space-y-4 animate-fadeIn">
+    <div className="m-page-with-bottom-nav space-y-4 animate-fadeIn">
       <ReportPageHeader
         title="Sales History"
         description="Review, edit, or filter past transactions."
@@ -292,7 +292,7 @@ const Transactions: React.FC<TransactionsProps> = ({
       ) : (
         <>
           {/* Mobile: structured cards — amount, customer, date/time, payment, status */}
-          <div className="md:hidden space-y-2.5 pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
+          <div className="md:hidden space-y-2.5">
             {sortedAndFilteredTransactions.map((txn) => {
               const meta = getTxnMeta(txn);
               const client = clients.find((c) => c.id === txn.clientId);
@@ -561,6 +561,7 @@ const Transactions: React.FC<TransactionsProps> = ({
         title="Edit Historical Record"
         description="Update date, amount, and client link for this record."
         size="md"
+        mobileFullscreen
         asForm
         formId="edit-historical-record-form"
         onSubmit={handleSaveEdit}

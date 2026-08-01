@@ -39,6 +39,7 @@ export const StaffEditor: React.FC<StaffEditorProps> = ({
     title={title}
     onClose={onClose}
     closeOnBackdrop={!saving}
+    mobileFullscreen
     className={className}
     footer={
       <StaffSaveBar

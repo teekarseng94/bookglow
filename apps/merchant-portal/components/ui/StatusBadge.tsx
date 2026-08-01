@@ -7,6 +7,8 @@ export interface StatusBadgeProps {
   children: React.ReactNode;
   tone?: StatusTone;
   className?: string;
+  /** Optional accessible explanation when the visible status is abbreviated. */
+  label?: string;
 }
 
 const toneClass: Record<StatusTone, string> = {
@@ -22,6 +24,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   children,
   tone = 'neutral',
   className,
+  label,
 }) => (
   <span
     className={cx(
@@ -30,6 +33,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
       toneClass[tone],
       className,
     )}
+    aria-label={label}
   >
     {children}
   </span>

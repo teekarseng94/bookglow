@@ -9,6 +9,8 @@ export interface SheetProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   side?: 'bottom' | 'right';
+  mobileMode?: 'sheet' | 'full-screen';
+  showHandle?: boolean;
   className?: string;
   closeOnBackdrop?: boolean;
   busy?: boolean;
@@ -26,6 +28,8 @@ export const Sheet: React.FC<SheetProps> = ({
   children,
   footer,
   side = 'bottom',
+  mobileMode,
+  showHandle,
   className,
   closeOnBackdrop,
   busy,
@@ -38,6 +42,8 @@ export const Sheet: React.FC<SheetProps> = ({
     description={description}
     footer={footer}
     side={side}
+    mobileMode={mobileMode}
+    showHandle={showHandle}
     className={className}
     closeOnBackdrop={closeOnBackdrop}
     busy={busy}

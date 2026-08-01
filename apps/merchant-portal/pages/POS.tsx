@@ -607,7 +607,7 @@ const POS: React.FC<POSProps> = ({
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-4 pb-[calc(72px+56px+16px+env(safe-area-inset-bottom,0px))] sm:pb-[calc(72px+env(safe-area-inset-bottom,0px))] lg:pb-0">
+    <div className="m-page-with-sticky-action flex h-full min-h-0 flex-col gap-4 sm:pb-[calc(var(--mobile-bottom-nav-height)+var(--mobile-safe-area-bottom))] lg:pb-0">
       <POSPageHeader
         shopName={outletSettings.shopName}
         banner={

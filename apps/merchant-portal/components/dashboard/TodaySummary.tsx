@@ -36,7 +36,7 @@ export const TodaySummary: React.FC<TodaySummaryProps> = ({
         <div
           key={m.id}
           className={cx(
-            'bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs',
+            'm-card bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs',
             m.emphasize ? 'p-4 lg:p-5 col-span-2 lg:col-span-1' : 'p-3 lg:p-4',
           )}
         >

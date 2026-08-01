@@ -17,7 +17,7 @@ export const POSStickyCartAction: React.FC<POSStickyCartActionProps> = ({
 }) => (
   <div
     className={cx(
-      'm-pos-sticky-cart fixed bottom-[calc(72px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-[45] sm:hidden',
+      'm-pos-sticky-cart fixed bottom-[calc(var(--mobile-bottom-nav-height)+var(--mobile-safe-area-bottom))] left-0 right-0 z-[45] sm:hidden',
       'bg-[var(--bg-surface)] shadow-[0_-4px_12px_rgba(15,23,42,0.12)]',
       className,
     )}
@@ -25,6 +25,7 @@ export const POSStickyCartAction: React.FC<POSStickyCartActionProps> = ({
     <button
       type="button"
       onClick={onOpen}
+      aria-label={itemCount > 0 ? `Review order, ${itemCount} items, ${totalLabel}` : 'Open empty order'}
       className="m-pos-sticky-cart__btn flex w-full items-center justify-between"
     >
       <div className="flex min-w-0 items-center gap-3">

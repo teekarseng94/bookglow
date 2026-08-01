@@ -12,6 +12,9 @@ export interface AppSheetProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   side?: 'bottom' | 'right';
+  /** Mobile presentation only; desktop/right-sheet behavior remains unchanged. */
+  mobileMode?: 'sheet' | 'full-screen';
+  showHandle?: boolean;
   zIndexClass?: string;
   className?: string;
   closeOnBackdrop?: boolean;
@@ -29,6 +32,8 @@ export const AppSheet: React.FC<AppSheetProps> = ({
   children,
   footer,
   side = 'bottom',
+  mobileMode = 'sheet',
+  showHandle = true,
   zIndexClass = 'z-[80]',
   className,
   closeOnBackdrop = true,
@@ -69,9 +74,13 @@ export const AppSheet: React.FC<AppSheetProps> = ({
           'absolute flex flex-col bg-[var(--bg-surface)] shadow-ui-lg border border-[var(--line)]',
           'overflow-hidden',
           panelClass,
+          mobileMode === 'full-screen' && 'm-sheet-panel--fullscreen',
           className,
         )}
       >
+        {side === 'bottom' && showHandle && mobileMode === 'sheet' ? (
+          <div className="m-sheet-handle shrink-0" aria-hidden="true" />
+        ) : null}
         {title != null ? (
           <ModalHeader
             title={title}

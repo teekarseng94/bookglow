@@ -1,14 +1,13 @@
 import React from 'react';
 import { cx } from './cx';
 
-export interface DenseEntityRowProps {
+export interface DenseEntityRowProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'title'> {
   leading?: React.ReactNode;
   title: React.ReactNode;
   subtitle?: React.ReactNode;
   meta?: React.ReactNode;
   trailing?: React.ReactNode;
-  onClick?: () => void;
-  className?: string;
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
 }
 
 /**
@@ -22,24 +21,27 @@ export const DenseEntityRow: React.FC<DenseEntityRowProps> = ({
   trailing,
   onClick,
   className,
+  disabled,
+  ...buttonProps
 }) => {
   const interactive = typeof onClick === 'function';
   const classNames = cx(
-    'flex w-full items-center gap-3 px-3 py-2.5 text-left',
+    'm-entity-row flex w-full items-center gap-3 px-3 py-2.5 text-left',
     'border-b border-[var(--line)] last:border-b-0',
     'bg-[var(--bg-surface)]',
     interactive && 'hover:bg-[var(--bg-soft)] focus-visible:shadow-ui-focus-strong',
+    disabled && 'm-entity-row--disabled cursor-not-allowed',
     className,
   );
   const body = (
     <>
       {leading ? <div className="shrink-0">{leading}</div> : null}
       <div className="min-w-0 flex-1 space-y-0.5">
-        <div className="truncate m-list-title text-sm font-semibold text-[var(--text-primary)]">{title}</div>
+        <div className="m-entity-row-title truncate m-list-title text-sm font-semibold text-[var(--text-primary)]">{title}</div>
         {subtitle ? (
-          <div className="truncate m-secondary text-xs text-[var(--text-secondary)]">{subtitle}</div>
+          <div className="m-entity-row-meta truncate m-secondary text-xs text-[var(--text-secondary)]">{subtitle}</div>
         ) : null}
-        {meta ? <div className="truncate m-secondary text-xs text-[var(--text-muted)]">{meta}</div> : null}
+        {meta ? <div className="m-entity-row-meta truncate m-secondary text-xs text-[var(--text-muted)]">{meta}</div> : null}
       </div>
       {trailing ? <div className="shrink-0 flex items-center gap-2">{trailing}</div> : null}
     </>
@@ -47,7 +49,7 @@ export const DenseEntityRow: React.FC<DenseEntityRowProps> = ({
 
   if (interactive) {
     return (
-      <button type="button" onClick={onClick} className={classNames}>
+      <button type="button" onClick={onClick} disabled={disabled} className={classNames} {...buttonProps}>
         {body}
       </button>
     );

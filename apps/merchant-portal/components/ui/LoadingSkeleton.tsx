@@ -12,7 +12,7 @@ export const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({
   className,
   rowClassName,
 }) => (
-  <div className={cx('space-y-3', className)} aria-busy="true" aria-live="polite">
+  <div className={cx('m-loading-state space-y-3', className)} aria-busy="true" aria-live="polite">
     <span className="sr-only">Loading</span>
     {Array.from({ length: rows }).map((_, index) => (
       <div

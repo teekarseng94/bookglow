@@ -36,9 +36,15 @@ export const POSCatalogueToolbar: React.FC<POSCatalogueToolbarProps> = ({
   onCategoryChange,
   className,
 }) => (
-  <div className={cx('m-pos-toolbar space-y-3 rounded-ui-md bg-[var(--bg-surface)]', className)}>
-    <div className="flex flex-col xl:flex-row xl:items-center gap-2.5 xl:gap-3">
-      <div className="relative flex-1 min-w-0">
+  <div
+    className={cx(
+      'm-pos-toolbar m-card space-y-3 rounded-ui-md bg-[var(--bg-surface)]',
+      (activeCatalog !== 'all' || selectedCategory !== 'All' || sortBy !== 'a-z') && 'm-filter-toolbar--active',
+      className,
+    )}
+  >
+    <div className="m-filter-toolbar-row flex flex-col xl:flex-row xl:items-center gap-2.5 xl:gap-3">
+      <div className="m-filter-search relative flex-1 min-w-0">
         <input
           type="search"
           placeholder="Search services or products..."
@@ -53,7 +59,7 @@ export const POSCatalogueToolbar: React.FC<POSCatalogueToolbarProps> = ({
         </div>
       </div>
 
-      <div className="flex items-center gap-1 overflow-x-auto scrollbar-thin min-w-0">
+      <div className="m-filter-chips flex items-center gap-1 min-w-0">
         {(['all', 'services', 'products', 'packages'] as const).map((cat) => (
           <button
             key={cat}
@@ -75,7 +81,7 @@ export const POSCatalogueToolbar: React.FC<POSCatalogueToolbarProps> = ({
         value={sortBy}
         onChange={(e) => onSortChange(e.target.value as POSSortBy)}
         aria-label="Sort catalog"
-        className="m-pos-sort shrink-0 xl:ml-auto w-full xl:w-auto px-3 py-2 min-h-[40px] bg-[var(--bg-surface)] border border-[var(--line)] rounded-ui-md outline-none focus-visible:shadow-ui-focus-strong text-sm font-medium"
+        className="m-pos-sort m-field-control shrink-0 xl:ml-auto w-full xl:w-auto bg-[var(--bg-surface)] border border-[var(--line)] outline-none focus-visible:shadow-ui-focus-strong text-sm font-medium"
       >
         <option value="a-z">A–Z</option>
         <option value="z-a">Z–A</option>
@@ -84,7 +90,7 @@ export const POSCatalogueToolbar: React.FC<POSCatalogueToolbarProps> = ({
       </select>
     </div>
 
-    <div className="overflow-x-auto scrollbar-thin -mx-0.5 px-0.5">
+    <div className="m-filter-chips -mx-0.5 px-0.5">
       <div className="flex gap-2 min-w-0 pb-0.5">
         {categories.map((cat) => (
           <button

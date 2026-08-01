@@ -1,5 +1,4 @@
 import React from 'react';
-import { PageHeader } from '../ui/PageHeader';
 import { cx } from '../ui/cx';
 
 export interface TodayHeaderProps {
@@ -19,12 +18,10 @@ export const TodayHeader: React.FC<TodayHeaderProps> = ({
   className,
 }) => (
   <div className={cx(className)}>
-    <PageHeader
-      className="lg:hidden border-b-0 pb-0"
-      title={title}
-      description={dateLabel}
-      actions={actions}
-    />
+    <div className="lg:hidden flex items-center justify-between gap-3" aria-label="Today overview">
+      <p className="m-page-header-description min-w-0 text-[var(--text-secondary)]">{dateLabel}</p>
+      {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
+    </div>
     <div className="hidden lg:flex items-end justify-between gap-4 pb-2 border-b border-[var(--line)]">
       <div>
         <h1 className={cx('font-bold tracking-tight text-[var(--text-primary)]', titleClassName || 'ui-page-title')}>

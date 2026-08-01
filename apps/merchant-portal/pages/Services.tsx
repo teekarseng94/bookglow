@@ -993,7 +993,7 @@ const Services: React.FC<ServicesProps> = ({
   );
 
   return (
-    <div className="space-y-4 animate-fadeIn">
+    <div className="m-page-with-bottom-nav space-y-4 animate-fadeIn">
       {/* ——— Mobile chrome (below 768px) ——— */}
       {saveMessage ? (
         <Alert tone="success" title="Changes saved">
@@ -1003,13 +1003,6 @@ const Services: React.FC<ServicesProps> = ({
 
       <div className="md:hidden space-y-3">
         <InventoryOutletCard />
-
-        <div>
-          <h1 className="m-inventory-page-title">Menu & Inventory</h1>
-          <p className="m-inventory-page-sub">
-            Manage your services, products and packages.
-          </p>
-        </div>
 
         <InventoryTypeTabs activeTab={activeTab} onChange={setActiveTab} />
 
@@ -1883,6 +1876,7 @@ const Services: React.FC<ServicesProps> = ({
         title="Services"
         description="Add a service to this package."
         size="md"
+        mobileFullscreen
         zIndexClass="z-[95]"
         footer={
           <ModalFooterActions>
@@ -1955,6 +1949,7 @@ const Services: React.FC<ServicesProps> = ({
         title="Select Image"
         description="Upload a photo or pick an icon."
         size="lg"
+        mobileFullscreen
         zIndexClass="z-[95]"
         footer={
           <ModalFooterActions>
@@ -2049,6 +2044,7 @@ const Services: React.FC<ServicesProps> = ({
         title="Rearrange Categories"
         description='Drag to reorder. "All" always stays first on the menu.'
         size="md"
+        mobileFullscreen
         footer={
           <ModalFooterActions>
             <Button variant="secondary" onClick={() => setShowRearrangeCategoriesModal(false)}>
@@ -2079,6 +2075,7 @@ const Services: React.FC<ServicesProps> = ({
         title="Manage Categories"
         description="Add, rename, or remove inventory categories."
         size="md"
+        mobileFullscreen
         footer={
           <ModalFooterActions>
             <Button variant="secondary" onClick={() => setShowCategoryModal(false)}>

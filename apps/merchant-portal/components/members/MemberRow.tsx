@@ -41,7 +41,7 @@ export const MemberRow: React.FC<MemberRowProps> = ({
       }
     }}
     className={cx(
-      'w-full flex items-center text-left cursor-pointer transition-colors',
+      'm-entity-row m-card-interactive w-full flex items-center text-left cursor-pointer transition-colors',
       'focus-visible:shadow-ui-focus-strong',
       'm-member-row',
       'md:rounded-ui-md md:border md:shadow-ui-xs md:p-3 md:gap-3 md:min-h-0',
@@ -70,7 +70,7 @@ export const MemberRow: React.FC<MemberRowProps> = ({
           </StatusBadge>
         ) : null}
       </div>
-      <p className="m-member-phone text-[var(--text-muted)] truncate" title={phoneOrId}>
+      <p className="m-member-phone text-[var(--text-muted)] whitespace-nowrap" title={phoneOrId}>
         {phoneOrId || '—'}
       </p>
       {secondaryMeta ? (

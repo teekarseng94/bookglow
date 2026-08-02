@@ -40,17 +40,21 @@ export const SettingsNavigation: React.FC<SettingsNavigationProps> = ({
     )}
     aria-label="Settings sections"
   >
-    <ul className="space-y-1 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] p-2">
+    <p className="px-1 mb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+      On this page
+    </p>
+    <ul className="space-y-0.5 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] p-1.5">
       {SETTINGS_NAV_ITEMS.map((item) => (
         <li key={item.id}>
           <button
             type="button"
             onClick={() => onSelect(item.id)}
+            aria-current={activeId === item.id ? 'true' : undefined}
             className={cx(
-              'w-full text-left px-3 py-2 rounded-ui-sm text-sm font-semibold transition-colors',
+              'w-full text-left px-3 py-2 rounded-ui-sm text-sm transition-colors',
               activeId === item.id
-                ? 'bg-[var(--brand-soft)] text-[var(--brand-deep)]'
-                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] hover:text-[var(--text-primary)]',
+                ? 'bg-[var(--brand-soft)] text-[var(--brand-deep)] font-semibold'
+                : 'text-[var(--text-secondary)] font-medium hover:bg-[var(--bg-soft)] hover:text-[var(--text-primary)]',
             )}
           >
             {item.label}

@@ -36,6 +36,7 @@ export type Database = {
           settings: Json | null;
           timezone: string | null;
           updated_at: string | null;
+          website: string | null;
         };
         Insert: {
           address?: Json | null;
@@ -54,6 +55,7 @@ export type Database = {
           settings?: Json | null;
           timezone?: string | null;
           updated_at?: string | null;
+          website?: string | null;
         };
         Update: {
           address?: Json | null;
@@ -72,6 +74,76 @@ export type Database = {
           settings?: Json | null;
           timezone?: string | null;
           updated_at?: string | null;
+          website?: string | null;
+        };
+        Relationships: [];
+      };
+      merchant_onboarding_drafts: {
+        Row: {
+          auth_user_id: string;
+          current_step: string;
+          account_type: string | null;
+          payload: Json;
+          created_at: string;
+          updated_at: string;
+          completed_at: string | null;
+        };
+        Insert: {
+          auth_user_id: string;
+          current_step?: string;
+          account_type?: string | null;
+          payload?: Json;
+          created_at?: string;
+          updated_at?: string;
+          completed_at?: string | null;
+        };
+        Update: {
+          auth_user_id?: string;
+          current_step?: string;
+          account_type?: string | null;
+          payload?: Json;
+          created_at?: string;
+          updated_at?: string;
+          completed_at?: string | null;
+        };
+        Relationships: [];
+      };
+      outlet_invitations: {
+        Row: {
+          id: string;
+          outlet_id: string;
+          email: string;
+          role: string;
+          token_hash: string;
+          expires_at: string;
+          accepted_at: string | null;
+          accepted_by: string | null;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          outlet_id: string;
+          email: string;
+          role: string;
+          token_hash: string;
+          expires_at: string;
+          accepted_at?: string | null;
+          accepted_by?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          outlet_id?: string;
+          email?: string;
+          role?: string;
+          token_hash?: string;
+          expires_at?: string;
+          accepted_at?: string | null;
+          accepted_by?: string | null;
+          created_by?: string | null;
+          created_at?: string;
         };
         Relationships: [];
       };
@@ -944,6 +1016,18 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      accept_outlet_invitation: {
+        Args: { invitation_token: string };
+        Returns: Json;
+      };
+      complete_merchant_onboarding: {
+        Args: { payload: Json };
+        Returns: Json;
+      };
+      create_outlet_invitation: {
+        Args: { invitee_email: string; invitation_role?: string; valid_hours?: number };
+        Returns: Json;
+      };
       get_public_available_slots: {
         Args: {
           p_outlet_id: string;

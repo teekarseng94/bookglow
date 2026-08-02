@@ -227,6 +227,15 @@ export interface OutletSettings {
   setmoreLastSyncedAt?: string;
   /** Allow new accounts registration flag for platform administration */
   allowNewAccounts?: boolean;
+  primaryBusinessCategory?: string;
+  businessCategories?: string[];
+  serviceLocationType?: 'physical' | 'mobile' | 'virtual';
+  teamSize?: 'independent' | '2-5' | '6-10' | '11-20' | '20-plus';
+  previousSoftware?: string;
+  previousSoftwareOther?: string;
+  onboardingCompletedAt?: string;
+  onboardingVersion?: number;
+  businessHoursConfigured?: boolean;
 }
 
 /** Daily operating hours for booking page (e.g. "8:00" - "17:00") */
@@ -270,6 +279,7 @@ export interface Outlet {
   };
   phone?: string;
   email?: string;
+  website?: string;
   timezone?: string; // e.g., "America/New_York"
   /** Reviews for booking page (array or empty) */
   reviews?: OutletReview[];

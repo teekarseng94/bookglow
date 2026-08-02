@@ -1093,6 +1093,17 @@
   white-space: pre-line;
 }
 
+.bookglow-login__success {
+  margin-bottom: 1rem;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--brand-border);
+  border-radius: 0.8rem;
+  color: var(--brand-deep);
+  background: var(--brand-soft);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
 .bookglow-login__submit {
   min-height: 3rem;
   border-radius: var(--radius-md);

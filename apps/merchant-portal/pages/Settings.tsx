@@ -17,6 +17,7 @@ import {
 } from '../components/ui';
 import {
   OperatingHoursRow,
+  SETTINGS_NAV_ITEMS,
   SettingsNavigation,
   SettingsPageHeader,
   SettingsSaveBar,
@@ -61,6 +62,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
 
   // Local state for outlet form data
   const [addressDisplay, setAddressDisplay] = useState<string>('');
+  const [website, setWebsite] = useState<string>('');
   const [phoneNumber, setPhoneNumber] = useState<string>('');
   const [businessHours, setBusinessHours] = useState<Record<string, { open: string; close: string; isOpen?: boolean }>>({});
   const [outletLoading, setOutletLoading] = useState(true);
@@ -89,6 +91,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
     // If outlet prop is provided, use it
     if (propOutlet) {
       setAddressDisplay(propOutlet.addressDisplay || '');
+      setWebsite(propOutlet.website || '');
       setPhoneNumber(propOutlet.phoneNumber || '');
       setBusinessHours(propOutlet.businessHours || {});
       const derived = shopNameToBookingSlug(propOutlet.name || '');
@@ -122,6 +125,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         clearTimeout(timeoutId);
         if (outletData) {
           setAddressDisplay(outletData.addressDisplay || '');
+          setWebsite(outletData.website || '');
           setPhoneNumber(outletData.phoneNumber || '');
           setBusinessHours(outletData.businessHours || {});
           const derived = shopNameToBookingSlug(outletData.name || '');
@@ -142,6 +146,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         } else {
           // Outlet doesn't exist yet - initialize with empty values
           setAddressDisplay('');
+          setWebsite('');
           setPhoneNumber('');
           setBusinessHours({});
           setBookingSlug(shopNameToBookingSlug(settings.shopName || ''));
@@ -152,6 +157,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         console.error('Failed to load outlet:', err);
         // On error, still allow editing (initialize with empty values)
         setAddressDisplay('');
+        setWebsite('');
         setPhoneNumber('');
         setBusinessHours({});
       })
@@ -354,6 +360,33 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  // Keep side nav in sync with which section is in view (jump links, not tabs).
+  useEffect(() => {
+    const ids = SETTINGS_NAV_ITEMS.map((item) => `settings-${item.id}`);
+    const elements = ids
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => Boolean(el));
+    if (elements.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        const top = visible[0];
+        if (!top?.target?.id) return;
+        const sectionId = top.target.id.replace(/^settings-/, '') as SettingsSectionId;
+        if (SETTINGS_NAV_ITEMS.some((item) => item.id === sectionId)) {
+          setActiveSection(sectionId);
+        }
+      },
+      { rootMargin: '-20% 0px -55% 0px', threshold: [0.1, 0.35, 0.6] },
+    );
+
+    elements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [effectiveOutletId, outletLoading]);
+
   const bookingSaveStatus =
     bookingInfoStatus === 'success'
       ? 'success'
@@ -378,77 +411,119 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       <div className="mt-4 lg:mt-6 flex gap-6 items-start">
         <SettingsNavigation activeId={activeSection} onSelect={scrollToSection} />
 
-        <div className="min-w-0 flex-1 max-w-3xl space-y-4 sm:space-y-5">
+        <div className="min-w-0 flex-1 max-w-3xl space-y-5 sm:space-y-6">
       {/* 1. Business profile */}
       <SettingsSection
         id="settings-business-profile"
         defaultOpen
         iconWrap="bg-[var(--brand-soft)] text-[var(--brand)]"
         title="Business profile"
-        description="Customize your brand and outlet details."
+        description="Name shown in the sidebar, invoices, and browser title."
         icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>}
       >
-        <div className="max-w-md">
-          <label className="m-settings-label block uppercase tracking-widest">Shop Name</label>
-          <input 
-            type="text" 
-            placeholder="e.g. Bookglow Spa"
-            className="m-settings-control w-full outline-none"
-            value={settings.shopName}
-            onChange={handleShopNameChange}
-          />
-          <p className="m-settings-hint mt-2 italic">This name will appear in the sidebar, invoices, and browser title.</p>
+        <div className="m-settings-block max-w-xl">
+          <div className="m-settings-field">
+            <label htmlFor="settings-shop-name" className="m-settings-label block">Shop name</label>
+            <input
+              id="settings-shop-name"
+              type="text"
+              placeholder="e.g. Bookglow Spa"
+              className="m-settings-control"
+              value={settings.shopName}
+              onChange={handleShopNameChange}
+            />
+          </div>
+          <div className="m-settings-field">
+            <label htmlFor="settings-website" className="m-settings-label block">Website</label>
+            <input
+              id="settings-website"
+              type="url"
+              placeholder="https://www.example.com"
+              className="m-settings-control"
+              value={website}
+              onChange={(event) => setWebsite(event.target.value)}
+              onBlur={() => outletService.update(effectiveOutletId, { website: website.trim() }).catch(() => undefined)}
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="m-settings-field">
+              <label htmlFor="settings-primary-category" className="m-settings-label block">Primary business category</label>
+              <input id="settings-primary-category" className="m-settings-control" value={settings.primaryBusinessCategory || ''} onChange={(event) => onUpdateSettings({ ...settings, primaryBusinessCategory: event.target.value })} />
+            </div>
+            <div className="m-settings-field">
+              <label htmlFor="settings-team-size" className="m-settings-label block">Team size</label>
+              <select id="settings-team-size" className="m-settings-control" value={settings.teamSize || ''} onChange={(event) => onUpdateSettings({ ...settings, teamSize: event.target.value as OutletSettings['teamSize'] })}>
+                <option value="">Not set</option><option value="independent">Independent</option><option value="2-5">2–5 people</option><option value="6-10">6–10 people</option><option value="11-20">11–20 people</option><option value="20-plus">20+ people</option>
+              </select>
+            </div>
+          </div>
+          <div className="m-settings-field">
+            <label htmlFor="settings-related-categories" className="m-settings-label block">Business categories</label>
+            <input id="settings-related-categories" className="m-settings-control" value={(settings.businessCategories || []).join(', ')} onChange={(event) => onUpdateSettings({ ...settings, businessCategories: event.target.value.split(',').map((value) => value.trim()).filter(Boolean).slice(0, 4) })} />
+            <p className="m-settings-hint">Up to four categories, separated by commas.</p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="m-settings-field"><label htmlFor="settings-location-type" className="m-settings-label block">Service location type</label><select id="settings-location-type" className="m-settings-control" value={settings.serviceLocationType || ''} onChange={(event) => onUpdateSettings({ ...settings, serviceLocationType: event.target.value as OutletSettings['serviceLocationType'] })}><option value="">Not set</option><option value="physical">Physical location</option><option value="mobile">Mobile operator</option><option value="virtual">Virtual services</option></select></div>
+            <div className="m-settings-field"><label htmlFor="settings-previous-software" className="m-settings-label block">Previous software</label><input id="settings-previous-software" className="m-settings-control" value={settings.previousSoftware === 'Other' ? settings.previousSoftwareOther || 'Other' : settings.previousSoftware || ''} onChange={(event) => onUpdateSettings({ ...settings, previousSoftware: event.target.value })} /></div>
+          </div>
         </div>
       </SettingsSection>
 
+      {/* Booking + hours share one Save */}
+      <div className="space-y-5 sm:space-y-6">
       {/* 2. Booking page */}
       <SettingsSection
         id="settings-booking-page"
         defaultOpen
         iconWrap="bg-[var(--success-soft)] text-[var(--success)]"
         title="Booking page"
-        description="Public booking link, path, address and phone shown to customers."
+        description="Public link and contact details customers see when booking."
         icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>}
       >
         {bookingUrl ? (
-          <div className="flex flex-col md:flex-row gap-6 items-start">
-            <div className="flex-1 min-w-0 space-y-4">
-              <div>
-                <label className="m-settings-label block uppercase tracking-widest">Booking page path</label>
-                <input
-                  type="text"
-                  value={bookingSlug}
-                  onChange={(e) => {
-                    setBookingSlug(e.target.value);
-                    setBookingSlugError(null);
-                  }}
-                  placeholder={shopNameToBookingSlug(settings.shopName || '') || 'baliWellness'}
-                  className="m-settings-control w-full outline-none bg-[var(--bg-surface)]"
-                />
-                <p className="m-settings-hint mt-1">
-                  Last segment of your public link (e.g. baliWellness). Leave empty to use your outlet id. Save with Save Changes under Operating hours.
-                </p>
-                {bookingSlugError && (
-                  <p className="text-xs text-[var(--danger)] mt-1">{bookingSlugError}</p>
-                )}
-              </div>
-              <div>
-                <label className="m-settings-label block uppercase tracking-widest">Booking URL</label>
+          <div className="m-settings-block">
+            <h4 className="m-settings-subhead text-[var(--text-primary)]">Public booking link</h4>
+
+            <div className="m-settings-field">
+              <label htmlFor="settings-booking-slug" className="m-settings-label block">Booking page path</label>
+              <input
+                id="settings-booking-slug"
+                type="text"
+                value={bookingSlug}
+                onChange={(e) => {
+                  setBookingSlug(e.target.value);
+                  setBookingSlugError(null);
+                }}
+                placeholder={shopNameToBookingSlug(settings.shopName || '') || 'baliWellness'}
+                className="m-settings-control"
+              />
+              <p className="m-settings-hint">
+                Last segment of your public link (e.g. baliWellness). Leave empty to use your outlet id.
+              </p>
+              {bookingSlugError && (
+                <p className="text-xs text-[var(--danger)]">{bookingSlugError}</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-4 lg:gap-5 items-start">
+              <div className="m-settings-field min-w-0">
+                <label htmlFor="settings-booking-url" className="m-settings-label block">Booking URL</label>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
+                    id="settings-booking-url"
                     type="text"
                     readOnly
                     value={bookingUrl}
-                    className="m-settings-control flex-1 min-w-0 truncate"
+                    className="m-settings-control flex-1 min-w-0 truncate font-mono text-sm"
                   />
-                  <div className="relative w-full sm:w-auto">
+                  <div className="relative w-full sm:w-auto shrink-0">
                     <button
                       type="button"
                       onClick={handleCopyLink}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl m-settings-btn bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)] transition-colors"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[2.75rem] rounded-ui-sm m-settings-btn bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)] transition-colors"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                      Copy Link
+                      Copy link
                     </button>
                     {copySuccess && (
                       <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-[var(--success)] text-white text-xs font-bold rounded-ui-sm shadow-ui-md whitespace-nowrap">
@@ -457,12 +532,14 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                     )}
                   </div>
                 </div>
+                <p className="m-settings-hint">
+                  Customers open this link to view services and book — no login required.
+                </p>
               </div>
-              <p className="m-settings-hint">Customers can open this link to view your service menu and book a time. No login required.</p>
-            </div>
-            <div className="flex flex-col items-center gap-2 p-4 bg-[var(--bg-soft)] rounded-ui-md border border-[var(--line-soft)]">
-              <QRCodeSVG value={bookingUrl} size={160} level="M" includeMargin />
-              <span className="m-settings-hint font-medium">Scan to book · Print for counter</span>
+              <div className="flex flex-col items-center gap-2 p-3 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] shrink-0 justify-self-start">
+                <QRCodeSVG value={bookingUrl} size={120} level="M" includeMargin />
+                <span className="m-settings-hint text-center leading-snug">Scan to book</span>
+              </div>
             </div>
           </div>
         ) : (
@@ -470,35 +547,38 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         )}
 
         {effectiveOutletId && (
-          <div className="mt-6 pt-6 border-t border-[var(--line-soft)] space-y-4">
+          <div className="m-settings-block">
+            <h4 className="m-settings-subhead text-[var(--text-primary)]">Contact details</h4>
             {(contextLoading || outletLoading) ? (
               <div className="flex items-center justify-center py-6">
                 <div className="w-8 h-8 border-4 border-[var(--brand)] border-t-transparent rounded-full animate-spin" />
                 <span className="ml-3 text-[var(--text-secondary)]">Loading outlet information...</span>
               </div>
             ) : (
-              <>
-                <div>
-                  <label className="m-settings-label block uppercase tracking-widest">Address (one line)</label>
+              <div className="m-settings-group !gap-4">
+                <div className="m-settings-field">
+                  <label htmlFor="settings-address" className="m-settings-label block">Address</label>
                   <textarea
-                    rows={2}
+                    id="settings-address"
+                    rows={3}
                     placeholder="e.g. 43-G, Jln Damai Perdana 6/1F, Bandar Damai Perdana, 56000 Cheras, Kuala Lumpur"
-                    className="m-settings-control w-full outline-none"
+                    className="m-settings-control"
                     value={addressDisplay}
                     onChange={(e) => setAddressDisplay(e.target.value)}
                   />
                 </div>
-                <div>
-                  <label className="m-settings-label block uppercase tracking-widest">Phone Number</label>
+                <div className="m-settings-field max-w-md">
+                  <label htmlFor="settings-phone" className="m-settings-label block">Phone number</label>
                   <input
+                    id="settings-phone"
                     type="text"
                     placeholder="e.g. +60 169929123"
-                    className="m-settings-control w-full outline-none"
+                    className="m-settings-control"
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                   />
                 </div>
-              </>
+              </div>
             )}
           </div>
         )}
@@ -510,7 +590,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         defaultOpen
         iconWrap="bg-sky-50 text-sky-600"
         title="Operating hours"
-        description="Hours used for Open / Closed status on the booking page."
+        description="Controls Open / Closed status on the booking page."
         icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
       >
         {!effectiveOutletId ? (
@@ -521,8 +601,8 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
             <span className="ml-3 text-[var(--text-secondary)]">Loading outlet information...</span>
           </div>
         ) : (
-          <>
-            <div>
+          <div className="m-settings-block !p-3 sm:!p-4">
+            <div className="m-settings-list">
               {DAYS.map((day) => {
                 const dayKey = day;
                 const hours = businessHours[dayKey] || { open: '09:00', close: '17:00', isOpen: true };
@@ -546,20 +626,27 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                 );
               })}
             </div>
-            <p className="m-settings-hint mt-2">
-              Saves address, phone, booking path and hours together. Closing without Save Changes does not write these fields.
-            </p>
-            <SettingsSaveBar
-              status={bookingSaveStatus}
-              disabled={!effectiveOutletId}
-              onSave={() => {
-                if (bookingInfoStatus === 'saving' || !effectiveOutletId) return;
-                handleSaveBookingInfo();
-              }}
-            />
-          </>
+          </div>
         )}
       </SettingsSection>
+
+      <div className="sticky bottom-3 z-20 sm:bottom-4">
+        <div className="rounded-ui-md border border-[var(--line-strong,var(--line))] bg-[var(--bg-surface)]/95 backdrop-blur-sm shadow-ui-md px-4 py-3">
+          <SettingsSaveBar
+            status={bookingSaveStatus}
+            disabled={!effectiveOutletId}
+            saveLabel="Save outlet details"
+            onSave={() => {
+              if (bookingInfoStatus === 'saving' || !effectiveOutletId) return;
+              handleSaveBookingInfo();
+            }}
+          />
+          <p className="m-settings-hint mt-2">
+            Saves booking path, address, phone, and operating hours.
+          </p>
+        </div>
+      </div>
+      </div>
 
       {/* 4. Notifications */}
       <SettingsSection
@@ -640,13 +727,13 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         description="POS payment methods and printed receipt layout for this outlet."
         icon={<Icons.POS />}
       >
-        <div className="space-y-8">
-          <div>
+        <div className="m-settings-group !gap-8">
+          <div className="m-settings-group !gap-4">
             <h4 className="m-settings-subhead">Payment methods</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <label className="m-settings-label block uppercase tracking-widest">Active Methods</label>
-                <div className="space-y-2">
+                <div className="m-settings-list">
                   {settings.paymentMethods.map((method, index) => (
                     <div key={index} className="flex items-center justify-between p-3 bg-[var(--bg-soft)] rounded-ui-sm border border-[var(--line-soft)] group">
                       {editingMethod?.index === index ? (
@@ -679,10 +766,10 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
             </div>
           </div>
 
-          <div className="border-t border-[var(--line-soft)] pt-6">
+          <div className="m-settings-group !gap-4 border-t border-[var(--line-soft)] pt-6">
             <h4 className="m-settings-subhead">Receipt layout</h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-              <div>
+              <div className="m-settings-field">
                 <label className="m-settings-label block uppercase tracking-widest">Header Title</label>
                 <input
                   type="text"
@@ -692,7 +779,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                   placeholder="Tax Invoice"
                 />
               </div>
-              <div>
+              <div className="m-settings-field">
                 <label className="m-settings-label block uppercase tracking-widest">Company Name</label>
                 <input
                   type="text"
@@ -702,7 +789,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                   placeholder="Bookglow Spa"
                 />
               </div>
-              <div>
+              <div className="m-settings-field">
                 <label className="m-settings-label block uppercase tracking-widest">Company Phone</label>
                 <input
                   type="text"
@@ -712,7 +799,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                   placeholder="+60 12-345 6789"
                 />
               </div>
-              <div>
+              <div className="m-settings-field">
                 <label className="m-settings-label block uppercase tracking-widest">Company Address</label>
                 <input
                   type="text"
@@ -722,7 +809,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                   placeholder="Outlet address for receipt"
                 />
               </div>
-              <div className="sm:col-span-2">
+              <div className="m-settings-field sm:col-span-2">
                 <label className="m-settings-label block uppercase tracking-widest">Footer Note</label>
                 <input
                   type="text"
@@ -755,7 +842,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                 </div>
               </div>
             </div>
-            <p className="m-settings-hint mt-3">Receipt layout values are stored in outlet settings and used by POS when user clicks Print Receipt.</p>
+            <p className="m-settings-hint">Receipt layout values are stored in outlet settings and used by POS when user clicks Print Receipt.</p>
           </div>
         </div>
       </SettingsSection>
@@ -769,10 +856,14 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           description={'Toggle "restricted mode" for shared terminals.'}
           icon={<Icons.Dashboard />}
         >
-          <div className="space-y-6">
+          <div className="m-settings-group">
+          <div className="grid grid-cols-1 gap-3 p-4 bg-[var(--bg-soft)] rounded-ui-sm border border-[var(--line-soft)]">
+            <div><span className="m-settings-label block">Owner email</span><span className="m-settings-value text-sm break-all">{userData?.email || 'Not available'}</span></div>
+            <div><span className="m-settings-label block">Owner role</span><span className="m-settings-value text-sm">{userData?.role === 'admin' ? 'Administrator' : userData?.role || 'Not available'}</span></div>
+          </div>
           <div className="flex items-center justify-between p-4 bg-[var(--bg-soft)] rounded-ui-sm border border-[var(--line-soft)]">
-            <div className="flex flex-col">
-              <span className="text-sm font-bold text-[var(--text-secondary)]">Enable Outlet Mode</span>
+            <div className="flex flex-col gap-1">
+              <span className="m-settings-value text-sm">Enable Outlet Mode</span>
               <span className="m-settings-hint font-semibold uppercase tracking-tight">Active restrictions for non-admins</span>
             </div>
             <button 
@@ -789,8 +880,8 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${settings.isAdminAuthenticated ? 'bg-[var(--brand)] text-white' : 'bg-[var(--danger)] text-white'}`}>
                   {settings.isAdminAuthenticated ? <Icons.Dashboard /> : <Icons.Lock />}
                 </div>
-                <div>
-                  <span className="block text-sm font-bold uppercase text-[var(--text-primary)]">
+                <div className="flex flex-col gap-1">
+                  <span className="m-settings-value block text-sm uppercase">
                     {settings.isAdminAuthenticated ? 'Admin Authenticated' : 'Restricted Access'}
                   </span>
                   <span className="m-settings-hint font-semibold">Currently in {settings.isAdminAuthenticated ? 'Manager' : 'Staff'} View</span>
@@ -818,7 +909,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           description="Control which features require admin elevation."
           icon={<Icons.Lock />}
         >
-          <div className={`space-y-4 ${!settings.isOutletModeEnabled ? 'opacity-30 pointer-events-none grayscale' : ''}`}>
+          <div className={`m-settings-list !gap-4 ${!settings.isOutletModeEnabled ? 'opacity-30 pointer-events-none grayscale' : ''}`}>
             {permissionList.map(perm => (
               <div 
                 key={perm.id} 
@@ -834,7 +925,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                     <span className="text-sm font-bold">{perm.label}</span>
                     {settings.lockedFeatures.includes(perm.id) && <span className="text-amber-400"><Icons.Lock /></span>}
                   </div>
-                  <p className={`m-settings-hint mt-1`}>{perm.description}</p>
+                  <p className="m-settings-hint mt-1">{perm.description}</p>
                 </div>
                 <div className={`w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center ${
                   settings.lockedFeatures.includes(perm.id) ? 'border-[var(--brand)] bg-[var(--brand)]' : 'border-[var(--line-strong)] bg-transparent'
@@ -862,8 +953,8 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
             className="flex items-start gap-3 p-4 rounded-xl border border-[var(--brand)]/30 bg-[var(--brand-soft)] hover:bg-[var(--bg-selection)] transition-colors text-left"
           >
             <svg className="w-5 h-5 text-[var(--brand)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
-            <div>
-              <p className="text-sm font-bold text-[var(--text-primary)]">Chatbot API Integration</p>
+            <div className="flex flex-col gap-1">
+              <p className="m-settings-value text-sm">Chatbot API Integration</p>
               <p className="text-xs text-[var(--text-muted)] mt-0.5">Outlet ID, API key, and webhook URL</p>
             </div>
           </button>
@@ -878,7 +969,15 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         description="Voucher redemption security and other advanced outlet controls."
         icon={<Icons.Lock />}
       >
-        <div className="max-w-md space-y-2">
+        <div className="m-settings-field max-w-md mb-5">
+          <label htmlFor="settings-outlet-id" className="m-settings-label block uppercase tracking-widest">Outlet ID</label>
+          <div className="flex gap-2">
+            <input id="settings-outlet-id" readOnly value={effectiveOutletId} className="m-settings-control flex-1 font-mono" />
+            <button type="button" className="m-settings-btn px-4 border border-[var(--line)] bg-[var(--bg-surface)]" onClick={() => navigator.clipboard.writeText(effectiveOutletId)}>Copy</button>
+          </div>
+          <p className="m-settings-hint">Permanent workspace identifier. It cannot be changed.</p>
+        </div>
+        <div className="m-settings-field max-w-md">
           <label className="m-settings-label block uppercase tracking-widest">
             Voucher Redemption PIN
           </label>
@@ -1019,9 +1118,9 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           </Field>
         </FormSection>
 
-        <div className="rounded-ui-md bg-[var(--bg-soft)] border border-[var(--line)] p-3 text-xs text-[var(--text-secondary)] space-y-1">
+        <div className="m-settings-prose rounded-ui-md bg-[var(--bg-soft)] border border-[var(--line)] p-3 text-xs text-[var(--text-secondary)]">
           <p className="font-semibold text-[var(--text-primary)]">Setup Guide (MyChatBot)</p>
-          <ul className="list-disc list-inside space-y-0.5">
+          <ul className="m-settings-list list-disc list-inside">
             <li>
               Paste the <span className="font-mono">Outlet ID</span> into the bot&apos;s outlet /
               location field.

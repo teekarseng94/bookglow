@@ -27,6 +27,7 @@ export interface ReportFilterSheetProps<TFilter extends string = string, TSort e
   onClear?: () => void;
   clearLabel?: string;
   applyLabel?: string;
+  extraSections?: React.ReactNode;
 }
 
 function ChipButton({
@@ -74,6 +75,7 @@ export function ReportFilterSheet<TFilter extends string = string, TSort extends
   onClear,
   clearLabel = 'Clear',
   applyLabel = 'Apply',
+  extraSections,
 }: ReportFilterSheetProps<TFilter, TSort>) {
   return (
     <Sheet
@@ -146,6 +148,7 @@ export function ReportFilterSheet<TFilter extends string = string, TSort extends
             </div>
           </div>
         ) : null}
+        {extraSections}
       </div>
     </Sheet>
   );

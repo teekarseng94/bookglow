@@ -26,10 +26,10 @@ export const ReportSummaryStrip: React.FC<ReportSummaryStripProps> = ({ items, c
     {items.map((item) => (
       <div
         key={item.label}
-        className="border-r border-[var(--line)] p-4 text-left last:border-r-0"
+        className="min-w-0 border-r border-[var(--line)] px-2.5 py-4 text-center last:border-r-0 sm:p-4 sm:text-left"
       >
         <p className="m-report-summary-label">{item.label}</p>
-        <p className={cx('m-report-summary-value mt-1 text-lg sm:text-xl tabular-nums truncate', toneClass[item.tone || 'neutral'])}>
+        <p className={cx('m-report-summary-value mt-1 break-words text-[clamp(0.78rem,3.6vw,1.25rem)] leading-tight tabular-nums', toneClass[item.tone || 'neutral'])}>
           {item.value}
         </p>
       </div>

@@ -1,6 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { CalendarDays, Info, Search, SlidersHorizontal } from 'lucide-react';
 import { Transaction, TransactionType, Client } from '../types';
 import { Icons } from '../constants';
 import {
@@ -11,8 +12,18 @@ import {
   ReportFilterToolbar,
   ReportPageHeader,
   ReportSummaryStrip,
-  ReportTxnCard,
 } from '../components/reports';
+import MobileTransactionHistory from '../components/transactions/MobileTransactionHistory';
+import {
+  groupTransactionsByDate,
+  selectTransactions,
+  summarizeTransactions,
+  type TransactionDatePeriod,
+  type TransactionFilter,
+  type TransactionHistoryFilters,
+  type TransactionSortField,
+  type TransactionSortOrder,
+} from '../components/transactions/transactionHistorySelectors';
 import type { StatusTone } from '../components/ui/StatusBadge';
 import {
   AppModal,
@@ -32,10 +43,10 @@ interface TransactionsProps {
   isDeleteLocked?: boolean;
 }
 
-type SortField = 'date' | 'amount' | 'client';
-type SortOrder = 'asc' | 'desc';
+type SortField = TransactionSortField;
+type SortOrder = TransactionSortOrder;
 // Record-type filter. Commission is an EXPENSE linked to a sale (parentSaleId) — see types.ts.
-type FilterKey = 'ALL' | 'SALE' | 'COMMISSION' | 'EXPENSE';
+type FilterKey = TransactionFilter;
 
 // A commission is an expense document tied back to a sale, or explicitly labelled as commission.
 const isCommissionTxn = (t: Transaction): boolean =>
@@ -92,57 +103,27 @@ const Transactions: React.FC<TransactionsProps> = ({
   const [filterType, setFilterType] = useState<FilterKey>('ALL');
   const [sortField, setSortField] = useState<SortField>('date');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [datePeriod, setDatePeriod] = useState<TransactionDatePeriod>('THIS_MONTH');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+  const [visibleCount, setVisibleCount] = useState(12);
   const [editingTxn, setEditingTxn] = useState<Transaction | null>(null);
   const [deletingTxn, setDeletingTxn] = useState<Transaction | null>(null);
   const [detailTxn, setDetailTxn] = useState<Transaction | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showSortSheet, setShowSortSheet] = useState(false); // mobile sort/filter bottom sheet
 
-  const sortedAndFilteredTransactions = useMemo(() => {
-    const filtered = transactions.filter(t => {
-      // Exclude voided sales so Sales History only shows active/deleted sales (voided in Sales Reports = removed from list)
-      if ((t as Transaction & { status?: string }).status === 'voided') return false;
-
-      const client = clients.find(c => c.id === t.clientId);
-      const clientName = client?.name || (t.type === TransactionType.SALE ? 'Guest' : '');
-      
-      const matchesSearch = t.description.toLowerCase().includes(search.toLowerCase()) || 
-                           t.category.toLowerCase().includes(search.toLowerCase()) ||
-                           clientName.toLowerCase().includes(search.toLowerCase());
-      
-      const matchesType =
-        filterType === 'ALL' ? true :
-        filterType === 'SALE' ? t.type === TransactionType.SALE :
-        filterType === 'COMMISSION' ? isCommissionTxn(t) :
-        /* EXPENSE */ t.type === TransactionType.EXPENSE && !isCommissionTxn(t);
-      return matchesSearch && matchesType;
-    });
-
-    return filtered.sort((a, b) => {
-      let comparison = 0;
-      if (sortField === 'date') {
-        comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
-      } else if (sortField === 'amount') {
-        comparison = a.amount - b.amount;
-      } else if (sortField === 'client') {
-        const clientA = clients.find(c => c.id === a.clientId)?.name || 'Guest';
-        const clientB = clients.find(c => c.id === b.clientId)?.name || 'Guest';
-        comparison = clientA.localeCompare(clientB);
-      }
-      return sortOrder === 'asc' ? comparison : -comparison;
-    });
-  }, [transactions, search, filterType, sortField, sortOrder, clients]);
+  const historyFilters: TransactionHistoryFilters = { search, type: filterType, sortField, sortOrder, datePeriod, customStart, customEnd };
+  const sortedAndFilteredTransactions = useMemo(
+    () => selectTransactions(transactions, clients, historyFilters),
+    [transactions, clients, search, filterType, sortField, sortOrder, datePeriod, customStart, customEnd],
+  );
 
   // Summary of the currently filtered records (derived, no calculation changes).
-  const summary = useMemo(() => {
-    let totalIn = 0;
-    let totalOut = 0;
-    for (const t of sortedAndFilteredTransactions) {
-      if (t.type === TransactionType.SALE) totalIn += t.amount;
-      else totalOut += t.amount;
-    }
-    return { totalIn, totalOut, net: totalIn - totalOut };
-  }, [sortedAndFilteredTransactions]);
+  const summary = useMemo(() => summarizeTransactions(sortedAndFilteredTransactions), [sortedAndFilteredTransactions]);
+  const visibleMobileTransactions = sortedAndFilteredTransactions.slice(0, visibleCount);
+  const mobileGroups = useMemo(() => groupTransactionsByDate(visibleMobileTransactions, sortOrder), [visibleMobileTransactions, sortOrder]);
+  const hasActiveFilters = Boolean(search || filterType !== 'ALL' || sortField !== 'date' || sortOrder !== 'desc' || datePeriod !== 'THIS_MONTH' || customStart || customEnd);
 
   const filterChips: { key: FilterKey; label: string }[] = [
     { key: 'ALL', label: 'All' },
@@ -205,10 +186,9 @@ const Transactions: React.FC<TransactionsProps> = ({
 
   return (
     <div className="m-page-with-bottom-nav space-y-4 animate-fadeIn">
-      <ReportPageHeader
-        title="Sales History"
-        description="Review, edit, or filter past transactions."
-      />
+      <div className="hidden md:block">
+        <ReportPageHeader title="Sales History" description="Review, edit, or filter past transactions." />
+      </div>
 
       <div className="hidden md:flex items-center gap-2 rounded-ui-md border border-[var(--brand-border)] bg-[var(--brand-soft)] px-3 py-2.5">
         <svg className="h-4 w-4 flex-shrink-0 text-[var(--brand)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -216,11 +196,43 @@ const Transactions: React.FC<TransactionsProps> = ({
           Management Console: Review, edit, or remove historical records to maintain data accuracy.
         </p>
       </div>
-      <div className="md:hidden flex items-center gap-1.5 m-caption font-medium text-[var(--text-muted)]">
-        <svg className="w-3.5 h-3.5 flex-shrink-0 text-[var(--brand)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-        <span>Management mode: review, edit, remove records</span>
+      <div className="flex items-start gap-3 rounded-ui-md border border-[var(--brand-border)] bg-[var(--brand-soft)] px-3.5 py-3 text-xs font-medium leading-5 text-[var(--brand-deep)] md:hidden">
+        <Info className="mt-0.5 h-5 w-5 shrink-0 text-[var(--brand)]" />
+        <span>Management mode: review, edit, or remove records to maintain data accuracy.</span>
       </div>
 
+      <div className="space-y-3 md:hidden">
+        <div className="flex gap-2">
+          <label className="relative min-w-0 flex-1">
+            <span className="sr-only">Search transactions</span>
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
+            <input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setVisibleCount(12); }} placeholder="Search transactions" className="h-12 w-full rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] pl-10 pr-3 text-sm outline-none focus-visible:shadow-ui-focus-strong" />
+          </label>
+          <button type="button" onClick={() => setShowSortSheet(true)} className={`relative grid h-12 w-12 shrink-0 place-items-center rounded-ui-md border bg-[var(--bg-surface)] text-[var(--brand)] ${hasActiveFilters ? 'border-[var(--brand)]' : 'border-[var(--line)]'}`} aria-label="Sort and filter transactions">
+            <SlidersHorizontal className="h-5 w-5" />
+            {hasActiveFilters ? <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--brand)]" /> : null}
+          </button>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="no-scrollbar flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1">
+            {filterChips.map((chip) => <button key={chip.key} type="button" aria-pressed={filterType === chip.key} onClick={() => { setFilterType(chip.key); setVisibleCount(12); }} className={`min-h-11 shrink-0 rounded-full border px-4 text-xs font-bold ${filterType === chip.key ? 'border-[var(--brand)] bg-[var(--brand)] text-white' : 'border-[var(--line)] bg-[var(--bg-surface)] text-[var(--text-secondary)]'}`}>{chip.label}</button>)}
+          </div>
+          <label className="relative shrink-0">
+            <span className="sr-only">Transaction date period</span>
+            <CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--brand)]" />
+            <select value={datePeriod} onChange={(event) => { setDatePeriod(event.target.value as TransactionDatePeriod); setVisibleCount(12); }} className="h-11 appearance-none rounded-ui-md border border-[var(--brand)] bg-[var(--bg-surface)] pl-9 pr-8 text-xs font-bold text-[var(--text-secondary)] outline-none">
+              <option value="THIS_MONTH">This month</option>
+              <option value="LAST_MONTH">Last month</option>
+              <option value="THIS_WEEK">This week</option>
+              <option value="CUSTOM">Custom range</option>
+            </select>
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--brand)]">⌄</span>
+          </label>
+        </div>
+        {datePeriod === 'CUSTOM' ? <div className="grid grid-cols-2 gap-2"><label className="text-[11px] font-semibold text-[var(--text-muted)]">From<input type="date" value={customStart} onChange={(event) => setCustomStart(event.target.value)} className={`${fieldControlClassName} mt-1`} /></label><label className="text-[11px] font-semibold text-[var(--text-muted)]">To<input type="date" value={customEnd} onChange={(event) => setCustomEnd(event.target.value)} className={`${fieldControlClassName} mt-1`} /></label></div> : null}
+      </div>
+
+      <div className="hidden md:block">
       <ReportFilterToolbar
         searchValue={search}
         onSearchChange={setSearch}
@@ -245,6 +257,17 @@ const Transactions: React.FC<TransactionsProps> = ({
           <>
             <span className="m-settings-label uppercase tracking-widest">Sort</span>
             <select
+              aria-label="Date period"
+              className="m-settings-control border border-[var(--line)] bg-[var(--bg-surface)] text-xs outline-none transition-all"
+              value={datePeriod}
+              onChange={(e) => setDatePeriod(e.target.value as TransactionDatePeriod)}
+            >
+              <option value="THIS_WEEK">This Week</option>
+              <option value="THIS_MONTH">This Month</option>
+              <option value="LAST_MONTH">Last Month</option>
+              <option value="CUSTOM">Custom Range</option>
+            </select>
+            <select
               aria-label="Sort by"
               className="m-settings-control border border-[var(--line)] bg-[var(--bg-surface)] text-xs outline-none transition-all"
               value={sortField}
@@ -266,8 +289,11 @@ const Transactions: React.FC<TransactionsProps> = ({
           </>
         }
       />
+      {datePeriod === 'CUSTOM' ? <div className="hidden grid-cols-2 gap-3 md:grid md:max-w-md"><Field id="desktop-transaction-start" label="From"><input id="desktop-transaction-start" type="date" value={customStart} onChange={(event) => setCustomStart(event.target.value)} className={fieldControlClassName} /></Field><Field id="desktop-transaction-end" label="To"><input id="desktop-transaction-end" type="date" value={customEnd} onChange={(event) => setCustomEnd(event.target.value)} className={fieldControlClassName} /></Field></div> : null}
+      </div>
 
       <ReportSummaryStrip
+        className="rounded-ui-lg"
         items={[
           { label: 'Total In', value: `+RM${summary.totalIn.toLocaleString()}`, tone: 'in' },
           { label: 'Total Out', value: `-RM${summary.totalOut.toLocaleString()}`, tone: 'out' },
@@ -281,39 +307,27 @@ const Transactions: React.FC<TransactionsProps> = ({
 
       {sortedAndFilteredTransactions.length === 0 ? (
         <ReportEmptyState
+          title={hasActiveFilters ? 'No matching transactions' : 'No transactions yet'}
           description={
-            search || filterType !== 'ALL'
+            hasActiveFilters
               ? 'Try adjusting your search or filters.'
               : 'Completed sales and expenses will appear here.'
           }
-          actionLabel={!search && filterType === 'ALL' ? 'Go to POS' : undefined}
-          onAction={!search && filterType === 'ALL' ? () => navigate('/pos') : undefined}
+          actionLabel={hasActiveFilters ? 'Clear filters' : 'Go to POS'}
+          onAction={hasActiveFilters ? () => { setSearch(''); setFilterType('ALL'); setSortField('date'); setSortOrder('desc'); setDatePeriod('THIS_MONTH'); setCustomStart(''); setCustomEnd(''); } : () => navigate('/pos')}
         />
       ) : (
         <>
-          {/* Mobile: structured cards — amount, customer, date/time, payment, status */}
-          <div className="md:hidden space-y-2.5">
-            {sortedAndFilteredTransactions.map((txn) => {
-              const meta = getTxnMeta(txn);
-              const client = clients.find((c) => c.id === txn.clientId);
-              const clientName = client?.name || (txn.type === TransactionType.SALE ? 'Guest' : '—');
-              const txnDate = new Date(txn.date);
-              return (
-                <ReportTxnCard
-                  key={txn.id}
-                  amountLabel={`${meta.sign}${formatRM(txn.amount)}`}
-                  amountTone={meta.amountTone}
-                  customer={clientName}
-                  dateTimeLabel={`${txnDate.toLocaleDateString()} · ${txnDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
-                  paymentMethod={txn.paymentMethod || '—'}
-                  statusLabel={meta.label}
-                  statusTone={meta.statusTone}
-                  description={txn.description}
-                  onClick={() => setDetailTxn(txn)}
-                />
-              );
-            })}
-          </div>
+          <MobileTransactionHistory
+            groups={mobileGroups}
+            clients={clients}
+            isLocked={isDeleteLocked}
+            hasMore={visibleCount < sortedAndFilteredTransactions.length}
+            onOpen={setDetailTxn}
+            onEdit={setEditingTxn}
+            onDelete={setDeletingTxn}
+            onLoadMore={() => setVisibleCount((count) => count + 12)}
+          />
 
           {/* iPad / desktop: table (compact padding on iPad, roomier on desktop) */}
           <div className="hidden min-w-0 gap-4 md:flex">
@@ -534,24 +548,42 @@ const Transactions: React.FC<TransactionsProps> = ({
         onClose={() => setShowSortSheet(false)}
         filterOptions={filterChips.map((c) => ({ value: c.key, label: c.label }))}
         filterValue={filterType}
-        onFilterChange={setFilterType}
+        onFilterChange={(value) => { setFilterType(value); setVisibleCount(12); }}
         sortOptions={[
           { value: 'date', label: 'Date' },
           { value: 'amount', label: 'Amount' },
           { value: 'client', label: 'Client Name' },
         ]}
         sortValue={sortField}
-        onSortChange={setSortField}
+        onSortChange={(value) => { setSortField(value); setVisibleCount(12); }}
         orderOptions={[
           { value: 'desc', label: 'Descending' },
           { value: 'asc', label: 'Ascending' },
         ]}
         orderValue={sortOrder}
-        onOrderChange={setSortOrder}
+        onOrderChange={(value) => { setSortOrder(value); setVisibleCount(12); }}
+        extraSections={
+          <div>
+            <p className="m-settings-subhead mb-2">Date Period</p>
+            <div className="flex flex-wrap gap-2">
+              {([
+                ['THIS_WEEK', 'This Week'], ['THIS_MONTH', 'This Month'], ['LAST_MONTH', 'Last Month'], ['CUSTOM', 'Custom Range'],
+              ] as const).map(([value, label]) => (
+                <button key={value} type="button" onClick={() => { setDatePeriod(value); setVisibleCount(12); }} className={`min-h-10 rounded-full border px-3.5 text-xs font-bold ${datePeriod === value ? 'border-[var(--brand)] bg-[var(--brand)] text-white' : 'border-[var(--line)] bg-[var(--bg-surface)] text-[var(--text-secondary)]'}`}>{label}</button>
+              ))}
+            </div>
+            {datePeriod === 'CUSTOM' ? <div className="mt-3 grid grid-cols-2 gap-3"><Field id="sheet-transaction-start" label="From"><input id="sheet-transaction-start" type="date" value={customStart} onChange={(event) => setCustomStart(event.target.value)} className={fieldControlClassName} /></Field><Field id="sheet-transaction-end" label="To"><input id="sheet-transaction-end" type="date" value={customEnd} onChange={(event) => setCustomEnd(event.target.value)} className={fieldControlClassName} /></Field></div> : null}
+          </div>
+        }
         onClear={() => {
+          setSearch('');
           setFilterType('ALL');
           setSortField('date');
           setSortOrder('desc');
+          setDatePeriod('THIS_MONTH');
+          setCustomStart('');
+          setCustomEnd('');
+          setVisibleCount(12);
         }}
       />
 

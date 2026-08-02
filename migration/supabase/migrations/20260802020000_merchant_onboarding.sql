@@ -152,7 +152,7 @@ BEGIN
   IF v_uid IS NULL THEN RAISE EXCEPTION 'Authentication required'; END IF;
   SELECT lower(email) INTO v_email FROM auth.users WHERE id = v_uid;
   SELECT * INTO v_inv FROM public.outlet_invitations
-    WHERE token_hash = encode(digest(invitation_token, 'sha256'), 'hex') FOR UPDATE;
+    WHERE token_hash = encode(extensions.digest(invitation_token, 'sha256'), 'hex') FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'Invalid invitation'; END IF;
   IF v_inv.accepted_at IS NOT NULL THEN RAISE EXCEPTION 'Invitation already accepted'; END IF;
   IF v_inv.expires_at <= now() THEN RAISE EXCEPTION 'Invitation expired'; END IF;
@@ -174,9 +174,9 @@ BEGIN
   IF v_outlet_id IS NULL OR NOT public.is_portal_admin() THEN RAISE EXCEPTION 'Outlet administrator access required'; END IF;
   IF invitation_role NOT IN ('admin','manager','cashier') THEN RAISE EXCEPTION 'Invalid invitation role'; END IF;
   IF invitee_email IS NULL OR position('@' in invitee_email) < 2 THEN RAISE EXCEPTION 'Valid email required'; END IF;
-  v_token := encode(gen_random_bytes(24), 'hex');
+  v_token := encode(extensions.gen_random_bytes(24), 'hex');
   INSERT INTO public.outlet_invitations(outlet_id,email,role,token_hash,expires_at,created_by)
-  VALUES(v_outlet_id,lower(trim(invitee_email)),invitation_role,encode(digest(v_token,'sha256'),'hex'),now() + make_interval(hours => greatest(1,least(valid_hours,720))),auth.uid()::text);
+  VALUES(v_outlet_id,lower(trim(invitee_email)),invitation_role,encode(extensions.digest(v_token,'sha256'),'hex'),now() + make_interval(hours => greatest(1,least(valid_hours,720))),auth.uid()::text);
   RETURN jsonb_build_object('invitation_token',v_token,'expires_at',now() + make_interval(hours => greatest(1,least(valid_hours,720))));
 END;
 $$;

@@ -15,7 +15,7 @@
       ],
       "headers": [
         {
-          "source": "/index.html",
+          "source": "**",
           "headers": [
             { "key": "Cache-Control", "value": "no-store, max-age=0" }
           ]
@@ -37,7 +37,7 @@
       ],
       "headers": [
         {
-          "source": "/index.html",
+          "source": "**",
           "headers": [
             { "key": "Cache-Control", "value": "no-store, max-age=0" }
           ]

@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { acceptMerchantInvitation, completeMerchantOnboarding, loadMerchantDraft, merchantPortalLoginUrl, saveMerchantDraft } from '../../services/merchantOnboardingService';
-import { signOutMerchantSignup } from '../../services/merchantAuthService';
 import { activeSteps, BUSINESS_CATEGORIES, PREVIOUS_SOFTWARE, TEAM_SIZES } from './onboardingSteps';
 import { emptyOnboardingPayload, type MerchantOnboardingPayload, type OnboardingStepId } from './onboardingTypes';
 import { normalizeWebsite, serializeDraft, validateStep } from './onboardingValidation';
@@ -62,7 +61,7 @@ export default function MerchantOnboardingWizard({ email }: Props) {
 
   const saveAndExit = async () => {
     setSaving(true); setError('');
-    try { await saveMerchantDraft(step, payload); await signOutMerchantSignup(); window.location.assign('/'); }
+    try { await saveMerchantDraft(step, payload); window.location.assign('/'); }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not save your progress.'); setSaving(false); }
   };
 

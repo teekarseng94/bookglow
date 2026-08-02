@@ -25,7 +25,8 @@ import {
   type SettingsSectionId,
 } from '../components/settings';
 
-const BOOKING_BASE_URL = 'https://bookglow-83fb3.web.app/book';
+const CUSTOMER_SITE_URL = (import.meta.env.VITE_CUSTOMER_SITE_URL || 'https://bookglow-83fb3.web.app').replace(/\/$/, '');
+const BOOKING_BASE_URL = `${CUSTOMER_SITE_URL}/book`;
 // Supabase Edge Function (Firestore retired). Old Firebase CF URL still proxies here.
 const CHATBOT_WEBHOOK_URL =
   'https://uecphpjymbgtttrizhgy.supabase.co/functions/v1/chatbot-webhook';
@@ -214,6 +215,10 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
 
       if (onUpdateOutlet) {
         await Promise.resolve(onUpdateOutlet(slugRaw ? { ...payload, bookingSlug: slugRaw } : payload));
+      }
+
+      if (settings.businessHoursConfigured === false) {
+        await Promise.resolve(onUpdateSettings({ ...settings, businessHoursConfigured: true }));
       }
 
       setBookingInfoStatus('success');
@@ -442,7 +447,11 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
               className="m-settings-control"
               value={website}
               onChange={(event) => setWebsite(event.target.value)}
-              onBlur={() => outletService.update(effectiveOutletId, { website: website.trim() }).catch(() => undefined)}
+              onBlur={(event) =>
+                outletService
+                  .update(effectiveOutletId, { website: event.currentTarget.value.trim() })
+                  .catch((saveError) => console.error('Failed to save website:', saveError))
+              }
             />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -593,6 +602,11 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         description="Controls Open / Closed status on the booking page."
         icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
       >
+        {settings.businessHoursConfigured === false && (
+          <div className="mb-3 rounded-ui-sm border border-[var(--warning)]/30 bg-[var(--warning-soft)] p-3 text-sm text-[var(--warning)]" role="status">
+            Operating hours are not configured yet. Set each day’s hours and availability, then save outlet details.
+          </div>
+        )}
         {!effectiveOutletId ? (
           <p className="text-sm text-[var(--danger)] font-semibold">Outlet ID missing — cannot save hours.</p>
         ) : (contextLoading || outletLoading) ? (
@@ -605,7 +619,11 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
             <div className="m-settings-list">
               {DAYS.map((day) => {
                 const dayKey = day;
-                const hours = businessHours[dayKey] || { open: '09:00', close: '17:00', isOpen: true };
+                const hours = businessHours[dayKey] || {
+                  open: '09:00',
+                  close: '17:00',
+                  isOpen: settings.businessHoursConfigured === false ? false : true,
+                };
                 return (
                   <OperatingHoursRow
                     key={day}

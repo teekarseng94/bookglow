@@ -30,6 +30,7 @@ interface UserContextType {
   role: UserRole | null;
   loading: boolean;
   error: string | null;
+  onboardingRequired: boolean;
   refreshUserData: () => Promise<void>;
 }
 
@@ -58,11 +59,13 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = ({
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [onboardingRequired, setOnboardingRequired] = useState(false);
 
   const fetchUserData = async (user: PortalAuthUser) => {
     try {
       setLoading(true);
       setError(null);
+      setOnboardingRequired(false);
       const email = (user.email || "").toLowerCase();
       if (email === OWNER_EMAIL.toLowerCase()) {
         setUserData({
@@ -79,17 +82,27 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = ({
 
       const profile = await fetchPortalUserProfile(user.uid);
       if (!profile) {
-        throw new Error(
-          "Your account is not linked to an outlet. " +
-            "An administrator must insert a row in public.users with uid = your Supabase Auth user id, " +
-            "outlet_id, and role (admin|cashier)."
-        );
+        setUserData({
+          uid: user.uid,
+          email: user.email,
+          outletId: null,
+          role: null,
+          displayName: user.displayName || null,
+        });
+        setOnboardingRequired(true);
+        return;
       }
       const outletId = profile.outletId?.trim() || "";
-      if (!outletId && profile.role !== "platform_admin" && profile.role !== "admin") {
-        throw new Error(
-          "Your user profile does not have an outlet assigned (public.users.outlet_id)."
-        );
+      if (!outletId && profile.role !== "platform_admin") {
+        setUserData({
+          uid: profile.uid,
+          email: profile.email || user.email,
+          outletId: null,
+          role: null,
+          displayName: profile.displayName || user.displayName || null,
+        });
+        setOnboardingRequired(true);
+        return;
       }
       if (outletId) {
         const outlet = await outletService.getById(outletId);
@@ -133,6 +146,7 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = ({
       setUserData(null);
       setLoading(false);
       setError(null);
+      setOnboardingRequired(false);
     }
   }, [authUser]);
 
@@ -144,6 +158,7 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = ({
     role: userData?.role ?? null,
     loading,
     error,
+    onboardingRequired,
     refreshUserData,
   };
 

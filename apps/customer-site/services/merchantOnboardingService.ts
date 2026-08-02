@@ -22,6 +22,11 @@ export async function saveMerchantDraft(currentStep: OnboardingStepId, payload: 
 }
 
 export async function completeMerchantOnboarding(payload: MerchantOnboardingPayload) {
+  if (payload.accountType !== 'create') {
+    throw new Error('Joining an existing business requires a verified invitation.');
+  }
+  const session = (await client().auth.getSession()).data.session;
+  if (!session) throw new Error('Your session expired. Sign in again to continue.');
   const { data, error } = await client().rpc('complete_merchant_onboarding' as never, { payload } as never);
   if (error) throw error;
   return data as unknown as { outlet_id: string; booking_slug: string; idempotent: boolean };

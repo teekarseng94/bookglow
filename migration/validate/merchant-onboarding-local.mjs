@@ -76,9 +76,18 @@ const invalidOutlets = await request(`/rest/v1/outlets?email=eq.${encodeURICompo
 if (invalidOutlets.length !== 0) throw new Error('Invalid completion left a partial outlet.');
 pass('invalid completion rolls back without partial outlet');
 
+await request('/rest/v1/rpc/complete_merchant_onboarding', {
+  token: owner.token, method: 'POST', body: { payload: { ...validPayload, accountType: 'join' } }, expected: 400,
+});
+pass('join path cannot provision an outlet without an invitation');
+
 const completed = await request('/rest/v1/rpc/complete_merchant_onboarding', { token: owner.token, method: 'POST', body: { payload: { ...validPayload, outlet_id: 'attacker_selected' } } });
-if (!completed?.outlet_id?.startsWith('outlet_') || completed.outlet_id === 'attacker_selected') throw new Error('Server did not generate Outlet_ID safely.');
+if (!/^outlet_[0-9a-f]{32}$/.test(completed?.outlet_id || '') || completed.outlet_id === 'attacker_selected') throw new Error('Server did not generate Outlet_ID safely.');
 pass('server-generated Outlet_ID ignores browser value');
+
+const completedDraft = await request(`/rest/v1/merchant_onboarding_drafts?auth_user_id=eq.${owner.uid}`, { token: owner.token });
+if (!completedDraft[0]?.completed_at || completedDraft[0]?.current_step !== 'complete') throw new Error('Completed onboarding draft was not finalized.');
+pass('onboarding draft marked complete');
 
 const linkedUsers = await request(`/rest/v1/users?uid=eq.${owner.uid}`, { token: owner.token });
 if (linkedUsers.length !== 1 || linkedUsers[0].outlet_id !== completed.outlet_id || linkedUsers[0].role !== 'admin') throw new Error('Owner mapping is incorrect.');

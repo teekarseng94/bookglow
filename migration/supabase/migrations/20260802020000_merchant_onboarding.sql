@@ -73,6 +73,12 @@ DECLARE
   v_settings jsonb;
 BEGIN
   IF v_uid IS NULL THEN RAISE EXCEPTION 'Authentication required'; END IF;
+  -- Serialize completion per Auth user so concurrent submissions cannot create
+  -- multiple outlets before the public.users mapping becomes visible.
+  PERFORM pg_advisory_xact_lock(hashtextextended(v_uid::text, 0));
+  IF coalesce(payload->>'accountType', '') <> 'create' THEN
+    RAISE EXCEPTION 'Joining an existing business requires a verified invitation';
+  END IF;
   SELECT email INTO v_email FROM auth.users WHERE id = v_uid;
   SELECT * INTO v_existing FROM public.users WHERE uid = v_uid::text;
   IF FOUND AND v_existing.outlet_id IS NOT NULL THEN
@@ -85,6 +91,9 @@ BEGIN
   IF char_length(v_name) < 2 OR char_length(v_name) > 80 THEN RAISE EXCEPTION 'Business name must be 2 to 80 characters'; END IF;
   IF coalesce(jsonb_array_length(coalesce(payload->'businessCategories', '[]'::jsonb)), 0) < 1 THEN RAISE EXCEPTION 'Select at least one business category'; END IF;
   IF jsonb_array_length(coalesce(payload->'businessCategories', '[]'::jsonb)) > 4 THEN RAISE EXCEPTION 'Select no more than four business categories'; END IF;
+  IF NOT (coalesce(payload->'businessCategories', '[]'::jsonb) ? coalesce(payload->>'primaryBusinessCategory', '')) THEN
+    RAISE EXCEPTION 'Primary business category must be selected from the business categories';
+  END IF;
   IF v_location_type NOT IN ('physical', 'mobile', 'virtual') THEN RAISE EXCEPTION 'Invalid service location type'; END IF;
   IF v_location_type = 'physical' AND char_length(trim(coalesce(payload->'location'->>'addressDisplay', ''))) < 4 THEN
     RAISE EXCEPTION 'Physical business address is required';

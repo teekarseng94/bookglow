@@ -23,7 +23,7 @@ export const FilterToolbar: React.FC<FilterToolbarProps> = ({
 }) => (
   <div
     className={cx(
-      'm-filter-toolbar flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between',
+      'm-filter-toolbar flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between',
       active && 'm-filter-toolbar--active',
       className,
     )}
@@ -37,7 +37,7 @@ export const FilterToolbar: React.FC<FilterToolbarProps> = ({
     {actions ? (
       <div className="m-filter-actions flex flex-wrap items-center gap-2 shrink-0">{actions}</div>
     ) : null}
-    {chips ? <div className="m-filter-chips lg:basis-full">{chips}</div> : null}
+    {chips ? <div className="m-filter-chips w-full lg:basis-full">{chips}</div> : null}
   </div>
 );
 

@@ -1,9 +1,8 @@
 
 import React, { useState, useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Transaction, TransactionType } from '../types';
 import { Icons } from '../constants';
-import { ReportEmptyState, ReportPageHeader, ReportTxnCard } from '../components/reports';
+import MobileFinanceOverview from '../components/finance/MobileFinanceOverview';
 import {
   AppModal,
   Button,
@@ -58,32 +57,6 @@ const Finance: React.FC<FinanceProps> = ({
     date: new Date().toISOString().split('T')[0] 
   });
 
-  const chartData = useMemo(() => {
-    const monthlyData: { [key: string]: any } = {};
-    const now = new Date();
-    // Generate last 6 months
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const fullKey = `${d.getFullYear()}-${d.getMonth()}`;
-      monthlyData[fullKey] = { 
-        month: d.toLocaleString('default', { month: 'short' }), 
-        income: 0, 
-        expenses: 0, 
-        timestamp: d.getTime() 
-      };
-    }
-    
-    transactions.forEach(txn => {
-      const d = new Date(txn.date);
-      const fullKey = `${d.getFullYear()}-${d.getMonth()}`;
-      if (monthlyData[fullKey]) {
-        if (txn.type === TransactionType.SALE) monthlyData[fullKey].income += txn.amount;
-        else monthlyData[fullKey].expenses += txn.amount;
-      }
-    });
-    return Object.values(monthlyData).sort((a: any, b: any) => a.timestamp - b.timestamp);
-  }, [transactions]);
-
   const handleSubmitExpense = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newExpense.description || !newExpense.amount) return;
@@ -123,146 +96,13 @@ const Finance: React.FC<FinanceProps> = ({
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      <ReportPageHeader
-        title="Financial Records"
-        description="Track your daily income and expenditures"
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <Button type="button" variant="secondary" onClick={() => setShowCategoryModal(true)}>
-              Categories
-            </Button>
-            <Button type="button" variant="primary" onClick={() => setShowExpenseModal(true)}>
-              Record Expense
-            </Button>
-          </div>
-        }
+      <MobileFinanceOverview
+        expenses={expenseHistory}
+        categories={expenseCategories}
+        onOpenCategories={() => setShowCategoryModal(true)}
+        onRecordExpense={() => setShowExpenseModal(true)}
+        onDeleteExpense={onDeleteTransaction}
       />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-        {/* Analytics Section — chart supports decisions; below header */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-[var(--bg-surface)] p-4 sm:p-6 rounded-ui-md border border-[var(--line)] shadow-ui-xs h-72 sm:h-80">
-            <h3 className="m-caption font-semibold uppercase tracking-wide text-[var(--text-muted)] mb-4 sm:mb-6 flex items-center gap-2">
-              <Icons.Finance /> Cashflow Overview
-            </h3>
-            <ResponsiveContainer width="100%" height="80%">
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--line-soft)" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 12 }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--text-muted)', fontSize: 12 }} tickFormatter={(value) => `RM${value}`} />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  cursor={{ fill: 'var(--bg-soft)' }}
-                />
-                <Legend iconType="circle" />
-                <Bar dataKey="income" name="Revenue" fill="var(--success)" radius={[4, 4, 0, 0]} barSize={32} />
-                <Bar dataKey="expenses" name="Expenses" fill="var(--danger)" radius={[4, 4, 0, 0]} barSize={32} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs overflow-hidden">
-            <div className="p-4 sm:p-6 border-b border-[var(--line-soft)]">
-               <h3 className="m-caption font-semibold uppercase tracking-wide text-[var(--text-muted)]">Expense Ledger</h3>
-            </div>
-
-            {/* Mobile cards */}
-            <div className="sm:hidden space-y-2 p-3">
-              {expenseHistory.map((txn) => (
-                <div key={txn.id} className="relative">
-                  <ReportTxnCard
-                    amountLabel={`-$${txn.amount.toLocaleString()}`}
-                    amountTone="out"
-                    customer={txn.description}
-                    dateTimeLabel={new Date(txn.date).toLocaleDateString()}
-                    paymentMethod={txn.category}
-                    statusLabel="Expense"
-                    statusTone="danger"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => onDeleteTransaction(txn.id)}
-                    className="absolute top-2 right-2 min-w-[40px] min-h-[40px] rounded-ui-sm text-[var(--text-subtle)] hover:text-[var(--danger)] hover:bg-[var(--danger-soft)]"
-                    aria-label={`Delete ${txn.description}`}
-                  >
-                    <Icons.Trash />
-                  </button>
-                </div>
-              ))}
-              {expenseHistory.length === 0 ? (
-                <ReportEmptyState title="No expenses recorded yet." description="Record an expense to see it in the ledger." />
-              ) : null}
-            </div>
-
-            {/* Desktop table */}
-            <div className="hidden sm:block overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="m-settings-label uppercase tracking-widest bg-[var(--bg-soft)]">
-                    <th className="px-6 py-4">Date</th>
-                    <th className="px-6 py-4">Description</th>
-                    <th className="px-6 py-4">Category</th>
-                    <th className="px-6 py-4">Amount</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--line-soft)]">
-                  {expenseHistory.map(txn => (
-                    <tr key={txn.id} className="hover:bg-[var(--bg-soft)] transition-colors">
-                      <td className="px-6 py-4 text-xs font-bold text-[var(--text-muted)]">{new Date(txn.date).toLocaleDateString()}</td>
-                      <td className="px-6 py-4 text-sm font-bold text-[var(--text)]">{txn.description}</td>
-                      <td className="px-6 py-4">
-                        <span className="m-inventory-badge bg-[var(--bg-soft)] text-[var(--text-muted)]">
-                          {txn.category}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 m-txn-amount text-[var(--danger)] tabular-nums">-RM{txn.amount.toLocaleString()}</td>
-                      <td className="px-6 py-4 text-right">
-                        <button onClick={() => onDeleteTransaction(txn.id)} className="text-[var(--text-subtle)] hover:text-[var(--danger)] transition-colors p-2" aria-label="Delete expense">
-                          <Icons.Trash />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                  {expenseHistory.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-12 text-center">
-                        <div className="flex flex-col items-center opacity-30">
-                          <div className="scale-150 mb-4 text-[var(--text-muted)]"><Icons.Finance /></div>
-                          <p className="text-sm font-bold italic">No expenses recorded yet.</p>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        {/* Categories Sidebar */}
-        <div className="space-y-6">
-           <div className="bg-[var(--bg-surface)] p-6 rounded-ui-md border border-[var(--line)] shadow-ui-xs">
-              <h3 className="m-settings-subhead mb-4">Summary by Category</h3>
-              <div className="space-y-4">
-                 {expenseCategories.map(cat => {
-                   const catTotal = expenseHistory.filter(e => e.category === cat).reduce((s, e) => s + e.amount, 0);
-                   if (catTotal === 0) return null;
-                   return (
-                     <div key={cat} className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                           <div className="w-2 h-2 rounded-full bg-[var(--danger)]"></div>
-                           <span className="text-sm font-bold text-[var(--text-secondary)]">{cat}</span>
-                        </div>
-                        <span className="m-txn-amount text-[var(--text-primary)] tabular-nums">RM{catTotal.toLocaleString()}</span>
-                     </div>
-                   );
-                 })}
-                 {expenseHistory.length === 0 && <p className="text-xs text-[var(--text-muted)] italic">No breakdown available.</p>}
-              </div>
-           </div>
-        </div>
-      </div>
 
       <AppModal
         open={showExpenseModal}
@@ -312,7 +152,7 @@ const Finance: React.FC<FinanceProps> = ({
                 ))}
               </select>
             </Field>
-            <Field id="expense-amount" label="Amount ($)" required>
+            <Field id="expense-amount" label="Amount (RM)" required>
               <input
                 id="expense-amount"
                 required

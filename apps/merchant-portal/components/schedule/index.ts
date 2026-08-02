@@ -6,6 +6,7 @@ export { ScheduleBookingCard } from './ScheduleBookingCard';
 export { ScheduleBookingList } from './ScheduleBookingList';
 export type { ScheduleBookingDaySection, ScheduleBookingListItem } from './ScheduleBookingList';
 export { ScheduleEmptyState } from './ScheduleEmptyState';
+export { ScheduleSetupState } from './ScheduleSetupState';
 export { ScheduleLoadingState } from './ScheduleLoadingState';
 export { ScheduleBookingDetailPanel } from './ScheduleBookingDetailPanel';
 export type { ScheduleDetailTab } from './ScheduleBookingDetailPanel';

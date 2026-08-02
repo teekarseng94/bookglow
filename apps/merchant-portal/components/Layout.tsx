@@ -48,7 +48,7 @@ const pageTitles: Record<string, string> = {
   menu: 'Menu & Inventory',
   'sales-reports': 'Sales Reports',
   transactions: 'Sales History',
-  finance: 'Expenses',
+  finance: 'Finance',
   marketing: 'Marketing',
   staff: 'Staff & Team',
   settings: 'Settings',

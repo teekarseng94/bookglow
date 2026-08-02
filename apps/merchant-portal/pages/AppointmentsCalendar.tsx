@@ -10,6 +10,7 @@ import {
   ScheduleDateStrip,
   ScheduleEmptyState,
   SchedulePageHeader,
+  ScheduleSetupState,
   ScheduleToolbar,
   type ScheduleBookingDaySection,
   type ScheduleDesktopTab,
@@ -165,6 +166,7 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
     ),
     [appointments]
   );
+  const scheduleReady = staff.length > 0 && services.length > 0;
 
   // Clear selectedAppointment if it was deleted (e.g., when sale was voided/deleted)
   // This prevents stale references and the "Appointment not found" warnings
@@ -636,6 +638,19 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
       }
     }
   };
+
+  if (!scheduleReady) {
+    return (
+      <div className="animate-fadeIn space-y-4 pb-24">
+        <SchedulePageHeader />
+        <ScheduleSetupState
+          businessName={outletSettings.shopName}
+          hasServices={services.length > 0}
+          hasStaff={staff.length > 0}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fadeIn md:space-y-4 md:pb-24">

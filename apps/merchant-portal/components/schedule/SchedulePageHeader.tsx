@@ -7,7 +7,7 @@ export interface SchedulePageHeaderProps {
   title?: string;
   dateLabel?: string;
   viewLabel?: string;
-  onNewBooking: () => void;
+  onNewBooking?: () => void;
   className?: string;
 }
 
@@ -24,11 +24,11 @@ export const SchedulePageHeader: React.FC<SchedulePageHeaderProps> = ({
         Live outlet
       </span>
     }
-    actions={
+    actions={onNewBooking ? (
       <Button variant="primary" size="md" onClick={onNewBooking}>
         New Booking
       </Button>
-    }
+    ) : undefined}
   />
 );
 

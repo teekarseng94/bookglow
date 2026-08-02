@@ -3,8 +3,7 @@
 # New incremental migrations should be created under migration/supabase/migrations/
 # via: npx supabase migration new <name>
 
-[project]
-id = "bookglow-local"
+project_id = "bookglow-local"
 
 [api]
 enabled = true

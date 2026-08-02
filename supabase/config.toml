@@ -39,5 +39,8 @@ verify_jwt = false
 [functions.billing-admin]
 verify_jwt = true
 
+[functions.account-admin]
+verify_jwt = true
+
 [functions.marketing-dispatch]
 verify_jwt = true

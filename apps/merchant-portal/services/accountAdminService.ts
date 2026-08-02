@@ -2,6 +2,24 @@ import { createBrowserSupabaseClient } from "@bookglow/supabase";
 
 const viteEnv = () => import.meta.env as unknown as Record<string, string | undefined>;
 
+export type WorkspaceAccountRole = "admin" | "manager" | "cashier";
+
+export interface UnlinkedAuthAccount {
+  id: string;
+  email: string;
+  displayName: string | null;
+  createdAt: string | null;
+  lastSignInAt: string | null;
+}
+
+const invokeAccountAdmin = async <T>(body: Record<string, unknown>): Promise<T> => {
+  const sb = createBrowserSupabaseClient(viteEnv());
+  const { data, error } = await sb.functions.invoke("account-admin", { body });
+  if (error) throw new Error((data as any)?.error || error.message);
+  if ((data as any)?.error) throw new Error((data as any).error);
+  return data as T;
+};
+
 export const accountAdminService = {
   changeRole: async (uid: string, role: string): Promise<void> => {
     const sb = createBrowserSupabaseClient(viteEnv());
@@ -26,10 +44,21 @@ export const accountAdminService = {
 
   // The following operations require server-side/service-role credentials to interact with Supabase Auth Admin APIs.
   // Exposing them in Vite/browser direct queries is insecure and disallowed.
+  listUnlinkedAccounts: async (): Promise<UnlinkedAuthAccount[]> => {
+    const result = await invokeAccountAdmin<{ accounts: UnlinkedAuthAccount[] }>({ action: "list_unlinked" });
+    return result.accounts || [];
+  },
+
+  linkRegisteredAccount: async (
+    userId: string,
+    outletId: string,
+    role: WorkspaceAccountRole,
+  ): Promise<void> => {
+    await invokeAccountAdmin({ action: "link_registered", userId, outletId, role });
+  },
+
   inviteAccount: async (email: string, role: string, outletId: string): Promise<void> => {
-    throw new Error(
-      "Unavailable: Inviting users requires secure backend access to the Supabase Auth Admin API (admin.inviteUserByEmail). A server RPC or Edge Function migration is required."
-    );
+    await invokeAccountAdmin({ action: "invite", email, role, outletId });
   },
 
   resendInvitation: async (email: string): Promise<void> => {

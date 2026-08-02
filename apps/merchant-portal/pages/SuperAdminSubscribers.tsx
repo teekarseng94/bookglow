@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { createBrowserSupabaseClient } from "@bookglow/supabase";
 import { outletService } from '../services/databaseService';
-import { accountAdminService } from '../services/accountAdminService';
+import {
+  accountAdminService,
+  type UnlinkedAuthAccount,
+  type WorkspaceAccountRole,
+} from '../services/accountAdminService';
 import { auditService, AuditEvent } from '../services/auditService';
 import { Outlet } from '../types';
 import { PlatformPageHeader } from '../components/admin';
@@ -52,6 +56,11 @@ const SuperAdminSubscribers: React.FC = () => {
   // New Account Invite Input (inside drawer Accounts tab)
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'admin' | 'manager' | 'cashier'>('admin');
+  const [unlinkedAccounts, setUnlinkedAccounts] = useState<UnlinkedAuthAccount[]>([]);
+  const [unlinkedLoading, setUnlinkedLoading] = useState(false);
+  const [unlinkedError, setUnlinkedError] = useState<string | null>(null);
+  const [linkRoles, setLinkRoles] = useState<Record<string, WorkspaceAccountRole>>({});
+  const [linkingAccountId, setLinkingAccountId] = useState<string | null>(null);
 
   // Load database content
   const loadData = async () => {
@@ -74,9 +83,25 @@ const SuperAdminSubscribers: React.FC = () => {
     }
   };
 
+  const loadUnlinkedAccounts = async () => {
+    try {
+      setUnlinkedLoading(true);
+      setUnlinkedError(null);
+      setUnlinkedAccounts(await accountAdminService.listUnlinkedAccounts());
+    } catch (err: any) {
+      setUnlinkedError(err.message || 'Could not load registered accounts waiting for setup.');
+    } finally {
+      setUnlinkedLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (drawerOpen && activeTab === 'accounts') loadUnlinkedAccounts();
+  }, [drawerOpen, activeTab]);
 
   // Fetch audit logs for the selected outlet
   useEffect(() => {
@@ -243,6 +268,27 @@ const SuperAdminSubscribers: React.FC = () => {
     }
   };
 
+  const handleLinkRegisteredAccount = async (account: UnlinkedAuthAccount) => {
+    if (!selectedOutlet) return;
+    try {
+      setLinkingAccountId(account.id);
+      setUnlinkedError(null);
+      const role = linkRoles[account.id] || 'admin';
+      await accountAdminService.linkRegisteredAccount(account.id, selectedOutlet.outletID, role);
+      await auditService.logEvent(
+        selectedOutlet.outletID,
+        'registered account linked',
+        `${account.email} linked as ${role.toUpperCase()}`,
+        'Super Admin',
+      );
+      await Promise.all([loadData(), loadUnlinkedAccounts()]);
+    } catch (err: any) {
+      setUnlinkedError(err.message || 'Could not link this account.');
+    } finally {
+      setLinkingAccountId(null);
+    }
+  };
+
   const handleRemoveUser = (user: PortalUser) => {
     setConfirmModal({
       type: 'remove_account',
@@ -309,6 +355,10 @@ const SuperAdminSubscribers: React.FC = () => {
       reasonRequired: false,
       onConfirm: async () => {
         await execute();
+        if (action === 'invite') {
+          setInviteEmail('');
+          await Promise.all([loadData(), loadUnlinkedAccounts()]);
+        }
       }
     });
   };
@@ -776,6 +826,76 @@ const SuperAdminSubscribers: React.FC = () => {
 
               {activeTab === 'accounts' && (
                 <div className="space-y-5 text-xs">
+                  {/* Existing Supabase registrations waiting for an outlet mapping */}
+                  <div className="bg-violet-50/60 p-4 border border-violet-200 rounded-xl space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h4 className="font-semibold text-violet-950">Registered Accounts Waiting for Setup</h4>
+                        <p className="text-[11px] leading-relaxed text-slate-500 mt-1">
+                          Choose a registered account and role. BookGlow will connect it to this workspace automatically.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={loadUnlinkedAccounts}
+                        disabled={unlinkedLoading}
+                        className="px-2.5 py-1.5 rounded-lg border border-violet-200 bg-white text-violet-700 font-semibold hover:bg-violet-50 disabled:opacity-50"
+                      >
+                        {unlinkedLoading ? 'Loading…' : 'Refresh'}
+                      </button>
+                    </div>
+
+                    {unlinkedError ? (
+                      <p role="alert" className="p-2.5 rounded-lg border border-rose-200 bg-rose-50 text-rose-700">
+                        {unlinkedError}
+                      </p>
+                    ) : null}
+
+                    {!unlinkedLoading && !unlinkedError && unlinkedAccounts.length === 0 ? (
+                      <div className="p-3 rounded-lg border border-violet-100 bg-white text-center text-slate-500">
+                        All registered accounts are already configured.
+                      </div>
+                    ) : null}
+
+                    {unlinkedAccounts.length > 0 ? (
+                      <div className="space-y-2">
+                        {unlinkedAccounts.map((account) => (
+                          <div key={account.id} className="p-3 rounded-lg border border-violet-100 bg-white space-y-2.5">
+                            <div className="min-w-0">
+                              <p className="font-semibold text-slate-900 truncate">{account.displayName || account.email || 'Registered account'}</p>
+                              {account.displayName ? <p className="text-[10px] text-slate-500 truncate mt-0.5">{account.email}</p> : null}
+                              <p className="text-[9px] text-slate-400 mt-1">Registered {formatDate(account.createdAt, true)}</p>
+                            </div>
+                            <div className="grid grid-cols-[1fr_auto] gap-2">
+                              <label className="sr-only" htmlFor={`pending-role-${account.id}`}>Workspace role for {account.email}</label>
+                              <select
+                                id={`pending-role-${account.id}`}
+                                value={linkRoles[account.id] || 'admin'}
+                                onChange={(e) => setLinkRoles((current) => ({
+                                  ...current,
+                                  [account.id]: e.target.value as WorkspaceAccountRole,
+                                }))}
+                                className="min-w-0 px-3 py-2 border border-slate-200 bg-white rounded-lg focus:outline-none focus:ring-1 focus:ring-violet-500"
+                              >
+                                <option value="admin">Administrator</option>
+                                <option value="manager">Manager</option>
+                                <option value="cashier">Cashier</option>
+                              </select>
+                              <button
+                                type="button"
+                                onClick={() => handleLinkRegisteredAccount(account)}
+                                disabled={Boolean(linkingAccountId)}
+                                className="px-3 py-2 bg-violet-600 text-white rounded-lg font-semibold hover:bg-violet-700 disabled:opacity-50"
+                              >
+                                {linkingAccountId === account.id ? 'Connecting…' : 'Connect Account'}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+
                   {/* Account Invite Panel */}
                   <div className="bg-slate-50 p-4 border border-slate-200 rounded-xl space-y-3">
                     <h4 className="font-semibold text-slate-800">Invite New Workspace Account</h4>

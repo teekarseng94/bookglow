@@ -135,6 +135,7 @@ function mapOutlet(row: Record<string, unknown>): Outlet {
     phoneNumber: (row.phone_number as string) || undefined,
     phone: (row.phone as string) || undefined,
     email: (row.email as string) || undefined,
+    website: (row.website as string) || undefined,
     timezone: (row.timezone as string) || undefined,
     businessHours: row.business_hours as Outlet["businessHours"],
     reviews: row.reviews as Outlet["reviews"],
@@ -143,6 +144,9 @@ function mapOutlet(row: Record<string, unknown>): Outlet {
       ? (row.service_categories as string[])
       : undefined,
     bookingSlug: (row.booking_slug as string) || undefined,
+    createdAt: row.created_at ? String(row.created_at) : undefined,
+    updatedAt: row.updated_at ? String(row.updated_at) : undefined,
+    isActive: row.is_active == null ? true : Boolean(row.is_active),
   } as Outlet;
 }
 
@@ -508,6 +512,7 @@ export const outletService = {
     if (updates.phoneNumber !== undefined) patch.phone_number = updates.phoneNumber;
     if (updates.phone !== undefined) patch.phone = updates.phone;
     if (updates.email !== undefined) patch.email = updates.email;
+    if (updates.website !== undefined) patch.website = updates.website;
     if (updates.timezone !== undefined) patch.timezone = updates.timezone;
     if (updates.businessHours !== undefined) patch.business_hours = updates.businessHours;
     if (updates.reviews !== undefined) patch.reviews = updates.reviews;

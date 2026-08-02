@@ -60,8 +60,19 @@ describe('Step 4 mobile patterns', () => {
   });
 
   it('uses the shared card boundary for settings accordions', () => {
-    const { container } = render(<SettingsSection title="Operating Hours">Hours</SettingsSection>);
+    const { container } = render(
+      <SettingsSection title="Operating Hours" defaultOpen>
+        <div className="m-settings-field">
+          <label className="m-settings-label">OPENING TIME</label>
+          <span className="m-settings-value">09:00</span>
+          <p className="m-settings-hint">Shown on the booking page.</p>
+        </div>
+      </SettingsSection>,
+    );
     expect(container.querySelector('section')).toHaveClass('m-card');
-    expect(screen.getByRole('button', { name: /Operating Hours/i })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByRole('button', { name: /Operating Hours/i })).toHaveAttribute('aria-expanded', 'true');
+    expect(container.querySelector('.m-settings-content')).toBeInTheDocument();
+    expect(screen.getByText('09:00')).toHaveClass('m-settings-value');
+    expect(screen.getByText('Shown on the booking page.')).toHaveClass('m-settings-hint');
   });
 });

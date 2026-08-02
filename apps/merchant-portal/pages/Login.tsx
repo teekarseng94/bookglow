@@ -10,7 +10,9 @@ const Login: React.FC = () => {
   const location = useLocation();
   const isBookingPath = location.pathname.startsWith('/book/');
 
-  const [email, setEmail] = useState('');
+  const query = new URLSearchParams(location.search);
+  const onboardingComplete = query.get('onboarding') === 'complete';
+  const [email, setEmail] = useState(query.get('email') || '');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -83,6 +85,12 @@ const Login: React.FC = () => {
             <h2>Sign in to your workspace</h2>
             <p>Use the merchant account connected to your outlet.</p>
           </div>
+
+          {onboardingComplete && (
+            <div className="bookglow-login__success" role="status">
+              Your workspace is ready. Sign in once to open your new dashboard.
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="bookglow-login__form">
             <div className="bookglow-login__field">

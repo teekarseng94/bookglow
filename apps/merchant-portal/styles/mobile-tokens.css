@@ -102,6 +102,14 @@
   --mobile-sticky-footer-height: 68px;
   --mobile-safe-area-bottom: env(safe-area-inset-bottom, 0px);
 
+  /* Settings content rhythm. These roles are intentionally opt-in. */
+  --settings-section-content-gap: var(--mobile-space-6);
+  --settings-group-gap: var(--mobile-space-6);
+  --settings-field-gap: var(--mobile-space-2);
+  --settings-helper-gap: var(--mobile-space-2);
+  --settings-paragraph-gap: var(--mobile-space-3);
+  --settings-list-gap: var(--mobile-space-2);
+
   /* Semantic mobile shape roles. */
   --mobile-input-radius: var(--mobile-radius-md);
   --mobile-button-radius: var(--mobile-radius-md);
@@ -145,6 +153,131 @@
   --mobile-status-success: var(--success);
   --mobile-status-warning: var(--warning);
   --mobile-status-danger: var(--danger);
+}
+
+/* Settings typography is normalized only through these semantic primitives. */
+.m-settings-content,
+.m-settings-group,
+.m-settings-field,
+.m-settings-prose,
+.m-settings-list {
+  min-width: 0;
+}
+
+.m-settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--settings-section-content-gap);
+}
+
+.m-settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--settings-group-gap);
+}
+
+.m-settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--settings-field-gap);
+}
+
+.m-settings-value {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.m-settings-field > .m-settings-label,
+.m-settings-group > .m-settings-subhead {
+  margin-bottom: 0;
+}
+
+.m-settings-field > .m-settings-hint {
+  margin-top: 0;
+}
+
+/* Desktop + mobile: controls must look like real inputs (border/padding). */
+.m-settings-control {
+  display: block;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--radius-ui-sm, 0.5rem);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border: 1px solid var(--line-strong, var(--line));
+  box-shadow: none;
+}
+
+.m-settings-control:focus,
+.m-settings-control:focus-visible {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: var(--shadow-focus-strong, 0 0 0 3px var(--brand-soft));
+  background: var(--bg-surface);
+}
+
+.m-settings-control[readonly] {
+  background: var(--bg-canvas, var(--bg-soft));
+  color: var(--text-secondary);
+  cursor: default;
+}
+
+textarea.m-settings-control {
+  min-height: 4.5rem;
+  resize: vertical;
+}
+
+.m-settings-block {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 1.125rem;
+  border-radius: var(--radius-ui-md, 0.75rem);
+  border: 1px solid var(--line);
+  background: var(--bg-soft);
+}
+
+.m-settings-block + .m-settings-block {
+  margin-top: 0.25rem;
+}
+
+.m-settings-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-secondary);
+  margin-bottom: 0;
+}
+
+.m-settings-hint {
+  font-size: 0.8125rem;
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.m-settings-subhead {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.m-settings-prose {
+  display: flex;
+  flex-direction: column;
+  gap: var(--settings-paragraph-gap);
+}
+
+.m-settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--settings-list-gap);
 }
 
 @media (max-width: 767.98px) {
@@ -1797,15 +1930,11 @@
     padding: var(--mobile-space-3) !important;
     border-radius: var(--mobile-radius-md) !important;
     font-size: var(--mobile-text-body) !important;
-    font-weight: var(--mobile-font-medium);
-    background: var(--bg-soft);
-    border: 1px solid var(--line);
-    color: var(--text-primary);
   }
 
-  .m-settings-control:focus {
-    outline: none;
-    box-shadow: var(--shadow-focus-strong, 0 0 0 3px var(--brand-soft));
+  .m-settings-block {
+    padding: var(--mobile-space-4);
+    gap: var(--mobile-space-4);
   }
 
   .m-settings-btn {

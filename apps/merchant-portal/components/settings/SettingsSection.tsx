@@ -34,7 +34,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
     <section
       id={id}
       className={cx(
-        'm-card !p-0 bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs scroll-mt-4',
+        'm-card !p-0 bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line-strong,var(--line))] shadow-ui-sm scroll-mt-6',
         className,
       )}
     >
@@ -46,7 +46,8 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
           'w-full flex items-center text-left',
           'm-settings-row',
           'sm:gap-4 sm:p-4 sm:min-h-0',
-          desktopAlwaysOpen && 'lg:cursor-default lg:pb-0 lg:p-5',
+          desktopAlwaysOpen && 'lg:cursor-default lg:p-5',
+          'border-b border-[var(--line-soft)]',
         )}
       >
         {icon ? (
@@ -57,7 +58,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
             {title}
           </h3>
           {description ? (
-            <p className="m-settings-desc text-xs text-[var(--text-muted)] font-medium mt-0.5 truncate lg:whitespace-normal lg:overflow-visible">
+            <p className="m-settings-desc text-xs text-[var(--text-muted)] font-medium mt-1 truncate lg:whitespace-normal lg:overflow-visible">
               {description}
             </p>
           ) : null}
@@ -78,12 +79,12 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
       </button>
       <div
         className={cx(
-          'px-4 pb-4 sm:px-5 sm:pb-5',
+          'px-4 py-4 sm:px-5 sm:py-5',
           open ? 'block' : 'hidden',
-          desktopAlwaysOpen && 'lg:block lg:pt-4',
+          desktopAlwaysOpen && 'lg:block',
         )}
       >
-        {children}
+        <div className="m-settings-content">{children}</div>
       </div>
     </section>
   );

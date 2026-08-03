@@ -22,11 +22,13 @@ import {
   ANY_AVAILABLE_STAFF,
   BookingEmptyState,
   BookingMerchantHeader,
+  BookingSectionTabs,
   BookingServiceCard,
   BookingStateScreen,
   BookingStickyAction,
   friendlyBookingError,
 } from "../../components/booking";
+import { filterPublicServices } from "../../components/booking/bookingFilters";
 
 type SelectedServiceSelection = {
   /** Unique per click/selection (allows selecting same service multiple times). */
@@ -155,6 +157,8 @@ export function BookingPage() {
   const outletId = resolvedOutletId ?? "";
   const [outlet, setOutlet] = useState<PublicOutlet | null>(null);
   const [services, setServices] = useState<PublicService[]>([]);
+  const [servicesError, setServicesError] = useState<string | null>(null);
+  const [servicesLoading, setServicesLoading] = useState(false);
   const [team, setTeam] = useState<PublicTeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -333,23 +337,10 @@ export function BookingPage() {
   }, []);
 
   // Filter services by selected category and search by name
-  const filteredServices = useMemo(() => {
-    let list = services;
-    if (selectedCategory && selectedCategory !== "All") {
-      if (selectedCategory === "Promotion") {
-        list = list.filter((s) => s.isPromotion === true || (s.category || "").toLowerCase() === "promotion");
-      } else {
-        list = list.filter(
-          (s) => (s.category || "").toLowerCase() === selectedCategory.toLowerCase()
-        );
-      }
-    }
-    const q = (searchQuery || "").trim().toLowerCase();
-    if (q) {
-      list = list.filter((s) => (s.name || "").toLowerCase().includes(q));
-    }
-    return list;
-  }, [services, selectedCategory, searchQuery]);
+  const filteredServices = useMemo(
+    () => filterPublicServices(services, selectedCategory, searchQuery),
+    [services, selectedCategory, searchQuery]
+  );
 
   const handleShare = async () => {
     if (shareLoading) return;
@@ -544,17 +535,39 @@ export function BookingPage() {
     };
   }, [pathResolveDone, resolvedOutletId]);
 
+  const loadServices = useCallback(async (id: string) => {
+    setServicesLoading(true);
+    setServicesError(null);
+    try {
+      const svc = await listVisibleServicesFromSupabase(id);
+      setServices(svc);
+    } catch (err) {
+      console.error("Supabase services fetch error:", err);
+      setServices([]);
+      setServicesError(friendlyBookingError(err, "Could not load services."));
+    } finally {
+      setServicesLoading(false);
+    }
+  }, []);
+
   // Services load from Supabase
   useEffect(() => {
     if (!outletId) return;
-
     let cancelled = false;
+    setServicesLoading(true);
+    setServicesError(null);
     listVisibleServicesFromSupabase(outletId)
       .then((svc) => {
-        if (!cancelled) setServices(svc);
+        if (cancelled) return;
+        setServices(svc);
+        setServicesLoading(false);
       })
       .catch((err) => {
         console.error("Supabase services fetch error:", err);
+        if (cancelled) return;
+        setServices([]);
+        setServicesError(friendlyBookingError(err, "Could not load services."));
+        setServicesLoading(false);
       });
     return () => {
       cancelled = true;
@@ -708,6 +721,41 @@ export function BookingPage() {
     setStep("datetime");
   };
 
+  /** Assign Any available therapist to all selected rows and continue. */
+  const handleChooseStaffLater = () => {
+    if (selectedServices.length === 0) return;
+    setServiceTeamMembers((prev) => {
+      const updated = { ...prev };
+      for (const sel of selectedServices) {
+        updated[sel.selectionId] = ANY_AVAILABLE_STAFF;
+      }
+      return updated;
+    });
+    setSelectedDate("");
+    setSelectedTime("");
+    setStep("datetime");
+  };
+
+  const handleBack = useCallback(() => {
+    const idx = (window.history.state as { idx?: number } | null)?.idx;
+    if (typeof idx === "number" && idx > 0) {
+      navigate(-1);
+      return;
+    }
+    if (document.referrer) {
+      try {
+        const ref = new URL(document.referrer);
+        if (ref.origin === window.location.origin) {
+          navigate(-1);
+          return;
+        }
+      } catch {
+        // ignore invalid referrer
+      }
+    }
+    navigate("/");
+  }, [navigate]);
+
   if (!pathResolveDone || loading) {
     return (
       <BookingStateScreen
@@ -757,16 +805,82 @@ export function BookingPage() {
   const address = outlet?.addressDisplay ?? "";
   const mapQuery = encodeURIComponent(address);
   const selectedTotal = selectedServices.reduce((total, item) => total + Number(item.service.price || 0), 0);
+  const selectedDuration = selectedServices.reduce(
+    (total, item) => total + Number(item.service.duration || 0),
+    0
+  );
+  const merchantName = outlet?.name || "Bookglow booking";
+
+  const renderCategoryChips = () => (
+    <div className="booking-filter-row" role="group" aria-label="Service categories">
+      <button
+        type="button"
+        onClick={() => setSelectedCategory(null)}
+        className={`booking-filter-chip ${selectedCategory == null ? "booking-filter-chip--active" : ""}`}
+        aria-pressed={selectedCategory == null}
+        title="All"
+      >
+        All
+      </button>
+      {categories.map((cat) => (
+        <button
+          key={cat}
+          type="button"
+          onClick={() => setSelectedCategory(cat)}
+          className={`booking-filter-chip ${selectedCategory === cat ? "booking-filter-chip--active" : ""}`}
+          aria-pressed={selectedCategory === cat}
+          title={cat}
+        >
+          {cat}
+        </button>
+      ))}
+    </div>
+  );
+
+  const renderServiceSearch = () => (
+    <div className="booking-search">
+      <svg className="booking-search__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+        />
+      </svg>
+      <input
+        type="search"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        placeholder="Search services"
+        aria-label="Search services"
+      />
+      {searchQuery.trim() ? (
+        <button
+          type="button"
+          className="booking-search__clear"
+          onClick={() => setSearchQuery("")}
+          aria-label="Clear search"
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      ) : null}
+    </div>
+  );
 
   return (
     <div className="bookglow-booking">
       <BookingMerchantHeader
-        merchantName={outlet?.name || "Bookglow booking"}
+        merchantName={merchantName}
         currentUserEmail={currentUserEmail}
         shareLoading={shareLoading}
+        onBack={handleBack}
         onShare={handleShare}
         onLogin={() => navigate(`/book/${outlet?.bookingSlug ?? outletId}/auth?loginSource=homepage`)}
       />
+
+      <BookingSectionTabs />
 
       {/* Simple toast for share fallback */}
       {shareToast && (
@@ -778,119 +892,70 @@ export function BookingPage() {
       )}
 
       <div className="booking-layout">
-        {/* Left column: scrollable content */}
+        {/* Left column: scrollable content — services first on all breakpoints */}
         <div className="booking-main">
           {/* Services */}
-          <section id="services" className="booking-section">
-            <div className="booking-section__header"><div><span className="booking-section__eyebrow">Book online</span><h2>Choose a service</h2></div></div>
+          <section id="services" className="booking-section" aria-labelledby="tab-services">
+            <div className="booking-section__header">
+              <div>
+                <span className="booking-section__eyebrow">Book online</span>
+                <h2>Choose a service</h2>
+              </div>
+            </div>
 
-            {services.length > 0 && (
-              <>
-                {/* Mobile / tablet header (unchanged layout) */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4 lg:hidden">
-                  <div className="booking-filter-row">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedCategory(null)}
-                      className={`booking-filter-chip ${
-                        selectedCategory == null
-                          ? "booking-filter-chip--active"
-                          : ""
-                      }`}
-                    >
-                      All
-                    </button>
-                    {categories.map((cat) => (
-                      <button
-                        key={cat}
-                        type="button"
-                        onClick={() => setSelectedCategory(cat)}
-                        className={`booking-filter-chip ${
-                          selectedCategory === cat
-                            ? "booking-filter-chip--active"
-                            : ""
-                        }`}
+            {(services.length > 0 || servicesLoading) && !servicesError ? (
+              <div className="booking-filters">
+                {servicesLoading && services.length === 0 ? (
+                  <div className="booking-filter-row" aria-hidden>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <span
+                        key={i}
+                        className="booking-filter-chip"
+                        style={{ opacity: 0.45, minWidth: `${4 + (i % 3)}rem` }}
                       >
-                        {cat}
-                      </button>
+                        &nbsp;
+                      </span>
                     ))}
                   </div>
-                  <div className="flex-1 min-w-0 flex items-center gap-2">
-                    <div className="booking-search flex-1 max-w-xs">
-                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                      <input
-                        type="search"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search services..."
-                        className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                        aria-label="Search services by name"
-                      />
+                ) : (
+                  renderCategoryChips()
+                )}
+                {renderServiceSearch()}
+              </div>
+            ) : null}
+
+            {servicesError ? (
+              <BookingEmptyState
+                title="Could not load services"
+                description={servicesError}
+                action={
+                  <button
+                    type="button"
+                    className="booking-primary-button"
+                    onClick={() => outletId && void loadServices(outletId)}
+                  >
+                    Retry
+                  </button>
+                }
+              />
+            ) : servicesLoading && services.length === 0 ? (
+              <div className="booking-service-list" aria-busy="true" aria-label="Loading services">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="booking-service-card" style={{ opacity: 0.5, pointerEvents: "none" }}>
+                    <div className="booking-service-card__body">
+                      <div className="booking-service-card__icon" />
+                      <div className="booking-service-card__copy" style={{ width: "100%" }}>
+                        <p className="booking-service-card__name">&nbsp;</p>
+                        <p className="booking-service-card__meta">&nbsp;</p>
+                      </div>
+                    </div>
+                    <div className="booking-service-card__aside">
+                      <span className="booking-service-card__price">RM —</span>
                     </div>
                   </div>
-                </div>
-
-                {/* Desktop header: categories left, large search on the right */}
-                <div className="hidden lg:flex items-center justify-between gap-6 mb-4">
-                  <div className="booking-filter-row">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedCategory(null)}
-                      className={`booking-filter-chip ${
-                        selectedCategory == null
-                          ? "booking-filter-chip--active"
-                          : ""
-                      }`}
-                    >
-                      All
-                    </button>
-                    {categories.map((cat) => (
-                      <button
-                        key={cat}
-                        type="button"
-                        onClick={() => setSelectedCategory(cat)}
-                        className={`booking-filter-chip ${
-                          selectedCategory === cat
-                            ? "booking-filter-chip--active"
-                            : ""
-                        }`}
-                      >
-                        {cat}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex items-center justify-end flex-1">
-                    <div className="booking-search w-full max-w-sm">
-                      <svg
-                        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                        />
-                      </svg>
-                      <input
-                        type="search"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search services..."
-                        className="w-full pl-9 pr-3 py-2.5 rounded-full border border-slate-200 text-sm text-slate-800 bg-white shadow-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none"
-                        aria-label="Search services by name"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {services.length === 0 ? (
+                ))}
+              </div>
+            ) : services.length === 0 ? (
               <BookingEmptyState
                 title="No services available"
                 description="This business has not published bookable services yet."
@@ -899,6 +964,28 @@ export function BookingPage() {
               <BookingEmptyState
                 title="No matching services"
                 description="Try another category or clear your search."
+                action={
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {searchQuery.trim() ? (
+                      <button
+                        type="button"
+                        className="booking-secondary-button"
+                        onClick={() => setSearchQuery("")}
+                      >
+                        Clear search
+                      </button>
+                    ) : null}
+                    {selectedCategory ? (
+                      <button
+                        type="button"
+                        className="booking-secondary-button"
+                        onClick={() => setSelectedCategory(null)}
+                      >
+                        Clear category
+                      </button>
+                    ) : null}
+                  </div>
+                }
               />
             ) : (
               <div className="booking-service-list">
@@ -921,7 +1008,7 @@ export function BookingPage() {
           </section>
 
           {/* Team */}
-          <section id="team" className="booking-section">
+          <section id="team" className="booking-section" aria-labelledby="tab-team">
             <div className="booking-section__header">
               <div>
                 <span className="booking-section__eyebrow">People</span>
@@ -978,7 +1065,7 @@ export function BookingPage() {
           </section>
 
           {/* Reviews */}
-          <section id="reviews" className="booking-section">
+          <section id="reviews" className="booking-section" aria-labelledby="tab-reviews">
             <div className="booking-section__header">
               <div>
                 <span className="booking-section__eyebrow">Customer feedback</span>
@@ -1082,7 +1169,7 @@ export function BookingPage() {
           </section>
 
           {/* Address + Map */}
-          <section id="address" className="booking-section">
+          <section id="address" className="booking-section" aria-labelledby="tab-address">
             <div className="booking-section__header"><div><span className="booking-section__eyebrow">Location</span><h2>Address</h2></div></div>
             {address ? (
               <>
@@ -1275,12 +1362,19 @@ export function BookingPage() {
         </aside>
       </div>
 
-      {step === "service" && selectedServices.length > 0 && (
+      {step === "service" && (
         <BookingStickyAction
-          title={`${selectedServices.length} service${selectedServices.length === 1 ? "" : "s"} selected`}
-          meta={`RM ${selectedTotal.toFixed(2)} · Choose date and time next`}
+          merchantName={merchantName}
+          isOpen={openClosed.isOpen}
+          address={address}
+          selectedCount={selectedServices.length}
+          totalPriceLabel={`RM ${selectedTotal.toFixed(2)}`}
+          totalDurationMinutes={selectedDuration}
           actionLabel="Continue"
           onAction={handleBookClick}
+          disabled={selectedServices.length === 0}
+          secondaryLabel={selectedServices.length > 0 ? "Choose staff later" : undefined}
+          onSecondary={selectedServices.length > 0 ? handleChooseStaffLater : undefined}
         />
       )}
 

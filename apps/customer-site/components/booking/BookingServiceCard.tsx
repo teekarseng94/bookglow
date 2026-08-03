@@ -9,7 +9,7 @@ export interface BookingServiceCardProps {
   onSelect: () => void;
 }
 
-/** Service discovery card — name, duration, and price are always visible. */
+/** Service discovery row — name, duration, and price are always visible. */
 export const BookingServiceCard: React.FC<BookingServiceCardProps> = ({
   name,
   durationMinutes,
@@ -19,6 +19,10 @@ export const BookingServiceCard: React.FC<BookingServiceCardProps> = ({
   onSelect,
 }) => {
   const isSelected = selectedCount > 0;
+  const label = isSelected
+    ? `${name}, selected${selectedCount > 1 ? ` ${selectedCount} times` : ""}. Add another.`
+    : `Add ${name}`;
+
   return (
     <div
       role="button"
@@ -31,29 +35,46 @@ export const BookingServiceCard: React.FC<BookingServiceCardProps> = ({
           onSelect();
         }
       }}
+      aria-pressed={isSelected}
+      aria-label={label}
     >
       <div className="booking-service-card__body">
-        <div className="booking-service-card__icon">{isSelected ? "✓" : "+"}</div>
-        <div>
-          <p className="booking-service-card__name">{name}</p>
+        <div className="booking-service-card__icon" aria-hidden>
+          {isSelected ? (
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            </svg>
+          ) : (
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 5v14M5 12h14" />
+            </svg>
+          )}
+        </div>
+        <div className="booking-service-card__copy">
+          <p className="booking-service-card__name" title={name}>
+            {name}
+          </p>
           <p className="booking-service-card__meta">
             {durationMinutes} min{category ? ` · ${category}` : ""}
+            {selectedCount > 1 ? (
+              <span className="booking-service-card__count"> · x{selectedCount}</span>
+            ) : null}
           </p>
         </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="booking-service-card__aside">
         {selectedCount > 1 ? (
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-700 border border-teal-200">
+          <span className="booking-service-card__badge" aria-hidden>
             x{selectedCount}
           </span>
         ) : null}
         <span className="booking-service-card__price">{priceLabel}</span>
         {isSelected ? (
-          <svg className="w-5 h-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="booking-service-card__chevron booking-service-card__chevron--selected" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         ) : (
-          <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="booking-service-card__chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         )}

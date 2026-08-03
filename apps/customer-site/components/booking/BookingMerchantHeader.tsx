@@ -4,6 +4,7 @@ export interface BookingMerchantHeaderProps {
   merchantName: string;
   currentUserEmail?: string | null;
   shareLoading?: boolean;
+  onBack: () => void;
   onShare: () => void;
   onLogin: () => void;
 }
@@ -13,16 +14,29 @@ export const BookingMerchantHeader: React.FC<BookingMerchantHeaderProps> = ({
   merchantName,
   currentUserEmail,
   shareLoading,
+  onBack,
   onShare,
   onLogin,
 }) => (
   <nav className="booking-nav" aria-label="Booking page navigation">
     <div className="booking-nav__inner">
       <div className="booking-nav__identity">
+        <button
+          type="button"
+          onClick={onBack}
+          className="booking-icon-button booking-nav__back"
+          aria-label="Go back"
+        >
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
         <span className="booking-nav__mark" aria-hidden>
           {(merchantName || "B").charAt(0).toUpperCase()}
         </span>
-        <span className="booking-nav__brand">{merchantName || "Bookglow booking"}</span>
+        <span className="booking-nav__brand" title={merchantName || "Bookglow booking"}>
+          {merchantName || "Bookglow booking"}
+        </span>
       </div>
       <div className="booking-nav__links">
         <a href="#services">Services</a>
@@ -32,7 +46,9 @@ export const BookingMerchantHeader: React.FC<BookingMerchantHeaderProps> = ({
       </div>
       <div className="booking-nav__actions">
         {currentUserEmail ? (
-          <span className="hidden text-xs font-medium text-slate-500 sm:inline">{currentUserEmail}</span>
+          <span className="booking-nav__email" title={currentUserEmail}>
+            {currentUserEmail}
+          </span>
         ) : null}
         <button
           type="button"

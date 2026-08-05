@@ -15,6 +15,7 @@ import {
   POSMemberSummary,
   POSPageHeader,
   POSPaymentSection,
+  POSQuickActions,
   POSSaleCompleteActions,
   POSStickyCartAction,
   POSTotals,
@@ -219,6 +220,14 @@ const POS: React.FC<POSProps> = ({
   );
 
   const hasRedemptionsInCart = useMemo(() => cart.some((i) => i.redeemedWithPoints), [cart]);
+
+  const cartQuantityByItemId = useMemo(() => {
+    const map = new Map<string, number>();
+    cart.forEach((item) => {
+      map.set(item.id, (map.get(item.id) || 0) + item.quantity);
+    });
+    return map;
+  }, [cart]);
 
   const selectedClientData = useMemo(
     () => (selectedClient ? clients.find((c) => c.id === selectedClient) : null),
@@ -606,8 +615,11 @@ const POS: React.FC<POSProps> = ({
     setCustomTime('');
   };
 
+  const catalogueSectionTitle =
+    activeCatalog === 'products' ? 'Products' : activeCatalog === 'packages' ? 'Packages' : 'Services';
+
   return (
-    <div className="m-page-with-sticky-action flex h-full min-h-0 flex-col gap-4 sm:pb-[calc(var(--mobile-bottom-nav-height)+var(--mobile-safe-area-bottom))] lg:pb-0">
+    <div className="m-page-with-sticky-action flex h-full min-h-0 flex-col gap-4 sm:pb-[calc(var(--mobile-bottom-nav-height)+var(--mobile-safe-area-bottom))] lg:pb-0 posd:gap-3">
       <POSPageHeader
         shopName={outletSettings.shopName}
         banner={
@@ -625,104 +637,123 @@ const POS: React.FC<POSProps> = ({
         }
       />
 
-      {/* Phone: stacked. Tablet 640–1199: split. Desktop 1200+: split with desktop rail. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-4 sm:flex-row sm:items-start sm:gap-3 posd:gap-5">
-        <div className="min-w-0 flex-1 space-y-4 sm:max-h-[calc(100vh-8.75rem)] sm:overflow-y-auto sm:pr-1 lg:max-h-[calc(100vh-7.5rem)]">
-        <POSCatalogueToolbar
-          search={globalSearch}
-          onSearchChange={setGlobalSearch}
-          activeCatalog={activeCatalog}
-          onCatalogChange={setActiveCatalog}
-          sortBy={posSortBy}
-          onSortChange={setPosSortBy}
-          categories={posCategories}
-          selectedCategory={posCategory}
-          onCategoryChange={setPosCategory}
-        />
+      {/* Phone: stacked. Tablet: split. Desktop: catalogue + 360px Order Summary. */}
+      <div className="flex min-h-0 flex-1 flex-col gap-4 sm:flex-row sm:items-start sm:gap-3 posd:grid posd:grid-cols-[minmax(0,1fr)_360px] posd:gap-5">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col sm:max-h-[calc(100vh-8.75rem)] lg:max-h-[calc(100vh-7.5rem)]">
+          <div className="shrink-0 space-y-3 pb-3">
+            <POSCatalogueToolbar
+              search={globalSearch}
+              onSearchChange={setGlobalSearch}
+              activeCatalog={activeCatalog}
+              onCatalogChange={setActiveCatalog}
+              sortBy={posSortBy}
+              onSortChange={setPosSortBy}
+              categories={posCategories}
+              selectedCategory={posCategory}
+              onCategoryChange={setPosCategory}
+              sectionTitle={catalogueSectionTitle}
+            />
+          </div>
 
-        <POSCatalogueList>
-          {(activeCatalog === 'all' || activeCatalog === 'services') && (
-            <POSCatalogueSection
-              title="Services"
-              empty={filteredServices.length === 0}
-              emptyMessage="No services found. Try a different category or search."
-            >
-              {filteredServices.map((service) => (
-                <POSItemCard
-                  key={service.id}
-                  name={service.name}
-                  priceLabel={`RM ${service.price}`}
-                  metaLeft={`${service.duration} mins`}
-                  metaRight={service.points ? `+${service.points} pts` : undefined}
-                  imageUrl={service.imageUrl}
-                  onAdd={() => addToCart(service, 'service')}
-                />
-              ))}
-            </POSCatalogueSection>
-          )}
+          <div className="min-h-0 flex-1 overflow-y-auto pr-1 scrollbar-thin">
+            <POSCatalogueList>
+              {(activeCatalog === 'all' || activeCatalog === 'services') && (
+                <POSCatalogueSection
+                  title="Services"
+                  hideTitle
+                  empty={filteredServices.length === 0}
+                  emptyMessage="No services found. Try a different category or search."
+                >
+                  {filteredServices.map((service) => (
+                    <POSItemCard
+                      key={service.id}
+                      name={service.name}
+                      priceLabel={`RM ${Number(service.price).toFixed(2)}`}
+                      metaLeft={`${service.duration} mins`}
+                      metaRight={service.points ? `+${service.points} pts` : undefined}
+                      imageUrl={service.imageUrl}
+                      cartQuantity={cartQuantityByItemId.get(service.id)}
+                      onAdd={() => addToCart(service, 'service')}
+                    />
+                  ))}
+                </POSCatalogueSection>
+              )}
 
-          {(activeCatalog === 'all' || activeCatalog === 'products') &&
-            (filteredProducts.length > 0 || activeCatalog === 'products') && (
-            <POSCatalogueSection
-              title="Products"
-              empty={filteredProducts.length === 0}
-              emptyMessage="No products found. Try a different category or search."
-            >
-              {filteredProducts.map((product) => (
-                <POSItemCard
-                  key={product.id}
-                  name={product.name}
-                  priceLabel={`RM ${product.price}`}
-                  metaLeft={`Stock: ${product.stock}`}
-                  onAdd={() => addToCart(product, 'product')}
-                />
-              ))}
-            </POSCatalogueSection>
-          )}
+              {(activeCatalog === 'all' || activeCatalog === 'products') &&
+                (filteredProducts.length > 0 || activeCatalog === 'products') && (
+                <POSCatalogueSection
+                  title="Products"
+                  hideTitle={activeCatalog === 'products'}
+                  className={activeCatalog === 'all' ? 'posd:mt-2' : undefined}
+                  empty={filteredProducts.length === 0}
+                  emptyMessage="No products found. Try a different category or search."
+                >
+                  {filteredProducts.map((product) => (
+                    <POSItemCard
+                      key={product.id}
+                      name={product.name}
+                      priceLabel={`RM ${Number(product.price).toFixed(2)}`}
+                      metaLeft={`Stock: ${product.stock}`}
+                      cartQuantity={cartQuantityByItemId.get(product.id)}
+                      onAdd={() => addToCart(product, 'product')}
+                    />
+                  ))}
+                </POSCatalogueSection>
+              )}
 
-          {(activeCatalog === 'all' || activeCatalog === 'packages') &&
-            (filteredPackages.length > 0 || activeCatalog === 'packages') && (
-            <POSCatalogueSection
-              title="Packages"
-              empty={filteredPackages.length === 0}
-              emptyMessage="No packages found. Try a different category or search."
-            >
-              {filteredPackages.map((pkg) => (
-                <POSItemCard
-                  key={pkg.id}
-                  name={pkg.name}
-                  priceLabel={`RM ${pkg.price}`}
-                  metaRight={pkg.points ? `+${pkg.points} pts` : undefined}
-                  onAdd={() => addToCart(pkg, 'package')}
-                  chips={
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {pkg.services.map((ps, idx) => {
-                        const srv = services.find((s) => s.id === ps.serviceId);
-                        return (
-                          <span
-                            key={idx}
-                            className="m-pos-mini-chip bg-[var(--bg-soft)] text-[var(--text-muted)]"
-                          >
-                            {ps.quantity}x {srv?.name.split(' ')[0]}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  }
-                />
-              ))}
-            </POSCatalogueSection>
-          )}
+              {(activeCatalog === 'all' || activeCatalog === 'packages') &&
+                (filteredPackages.length > 0 || activeCatalog === 'packages') && (
+                <POSCatalogueSection
+                  title="Packages"
+                  hideTitle={activeCatalog === 'packages'}
+                  className={activeCatalog === 'all' ? 'posd:mt-2' : undefined}
+                  empty={filteredPackages.length === 0}
+                  emptyMessage="No packages found. Try a different category or search."
+                >
+                  {filteredPackages.map((pkg) => (
+                    <POSItemCard
+                      key={pkg.id}
+                      name={pkg.name}
+                      priceLabel={`RM ${Number(pkg.price).toFixed(2)}`}
+                      metaRight={pkg.points ? `+${pkg.points} pts` : undefined}
+                      cartQuantity={cartQuantityByItemId.get(pkg.id)}
+                      onAdd={() => addToCart(pkg, 'package')}
+                      chips={
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {pkg.services.map((ps, idx) => {
+                            const srv = services.find((s) => s.id === ps.serviceId);
+                            return (
+                              <span
+                                key={idx}
+                                className="m-pos-mini-chip bg-[var(--bg-soft)] text-[var(--text-muted)]"
+                              >
+                                {ps.quantity}x {srv?.name.split(' ')[0]}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      }
+                    />
+                  ))}
+                </POSCatalogueSection>
+              )}
 
-          {activeCatalog === 'all' &&
-            filteredServices.length === 0 &&
-            filteredProducts.length === 0 &&
-            filteredPackages.length === 0 && (
-              <div className="py-12 text-center text-[var(--text-muted)] text-sm">
-                No items found. Try a different category or search.
-              </div>
-            )}
-        </POSCatalogueList>
+              {activeCatalog === 'all' &&
+                filteredServices.length === 0 &&
+                filteredProducts.length === 0 &&
+                filteredPackages.length === 0 && (
+                  <div className="py-12 text-center text-[var(--text-muted)] text-sm">
+                    No items found. Try a different category or search.
+                  </div>
+                )}
+            </POSCatalogueList>
+          </div>
+
+          <POSQuickActions
+            onWalkInCustomer={() => navigate('/member')}
+            onClearCart={clearCart}
+            clearDisabled={cart.length === 0 && !saleComplete}
+          />
         </div>
 
         <POSCartSheet
@@ -787,6 +818,7 @@ const POS: React.FC<POSProps> = ({
               <POSTotals
                 totalLabel={`RM ${total.toFixed(2)}`}
                 subtotalLabel={`RM ${total.toFixed(2)}`}
+                discountLabel="RM 0.00"
                 warning={
                   cart.some((i) => i.type === 'package') && !selectedClient ? (
                     <p className="text-xs text-[var(--warning)] font-medium">
@@ -794,7 +826,7 @@ const POS: React.FC<POSProps> = ({
                     </p>
                   ) : null
                 }
-                checkoutLabel="Complete Sale"
+                checkoutLabel="Proceed to Payment"
                 onCheckout={handleCheckout}
                 checkoutDisabled={
                   cart.length === 0 || (cart.some((i) => i.type === 'package') && !selectedClient)
@@ -815,6 +847,11 @@ const POS: React.FC<POSProps> = ({
                 : null
             }
             onNewCustomer={() => navigate('/member')}
+            selectedCustomer={
+              selectedClientData
+                ? { name: selectedClientData.name, phone: selectedClientData.phone }
+                : null
+            }
           >
             <div className="relative" ref={customerDropdownRef}>
               <svg
@@ -998,9 +1035,9 @@ const POS: React.FC<POSProps> = ({
                 );
               })}
               {cart.length === 0 && (
-                <div className="text-center py-10">
-                  <div className="w-14 h-14 bg-[var(--bg-soft)] rounded-full flex items-center justify-center mx-auto mb-3">
-                    <svg className="w-7 h-7 text-[var(--text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="px-2 py-6 text-center posd:py-5">
+                  <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--bg-soft)]">
+                    <svg className="h-5 w-5 text-[var(--text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -1010,7 +1047,7 @@ const POS: React.FC<POSProps> = ({
                     </svg>
                   </div>
                   <p className="text-sm font-semibold text-[var(--text-muted)]">No items selected</p>
-                  <p className="text-xs text-[var(--text-muted)] mt-1">Tap a service or product to start a sale.</p>
+                  <p className="mt-1 text-xs text-[var(--text-muted)]">Tap a service or product to start a sale.</p>
                 </div>
               )}
             </>

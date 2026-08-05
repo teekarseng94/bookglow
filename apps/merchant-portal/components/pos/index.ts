@@ -9,3 +9,4 @@ export { POSCartItem } from './POSCartItem';
 export { POSMemberSummary } from './POSMemberSummary';
 export { POSPaymentSection } from './POSPaymentSection';
 export { POSTotals, POSSaleCompleteActions } from './POSTotals';
+export { POSQuickActions } from './POSQuickActions';

@@ -91,6 +91,11 @@
   --mobile-pos-price-size: 16px;
   --mobile-pos-add-size: 44px;
 
+  /* POS desktop catalogue list row (1200px+) */
+  --desktop-pos-row-height: 76px;
+  --desktop-pos-thumbnail-size: 72px;
+  --desktop-pos-row-gap: 4px;
+
   /* Semantic mobile layout roles. Keep these aliases page-agnostic. */
   --mobile-page-horizontal-padding: var(--mobile-page-padding);
   --mobile-page-top-spacing: var(--mobile-space-4);
@@ -2335,5 +2340,28 @@ textarea.m-settings-control {
   .m-pos-mobile-card__price {
     font-size: 13px;
     font-weight: var(--mobile-font-bold);
+  }
+}
+
+/* ——— Desktop POS catalogue list (1200+) ——— */
+@media (min-width: 1200px) {
+  .m-pos-desktop-row {
+    min-height: 72px;
+    max-height: 82px;
+  }
+
+  .m-pos-section-title {
+    margin-bottom: 8px;
+  }
+
+  .m-pos-toolbar .m-pos-category-chip {
+    min-height: 34px;
+    padding: 6px 14px;
+    font-size: 13px;
+  }
+
+  .m-pos-toolbar .m-pos-search {
+    min-height: 44px;
+    height: 44px;
   }
 }

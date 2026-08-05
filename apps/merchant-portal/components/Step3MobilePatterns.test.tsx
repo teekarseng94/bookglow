@@ -39,7 +39,7 @@ describe('Step 3 mobile patterns', () => {
     expect(screen.queryByRole('button', { name: 'Add member' })).not.toBeInTheDocument();
   });
 
-  it('marks POS filters active without changing catalogue callbacks', () => {
+  it('marks POS filters active without changing catalogue callbacks', async () => {
     const { container } = render(
       <POSCatalogueToolbar
         search=""
@@ -55,7 +55,9 @@ describe('Step 3 mobile patterns', () => {
     );
 
     expect(container.firstChild).toHaveClass('m-filter-toolbar--active');
-    expect(screen.getByRole('button', { name: 'Services' })).toBeInTheDocument();
+    const filterButtons = screen.getAllByRole('button', { name: 'Catalogue filters and sort' });
+    filterButtons[0].click();
+    expect(screen.getAllByRole('button', { name: 'Services' }).length).toBeGreaterThan(0);
   });
 
   it('uses the shared appointment-card grammar in Schedule', () => {

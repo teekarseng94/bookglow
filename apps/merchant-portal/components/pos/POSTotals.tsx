@@ -5,6 +5,8 @@ import { cx } from '../ui/cx';
 export interface POSTotalsProps {
   totalLabel: string;
   subtotalLabel?: string;
+  /** Presentation-only discount line (defaults hidden when omitted). */
+  discountLabel?: string;
   warning?: React.ReactNode;
   checkoutLabel: string;
   onCheckout: () => void;
@@ -14,10 +16,11 @@ export interface POSTotalsProps {
   className?: string;
 }
 
-/** Sticky checkout block — total + Complete Sale CTA. */
+/** Sticky checkout block — total + checkout CTA. */
 export const POSTotals: React.FC<POSTotalsProps> = ({
   totalLabel,
   subtotalLabel,
+  discountLabel,
   warning,
   checkoutLabel,
   onCheckout,
@@ -26,17 +29,23 @@ export const POSTotals: React.FC<POSTotalsProps> = ({
   hasRedemptions,
   className,
 }) => (
-  <div className={cx('space-y-2 posd:space-y-3', className)}>
+  <div className={cx('space-y-2 posd:space-y-2.5', className)}>
     {subtotalLabel ? (
       <div className="flex justify-between text-xs text-[var(--text-secondary)] posd:text-sm">
         <span>Subtotal</span>
         <span className="font-medium tabular-nums text-[var(--text-primary)]">{subtotalLabel}</span>
       </div>
     ) : null}
+    {discountLabel ? (
+      <div className="flex justify-between text-xs text-[var(--text-secondary)] posd:text-sm">
+        <span>Discount</span>
+        <span className="font-medium tabular-nums text-[var(--text-primary)]">{discountLabel}</span>
+      </div>
+    ) : null}
     <div className="border-t border-[var(--line)]" />
     <div className="flex items-baseline justify-between text-[var(--text-primary)]">
-      <span className="text-sm font-bold posd:text-base">Total</span>
-      <span className="m-pos-totals-total text-lg font-bold tabular-nums text-[var(--brand)] posd:text-xl">
+      <span className="text-sm font-bold posd:text-[17px]">Total</span>
+      <span className="m-pos-totals-total text-lg font-bold tabular-nums text-[var(--brand)] posd:text-[22px]">
         {totalLabel}
       </span>
     </div>
@@ -46,31 +55,18 @@ export const POSTotals: React.FC<POSTotalsProps> = ({
       disabled={checkoutDisabled || isProcessing}
       onClick={onCheckout}
       className={cx(
-        'm-pos-checkout-btn w-full rounded-ui-md px-3.5 py-2.5 font-semibold shadow-ui-xs transition-all posd:px-4 posd:py-3',
-        'flex min-h-[44px] items-center justify-between gap-2 text-sm posd:min-h-[48px]',
+        'm-pos-checkout-btn w-full rounded-ui-md px-3.5 py-2.5 font-semibold shadow-ui-xs transition-all posd:px-4 posd:py-3.5',
+        'flex min-h-[44px] items-center justify-center gap-2 text-sm posd:min-h-[52px] posd:text-[15px]',
         checkoutDisabled
           ? 'bg-[var(--bg-soft)] text-[var(--text-muted)] cursor-not-allowed'
           : isProcessing
             ? 'bg-[var(--brand)]/70 text-white cursor-wait'
             : hasRedemptions
               ? 'bg-[var(--warning)] text-white hover:opacity-90 active:scale-[0.99]'
-              : 'bg-gradient-to-r from-[var(--brand)] to-[var(--brand-deep,var(--brand))] text-white hover:opacity-95 active:scale-[0.99]',
+              : 'bg-[var(--brand)] text-white hover:opacity-95 active:scale-[0.99]',
       )}
     >
-      <span className="inline-flex items-center gap-2 min-w-0">
-        {!isProcessing ? (
-          <svg className="w-4 h-4 shrink-0 opacity-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-            />
-          </svg>
-        ) : null}
-        <span className="truncate">{isProcessing ? 'Finalizing...' : checkoutLabel}</span>
-      </span>
-      {!isProcessing ? <span className="tabular-nums font-bold shrink-0">{totalLabel}</span> : null}
+      <span className="truncate">{isProcessing ? 'Finalizing...' : checkoutLabel}</span>
     </button>
   </div>
 );

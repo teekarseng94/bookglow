@@ -10,6 +10,8 @@ export interface POSCatalogueSectionProps {
   children: React.ReactNode;
   empty?: boolean;
   emptyMessage?: string;
+  /** Hide section heading (desktop toolbar already shows Services). */
+  hideTitle?: boolean;
   className?: string;
 }
 
@@ -20,17 +22,20 @@ export const POSCatalogueSection: React.FC<POSCatalogueSectionProps> = ({
   children,
   empty,
   emptyMessage,
+  hideTitle,
   className,
 }) => (
   <section className={cx('animate-fadeIn', className)}>
-    <SectionHeader
-      className={cx('m-pos-section-title mb-3', titleClassName || 'text-[var(--brand)]')}
-      title={<span className="flex items-center gap-2">{icon}{title}</span>}
-    />
+    {!hideTitle ? (
+      <SectionHeader
+        className={cx('m-pos-section-title mb-3 posd:mb-2', titleClassName || 'text-[var(--brand)]')}
+        title={<span className="flex items-center gap-2">{icon}{title}</span>}
+      />
+    ) : null}
     {empty ? (
       <EmptyState className="border-0" title={emptyMessage || 'No items found'} />
     ) : (
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-1 md:grid-cols-2 posd:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-1 md:grid-cols-2 posd:flex posd:flex-col posd:gap-2.5">
         {children}
       </div>
     )}
@@ -43,7 +48,7 @@ export interface POSCatalogueListProps {
 }
 
 export const POSCatalogueList: React.FC<POSCatalogueListProps> = ({ children, className }) => (
-  <div className={cx('space-y-6', className)}>{children}</div>
+  <div className={cx('space-y-6 posd:space-y-5', className)}>{children}</div>
 );
 
 export default POSCatalogueList;

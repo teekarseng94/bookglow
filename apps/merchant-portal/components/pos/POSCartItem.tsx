@@ -186,16 +186,15 @@ export const POSCartItem: React.FC<POSCartItemProps> = ({
       {/* —— Desktop row (1200+) —— */}
       <div className="hidden posd:block">
         <div className="flex items-start gap-2.5">
-          <div className="m-pos-cart-item__thumb flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-ui-sm bg-[var(--brand-soft)]">
-            {imageUrl ? (
-              <img src={imageUrl} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <span className="text-sm font-bold text-[var(--brand)]">{initial}</span>
-            )}
+          <div
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[var(--brand-soft)] text-xs font-bold tabular-nums text-[var(--brand)]"
+            aria-hidden
+          >
+            {typeof quantity === 'number' ? quantity : initial}
           </div>
 
           <div className="min-w-0 flex-1">
-            <p className="m-pos-cart-item__name line-clamp-2 text-sm font-bold leading-snug text-[var(--text-primary)]">
+            <p className="m-pos-cart-item__name truncate whitespace-nowrap text-sm font-bold leading-snug text-[var(--text-primary)]">
               {displayName}
             </p>
             {meta ? <div className="mt-0.5 text-xs text-[var(--text-muted)]">{meta}</div> : null}
@@ -207,7 +206,7 @@ export const POSCartItem: React.FC<POSCartItemProps> = ({
           <div className="flex shrink-0 items-start gap-0.5">
             <span
               className={cx(
-                'm-pos-cart-item__price pt-0.5 text-sm font-bold tabular-nums text-[var(--success)]',
+                'm-pos-cart-item__price pt-0.5 text-sm font-bold tabular-nums text-[var(--text-primary)]',
                 lineTotalEmphasized && 'opacity-90',
               )}
             >
@@ -216,10 +215,10 @@ export const POSCartItem: React.FC<POSCartItemProps> = ({
             <button
               type="button"
               onClick={onRemove}
-              className="m-pos-cart-item__qty-btn inline-flex items-center justify-center rounded-ui-sm text-[var(--text-muted)] hover:bg-[var(--danger-soft)] hover:text-[var(--danger)] focus-visible:shadow-ui-focus-strong"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-muted)] hover:bg-[var(--danger-soft)] hover:text-[var(--danger)] focus-visible:shadow-ui-focus-strong"
               aria-label="Remove item"
             >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>

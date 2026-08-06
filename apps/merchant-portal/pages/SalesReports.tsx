@@ -96,13 +96,13 @@ const SalesReports: React.FC<SalesReportsProps> = ({
     let cancelled = false;
     const load = async () => {
       try {
-        const all = await transactionService.getAll(outletID);
+        const inRange = await transactionService.getInDateRange(
+          startOfRange.toISOString(),
+          endOfRange.toISOString(),
+          outletID,
+          { limit: 500, offset: 0, type: TransactionType.SALE },
+        );
         if (cancelled) return;
-        const inRange = all.filter((t) => {
-          if (!t.date) return false;
-          const d = new Date(t.date);
-          return d >= startOfRange && d <= endOfRange;
-        });
         setDailySales(filterNonVoidedSales(inRange));
         setCollectionError(null);
         setCollectionLoading(false);
@@ -115,10 +115,8 @@ const SalesReports: React.FC<SalesReportsProps> = ({
       }
     };
     void load();
-    const timer = window.setInterval(() => void load(), 15000);
     return () => {
       cancelled = true;
-      window.clearInterval(timer);
     };
   }, [outletID, startDate, endDate]);
 

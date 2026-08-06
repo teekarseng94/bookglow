@@ -24,6 +24,7 @@ import type {
   VoucherStatus,
 } from "../types";
 import { TransactionType } from "../types";
+import { withQueryTelemetry } from "./queryTelemetry";
 
 function viteEnv(): Record<string, string | undefined> {
   return import.meta.env as unknown as Record<string, string | undefined>;
@@ -36,6 +37,20 @@ export function isMerchantSupabaseData(): boolean {
 function client() {
   return createBrowserSupabaseClient(viteEnv());
 }
+
+/** Member list / POS typeahead — excludes notes and marketing blobs. */
+const CLIENT_LIST_COLUMNS =
+  "id,outlet_id,name,email,phone,points,credit,outstanding,member_tier,voucher_count,created_at,birthday,gender,source,tag";
+
+/** Transaction list — excludes heavy `items` JSON until detail open. */
+const TRANSACTION_LIST_COLUMNS =
+  "id,outlet_id,date,type,client_id,amount,category,description,payment_method,parent_sale_id,status,voided,remarks,payment_status,outstanding,created_at";
+
+/** Appointment list for calendar — all row columns are small; keep explicit. */
+const APPOINTMENT_LIST_COLUMNS =
+  "id,outlet_id,client_id,customer_id,staff_id,service_id,date,time,end_time,status,reminder_sent,is_on_duty,source_sale_id,sale_id,source,created_at";
+
+export const DEFAULT_LIST_PAGE_SIZE = 50;
 
 function newId(): string {
   return crypto.randomUUID().replace(/-/g, "");
@@ -153,14 +168,19 @@ function mapOutlet(row: Record<string, unknown>): Outlet {
 export const staffService = {
   getAll: async (outletID: string = currentOutletID): Promise<Staff[]> => {
     if (!hasValidOutlet(outletID)) return [];
-    const { data, error } = await client()
-      .from("staff")
-      .select("*")
-      .eq("outlet_id", outletID);
-    if (error) throw error;
-    const list = (data || []).map((r) => mapStaff(r as Record<string, unknown>));
-    list.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
-    return list;
+    return withQueryTelemetry(
+      { queryName: "staffService.getAll", resource: "staff" },
+      async () => {
+        const { data, error } = await client()
+          .from("staff")
+          .select("*")
+          .eq("outlet_id", outletID);
+        if (error) throw error;
+        const list = (data || []).map((r) => mapStaff(r as Record<string, unknown>));
+        list.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+        return list;
+      },
+    );
   },
 
   add: async (
@@ -230,18 +250,23 @@ export const staffService = {
 export const serviceService = {
   getAll: async (outletID: string = currentOutletID): Promise<Service[]> => {
     if (!hasValidOutlet(outletID)) return [];
-    const { data, error } = await client()
-      .from("services")
-      .select("*")
-      .eq("outlet_id", outletID);
-    if (error) throw error;
-    const list = (data || []).map((r) => mapService(r as Record<string, unknown>));
-    return list.sort((a, b) => {
-      const aOrder = a.displayOrder ?? 0;
-      const bOrder = b.displayOrder ?? 0;
-      if (aOrder !== bOrder) return aOrder - bOrder;
-      return (a.name || "").localeCompare(b.name || "");
-    });
+    return withQueryTelemetry(
+      { queryName: "serviceService.getAll", resource: "services" },
+      async () => {
+        const { data, error } = await client()
+          .from("services")
+          .select("*")
+          .eq("outlet_id", outletID);
+        if (error) throw error;
+        const list = (data || []).map((r) => mapService(r as Record<string, unknown>));
+        return list.sort((a, b) => {
+          const aOrder = a.displayOrder ?? 0;
+          const bOrder = b.displayOrder ?? 0;
+          if (aOrder !== bOrder) return aOrder - bOrder;
+          return (a.name || "").localeCompare(b.name || "");
+        });
+      },
+    );
   },
 
   add: async (service: Omit<Service, "id">, outletID: string = currentOutletID): Promise<string> => {
@@ -341,30 +366,122 @@ export const serviceService = {
 export const appointmentService = {
   getAll: async (outletID: string = currentOutletID): Promise<Appointment[]> => {
     if (!hasValidOutlet(outletID)) return [];
-    const { data, error } = await client()
-      .from("appointments")
-      .select("*")
-      .eq("outlet_id", outletID);
-    if (error) throw error;
-    const list = (data || []).map((r) => mapAppointment(r as Record<string, unknown>));
-    list.sort((a, b) => {
-      const aDate = a.date ? new Date(a.date + "T" + (a.time || "00:00")).getTime() : 0;
-      const bDate = b.date ? new Date(b.date + "T" + (b.time || "00:00")).getTime() : 0;
-      return bDate - aDate;
-    });
-    return list;
+    return withQueryTelemetry(
+      { queryName: "appointmentService.getAll", resource: "appointments" },
+      async () => {
+        const { data, error } = await client()
+          .from("appointments")
+          .select(APPOINTMENT_LIST_COLUMNS)
+          .eq("outlet_id", outletID);
+        if (error) throw error;
+        const list = (data || []).map((r) => mapAppointment(r as Record<string, unknown>));
+        list.sort((a, b) => {
+          const aDate = a.date ? new Date(a.date + "T" + (a.time || "00:00")).getTime() : 0;
+          const bDate = b.date ? new Date(b.date + "T" + (b.time || "00:00")).getTime() : 0;
+          return bDate - aDate;
+        });
+        return list;
+      },
+    );
+  },
+
+  /** Inclusive date range (YYYY-MM-DD) for schedule views. */
+  getInDateRange: async (
+    startDate: string,
+    endDate: string,
+    outletID: string = currentOutletID,
+  ): Promise<Appointment[]> => {
+    if (!hasValidOutlet(outletID)) return [];
+    return withQueryTelemetry(
+      { queryName: "appointmentService.getInDateRange", resource: "appointments", trigger: "route_change" },
+      async () => {
+        const { data, error } = await client()
+          .from("appointments")
+          .select(APPOINTMENT_LIST_COLUMNS)
+          .eq("outlet_id", outletID)
+          .gte("date", startDate)
+          .lte("date", endDate)
+          .order("date", { ascending: true })
+          .order("time", { ascending: true });
+        if (error) throw error;
+        return (data || []).map((r) => mapAppointment(r as Record<string, unknown>));
+      },
+    );
+  },
+
+  getByClient: async (
+    clientId: string,
+    outletID: string = currentOutletID,
+    limit = DEFAULT_LIST_PAGE_SIZE,
+  ): Promise<Appointment[]> => {
+    if (!hasValidOutlet(outletID) || !clientId) return [];
+    return withQueryTelemetry(
+      { queryName: "appointmentService.getByClient", resource: "appointments" },
+      async () => {
+        const { data, error } = await client()
+          .from("appointments")
+          .select(APPOINTMENT_LIST_COLUMNS)
+          .eq("outlet_id", outletID)
+          .eq("client_id", clientId)
+          .order("date", { ascending: false })
+          .order("time", { ascending: false })
+          .limit(limit);
+        if (error) throw error;
+        return (data || []).map((r) => mapAppointment(r as Record<string, unknown>));
+      },
+    );
+  },
+
+  getById: async (id: string, outletID: string = currentOutletID): Promise<Appointment | null> => {
+    if (!hasValidOutlet(outletID) || !id) return null;
+    return withQueryTelemetry(
+      { queryName: "appointmentService.getById", resource: "appointments" },
+      async () => {
+        const { data, error } = await client()
+          .from("appointments")
+          .select(APPOINTMENT_LIST_COLUMNS)
+          .eq("outlet_id", outletID)
+          .eq("id", id)
+          .maybeSingle();
+        if (error) throw error;
+        if (!data) return null;
+        return mapAppointment(data as Record<string, unknown>);
+      },
+    );
+  },
+
+  /** Appointments linked to a sale via sale_id or source_sale_id. */
+  listBySaleId: async (saleId: string, outletID: string = currentOutletID): Promise<Appointment[]> => {
+    if (!hasValidOutlet(outletID) || !saleId) return [];
+    return withQueryTelemetry(
+      { queryName: "appointmentService.listBySaleId", resource: "appointments" },
+      async () => {
+        const { data, error } = await client()
+          .from("appointments")
+          .select(APPOINTMENT_LIST_COLUMNS)
+          .eq("outlet_id", outletID)
+          .or(`sale_id.eq.${saleId},source_sale_id.eq.${saleId}`);
+        if (error) throw error;
+        return (data || []).map((r) => mapAppointment(r as Record<string, unknown>));
+      },
+    );
   },
 
   getDaily: async (date: string, outletID: string = currentOutletID): Promise<Appointment[]> => {
     if (!hasValidOutlet(outletID)) return [];
-    const { data, error } = await client()
-      .from("appointments")
-      .select("*")
-      .eq("outlet_id", outletID)
-      .eq("date", date)
-      .order("time", { ascending: true });
-    if (error) throw error;
-    return (data || []).map((r) => mapAppointment(r as Record<string, unknown>));
+    return withQueryTelemetry(
+      { queryName: "appointmentService.getDaily", resource: "appointments" },
+      async () => {
+        const { data, error } = await client()
+          .from("appointments")
+          .select(APPOINTMENT_LIST_COLUMNS)
+          .eq("outlet_id", outletID)
+          .eq("date", date)
+          .order("time", { ascending: true });
+        if (error) throw error;
+        return (data || []).map((r) => mapAppointment(r as Record<string, unknown>));
+      },
+    );
   },
 
   getStaffSchedule: async (
@@ -603,26 +720,98 @@ function mapClient(row: Record<string, unknown>): Client {
 export const clientService = {
   getAll: async (outletID: string = currentOutletID): Promise<Client[]> => {
     if (!hasValidOutlet(outletID)) return [];
-    const { data, error } = await client()
-      .from("clients")
-      .select("*")
-      .eq("outlet_id", outletID)
-      .order("created_at", { ascending: false });
-    if (error) throw error;
-    return (data || []).map((r) => mapClient(r as Record<string, unknown>));
+    return withQueryTelemetry(
+      { queryName: "clientService.getAll", resource: "clients" },
+      async () => {
+        const { data, error } = await client()
+          .from("clients")
+          .select(CLIENT_LIST_COLUMNS)
+          .eq("outlet_id", outletID)
+          .order("created_at", { ascending: false });
+        if (error) throw error;
+        return (data || []).map((r) => mapClient(r as Record<string, unknown>));
+      },
+    );
+  },
+
+  /** First page for Members / CRM. */
+  listPage: async (
+    outletID: string = currentOutletID,
+    options: { limit?: number; offset?: number } = {},
+  ): Promise<Client[]> => {
+    if (!hasValidOutlet(outletID)) return [];
+    const limit = options.limit ?? DEFAULT_LIST_PAGE_SIZE;
+    const offset = options.offset ?? 0;
+    return withQueryTelemetry(
+      { queryName: "clientService.listPage", resource: "clients", trigger: "pagination" },
+      async () => {
+        const { data, error } = await client()
+          .from("clients")
+          .select(CLIENT_LIST_COLUMNS)
+          .eq("outlet_id", outletID)
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: false })
+          .range(offset, offset + limit - 1);
+        if (error) throw error;
+        return (data || []).map((r) => mapClient(r as Record<string, unknown>));
+      },
+    );
+  },
+
+  /** Server-side member search for POS / CRM typeahead. Does not log the query string. */
+  search: async (
+    query: string,
+    outletID: string = currentOutletID,
+    limit = 20,
+  ): Promise<Client[]> => {
+    if (!hasValidOutlet(outletID)) return [];
+    const q = (query || "").trim();
+    if (q.length < 1) return [];
+    // Strip PostgREST filter metacharacters; never log the raw query in telemetry.
+    const safe = q.replace(/[%_,.()]+/g, ' ').replace(/["']/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!safe) return [];
+    return withQueryTelemetry(
+      { queryName: "clientService.search", resource: "clients", trigger: "search" },
+      async () => {
+        const digits = safe.replace(/\D/g, "");
+        let builder = client()
+          .from("clients")
+          .select(CLIENT_LIST_COLUMNS)
+          .eq("outlet_id", outletID)
+          .order("name", { ascending: true })
+          .limit(limit);
+
+        if (digits.length >= 2) {
+          builder = builder.or(
+            `name.ilike.%${safe}%,phone.ilike.%${digits}%,email.ilike.%${safe}%`,
+          );
+        } else {
+          builder = builder.or(`name.ilike.%${safe}%,email.ilike.%${safe}%`);
+        }
+
+        const { data, error } = await builder;
+        if (error) throw error;
+        return (data || []).map((r) => mapClient(r as Record<string, unknown>));
+      },
+    );
   },
 
   getById: async (clientId: string, outletID: string = currentOutletID): Promise<Client | null> => {
     if (!hasValidOutlet(outletID)) return null;
-    const { data, error } = await client()
-      .from("clients")
-      .select("*")
-      .eq("id", clientId)
-      .eq("outlet_id", outletID)
-      .maybeSingle();
-    if (error) throw error;
-    if (!data) return null;
-    return mapClient(data as Record<string, unknown>);
+    return withQueryTelemetry(
+      { queryName: "clientService.getById", resource: "clients" },
+      async () => {
+        const { data, error } = await client()
+          .from("clients")
+          .select("*")
+          .eq("id", clientId)
+          .eq("outlet_id", outletID)
+          .maybeSingle();
+        if (error) throw error;
+        if (!data) return null;
+        return mapClient(data as Record<string, unknown>);
+      },
+    );
   },
 
   add: async (
@@ -1017,13 +1206,109 @@ function mapTransaction(row: Record<string, unknown>): Transaction {
 export const transactionService = {
   getAll: async (outletID: string = currentOutletID): Promise<Transaction[]> => {
     if (!hasValidOutlet(outletID)) return [];
-    const { data, error } = await client()
-      .from("transactions")
-      .select("*")
-      .eq("outlet_id", outletID)
-      .order("date", { ascending: false });
-    if (error) throw error;
-    return (data || []).map((r) => mapTransaction(r as Record<string, unknown>));
+    return withQueryTelemetry(
+      { queryName: "transactionService.getAll", resource: "transactions" },
+      async () => {
+        const { data, error } = await client()
+          .from("transactions")
+          .select(TRANSACTION_LIST_COLUMNS)
+          .eq("outlet_id", outletID)
+          .order("date", { ascending: false });
+        if (error) throw error;
+        return (data || []).map((r) => mapTransaction(r as Record<string, unknown>));
+      },
+    );
+  },
+
+  /** Date-bounded list (ISO timestamps) without line-item JSON. */
+  getInDateRange: async (
+    startIso: string,
+    endIso: string,
+    outletID: string = currentOutletID,
+    options: { limit?: number; offset?: number; type?: string } = {},
+  ): Promise<Transaction[]> => {
+    if (!hasValidOutlet(outletID)) return [];
+    const limit = options.limit ?? DEFAULT_LIST_PAGE_SIZE;
+    const offset = options.offset ?? 0;
+    return withQueryTelemetry(
+      { queryName: "transactionService.getInDateRange", resource: "transactions", trigger: "pagination" },
+      async () => {
+        let builder = client()
+          .from("transactions")
+          .select(TRANSACTION_LIST_COLUMNS)
+          .eq("outlet_id", outletID)
+          .gte("date", startIso)
+          .lte("date", endIso)
+          .order("date", { ascending: false })
+          .order("id", { ascending: false })
+          .range(offset, offset + limit - 1);
+        if (options.type) builder = builder.eq("type", options.type);
+        const { data, error } = await builder;
+        if (error) throw error;
+        return (data || []).map((r) => mapTransaction(r as Record<string, unknown>));
+      },
+    );
+  },
+
+  getByClient: async (
+    clientId: string,
+    outletID: string = currentOutletID,
+    limit = DEFAULT_LIST_PAGE_SIZE,
+  ): Promise<Transaction[]> => {
+    if (!hasValidOutlet(outletID) || !clientId) return [];
+    return withQueryTelemetry(
+      { queryName: "transactionService.getByClient", resource: "transactions" },
+      async () => {
+        const { data, error } = await client()
+          .from("transactions")
+          .select(TRANSACTION_LIST_COLUMNS)
+          .eq("outlet_id", outletID)
+          .eq("client_id", clientId)
+          .order("date", { ascending: false })
+          .limit(limit);
+        if (error) throw error;
+        return (data || []).map((r) => mapTransaction(r as Record<string, unknown>));
+      },
+    );
+  },
+
+  /** Full row including `items` — open transaction detail only. */
+  getById: async (id: string, outletID: string = currentOutletID): Promise<Transaction | null> => {
+    if (!hasValidOutlet(outletID) || !id) return null;
+    return withQueryTelemetry(
+      { queryName: "transactionService.getById", resource: "transactions" },
+      async () => {
+        const { data, error } = await client()
+          .from("transactions")
+          .select("*")
+          .eq("outlet_id", outletID)
+          .eq("id", id)
+          .maybeSingle();
+        if (error) throw error;
+        if (!data) return null;
+        return mapTransaction(data as Record<string, unknown>);
+      },
+    );
+  },
+
+  /** Child rows (e.g. commission expenses) linked via parent_sale_id. */
+  listByParentSaleId: async (
+    parentSaleId: string,
+    outletID: string = currentOutletID,
+  ): Promise<Transaction[]> => {
+    if (!hasValidOutlet(outletID) || !parentSaleId) return [];
+    return withQueryTelemetry(
+      { queryName: "transactionService.listByParentSaleId", resource: "transactions" },
+      async () => {
+        const { data, error } = await client()
+          .from("transactions")
+          .select(TRANSACTION_LIST_COLUMNS)
+          .eq("outlet_id", outletID)
+          .eq("parent_sale_id", parentSaleId);
+        if (error) throw error;
+        return (data || []).map((r) => mapTransaction(r as Record<string, unknown>));
+      },
+    );
   },
 
   getDailySales: async (date: string, outletID: string = currentOutletID): Promise<Transaction[]> => {
@@ -1032,16 +1317,21 @@ export const transactionService = {
     start.setHours(0, 0, 0, 0);
     const end = new Date(date);
     end.setHours(23, 59, 59, 999);
-    const { data, error } = await client()
-      .from("transactions")
-      .select("*")
-      .eq("outlet_id", outletID)
-      .eq("type", TransactionType.SALE)
-      .gte("date", start.toISOString())
-      .lte("date", end.toISOString())
-      .order("date", { ascending: false });
-    if (error) throw error;
-    return (data || []).map((r) => mapTransaction(r as Record<string, unknown>));
+    return withQueryTelemetry(
+      { queryName: "transactionService.getDailySales", resource: "transactions" },
+      async () => {
+        const { data, error } = await client()
+          .from("transactions")
+          .select(TRANSACTION_LIST_COLUMNS)
+          .eq("outlet_id", outletID)
+          .eq("type", TransactionType.SALE)
+          .gte("date", start.toISOString())
+          .lte("date", end.toISOString())
+          .order("date", { ascending: false });
+        if (error) throw error;
+        return (data || []).map((r) => mapTransaction(r as Record<string, unknown>));
+      },
+    );
   },
 
   add: async (

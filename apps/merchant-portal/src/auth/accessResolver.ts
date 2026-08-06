@@ -4,10 +4,62 @@ import type { MerchantAccessContext } from "@bookglow/auth-contracts";
 const env = () => import.meta.env as unknown as Record<string, string | undefined>;
 
 export async function resolveMerchantAccess(): Promise<MerchantAccessContext> {
-  const { data, error } = await createBrowserSupabaseClient(env()).rpc("resolve_merchant_access" as never);
-  if (error) throw error;
+  const sb = createBrowserSupabaseClient(env());
+  const { data, error } = await sb.rpc("resolve_merchant_access" as never);
+  if (error) {
+    const missingRpc = error.code === "PGRST202" || /could not find the function.*resolve_merchant_access/i.test(error.message);
+    if (!missingRpc) throw error;
+    return resolveLegacyMerchantAccess(sb as any);
+  }
   const value = data as unknown as Record<string, string | null>;
   return { state: value.state as MerchantAccessContext["state"], outletId: value.outlet_id, role: value.role as MerchantAccessContext["role"], onboardingStatus: value.onboarding_status, accessStatus: value.access_status };
+}
+
+async function resolveLegacyMerchantAccess(sb: any): Promise<MerchantAccessContext> {
+  const { data: adminData, error: adminError } = await sb.rpc("is_portal_platform_admin");
+  if (!adminError && adminData === true) {
+    return { state: "platform_admin", outletId: null, role: null, onboardingStatus: null, accessStatus: "active" };
+  }
+
+  const { data: sessionData, error: sessionError } = await sb.auth.getSession();
+  if (sessionError) throw sessionError;
+  const userId = sessionData.session?.user.id;
+  if (!userId) throw new Error("Your merchant session has expired. Please sign in again.");
+
+  const { data: profile, error: profileError } = await sb
+    .from("users")
+    .select("outlet_id,role")
+    .eq("uid", userId)
+    .maybeSingle();
+  if (profileError) throw profileError;
+  if (!profile?.outlet_id) {
+    return { state: "no_workspace", outletId: null, role: null, onboardingStatus: null, accessStatus: null };
+  }
+
+  const { data: outlet, error: outletError } = await sb
+    .from("outlets")
+    .select("is_active")
+    .eq("outlet_id", profile.outlet_id)
+    .maybeSingle();
+  if (outletError) throw outletError;
+  if (outlet && outlet.is_active === false) {
+    return { state: "outlet_suspended", outletId: profile.outlet_id, role: legacyRole(profile.role), onboardingStatus: null, accessStatus: "suspended" };
+  }
+
+  return {
+    state: "active",
+    outletId: profile.outlet_id,
+    role: legacyRole(profile.role),
+    onboardingStatus: "complete",
+    accessStatus: "active",
+  };
+}
+
+function legacyRole(value: unknown): MerchantAccessContext["role"] {
+  const role = String(value || "cashier").toLowerCase();
+  if (role === "admin") return "owner";
+  if (role === "manager") return "manager";
+  return "cashier";
 }
 
 export function merchantAccessDestination(access: MerchantAccessContext): string {

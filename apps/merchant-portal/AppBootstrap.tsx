@@ -5,12 +5,17 @@
 import React from "react";
 import { UserContextProvider } from "./contexts/UserContext";
 import { onAuthStateChange, type PortalAuthUser } from "./services/authService";
+import { installQueryMetricsGlobal } from "./services/queryTelemetry";
 
 const RootRoutes = React.lazy(() => import("./RootRoutes"));
 
 const AppBootstrap: React.FC = () => {
   const [authUser, setAuthUser] = React.useState<PortalAuthUser | null>(null);
   const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    installQueryMetricsGlobal();
+  }, []);
 
   React.useEffect(() => {
     const unsubscribe = onAuthStateChange((user) => {

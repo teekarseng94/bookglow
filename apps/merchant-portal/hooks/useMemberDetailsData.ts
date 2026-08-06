@@ -1,10 +1,12 @@
 /**
  * Member Details data: sales + appointments for a single client (Supabase).
+ * Loads only that client's rows — never the full outlet tables.
  */
 
 import { useState, useEffect, useMemo } from "react";
 import { Transaction, TransactionType, Appointment } from "../types";
 import { appointmentService, transactionService } from "../services/databaseService";
+import { setTelemetryTrigger } from "../services/queryTelemetry";
 
 export function useMemberDetailsData(clientId: string | undefined, outletId: string | undefined) {
   const [clientSales, setClientSales] = useState<Transaction[]>([]);
@@ -29,20 +31,19 @@ export function useMemberDetailsData(clientId: string | undefined, outletId: str
     let cancelled = false;
     const load = async () => {
       try {
-        const [allAppts, allTxns] = await Promise.all([
-          appointmentService.getAll(outletId),
-          transactionService.getAll(outletId),
+        setTelemetryTrigger("route_change");
+        const [appts, txns] = await Promise.all([
+          appointmentService.getByClient(clientId, outletId, 50),
+          transactionService.getByClient(clientId, outletId, 50),
         ]);
         if (cancelled) return;
-        const forClient = allAppts
-          .filter((a) => a.clientId === clientId)
-          .sort((a, b) => {
-            const aDate = a.date ? new Date(a.date + "T" + (a.time || "00:00")).getTime() : 0;
-            const bDate = b.date ? new Date(b.date + "T" + (b.time || "00:00")).getTime() : 0;
-            return bDate - aDate;
-          });
-        const sales = allTxns
-          .filter((t) => t.clientId === clientId && t.type === TransactionType.SALE)
+        const forClient = appts.sort((a, b) => {
+          const aDate = a.date ? new Date(a.date + "T" + (a.time || "00:00")).getTime() : 0;
+          const bDate = b.date ? new Date(b.date + "T" + (b.time || "00:00")).getTime() : 0;
+          return bDate - aDate;
+        });
+        const sales = txns
+          .filter((t) => t.type === TransactionType.SALE)
           .filter((t) => {
             const statusStr = (t.status ?? "").toString().toLowerCase();
             return statusStr !== "voided" && statusStr !== "void";
@@ -63,7 +64,8 @@ export function useMemberDetailsData(clientId: string | undefined, outletId: str
       }
     };
     void load();
-    const timer = window.setInterval(() => void load(), 15000);
+    // Soft refresh every 2 minutes (was 15s full-outlet getAll).
+    const timer = window.setInterval(() => void load(), 120000);
     return () => {
       cancelled = true;
       window.clearInterval(timer);

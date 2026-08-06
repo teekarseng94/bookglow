@@ -11,6 +11,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { outletService } from './services/databaseService';
 import { isTabAllowed } from './utils/permissions';
 import { ErrorState, LoadingSkeleton } from './components/ui';
+import { setTelemetryRoute } from './services/queryTelemetry';
 
 // Lazy-load pages to reduce build memory (each page becomes a separate chunk)
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
@@ -99,7 +100,11 @@ const App: React.FC = () => {
     handleUpdateServiceCategory,
     handleDeleteServiceCategory,
     handleReorderServiceCategories
-  } = useFirestoreData(effectiveOutletID, role);
+  } = useFirestoreData(effectiveOutletID, role, activeTab);
+
+  useEffect(() => {
+    setTelemetryRoute(`/${activeTab || 'dashboard'}`);
+  }, [activeTab]);
 
   // Local state for UI-only data
   const [roleCommissions, setRoleCommissions] = useState<RoleCommission[]>(INITIAL_ROLE_COMMISSIONS);

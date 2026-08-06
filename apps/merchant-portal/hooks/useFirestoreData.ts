@@ -32,6 +32,10 @@ import {
   Reward,
   TransactionType
 } from '../types';
+import { domainsForRoute, tableToDomain, type OutletDataDomain } from './outletDataDomains';
+
+export type { OutletDataDomain } from './outletDataDomains';
+export { domainsForRoute } from './outletDataDomains';
 
 const NO_OUTLET_ERROR = 'No outlet assigned. Each user must be mapped to an outlet in the users collection.';
 
@@ -43,7 +47,11 @@ const commissionCreatedForSaleIds = new Set<string>();
 /** Role from users/{uid}: cashiers may only read/write SALE transactions (Firestore rules). */
 export type FirestoreUserRole = 'admin' | 'manager' | 'cashier' | null;
 
-export const useFirestoreData = (outletID: string, role: FirestoreUserRole = null) => {
+export const useFirestoreData = (
+  outletID: string,
+  role: FirestoreUserRole = null,
+  activeRoute: string = 'dashboard',
+) => {
   // Multi-tenant: outletID must come from the authenticated user's Firestore document (users/{uid}.outletId). No default.
   const hasOutlet = Boolean(outletID && String(outletID).trim());
   // Until role is known, use cashier-safe query (only SALE) so we don't get permission denied
@@ -71,6 +79,10 @@ export const useFirestoreData = (outletID: string, role: FirestoreUserRole = nul
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  /** Domains successfully loaded for this outlet (kept across navigations). */
+  const loadedDomainsRef = useRef<Set<OutletDataDomain>>(new Set());
+  const pendingTablesRef = useRef<Set<string>>(new Set());
+
   /** Ref to delete transaction (set after handleDeleteTransaction is defined) so handleDeleteAppointment can delete the linked sale from Sales History. */
   const deleteTransactionRef = useRef<((id: string) => Promise<void>) | null>(null);
 
@@ -88,200 +100,214 @@ export const useFirestoreData = (outletID: string, role: FirestoreUserRole = nul
       setPackages([]);
       setRewards([]);
       setServiceCategories([]);
+      loadedDomainsRef.current = new Set();
     } else {
       setError(null);
     }
   }, [hasOutlet]);
 
-  // Load all data (only when we have a valid outlet)
-  const loadData = useCallback(async () => {
-    if (!hasOutlet) {
-      setLoading(false);
-      return;
-    }
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Load service categories first (single-doc read, no composite index). So categories
-      // persist after refresh even when other queries fail (e.g. missing Firestore index).
-      let categoriesList: string[] = DEFAULT_SERVICE_CATEGORIES;
-      try {
-        const categoriesData = await outletService.getServiceCategories(outletID);
-        categoriesList = Array.isArray(categoriesData) && categoriesData.length > 0
-          ? categoriesData
-          : DEFAULT_SERVICE_CATEGORIES;
-        if (!Array.isArray(categoriesData) || categoriesData.length === 0) {
-          await outletService.updateServiceCategories(outletID, categoriesList);
-        }
-      } catch (catErr: any) {
-        console.warn('Could not load service categories:', catErr?.message || catErr);
-      }
-      setServiceCategories(categoriesList);
-
-      const [
-        clientsData,
-        staffData,
-        appointmentsData,
-        transactionsData,
-        servicesData,
-        productsData,
-        packagesData,
-        rewardsData
-      ] = await Promise.all([
-        clientService.getAll(outletID),
-        staffService.getAll(outletID),
-        appointmentService.getAll(outletID),
-        transactionService.getAll(outletID),
-        serviceService.getAll(outletID),
-        productService.getAll(outletID),
-        packageService.getAll(outletID),
-        rewardService.getAll(outletID)
-      ]);
-
-      setClients(clientsData);
-      setStaff(staffData);
-      setAppointments(appointmentsData);
-      setTransactions(transactionsData);
-      setServices(servicesData);
-      setProducts(productsData);
-      setPackages(packagesData);
-      setRewards(rewardsData);
-    } catch (err: any) {
-      console.error('Error loading data:', err);
-      setError(err.message || 'Failed to load data');
-      // Service categories were already set above; if another query failed (e.g. missing index),
-      // try loading only categories so saved categories still appear after refresh
-      try {
-        const categoriesData = await outletService.getServiceCategories(outletID);
-        const list = Array.isArray(categoriesData) && categoriesData.length > 0
-          ? categoriesData
-          : DEFAULT_SERVICE_CATEGORIES;
-        setServiceCategories(list);
-      } catch (_) {
-        // keep existing serviceCategories state
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [outletID, hasOutlet]);
-
-  // Initial one-time load for collections that don't have real-time listeners (e.g. outlet serviceCategories)
+  // Outlet switch: drop cached domains so the next route load is scoped to the new tenant.
   useEffect(() => {
-    if (!hasOutlet || !outletID) return;
-    // Fire and forget; errors are handled inside loadData
-    loadData();
-  }, [hasOutlet, outletID, loadData]);
+    loadedDomainsRef.current = new Set();
+    pendingTablesRef.current = new Set();
+    setClients([]);
+    setStaff([]);
+    setAppointments([]);
+    setTransactions([]);
+    setServices([]);
+    setProducts([]);
+    setPackages([]);
+    setRewards([]);
+  }, [outletID]);
 
-  // Set up Supabase Realtime + polling refresh
-  useEffect(() => {
-    if (!hasOutlet || !outletID) return;
+  const refreshDomain = useCallback(
+    async (domain: OutletDataDomain, trigger: 'initial_load' | 'route_change' | 'realtime_event' | 'manual_refresh' = 'manual_refresh') => {
+      if (!hasOutlet) return;
+      const { setTelemetryTrigger } = await import('../services/queryTelemetry');
+      setTelemetryTrigger(trigger);
 
-    console.log("Supabase data mode: Realtime + refresh for outlet:", outletID);
-    let cancelled = false;
-    let debounceTimer: number | undefined;
-    const supabase = createBrowserSupabaseClient(
-      import.meta.env as unknown as Record<string, string | undefined>
-    );
-
-    const refreshAll = async () => {
-      try {
-        const [
-          staffData,
-          appointmentsData,
-          servicesData,
-          categoriesData,
-          clientsData,
-          transactionsData,
-          productsData,
-          packagesData,
-          rewardsData,
-        ] = await Promise.all([
-          staffService.getAll(outletID),
-          appointmentService.getAll(outletID),
-          serviceService.getAll(outletID),
-          outletService.getServiceCategories(outletID),
-          clientService.getAll(outletID),
-          transactionService.getAll(outletID),
-          productService.getAll(outletID),
-          packageService.getAll(outletID),
-          rewardService.getAll(outletID),
-        ]);
-        if (cancelled) return;
+      if (domain === 'catalog') {
+        const [staffData, servicesData, productsData, packagesData, rewardsData, categoriesData] =
+          await Promise.all([
+            staffService.getAll(outletID),
+            serviceService.getAll(outletID),
+            productService.getAll(outletID),
+            packageService.getAll(outletID),
+            rewardService.getAll(outletID),
+            outletService.getServiceCategories(outletID),
+          ]);
         setStaff(staffData);
-        setAppointments(appointmentsData.filter((a) => !a.id.startsWith("app_onduty_")));
         setServices(servicesData);
-        setClients(clientsData);
-        setTransactions(transactionsData);
         setProducts(productsData);
         setPackages(packagesData);
         setRewards(rewardsData);
         if (Array.isArray(categoriesData) && categoriesData.length > 0) {
           setServiceCategories(categoriesData);
+        } else {
+          setServiceCategories(DEFAULT_SERVICE_CATEGORIES);
         }
+      } else if (domain === 'clients') {
+        // First page only for list shells; CRM search uses clientService.search.
+        const clientsData = await clientService.listPage(outletID, { limit: 50, offset: 0 });
+        setClients(clientsData);
+      } else if (domain === 'appointments') {
+        // Default: rolling 60-day window (past 7 + next 53) instead of all history.
+        const today = new Date();
+        const start = new Date(today);
+        start.setDate(start.getDate() - 7);
+        const end = new Date(today);
+        end.setDate(end.getDate() + 53);
+        const startDate = start.toISOString().slice(0, 10);
+        const endDate = end.toISOString().slice(0, 10);
+        const appointmentsData = await appointmentService.getInDateRange(startDate, endDate, outletID);
+        setAppointments(appointmentsData.filter((a) => !a.id.startsWith('app_onduty_')));
+      } else if (domain === 'transactions') {
+        // Default: last 62 days of ledger rows (list projection, no items JSON).
+        const end = new Date();
+        const start = new Date();
+        start.setDate(start.getDate() - 62);
+        const transactionsData = await transactionService.getInDateRange(
+          start.toISOString(),
+          end.toISOString(),
+          outletID,
+          { limit: 500, offset: 0 },
+        );
+        setTransactions(transactionsData);
+      }
+      loadedDomainsRef.current.add(domain);
+    },
+    [hasOutlet, outletID],
+  );
+
+  const loadData = useCallback(async () => {
+    if (!hasOutlet || !outletID) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const domains = new Set<OutletDataDomain>(['catalog', ...domainsForRoute(activeRoute)]);
+      for (const domain of domains) await refreshDomain(domain, 'manual_refresh');
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load data');
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [activeRoute, hasOutlet, outletID, refreshDomain]);
+
+  // Route-scoped load: catalog always; heavy domains only when the active route needs them.
+  useEffect(() => {
+    if (!hasOutlet || !outletID) return;
+    let cancelled = false;
+
+    const run = async () => {
+      const needed = domainsForRoute(activeRoute);
+      const missing = [...needed].filter((d) => !loadedDomainsRef.current.has(d));
+      // Always ensure catalog on first paint
+      if (!loadedDomainsRef.current.has('catalog') && !missing.includes('catalog')) {
+        missing.unshift('catalog');
+      }
+      if (missing.length === 0) {
         setLoading(false);
-      } catch (err: any) {
-        console.error("Supabase refresh error:", err);
-        if (!cancelled) {
-          setError(err?.message || "Failed to load Supabase data");
-          setLoading(false);
+        return;
+      }
+      setLoading(true);
+      setError(null);
+      try {
+        const trigger = loadedDomainsRef.current.size === 0 ? 'initial_load' : 'route_change';
+        for (const domain of missing) {
+          if (cancelled) return;
+          await refreshDomain(domain, trigger);
         }
+      } catch (err: any) {
+        console.error('Error loading outlet data:', err);
+        if (!cancelled) setError(err?.message || 'Failed to load data');
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     };
 
-    const scheduleRefresh = () => {
-      if (debounceTimer) window.clearTimeout(debounceTimer);
-      debounceTimer = window.setTimeout(() => {
-        void refreshAll();
-      }, 300);
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [hasOutlet, outletID, activeRoute, refreshDomain]);
+
+  // Realtime: refresh only the affected loaded domain (never full-table dump of all domains).
+  useEffect(() => {
+    if (!hasOutlet || !outletID) return;
+
+    let cancelled = false;
+    let debounceTimer: number | undefined;
+    const supabase = createBrowserSupabaseClient(
+      import.meta.env as unknown as Record<string, string | undefined>,
+    );
+
+    const flushPending = () => {
+      const tables = [...pendingTablesRef.current];
+      pendingTablesRef.current.clear();
+      const domains = new Set<OutletDataDomain>();
+      for (const table of tables) {
+        const domain = tableToDomain(table);
+        if (!domain) continue;
+        if (loadedDomainsRef.current.has(domain)) domains.add(domain);
+      }
+      void (async () => {
+        try {
+          for (const domain of domains) {
+            if (cancelled) return;
+            await refreshDomain(domain, 'realtime_event');
+          }
+        } catch (err: any) {
+          console.error('Supabase targeted refresh error:', err);
+        }
+      })();
     };
 
-    void refreshAll();
+    const scheduleTableRefresh = (table: string) => {
+      pendingTablesRef.current.add(table);
+      if (debounceTimer) window.clearTimeout(debounceTimer);
+      debounceTimer = window.setTimeout(flushPending, 300);
+    };
 
     const tables = [
-      "clients",
-      "staff",
-      "services",
-      "appointments",
-      "transactions",
-      "products",
-      "packages",
-      "rewards",
-      "vouchers",
-      "outlets",
+      'clients',
+      'staff',
+      'services',
+      'appointments',
+      'transactions',
+      'products',
+      'packages',
+      'rewards',
+      'vouchers',
+      'outlets',
     ] as const;
 
     let channel = supabase.channel(`merchant-outlet-${outletID}`);
     for (const table of tables) {
       const filter = `outlet_id=eq.${outletID}`;
       channel = channel.on(
-        "postgres_changes",
+        'postgres_changes',
         {
-          event: "*",
-          schema: "public",
+          event: '*',
+          schema: 'public',
           table,
           filter,
         },
-        () => scheduleRefresh()
+        () => scheduleTableRefresh(table),
       );
     }
     channel.subscribe((status) => {
-      if (status === "SUBSCRIBED") {
-        console.log("Supabase Realtime subscribed for outlet:", outletID);
+      if (status === 'SUBSCRIBED' && import.meta.env.DEV) {
+        console.debug('Supabase Realtime subscribed for outlet:', outletID);
       }
     });
-
-    const pollTimer = window.setInterval(() => {
-      void refreshAll();
-    }, 60000);
 
     return () => {
       cancelled = true;
       if (debounceTimer) window.clearTimeout(debounceTimer);
-      window.clearInterval(pollTimer);
       void supabase.removeChannel(channel);
     };
-  }, [outletID, isCashier]);
+  }, [outletID, hasOutlet, isCashier, refreshDomain]);
 
   // Client operations
   const handleAddClient = useCallback(async (client: Omit<Client, 'id' | 'points' | 'outletID'> & { points?: number; outletID?: string }) => {
@@ -467,8 +493,7 @@ export const useFirestoreData = (outletID: string, role: FirestoreUserRole = nul
     try {
       console.log('Updating appointment:', id, status, updates);
 
-      const allAppts = await appointmentService.getAll(outletID);
-      const existing = allAppts.find((a) => a.id === id);
+      const existing = await appointmentService.getById(id, outletID);
       if (!existing) {
         console.warn(`Appointment ${id} not found - may have been deleted (e.g., when sale was voided). Skipping update.`);
         return;
@@ -509,14 +534,12 @@ export const useFirestoreData = (outletID: string, role: FirestoreUserRole = nul
 
     try {
       console.log('🗑️ Deleting appointment:', id, 'outletID:', outletID);
-      const allAppts = await appointmentService.getAll(outletID);
-      let appointment = allAppts.find((a) => a.id === id);
+      let appointment = await appointmentService.getById(id, outletID);
 
       if (!appointment) {
         console.warn(`⚠️ Appointment ${id} not found. Checking again after short delay...`);
         await new Promise((resolve) => setTimeout(resolve, 500));
-        const retryAppts = await appointmentService.getAll(outletID);
-        appointment = retryAppts.find((a) => a.id === id);
+        appointment = await appointmentService.getById(id, outletID);
         if (!appointment) {
           console.log(`ℹ️ Appointment ${id} confirmed deleted (likely by another process).`);
           return;
@@ -642,10 +665,8 @@ export const useFirestoreData = (outletID: string, role: FirestoreUserRole = nul
         }
 
         const listCommissionsForSale = async () => {
-          const all = await transactionService.getAll(outletID);
-          return all.filter(
-            (t) => t.parentSaleId === id && t.category === 'Commission'
-          );
+          const children = await transactionService.listByParentSaleId(id, outletID);
+          return children.filter((t) => t.category === 'Commission');
         };
 
         const existing = await listCommissionsForSale();
@@ -778,17 +799,13 @@ export const useFirestoreData = (outletID: string, role: FirestoreUserRole = nul
     try {
       console.log('Deleting transaction:', id);
 
-      const allTxns = await transactionService.getAll(outletID);
-        const txnData = allTxns.find((t) => t.id === id);
+      const txnData = await transactionService.getById(id, outletID);
         if (!txnData) throw new Error('Transaction not found');
         if (txnData.outletID !== outletID) {
           throw new Error('Transaction does not belong to this outlet');
         }
 
-        const allAppts = await appointmentService.getAll(outletID);
-        const linkedAppts = allAppts.filter(
-          (a) => a.saleId === id || (a as any).sourceSaleId === id
-        );
+        const linkedAppts = await appointmentService.listBySaleId(id, outletID);
         for (const appt of linkedAppts) {
           await appointmentService.delete(appt.id, outletID);
         }
@@ -796,9 +813,8 @@ export const useFirestoreData = (outletID: string, role: FirestoreUserRole = nul
           console.log('Deleted', linkedAppts.length, 'appointment(s) linked to sale', id);
         }
 
-        const commissions = allTxns.filter(
-          (t) => t.parentSaleId === id && t.category === 'Commission'
-        );
+        const children = await transactionService.listByParentSaleId(id, outletID);
+        const commissions = children.filter((t) => t.category === 'Commission');
         for (const c of commissions) {
           await transactionService.delete(c.id, outletID);
         }
@@ -875,8 +891,7 @@ export const useFirestoreData = (outletID: string, role: FirestoreUserRole = nul
     try {
       console.log('Voiding transaction:', id);
 
-      const allTxns = await transactionService.getAll(outletID);
-      const txnData = allTxns.find((t) => t.id === id);
+      const txnData = await transactionService.getById(id, outletID);
       if (!txnData) throw new Error('Transaction not found');
       if (txnData.outletID !== outletID) {
         throw new Error('Transaction does not belong to this outlet');
@@ -944,10 +959,7 @@ export const useFirestoreData = (outletID: string, role: FirestoreUserRole = nul
         await clientService.incrementVoucherCount(clientId, vouchersToRefund, outletID);
       }
 
-      const allAppts = await appointmentService.getAll(outletID);
-      const linkedAppts = allAppts.filter(
-        (a) => a.saleId === id || (a as any).sourceSaleId === id
-      );
+      const linkedAppts = await appointmentService.listBySaleId(id, outletID);
       for (const appt of linkedAppts) {
         await appointmentService.delete(appt.id, outletID);
       }
@@ -955,9 +967,8 @@ export const useFirestoreData = (outletID: string, role: FirestoreUserRole = nul
         console.log('Deleted', linkedAppts.length, 'appointment(s) linked to voided sale', id);
       }
 
-      const commissions = allTxns.filter(
-        (t) => t.parentSaleId === id && t.category === 'Commission'
-      );
+      const children = await transactionService.listByParentSaleId(id, outletID);
+      const commissions = children.filter((t) => t.category === 'Commission');
       for (const c of commissions) {
         await transactionService.delete(c.id, outletID);
       }
@@ -1100,9 +1111,8 @@ export const useFirestoreData = (outletID: string, role: FirestoreUserRole = nul
   const handleUpdateRewards = useCallback(async (newRewards: Reward[]) => {
     try {
       console.log('Updating rewards in Firestore:', newRewards.length);
-      // This is a batch update - you might want to implement a batch service
-      // For now, we'll update individually
-      const currentRewards = await rewardService.getAll(outletID);
+      // Diff against in-memory catalog (already loaded) — avoid full getAll refetch.
+      const currentRewards = rewards;
       const currentIds = new Set(currentRewards.map(r => r.id));
       const newIds = new Set(newRewards.map(r => r.id));
 
@@ -1131,7 +1141,7 @@ export const useFirestoreData = (outletID: string, role: FirestoreUserRole = nul
       setError(err.message || 'Failed to update rewards');
       throw err;
     }
-  }, [outletID]);
+  }, [outletID, rewards]);
 
   const handleAddServiceCategory = useCallback(async (category: string) => {
     const name = (category || '').trim();

@@ -41,8 +41,8 @@ The `invite-outlet-member` function requires its standard protected function env
 ## Apply to a local or test project
 
 ```powershell
-npx supabase start
-npx supabase db reset
+npm run supabase:start
+npm run supabase:reset
 npm run supabase:types
 npx supabase functions serve invite-outlet-member --no-verify-jwt
 ```
@@ -50,7 +50,7 @@ npx supabase functions serve invite-outlet-member --no-verify-jwt
 Deploy only after reviewing the linked project:
 
 ```powershell
-npx supabase db push --linked
+npx supabase --workdir migration db push --linked
 npx supabase functions deploy invite-outlet-member
 ```
 

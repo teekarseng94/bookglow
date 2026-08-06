@@ -1,10 +1,11 @@
 
-import React, { useState, useMemo, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useMemo, useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Service, Product, Package, Client, Transaction, TransactionType, CartItem, Staff, RoleCommission, Appointment, OutletSettings } from '../types';
 import { Icons } from '../constants';
 import ReceiptTemplate, { type ReceiptTemplateData } from '../components/ReceiptTemplate';
+import { clientService, getCurrentOutletID } from '../services/databaseService';
 import {
   POSCartItem,
   POSCartSheet,
@@ -229,10 +230,14 @@ const POS: React.FC<POSProps> = ({
     return map;
   }, [cart]);
 
-  const selectedClientData = useMemo(
-    () => (selectedClient ? clients.find((c) => c.id === selectedClient) : null),
-    [clients, selectedClient]
-  );
+  /** Cache selected customer so POS does not require a full CRM download. */
+  const [selectedClientCache, setSelectedClientCache] = useState<Client | null>(null);
+
+  const selectedClientData = useMemo(() => {
+    if (!selectedClient) return null;
+    if (selectedClientCache?.id === selectedClient) return selectedClientCache;
+    return clients.find((c) => c.id === selectedClient) || null;
+  }, [clients, selectedClient, selectedClientCache]);
 
   /** Points already reserved by other redeemed lines (excludes `excludeLineId`). */
   const pointsUsedByOtherRedemptions = (excludeLineId: string) =>
@@ -288,23 +293,31 @@ const POS: React.FC<POSProps> = ({
     });
   }, [selectedClientData, cart]);
 
-  // Customer autocomplete: filter by name (starts with or contains) or phone, limit for performance
-  const customerSuggestions = useMemo(() => {
-    const q = customerSearchQuery.trim().toLowerCase();
-    if (!q) return clients.slice(0, 30);
-    const nameMatch = (name: string) => {
-      const n = (name || '').trim().toLowerCase();
-      return n.startsWith(q) || n.includes(q);
-    };
-    const phoneDigits = q.replace(/\D/g, '');
-    return clients
-      .filter(
-        (c) =>
-          nameMatch(c.name) ||
-          (phoneDigits.length >= 2 && c.phone && c.phone.replace(/\D/g, '').includes(phoneDigits))
-      )
-      .slice(0, 30);
-  }, [clients, customerSearchQuery]);
+  // Server-side customer typeahead (debounced) — does not download the full member table.
+  const [customerSuggestions, setCustomerSuggestions] = useState<Client[]>([]);
+  const customerSearchSeq = useRef(0);
+  useEffect(() => {
+    const q = customerSearchQuery.trim();
+    if (selectedClient) {
+      setCustomerSuggestions([]);
+      return;
+    }
+    if (q.length < 1) {
+      setCustomerSuggestions([]);
+      return;
+    }
+    const outletID = getCurrentOutletID();
+    if (!outletID) return;
+    const seq = ++customerSearchSeq.current;
+    const timer = window.setTimeout(() => {
+      void clientService.search(q, outletID, 20).then((rows) => {
+        if (customerSearchSeq.current === seq) setCustomerSuggestions(rows);
+      }).catch(() => {
+        if (customerSearchSeq.current === seq) setCustomerSuggestions([]);
+      });
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [customerSearchQuery, selectedClient]);
 
   // Keep search input in sync when selection is set from outside (e.g. Quick POS)
   useEffect(() => {
@@ -312,6 +325,17 @@ const POS: React.FC<POSProps> = ({
       setCustomerSearchQuery(selectedClientData.name);
     }
   }, [selectedClient, selectedClientData]);
+
+  // Resolve member handed off from Member Details / Quick POS without loading all clients.
+  useEffect(() => {
+    if (!selectedClient || selectedClientCache?.id === selectedClient) return;
+    if (clients.some((c) => c.id === selectedClient)) return;
+    const outletID = getCurrentOutletID();
+    if (!outletID) return;
+    void clientService.getById(selectedClient, outletID).then((row) => {
+      if (row) setSelectedClientCache(row);
+    });
+  }, [selectedClient, selectedClientCache, clients]);
 
   // Position dropdown under input (for portal); update when open or scroll/resize so it stays aligned
   const updateCustomerDropdownRect = () => {
@@ -873,6 +897,7 @@ const POS: React.FC<POSProps> = ({
                 onChange={(e) => {
                   setCustomerSearchQuery(e.target.value);
                   setSelectedClient('');
+                  setSelectedClientCache(null);
                   setQuickPOSMemberName(null);
                   setCustomerDropdownOpen(true);
                 }}
@@ -898,6 +923,7 @@ const POS: React.FC<POSProps> = ({
                       onMouseDown={(e) => {
                         e.preventDefault();
                         setSelectedClient('');
+                        setSelectedClientCache(null);
                         setCustomerSearchQuery('');
                         setQuickPOSMemberName(null);
                         setCustomerDropdownOpen(false);
@@ -916,6 +942,7 @@ const POS: React.FC<POSProps> = ({
                           onMouseDown={(e) => {
                             e.preventDefault();
                             setSelectedClient(client.id);
+                            setSelectedClientCache(client);
                             setCustomerSearchQuery(client.name);
                             setQuickPOSMemberName(null);
                             setCustomerDropdownOpen(false);

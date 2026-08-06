@@ -3,7 +3,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Client, Transaction, TransactionType, Service, Reward } from '../types';
 import { Icons, COLORS } from '../constants';
-import { getCurrentOutletID } from '../services/databaseService';
+import { clientService, getCurrentOutletID } from '../services/databaseService';
 import {
   MemberFilterSheet,
   MemberPageHeader,
@@ -169,12 +169,39 @@ const CRM: React.FC<CRMProps> = ({
     }
   }, [memberFormSettings]);
 
-  const filteredClients = useMemo(() => 
-    clients.filter(c => 
-      c.name.toLowerCase().includes(search.toLowerCase()) || 
-      (c.email && c.email.toLowerCase().includes(search.toLowerCase())) ||
-      (c.phone && c.phone.includes(search))
-    ), [clients, search]);
+  // Server search when the user types; otherwise show the first page from props.
+  const [searchResults, setSearchResults] = useState<Client[] | null>(null);
+  const searchSeq = useRef(0);
+  useEffect(() => {
+    const q = search.trim();
+    if (q.length < 1) {
+      setSearchResults(null);
+      return;
+    }
+    const outletID = getCurrentOutletID();
+    if (!outletID) return;
+    const seq = ++searchSeq.current;
+    const timer = window.setTimeout(() => {
+      void clientService.search(q, outletID, 40).then((rows) => {
+        if (searchSeq.current === seq) setSearchResults(rows);
+      }).catch(() => {
+        if (searchSeq.current === seq) setSearchResults(null);
+      });
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [search]);
+
+  const filteredClients = useMemo(() => {
+    if (searchResults) return searchResults;
+    const q = search.trim().toLowerCase();
+    if (!q) return clients;
+    return clients.filter(
+      (c) =>
+        c.name.toLowerCase().includes(q) ||
+        (c.email && c.email.toLowerCase().includes(q)) ||
+        (c.phone && c.phone.includes(search.trim())),
+    );
+  }, [clients, search, searchResults]);
 
   // Normalize phone for duplicate check (digits only)
   const normalizePhoneForCompare = (phone: string) =>

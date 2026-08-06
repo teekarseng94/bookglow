@@ -1,4 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import {
+  fetchMonthlyReportSummary,
+  type MonthlyReportSummary,
+} from '../services/dashboardService';
 import { Transaction, TransactionType, Staff } from '../types';
 import { ReportPageHeader, ReportSummaryStrip, ReportFiltersSheet } from '../components/reports';
 import { Button } from '../components/ui/Button';
@@ -648,32 +652,126 @@ function MonthlySummaryCard({ data, monthLabel }: { data: MonthlySummaryData; mo
   );
 }
 
+function mergeMonthlyWithRpc(
+  local: MonthlySummaryData,
+  rpc: MonthlyReportSummary | null,
+): MonthlySummaryData {
+  if (!rpc) return local;
+  const expenses: Record<string, number> = {
+    Rent: 0,
+    Supplies: 0,
+    Utilities: 0,
+    Marketing: 0,
+    Payroll: 0,
+    Commission: 0,
+    Other: 0,
+    ...rpc.expenses,
+  };
+  for (const k of Object.keys(expenses)) {
+    expenses[k] = Number(expenses[k]) || 0;
+  }
+  return {
+    ...local,
+    collectionTotal: rpc.collection_total,
+    collection: rpc.collection.length > 0 ? rpc.collection : local.collection,
+    salesTotal: rpc.sales_total,
+    customerPax: rpc.customer_pax,
+    service: rpc.service,
+    product: rpc.product,
+    package: rpc.package,
+    receipt: {
+      ...local.receipt,
+      totalCount: rpc.total_count,
+      averageSales: rpc.average_sales,
+      voidedCount: rpc.voided_count,
+      voidedSales: rpc.voided_sales,
+    },
+    expenses,
+    totalCollection: rpc.total_collection,
+    totalExpenses: rpc.total_expenses,
+    closingBalance: rpc.closing_balance,
+  };
+}
+
 const ReportPage: React.FC<ReportPageProps> = ({ transactions, outletID, staff }) => {
   const [reportNav, setReportNav] = useState('monthly-summary');
   const [searchQuery, setSearchQuery] = useState('');
   const [showNavSheet, setShowNavSheet] = useState(false);
+  const [rpcMonth1, setRpcMonth1] = useState<MonthlyReportSummary | null>(null);
+  const [rpcMonth2, setRpcMonth2] = useState<MonthlyReportSummary | null>(null);
 
   // Report period: single month (for Summary Report and first card)
   const now = new Date();
   const [reportYear, setReportYear] = useState(now.getFullYear());
   const [reportMonth, setReportMonth] = useState(now.getMonth() + 1); // 1-12
 
-  // Two monthly cards: (reportYear, reportMonth) and (reportYear, reportMonth + 1)
-  const month1Data = useMemo(
-    () => computeMonthlySummary(transactions, outletID, staff, reportYear, reportMonth),
-    [transactions, outletID, staff, reportYear, reportMonth]
-  );
   const month2Year = reportMonth === 12 ? reportYear + 1 : reportYear;
   const month2Month = reportMonth === 12 ? 1 : reportMonth + 1;
+
+  useEffect(() => {
+    if (!outletID?.trim()) {
+      setRpcMonth1(null);
+      setRpcMonth2(null);
+      return;
+    }
+    let cancelled = false;
+    void Promise.all([
+      fetchMonthlyReportSummary(outletID, reportYear, reportMonth),
+      fetchMonthlyReportSummary(outletID, month2Year, month2Month),
+    ])
+      .then(([m1, m2]) => {
+        if (!cancelled) {
+          setRpcMonth1(m1);
+          setRpcMonth2(m2);
+        }
+      })
+      .catch((err) => {
+        console.warn('Monthly report RPC unavailable; using local fallback.', err?.message || err);
+        if (!cancelled) {
+          setRpcMonth1(null);
+          setRpcMonth2(null);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [outletID, reportYear, reportMonth, month2Year, month2Month]);
+
+  // Two monthly cards: prefer RPC financials; keep staff/top-service from local items.
+  const month1Data = useMemo(
+    () =>
+      mergeMonthlyWithRpc(
+        computeMonthlySummary(transactions, outletID, staff, reportYear, reportMonth),
+        rpcMonth1,
+      ),
+    [transactions, outletID, staff, reportYear, reportMonth, rpcMonth1]
+  );
   const month2Data = useMemo(
-    () => computeMonthlySummary(transactions, outletID, staff, month2Year, month2Month),
-    [transactions, outletID, staff, month2Year, month2Month]
+    () =>
+      mergeMonthlyWithRpc(
+        computeMonthlySummary(transactions, outletID, staff, month2Year, month2Month),
+        rpcMonth2,
+      ),
+    [transactions, outletID, staff, month2Year, month2Month, rpcMonth2]
   );
   const month1Label = new Date(reportYear, reportMonth - 1, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
   const month2Label = new Date(month2Year, month2Month - 1, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
 
-  // Summary Report: TnG, Cash, Other, Total Revenue from transactions (SALE only, not voided, selected month, current outlet)
+  // Summary Report: TnG, Cash, Other — prefer RPC collection when available.
   const summaryReport = useMemo(() => {
+    if (rpcMonth1) {
+      let tng = 0;
+      let cash = 0;
+      let other = 0;
+      for (const row of rpcMonth1.collection) {
+        const bucket = paymentBucket(row.name);
+        if (bucket === 'TnG') tng += row.value;
+        else if (bucket === 'Cash') cash += row.value;
+        else other += row.value;
+      }
+      return { tng, cash, other, totalRevenue: tng + cash + other };
+    }
+
     const tng: number[] = [];
     const cash: number[] = [];
     const other: number[] = [];
@@ -706,7 +804,7 @@ const ReportPage: React.FC<ReportPageProps> = ({ transactions, outletID, staff }
       other: otherTotal,
       totalRevenue: tngTotal + cashTotal + otherTotal
     };
-  }, [transactions, outletID, reportYear, reportMonth]);
+  }, [rpcMonth1, transactions, outletID, reportYear, reportMonth]);
 
   const reportMonthLabel = useMemo(() => {
     return new Date(reportYear, reportMonth - 1, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });

@@ -4,7 +4,7 @@
  * Single dashboardData useMemo so POS completions update the dashboard instantly.
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   BarChart3,
@@ -21,6 +21,10 @@ import {
 import { Transaction, TransactionType, Client, Appointment, Service, Product, OutletSettings } from '../types';
 import { useUserContext } from '../contexts/UserContext';
 import { Button } from '../components/ui';
+import {
+  fetchDashboardAggregates,
+  type DashboardAggregates,
+} from '../services/dashboardService';
 import {
   AttentionList,
   BookingLinkCard,
@@ -79,6 +83,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [currentDate, setCurrentDate] = useState(new Date());
   const [topSellingTab, setTopSellingTab] = useState<TopSellingTab>('service');
   const [salesPeriod, setSalesPeriod] = useState<'today' | 'week' | 'month'>('week');
+  const [rpcAggregates, setRpcAggregates] = useState<DashboardAggregates | null>(null);
   const navigate = useNavigate();
   const { user, userData } = useUserContext();
 
@@ -89,8 +94,115 @@ const Dashboard: React.FC<DashboardProps> = ({
     return firstName ? `${prefix}, ${firstName}` : prefix;
   }, [user?.displayName, userData?.displayName]);
 
-  // Single dashboard data object: recalculates when transactions (or outletID) change so POS updates show instantly.
+  // Date bounds for RPC — preserve existing Dashboard window rules (UTC month / local week-day).
+  const aggregateBounds = useMemo(() => {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+    const today = formatLocalDate(now);
+    const yesterdayDate = new Date(now);
+    yesterdayDate.setDate(now.getDate() - 1);
+    const yesterday = formatLocalDate(yesterdayDate);
+    const dow = now.getDay();
+    const monOffset = dow === 0 ? -6 : 1 - dow;
+    const weekMon = new Date(now);
+    weekMon.setDate(now.getDate() + monOffset);
+    const weekSun = new Date(weekMon);
+    weekSun.setDate(weekMon.getDate() + 6);
+    const lastWeekMon = new Date(weekMon);
+    lastWeekMon.setDate(weekMon.getDate() - 7);
+    const lastWeekSun = new Date(weekMon);
+    lastWeekSun.setDate(weekMon.getDate() - 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+    return {
+      monthStart,
+      monthEnd,
+      weekStart: formatLocalDate(weekMon),
+      weekEnd: formatLocalDate(weekSun),
+      today,
+      yesterday,
+      prevWeekStart: formatLocalDate(lastWeekMon),
+      prevWeekEnd: formatLocalDate(lastWeekSun),
+      prevMonthStart: formatLocalDate(lastMonthStart),
+      prevMonthEnd: formatLocalDate(lastMonthEnd),
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!outletID?.trim()) {
+      setRpcAggregates(null);
+      return;
+    }
+    let cancelled = false;
+    void fetchDashboardAggregates(outletID, aggregateBounds)
+      .then((data) => {
+        if (!cancelled) setRpcAggregates(data);
+      })
+      .catch((err) => {
+        console.warn('Dashboard aggregate RPC unavailable; using local fallback.', err?.message || err);
+        if (!cancelled) setRpcAggregates(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [outletID, aggregateBounds]);
+
+  // Prefer RPC aggregates; fall back to in-memory transactions when RPC is not deployed.
   const dashboardData = useMemo(() => {
+    if (rpcAggregates) {
+      const cat = rpcAggregates.category_summary;
+      const weekAvgSale =
+        rpcAggregates.week_txn_count > 0
+          ? rpcAggregates.week_sales / rpcAggregates.week_txn_count
+          : 0;
+      const topSellingAll = rpcAggregates.top_selling.map((t) => ({
+        name: t.name,
+        type: t.type,
+        quantity: t.quantity,
+        amount: t.amount,
+      }));
+      const visitors = rpcAggregates.visitors.map((v) => {
+        const tier =
+          v.points >= 1000 ? 'Gold Member' : v.points >= 300 ? 'Regular Member' : 'New Member';
+        return { clientId: v.client_id, name: v.name, spent: v.spent, tier };
+      });
+      return {
+        stats: {
+          revenue: rpcAggregates.revenue,
+          expenses: rpcAggregates.expenses,
+          expenseTxnCount: rpcAggregates.expense_txn_count,
+          profit: rpcAggregates.profit,
+          clientCount: rpcAggregates.client_count,
+        },
+        chartData: rpcAggregates.week_chart.map((d) => ({
+          day: d.day,
+          sales: Math.round(d.sales * 100) / 100,
+        })),
+        totalSalesThisWeek: rpcAggregates.week_sales,
+        weekTxnCount: rpcAggregates.week_txn_count,
+        weekTopItem: topSellingAll[0]?.name ?? null,
+        weekAvgSale,
+        categorySummary: [
+          { label: 'Service', value: cat.service, icon: TrendingUp, color: 'text-[var(--brand)]' },
+          { label: 'Product', value: cat.product, icon: ShoppingCart, color: 'text-[var(--brand)]' },
+          { label: 'Package', value: cat.package, icon: Package, color: 'text-[var(--brand)]' },
+          { label: 'Discount', value: cat.discount, icon: Tag, color: 'text-[var(--brand)]' },
+          { label: 'Outstanding', value: cat.outstanding, icon: CreditCard, color: 'text-[var(--brand)]' },
+        ],
+        topSellingAll,
+        monthSales: Array.from({ length: rpcAggregates.month_sale_count }, () => ({}) as Transaction),
+        visitors,
+        visitorTotalCount: visitors.length,
+        paymentBreakdown: rpcAggregates.payment_summary.map((p) => ({
+          method: p.method,
+          amount: p.amount,
+        })),
+        outstandingCount: rpcAggregates.outstanding_count,
+        fromRpc: true as const,
+      };
+    }
+
     const now = new Date();
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
     const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
@@ -270,13 +382,39 @@ const Dashboard: React.FC<DashboardProps> = ({
       visitorTotalCount,
       paymentBreakdown,
       outstandingCount,
+      fromRpc: false as const,
     };
-  }, [transactions, clients, outletID]);
+  }, [rpcAggregates, transactions, clients, outletID]);
 
-  // Sales Snapshot period totals — additive; reuses the exact same "real sale" predicate as
-  // dashboardData's salesOnly filter above, just applied over Today/This week/This month ranges
-  // plus each range's immediately-prior period, so the trend line is always a genuine comparison.
+  // Sales Snapshot period totals — RPC periods when available; else local fallback.
   const periodSalesData = useMemo(() => {
+    const pctChange = (curr: number, prev: number): number | null =>
+      prev > 0 ? ((curr - prev) / prev) * 100 : null;
+
+    if (rpcAggregates) {
+      const chart = rpcAggregates.week_chart.map((d) => ({ label: d.day, value: d.sales }));
+      return {
+        today: {
+          total: rpcAggregates.periods.today.total,
+          trendPct: pctChange(rpcAggregates.periods.today.total, rpcAggregates.periods.today.prev),
+          chart: [
+            { label: 'Yday', value: rpcAggregates.periods.today.prev },
+            { label: 'Today', value: rpcAggregates.periods.today.total },
+          ],
+        },
+        week: {
+          total: rpcAggregates.periods.week.total,
+          trendPct: pctChange(rpcAggregates.periods.week.total, rpcAggregates.periods.week.prev),
+          chart,
+        },
+        month: {
+          total: rpcAggregates.periods.month.total,
+          trendPct: pctChange(rpcAggregates.periods.month.total, rpcAggregates.periods.month.prev),
+          chart,
+        },
+      };
+    }
+
     const isRevenueSale = (t: Transaction) => {
       if (t.type !== TransactionType.SALE) return false;
       if (t.category === 'Voucher' || t.category === 'Redemption') return false;
@@ -289,7 +427,6 @@ const Dashboard: React.FC<DashboardProps> = ({
       transactions
         .filter((t) => isRevenueSale(t) && (t.date || '').slice(0, 10) >= startIso && (t.date || '').slice(0, 10) <= endIso)
         .reduce((sum, t) => sum + t.amount, 0);
-    const pctChange = (curr: number, prev: number): number | null => (prev > 0 ? ((curr - prev) / prev) * 100 : null);
 
     const now = new Date();
     const todayIso = formatLocalDate(now);
@@ -343,7 +480,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         chart: chartByDay(formatLocalDate(monthStart), formatLocalDate(monthEnd)),
       },
     };
-  }, [transactions, outletID]);
+  }, [rpcAggregates, transactions, outletID]);
 
   // Top Selling per tab: filter by type, sort by quantity, top 5
   const topSellingByType = useMemo(() => {
@@ -367,25 +504,33 @@ const Dashboard: React.FC<DashboardProps> = ({
     const newClientsToday = clients.filter((c) => (c.createdAt || '').slice(0, 10) === todayIso).length;
     const newClientsYesterday = clients.filter((c) => (c.createdAt || '').slice(0, 10) === yesterdayIso).length;
 
-    // Returning this month = paid this month (already computed in dashboardData.monthSales) AND the
-    // account existed before this month started — i.e. not a brand-new signup.
-    const payingClientIdsThisMonth = new Set(
-      dashboardData.monthSales.map((t) => t.clientId).filter((id): id is string => !!id && id !== 'guest'),
-    );
+    // Returning this month: prefer RPC visitor ids; else fall back to monthSales client ids.
     let returningClientsThisMonth = 0;
-    payingClientIdsThisMonth.forEach((id) => {
-      const client = clients.find((c) => c.id === id);
-      if (client && (client.createdAt || '').slice(0, 10) < monthStartIso) returningClientsThisMonth += 1;
-    });
+    if (rpcAggregates) {
+      returningClientsThisMonth = rpcAggregates.visitors.filter((v) => {
+        const client = clients.find((c) => c.id === v.client_id);
+        return client && (client.createdAt || '').slice(0, 10) < monthStartIso;
+      }).length;
+    } else {
+      const payingClientIdsThisMonth = new Set(
+        dashboardData.monthSales.map((t) => t.clientId).filter((id): id is string => !!id && id !== 'guest'),
+      );
+      payingClientIdsThisMonth.forEach((id) => {
+        const client = clients.find((c) => c.id === id);
+        if (client && (client.createdAt || '').slice(0, 10) < monthStartIso) returningClientsThisMonth += 1;
+      });
+    }
 
-    const bookingsThisMonth = appointments.filter((a) => {
-      if (a.status === 'cancelled') return false;
-      if (typeof a.id === 'string' && a.id.startsWith('app_onduty_')) return false;
-      return a.date >= monthStartIso && a.date <= monthEndIso;
-    }).length;
+    const bookingsThisMonth = rpcAggregates
+      ? rpcAggregates.appointment_count
+      : appointments.filter((a) => {
+          if (a.status === 'cancelled') return false;
+          if (typeof a.id === 'string' && a.id.startsWith('app_onduty_')) return false;
+          return a.date >= monthStartIso && a.date <= monthEndIso;
+        }).length;
 
     return { newClientsToday, newClientsYesterday, returningClientsThisMonth, bookingsThisMonth };
-  }, [clients, appointments, dashboardData.monthSales]);
+  }, [clients, appointments, dashboardData.monthSales, rpcAggregates]);
 
   // Needs Attention inputs that require data Dashboard didn't previously receive (products) — additive only.
   const stockAlerts = useMemo(() => {

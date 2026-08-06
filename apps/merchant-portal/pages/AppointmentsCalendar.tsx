@@ -1,6 +1,7 @@
 
 import React, { useState, useMemo, useEffect, useRef, useLayoutEffect } from 'react';
 import { Appointment, Staff, Client, Service, RoleCommission, OutletSettings } from '../types';
+import { appointmentMatchesStaffColumn, buildScheduleStaffColumns, UNASSIGNED_STAFF_ID } from './scheduleLayout';
 import { Icons } from '../constants';
 import { generateReminderMessage } from '../services/geminiService';
 import {
@@ -167,6 +168,10 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
     [appointments]
   );
   const scheduleReady = staff.length > 0 && services.length > 0;
+  const desktopStaff = useMemo(
+    () => buildScheduleStaffColumns(staff, activeAppointments, selectedDate),
+    [staff, activeAppointments, selectedDate]
+  );
 
   // Clear selectedAppointment if it was deleted (e.g., when sale was voided/deleted)
   // This prevents stale references and the "Appointment not found" warnings
@@ -695,10 +700,10 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
 
           <div className="hidden min-h-0 flex-1 md:flex">
             <div className="schedule-desktop-workspace min-w-0 flex-1 overflow-auto">
-              <div className="relative min-w-[720px]" style={{ width: `${72 + Math.max(staff.length, 1) * 190}px` }}>
-                <div className="sticky top-0 z-30 grid h-[58px] border-b border-[var(--line)] bg-[var(--bg-surface)]" style={{ gridTemplateColumns: `72px repeat(${staff.length}, minmax(190px, 1fr))` }}>
+              <div className="relative min-w-[720px]" style={{ width: '100%', minWidth: `${72 + Math.max(desktopStaff.length, 1) * 170}px` }}>
+                <div className="sticky top-0 z-30 grid h-[62px] border-b border-[var(--line)] bg-[var(--bg-surface)]" style={{ gridTemplateColumns: `72px repeat(${desktopStaff.length}, minmax(170px, 1fr))` }}>
                   <div className="sticky left-0 z-40 border-r border-[var(--line)] bg-[var(--bg-surface)]" />
-                  {staff.map((member) => (
+                  {desktopStaff.map((member) => (
                     <div key={member.id} className="flex min-w-0 items-center gap-2.5 border-r border-[var(--line)] px-3">
                       {member.photoURL || member.profilePicture ? <img src={member.photoURL || member.profilePicture} alt="" className="h-9 w-9 rounded-full object-cover" /> :
                         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--brand-soft)] text-xs font-bold text-[var(--brand)]">{member.name.charAt(0)}</span>}
@@ -708,12 +713,12 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
                 </div>
                 <div className="relative" style={{ height: `${hours.length * 52}px` }}>
                   {hours.map((hour, index) => (
-                    <div key={hour} className="absolute left-0 right-0 grid border-b border-[var(--line)]" style={{ top: `${index * 52}px`, height: '52px', gridTemplateColumns: `72px repeat(${staff.length}, minmax(190px, 1fr))` }}>
+                    <div key={hour} className="absolute left-0 right-0 grid border-b border-[var(--line)]" style={{ top: `${index * 52}px`, height: '52px', gridTemplateColumns: `72px repeat(${desktopStaff.length}, minmax(170px, 1fr))` }}>
                       <div className="sticky left-0 z-20 border-r border-[var(--line)] bg-[var(--bg-surface)] px-2 pt-2 text-right text-[11px] text-[var(--text-muted)]">{hour}</div>
-                      {staff.map((member) => <button key={member.id} type="button" onClick={() => handleEmptySlotClick(member.id, hour, selectedDate)} className="border-r border-[var(--line)] hover:bg-[var(--bg-soft)]/50" aria-label={`Book ${member.name} at ${hour}`} />)}
+                      {desktopStaff.map((member) => <button key={member.id} type="button" disabled={member.id === UNASSIGNED_STAFF_ID} onClick={() => handleEmptySlotClick(member.id, hour, selectedDate)} className="border-r border-[var(--line)] hover:bg-[var(--bg-soft)]/50 disabled:cursor-default" aria-label={`Book ${member.name} at ${hour}`} />)}
                     </div>
                   ))}
-                  {staff.flatMap((member, staffIndex) => activeAppointments.filter((app) => app.date === selectedDate && app.staffId === member.id).map((app) => {
+                  {desktopStaff.flatMap((member, staffIndex) => activeAppointments.filter((app) => app.date === selectedDate && appointmentMatchesStaffColumn(app, member.id, staff)).map((app) => {
                     const service = services.find((item) => item.id === app.serviceId);
                     const client = clients.find((item) => item.id === app.clientId);
                     const [startH, startM] = app.time.split(':').map(Number);
@@ -722,22 +727,24 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
                     const tones = {
                       scheduled: 'border-[var(--brand-border)] bg-[var(--brand-soft)] text-[var(--brand)]',
                       completed: 'border-[var(--success)]/20 bg-[var(--success-soft)] text-[var(--success)]',
+                      confirmed: 'border-blue-200 bg-blue-50 text-blue-700',
                       'no-show': 'border-[var(--danger)]/20 bg-[var(--danger-soft)] text-[var(--danger)]',
                       cancelled: 'border-[var(--line)] bg-[var(--bg-soft)] text-[var(--text-muted)]',
                     };
                     return (
                       <button key={app.id} type="button" onClick={() => handleAppointmentClick(app)}
-                        className={`absolute z-10 overflow-hidden rounded-md border p-2 text-left transition-shadow hover:shadow-ui-sm ${tones[app.status]} ${selectedAppointment?.id === app.id ? 'ring-2 ring-[var(--brand)] ring-offset-1' : ''}`}
-                        style={{ left: `${72 + staffIndex * 190 + 5}px`, width: '180px', top: `${Math.max(0, startOffset / 30 * 52) + 4}px`, height: `${Math.max(44, duration / 30 * 52 - 8)}px` }}>
+                        title={`${app.time}-${app.endTime || app.time} · ${client?.name || 'Guest'} · ${service?.name || 'Service'} · ${member.name} · ${app.status}`}
+                        className={`absolute z-20 overflow-hidden rounded-lg border px-2 py-1.5 text-left transition-shadow hover:shadow-ui-sm ${tones[app.status]} ${selectedAppointment?.id === app.id ? 'ring-2 ring-[var(--brand)] ring-offset-1' : ''}`}
+                        style={{ left: `calc(${staffIndex / desktopStaff.length * 100}% + ${72 * (1 - staffIndex / desktopStaff.length) + 5}px)`, width: `calc(${100 / desktopStaff.length}% - ${72 / desktopStaff.length + 10}px)`, top: `${Math.max(0, startOffset / 30 * 52) + 4}px`, height: `${Math.max(44, duration / 30 * 52 - 8)}px` }}>
                         <p className="truncate text-[10px] font-medium opacity-80">{app.time} – {app.endTime || app.time}</p>
-                        <p className="truncate text-[12px] font-semibold text-[var(--text-primary)]">{client?.name || 'Guest'}</p>
-                        <p className="truncate text-[11px] text-[var(--text-secondary)]">{service?.name || 'Service'}</p>
-                        <p className="mt-1 truncate text-[10px] font-semibold capitalize">● {app.status}</p>
+                        <p className="truncate text-[13px] font-semibold text-[var(--text-primary)]">{client?.name || 'Guest'}</p>
+                        {duration > 30 ? <p className="truncate text-[11px] text-[var(--text-secondary)]">{service?.name || 'Service'}</p> : null}
+                        <p className="truncate text-[10px] font-semibold capitalize">● {app.status === 'no-show' ? 'No-show' : app.status}</p>
                       </button>
                     );
                   }))}
                   {selectedDate === todayIso && now.getHours() * 60 + now.getMinutes() >= 10 * 60 ? (
-                    <div className="pointer-events-none absolute z-20 h-px bg-[var(--danger)]" style={{ left: '72px', right: 0, top: `${(now.getHours() * 60 + now.getMinutes() - 10 * 60) / 30 * 52}px` }}>
+                    <div className="pointer-events-none absolute z-10 h-px bg-[var(--danger)]" style={{ left: '72px', right: 0, top: `${(now.getHours() * 60 + now.getMinutes() - 10 * 60) / 30 * 52}px` }}>
                       <span className="absolute -left-1 -top-1 h-2 w-2 rounded-full bg-[var(--danger)]" />
                     </div>
                   ) : null}

@@ -83,6 +83,7 @@ const POS: React.FC<POSProps> = ({
   const [useCustomDateTime, setUseCustomDateTime] = useState(false);
   const [customDate, setCustomDate] = useState<string>('');
   const [customTime, setCustomTime] = useState<string>('');
+  const loadedAppointmentIdRef = useRef<string | null>(null);
   useEffect(() => {
     const state = location.state as { selectedMember?: SelectedMemberFromRoute; redeemVoucher?: boolean } | null;
     if (state?.selectedMember?.id) {
@@ -113,7 +114,8 @@ const POS: React.FC<POSProps> = ({
   }, [useCustomDateTime, customDate, currentTime]);
 
   useEffect(() => {
-    if (activeAppointmentForSale && onClearActiveAppointment) {
+    if (activeAppointmentForSale && loadedAppointmentIdRef.current !== activeAppointmentForSale.id) {
+      loadedAppointmentIdRef.current = activeAppointmentForSale.id;
       const service = services.find(s => s.id === activeAppointmentForSale.serviceId);
       const assignedStaff = staff.find(s => s.id === activeAppointmentForSale.staffId);
       
@@ -124,9 +126,8 @@ const POS: React.FC<POSProps> = ({
         setCart([newItem]);
         setSelectedClient(activeAppointmentForSale.clientId === 'guest' ? '' : activeAppointmentForSale.clientId);
       }
-      onClearActiveAppointment();
     }
-  }, [activeAppointmentForSale, services, staff, roleCommissions, onClearActiveAppointment]);
+  }, [activeAppointmentForSale?.id, services, staff, roleCommissions]);
 
   // When voucher redemption mode is activated from Member Details, auto-add 1 default voucher service to the cart if empty.
   // Default voucher service is derived from the first configured package's first service; if none, fall back to the first service.
@@ -496,6 +497,8 @@ const POS: React.FC<POSProps> = ({
     setSaleComplete(false);
     setLastSaleData(null);
     setIsVoucherRedemptionMode(false);
+    loadedAppointmentIdRef.current = null;
+    onClearActiveAppointment?.();
   };
 
   const handleCheckout = async () => {
@@ -582,9 +585,13 @@ const POS: React.FC<POSProps> = ({
         amount: isVoucherSale ? 0 : total,
         category: isVoucherSale ? 'Redemption' : (hasRedemptions ? 'Redemption' : 'Sales'),
         description: isVoucherSale ? `Voucher redemption: ${cart.map(i => i.name).join(', ')}` : `Sale: ${cart.map(i => i.name).join(', ')}`,
-        paymentMethod: isVoucherSale ? 'Voucher' : (selectedPaymentMethod.startsWith('Member Credit') ? 'Member Credit' : selectedPaymentMethod)
+        paymentMethod: isVoucherSale ? 'Voucher' : (selectedPaymentMethod.startsWith('Member Credit') ? 'Member Credit' : selectedPaymentMethod),
+        appointmentId: activeAppointmentForSale?.id,
+        paymentStatus: 'paid',
       };
       await onCompleteSale(newTxn);
+      loadedAppointmentIdRef.current = null;
+      onClearActiveAppointment?.();
 
       if (hasRedemptions && selectedClientData && pointsToRedeem > 0) {
         try {

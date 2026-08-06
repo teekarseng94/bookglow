@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Transaction, Client, Staff } from '../types';
+import { Transaction, Client, Staff, Appointment } from '../types';
+import { appointmentService } from '../services/supabaseMerchant';
 import {
   AppModal,
   Button,
@@ -16,7 +17,7 @@ interface TransactionDetailModalProps {
   client: Client | undefined;
   staff: Staff[];
   onClose: () => void;
-  onVoid: (transactionId: string) => Promise<void>;
+  onVoid: (transactionId: string, reason?: string) => Promise<void>;
   onUpdate?: (id: string, updates: Partial<Transaction>) => Promise<void>;
   /** Optional: list of payment methods for the Edit payment dropdown (e.g. from outlet settings) */
   paymentMethods?: string[];
@@ -32,6 +33,8 @@ const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   paymentMethods = [],
 }) => {
   const [isVoiding, setIsVoiding] = useState(false);
+  const [voidReason, setVoidReason] = useState('');
+  const [linkedAppointment, setLinkedAppointment] = useState<Appointment | null>(null);
   const [showVoidConfirm, setShowVoidConfirm] = useState(false);
   const [showEditDate, setShowEditDate] = useState(false);
   const [editedDate, setEditedDate] = useState(transaction.date.split('T')[0]);
@@ -47,6 +50,14 @@ const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   useEffect(() => {
     setEditedPaymentMethod(transaction.paymentMethod ?? '');
   }, [transaction.paymentMethod]);
+
+  useEffect(() => {
+    let active = true;
+    appointmentService.listBySaleId(transaction.id, transaction.outletID)
+      .then((rows) => { if (active) setLinkedAppointment(rows[0] || null); })
+      .catch(() => { if (active) setLinkedAppointment(null); });
+    return () => { active = false; };
+  }, [transaction.id, transaction.outletID]);
 
   const receiptNumber = useMemo(() => {
     const num = transaction.id.replace(/\D/g, '').slice(-10) || transaction.id.slice(-8);
@@ -92,7 +103,8 @@ const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
   const handleVoidConfirm = async () => {
     setIsVoiding(true);
     try {
-      await onVoid(transaction.id);
+      if (voidReason.trim().length < 3) throw new Error('Enter a void reason (at least 3 characters).');
+      await onVoid(transaction.id, voidReason.trim());
       setShowVoidConfirm(false);
       onClose();
     } catch (error: any) {
@@ -424,7 +436,12 @@ const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
         onClose={() => setShowVoidConfirm(false)}
         onConfirm={handleVoidConfirm}
         title="Void Order"
-        description={voidDescription}
+        description={<div className="space-y-3">
+          <p>{voidDescription}</p>
+          {linkedAppointment ? <p className="rounded-ui-md bg-[var(--warning-soft)] p-3 font-medium text-[var(--text-primary)]">Voiding this sale will reverse the transaction and remove the linked appointment from Schedule.<br /><span className="text-xs font-normal">{linkedAppointment.date} · {linkedAppointment.time}–{linkedAppointment.endTime || linkedAppointment.time}</span></p> : null}
+          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs"><dt>Reference</dt><dd className="font-semibold">{receiptNumber}</dd><dt>Customer</dt><dd>{client?.name || 'Guest'}</dd><dt>Amount</dt><dd className="font-semibold">RM{transaction.amount.toFixed(2)}</dd></dl>
+          <label className="block"><span className="mb-1 block text-xs font-semibold text-[var(--text-primary)]">Void reason</span><textarea className={`${fieldControlClassName} min-h-20 resize-none`} value={voidReason} onChange={(event) => setVoidReason(event.target.value)} placeholder="Why is this sale being voided?" /></label>
+        </div>}
         confirmLabel="Void Order"
         tone="danger"
         busy={isVoiding}

@@ -44,7 +44,7 @@ interface MemberDetailsProps {
     transactionId?: string
   ) => Promise<number>;
   onRedeemVoucher?: (clientId: string) => Promise<void>;
-  onVoidTransaction?: (id: string) => Promise<void>;
+  onVoidTransaction?: (id: string, reason?: string) => Promise<void>;
 }
 
 // Placeholder icon when service/product has no image (Lucide-style box)

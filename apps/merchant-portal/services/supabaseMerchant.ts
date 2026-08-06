@@ -48,7 +48,7 @@ const TRANSACTION_LIST_COLUMNS =
 
 /** Appointment list for calendar — all row columns are small; keep explicit. */
 const APPOINTMENT_LIST_COLUMNS =
-  "id,outlet_id,client_id,customer_id,staff_id,service_id,date,time,end_time,status,reminder_sent,is_on_duty,source_sale_id,sale_id,source,created_at";
+  "id,outlet_id,client_id,customer_id,staff_id,service_id,date,time,end_time,status,reminder_sent,is_on_duty,source_sale_id,sale_id,source,payment_status,completed_at,updated_at,created_at";
 
 export const DEFAULT_LIST_PAGE_SIZE = 50;
 
@@ -137,6 +137,8 @@ function mapAppointment(row: Record<string, unknown>): Appointment {
     isOnDuty: Boolean(row.is_on_duty),
     sourceSaleId: (row.source_sale_id as string) || undefined,
     saleId: (row.sale_id as string) || undefined,
+    paymentStatus: (row.payment_status as Appointment['paymentStatus']) || undefined,
+    completedAt: (row.completed_at as string) || undefined,
     source: (row.source as string) || undefined,
   };
 }
@@ -575,6 +577,30 @@ export const appointmentService = {
       .eq("id", appointmentId)
       .eq("outlet_id", outletID);
     if (error) throw error;
+  },
+
+  /**
+   * Delete a schedule appointment and, when linked, its POS sale + commission rows.
+   * Prefer this over plain delete so Sales Reports stays in sync with Schedule.
+   */
+  deleteWithLinkedSale: async (
+    appointmentId: string,
+    outletID: string = currentOutletID,
+  ): Promise<{ transactionId: string | null; saleDeleted: boolean; deletedAppointmentIds: string[] }> => {
+    if (!hasValidOutlet(outletID)) throw new Error("outletID is required.");
+    const { data, error } = await client().rpc("delete_appointment_and_linked_sale", {
+      p_appointment_id: appointmentId,
+    });
+    if (error) throw error;
+    const payload = (data || {}) as Record<string, unknown>;
+    const deletedAppointmentIds = Array.isArray(payload.deleted_appointment_ids)
+      ? payload.deleted_appointment_ids.map(String)
+      : [appointmentId];
+    return {
+      transactionId: payload.transaction_id != null ? String(payload.transaction_id) : null,
+      saleDeleted: Boolean(payload.sale_deleted),
+      deletedAppointmentIds,
+    };
   },
 };
 
@@ -1204,6 +1230,32 @@ function mapTransaction(row: Record<string, unknown>): Transaction {
 }
 
 export const transactionService = {
+  completePosSale: async (txn: Transaction, outletID: string = currentOutletID): Promise<string> => {
+    if (!hasValidOutlet(outletID)) throw new Error("outletID is required.");
+    const { data, error } = await client().rpc("complete_pos_sale", {
+      p_transaction: {
+        id: txn.id, outlet_id: outletID, date: txn.date, type: txn.type,
+        client_id: txn.clientId || null, items: txn.items || null, amount: txn.amount,
+        category: txn.category, description: txn.description,
+        payment_method: txn.paymentMethod || null, status: txn.status || null,
+        remarks: txn.remarks || null, payment_status: txn.paymentStatus || 'paid',
+        outstanding: txn.outstanding || 0,
+      },
+      p_appointment_id: txn.appointmentId || null,
+    } as never);
+    if (error) throw error;
+    return String((data as any)?.transaction_id || txn.id);
+  },
+
+  voidSale: async (transactionId: string, reason: string, outletID: string = currentOutletID): Promise<string[]> => {
+    if (!hasValidOutlet(outletID)) throw new Error("outletID is required.");
+    const { data, error } = await client().rpc("void_sale_and_remove_linked_appointments", {
+      p_transaction_id: transactionId,
+      p_reason: reason,
+    } as never);
+    if (error) throw error;
+    return Array.isArray((data as any)?.appointment_ids) ? (data as any).appointment_ids.map(String) : [];
+  },
   getAll: async (outletID: string = currentOutletID): Promise<Transaction[]> => {
     if (!hasValidOutlet(outletID)) return [];
     return withQueryTelemetry(

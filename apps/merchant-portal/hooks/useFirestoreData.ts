@@ -542,6 +542,7 @@ export const useFirestoreData = (
         appointment = await appointmentService.getById(id, outletID);
         if (!appointment) {
           console.log(`ℹ️ Appointment ${id} confirmed deleted (likely by another process).`);
+          setAppointments((current) => current.filter((a) => a.id !== id));
           return;
         }
         console.log(`✅ Appointment ${id} found on retry, proceeding with deletion.`);
@@ -553,25 +554,47 @@ export const useFirestoreData = (
         throw new Error('Appointment does not belong to this outlet');
       }
 
-      await appointmentService.delete(id, outletID);
-      console.log('✅ Appointment deleted successfully:', id);
+      const linkedSaleId = (appointment.saleId || appointment.sourceSaleId || '').trim();
 
-      // Delete the linked sale from Firestore so it is removed from Sales History (same as when user deletes the sale in Sales History).
-      const linkedSaleId = (appointment.saleId || (appointment as any).sourceSaleId)?.trim();
+      // Prefer deleting the linked sale first: that removes related schedule rows too and
+      // keeps Sales Reports in sync. Falls back to appointment-only delete when unlinked.
       if (linkedSaleId && deleteTransactionRef.current) {
         try {
           await deleteTransactionRef.current(linkedSaleId);
-          console.log('✅ Linked sale deleted from Sales History:', linkedSaleId);
+          console.log('✅ Linked sale deleted with schedule appointment:', linkedSaleId);
+          return;
         } catch (delErr: any) {
-          if (delErr.message?.includes('Transaction not found')) {
-            console.log('ℹ️ Linked sale already missing:', linkedSaleId);
-          } else {
-            console.warn('Could not delete linked sale after appointment delete:', linkedSaleId, delErr);
+          if (!delErr?.message?.includes('Transaction not found')) {
+            throw delErr;
           }
+          console.log('ℹ️ Linked sale already missing, deleting appointment only:', linkedSaleId);
         }
       }
 
-      // Realtime refresh will update appointments state.
+      // Atomic DB cascade (appointment + sale) when client sale-delete path is unavailable.
+      try {
+        const result = await appointmentService.deleteWithLinkedSale(id, outletID);
+        const removedApptIds = new Set(result.deletedAppointmentIds.concat(id));
+        setAppointments((current) => current.filter((a) => !removedApptIds.has(a.id)));
+        if (result.transactionId) {
+          const saleId = result.transactionId;
+          setTransactions((current) =>
+            current.filter((t) => t.id !== saleId && t.parentSaleId !== saleId),
+          );
+        }
+        console.log('✅ Appointment cascade delete:', result);
+        return;
+      } catch (rpcErr: any) {
+        // Older environments may not have the RPC yet — fall back to plain delete.
+        const msg = String(rpcErr?.message || '');
+        if (!msg.includes('delete_appointment_and_linked_sale') && !msg.includes('Could not find the function')) {
+          console.warn('deleteWithLinkedSale failed, falling back to plain delete:', msg);
+        }
+      }
+
+      await appointmentService.delete(id, outletID);
+      setAppointments((current) => current.filter((a) => a.id !== id));
+      console.log('✅ Appointment deleted successfully:', id);
     } catch (err: any) {
       console.error('❌ Error deleting appointment:', err);
       console.error('Error details:', {
@@ -583,6 +606,7 @@ export const useFirestoreData = (
       // If appointment was already deleted, silently return
       if (err.message?.includes('not found') || err.message?.includes('Appointment not found')) {
         console.log('ℹ️ Appointment was already deleted, ignoring error');
+        setAppointments((current) => current.filter((a) => a.id !== id));
         return;
       }
       
@@ -609,7 +633,14 @@ export const useFirestoreData = (
         outletID: (txn.outletID?.trim() || outletID).trim()
       };
 
-      const id = await transactionService.add(transactionWithOutlet, outletID);
+      const id = transactionWithOutlet.type === TransactionType.SALE
+        ? await transactionService.completePosSale(transactionWithOutlet, outletID)
+        : await transactionService.add(transactionWithOutlet, outletID);
+      if (transactionWithOutlet.appointmentId) {
+        setAppointments((current) => current.map((appointment) => appointment.id === transactionWithOutlet.appointmentId
+          ? { ...appointment, status: 'completed', paymentStatus: 'paid', saleId: id }
+          : appointment));
+      }
       console.log('✅ Transaction added successfully with ID:', id);
 
       // Voucher redemption sale: decrement member voucher count by 1 (voucher already paid in the past).
@@ -800,86 +831,91 @@ export const useFirestoreData = (
       console.log('Deleting transaction:', id);
 
       const txnData = await transactionService.getById(id, outletID);
-        if (!txnData) throw new Error('Transaction not found');
-        if (txnData.outletID !== outletID) {
-          throw new Error('Transaction does not belong to this outlet');
-        }
+      if (!txnData) throw new Error('Transaction not found');
+      if (txnData.outletID !== outletID) {
+        throw new Error('Transaction does not belong to this outlet');
+      }
 
-        const linkedAppts = await appointmentService.listBySaleId(id, outletID);
-        for (const appt of linkedAppts) {
-          await appointmentService.delete(appt.id, outletID);
-        }
-        if (linkedAppts.length > 0) {
-          console.log('Deleted', linkedAppts.length, 'appointment(s) linked to sale', id);
-        }
+      const linkedAppts = await appointmentService.listBySaleId(id, outletID);
+      for (const appt of linkedAppts) {
+        await appointmentService.delete(appt.id, outletID);
+      }
+      if (linkedAppts.length > 0) {
+        console.log('Deleted', linkedAppts.length, 'appointment(s) linked to sale', id);
+      }
 
-        const children = await transactionService.listByParentSaleId(id, outletID);
-        const commissions = children.filter((t) => t.category === 'Commission');
-        for (const c of commissions) {
-          await transactionService.delete(c.id, outletID);
-        }
-        if (commissions.length > 0) {
-          console.log('Deleted', commissions.length, 'commission transaction(s) linked to sale', id);
-        }
+      const children = await transactionService.listByParentSaleId(id, outletID);
+      const commissions = children.filter((t) => t.category === 'Commission');
+      for (const c of commissions) {
+        await transactionService.delete(c.id, outletID);
+      }
+      if (commissions.length > 0) {
+        console.log('Deleted', commissions.length, 'commission transaction(s) linked to sale', id);
+      }
 
-        let pointsDelta = 0;
-        let clientId: string | undefined;
-        let receiptNumber = id.replace(/\D/g, '').slice(-10) || id.slice(-8);
-        receiptNumber = '#' + receiptNumber.padStart(10, '0');
-        let vouchersToRemove = 0;
-        let vouchersToRefund = 0;
+      let pointsDelta = 0;
+      let clientId: string | undefined;
+      let receiptNumber = id.replace(/\D/g, '').slice(-10) || id.slice(-8);
+      receiptNumber = '#' + receiptNumber.padStart(10, '0');
+      let vouchersToRemove = 0;
+      let vouchersToRefund = 0;
 
-        if (
-          txnData.type === TransactionType.SALE &&
-          txnData.clientId &&
-          txnData.clientId !== 'guest'
-        ) {
-          clientId = txnData.clientId;
-          if (txnData.paymentMethod === 'Voucher' || txnData.category === 'Voucher') {
-            vouchersToRefund = 1;
-          } else if (txnData.category === 'Redemption') {
-            if (txnData.items?.length) {
-              pointsDelta = txnData.items.reduce((sum, item: any) => {
-                if (!item.redeemedWithPoints || !item.redeemPoints) return sum;
-                return sum + item.redeemPoints * (item.quantity ?? 1);
-              }, 0);
-            }
-          } else if (txnData.items?.length) {
-            pointsDelta = -txnData.items.reduce((sum, item: any) => {
-              const itemPoints = item.points !== undefined ? item.points : Math.floor(item.price);
-              return sum + itemPoints * item.quantity;
+      if (
+        txnData.type === TransactionType.SALE &&
+        txnData.clientId &&
+        txnData.clientId !== 'guest'
+      ) {
+        clientId = txnData.clientId;
+        if (txnData.paymentMethod === 'Voucher' || txnData.category === 'Voucher') {
+          vouchersToRefund = 1;
+        } else if (txnData.category === 'Redemption') {
+          if (txnData.items?.length) {
+            pointsDelta = txnData.items.reduce((sum, item: any) => {
+              if (!item.redeemedWithPoints || !item.redeemPoints) return sum;
+              return sum + item.redeemPoints * (item.quantity ?? 1);
             }, 0);
-            for (const item of txnData.items) {
-              if (item.type !== 'package') continue;
-              const pkg = packages.find((p: Package) => p.id === item.id);
-              const totalServices = pkg?.services?.length
-                ? pkg.services.reduce((s: number, ps: any) => s + (ps.quantity ?? 0), 0)
-                : 1;
-              vouchersToRemove += (item.quantity ?? 1) * Math.max(1, totalServices);
-            }
-          } else {
-            pointsDelta = -Math.floor(txnData.amount);
           }
+        } else if (txnData.items?.length) {
+          pointsDelta = -txnData.items.reduce((sum, item: any) => {
+            const itemPoints = item.points !== undefined ? item.points : Math.floor(item.price);
+            return sum + itemPoints * item.quantity;
+          }, 0);
+          for (const item of txnData.items) {
+            if (item.type !== 'package') continue;
+            const pkg = packages.find((p: Package) => p.id === item.id);
+            const totalServices = pkg?.services?.length
+              ? pkg.services.reduce((s: number, ps: any) => s + (ps.quantity ?? 0), 0)
+              : 1;
+            vouchersToRemove += (item.quantity ?? 1) * Math.max(1, totalServices);
+          }
+        } else {
+          pointsDelta = -Math.floor(txnData.amount);
         }
+      }
 
-        if (clientId && pointsDelta < 0) {
-          await pointTransactionService.deductForSaleDeletion(
-            clientId,
-            Math.abs(pointsDelta),
-            receiptNumber.replace(/^#/, ''),
-            outletID
-          );
-        } else if (clientId && pointsDelta > 0) {
-          await pointTransactionService.add(clientId, 'Topup', pointsDelta, outletID);
-        }
-        if (clientId && vouchersToRemove > 0) {
-          await clientService.decrementVoucherCount(clientId, vouchersToRemove, outletID);
-        }
-        if (clientId && vouchersToRefund > 0) {
-          await clientService.incrementVoucherCount(clientId, vouchersToRefund, outletID);
-        }
+      if (clientId && pointsDelta < 0) {
+        await pointTransactionService.deductForSaleDeletion(
+          clientId,
+          Math.abs(pointsDelta),
+          receiptNumber.replace(/^#/, ''),
+          outletID
+        );
+      } else if (clientId && pointsDelta > 0) {
+        await pointTransactionService.add(clientId, 'Topup', pointsDelta, outletID);
+      }
+      if (clientId && vouchersToRemove > 0) {
+        await clientService.decrementVoucherCount(clientId, vouchersToRemove, outletID);
+      }
+      if (clientId && vouchersToRefund > 0) {
+        await clientService.incrementVoucherCount(clientId, vouchersToRefund, outletID);
+      }
 
-        await transactionService.delete(id, outletID);
+      await transactionService.delete(id, outletID);
+
+      const removedApptIds = new Set(linkedAppts.map((a) => a.id));
+      const removedTxnIds = new Set<string>([id, ...commissions.map((c) => c.id)]);
+      setAppointments((current) => current.filter((a) => !removedApptIds.has(a.id) && a.saleId !== id && a.sourceSaleId !== id));
+      setTransactions((current) => current.filter((t) => !removedTxnIds.has(t.id) && t.parentSaleId !== id));
     } catch (err: any) {
       console.error('Error deleting transaction:', err);
       setError(err.message || 'Failed to delete transaction');
@@ -887,7 +923,7 @@ export const useFirestoreData = (
     }
   }, [outletID, packages]);
 
-  const handleVoidTransaction = useCallback(async (id: string) => {
+  const handleVoidTransaction = useCallback(async (id: string, reason = 'Voided by merchant') => {
     try {
       console.log('Voiding transaction:', id);
 
@@ -940,8 +976,6 @@ export const useFirestoreData = (
         }
       }
 
-      await transactionService.update(id, { status: 'voided' }, outletID);
-
       if (clientId && pointsDelta < 0) {
         await pointTransactionService.deductForSaleDeletion(
           clientId,
@@ -960,18 +994,14 @@ export const useFirestoreData = (
       }
 
       const linkedAppts = await appointmentService.listBySaleId(id, outletID);
-      for (const appt of linkedAppts) {
-        await appointmentService.delete(appt.id, outletID);
-      }
       if (linkedAppts.length > 0) {
         console.log('Deleted', linkedAppts.length, 'appointment(s) linked to voided sale', id);
       }
 
-      const children = await transactionService.listByParentSaleId(id, outletID);
-      const commissions = children.filter((t) => t.category === 'Commission');
-      for (const c of commissions) {
-        await transactionService.delete(c.id, outletID);
-      }
+      const removedAppointmentIds = await transactionService.voidSale(id, reason, outletID);
+      setAppointments((current) => current.filter((appointment) => !removedAppointmentIds.includes(appointment.id)));
+      setTransactions((current) => current.map((transaction) => transaction.id === id ? { ...transaction, status: 'voided' } : transaction));
+      const commissions = (await transactionService.listByParentSaleId(id, outletID)).filter((t) => t.category === 'Commission');
       if (commissions.length > 0) {
         console.log('Deleted', commissions.length, 'commission transaction(s) linked to voided sale', id);
       }

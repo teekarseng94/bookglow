@@ -272,7 +272,7 @@ interface AppContentProps {
   handleAddTransaction: (txn: Transaction) => Promise<string | undefined>;
   handleUpdateTransaction: (id: string, updatedData: Partial<Transaction>) => Promise<void>;
   handleDeleteTransaction: (id: string) => Promise<void>;
-  handleVoidTransaction: (id: string) => Promise<void>;
+  handleVoidTransaction: (id: string, reason?: string) => Promise<void>;
   handleAddService: (newService: Service) => Promise<string | undefined>;
   handleUpdateService: (updatedService: Service) => Promise<void>;
   handleDeleteService: (id: string) => Promise<void>;
@@ -500,74 +500,23 @@ const AppContent: React.FC<AppContentProps> = ({
       );
     }
 
-    // Handle appointments (points are handled inside useFirestoreData handleAddTransaction with saleId idempotency)
-    if (transactionWithOutlet.type === TransactionType.SALE) {
-      // Create "On Duty" calendar entries for assigned therapists
-      if (transactionWithOutlet.items && transactionWithOutlet.items.length > 0) {
-        const txnDateObj = new Date(transactionWithOutlet.date);
-        const dateStr = txnDateObj.toISOString().split('T')[0];
-        const timeStr = txnDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-
-        for (const [idx, item] of transactionWithOutlet.items.entries()) {
-          if (item.type === 'service' && item.staffId) {
-            // Find the service to get duration
-            const service = services.find(s => s.id === item.id);
-            const duration = service?.duration || 60; // Default to 60 minutes if not found
-            
-            // Calculate end time
-            const startTime = new Date(txnDateObj);
-            const [hours, minutes] = timeStr.split(':').map(Number);
-            startTime.setHours(hours, minutes, 0, 0);
-            const endTime = new Date(startTime.getTime() + duration * 60000); // Add duration in milliseconds
-            const endTimeStr = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-
-            // Create "On Duty" appointment entry
-            const newApp: Appointment = {
-              id: `app_onduty_${transactionWithOutlet.id}_${idx}_${Date.now()}`,
-              outletID: transactionWithOutlet.outletID,
-              clientId: transactionWithOutlet.clientId || 'guest',
-              staffId: item.staffId,
-              serviceId: item.id,
-              date: dateStr,
-              time: timeStr,
-              endTime: endTimeStr,
-              status: 'scheduled', // Mark as scheduled for "On Duty" entries
-              isOnDuty: true // Flag to identify On Duty entries created from POS
-            };
-            const appointmentId = await handleAddAppointment(newApp);
-            
-            // Emit Socket.io event for real-time updates (optional - Firestore listeners already provide real-time updates)
-            try {
-              const { emitAppointmentUpdate } = await import('./services/socketService');
-              emitAppointmentUpdate({ ...newApp, id: appointmentId || newApp.id });
-            } catch (error) {
-              // Socket.io not configured or not available - Firestore listeners will handle updates
-              console.log('Socket.io not available, using Firestore real-time listeners');
-            }
-          }
-        }
-      }
-    }
+    // Walk-in sales intentionally do not create calendar appointments. When this
+    // sale came from Schedule, handleAddTransaction atomically completes that row.
   };
 
   // Appointment handlers are now from useFirestoreData hook
   // Enhanced wrapper to handle POS flow
   const handleUpdateAppointmentStatusWithPOS = async (id: string, status: Appointment['status']) => {
-    await handleUpdateAppointmentStatus(id, status);
-    
-    // If completed, open POS for this appointment
-    // Note: We need to wait for data to reload, so we'll find it from the updated appointments
     if (status === 'completed') {
-      // Small delay to allow Firestore to update
-      setTimeout(() => {
-        const completedApp = appointments.find(a => a.id === id);
-        if (completedApp) {
-          setActiveAppointmentForSale(completedApp);
-          navigate('/pos');
-          setActiveTab('pos');
-        }
-      }, 100);
+      const appointment = appointments.find(a => a.id === id);
+      if (appointment) {
+        setActiveAppointmentForSale(appointment);
+        navigate('/pos');
+        setActiveTab('pos');
+      }
+      return;
     }
+    await handleUpdateAppointmentStatus(id, status);
   };
 
   const handleMarkReminderSent = async (id: string) => {

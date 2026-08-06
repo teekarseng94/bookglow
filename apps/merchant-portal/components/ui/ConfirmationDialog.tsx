@@ -49,7 +49,7 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
       </div>
     }
   >
-    {description ? <p className="text-sm text-[var(--text-secondary)]">{description}</p> : null}
+    {description ? <div className="text-sm text-[var(--text-secondary)]">{description}</div> : null}
   </Modal>
 );
 

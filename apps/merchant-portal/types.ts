@@ -133,13 +133,15 @@ export interface Appointment {
   date: string; // ISO Date string (YYYY-MM-DD)
   time: string; // HH:mm
   endTime?: string; // HH:mm - calculated end time based on service duration
-  status: 'scheduled' | 'completed' | 'cancelled' | 'no-show';
+  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no-show';
   reminderSent?: boolean;
   isOnDuty?: boolean; // Flag to mark "On Duty" entries created from POS sales
   /** Optional: Firestore transaction document ID that created this on-duty slot (used to clean up when sale is voided/deleted) */
   sourceSaleId?: string;
   /** Optional: Same as sourceSaleId; stored in bookings collection for triggers and queries */
   saleId?: string;
+  paymentStatus?: 'unpaid' | 'paid';
+  completedAt?: string;
   /** Optional: origin marker for imported/external appointments (e.g. setmore) */
   source?: string;
 }
@@ -188,6 +190,8 @@ export interface Transaction {
   paymentStatus?: string;
   /** Outstanding amount owed for partial payments */
   outstanding?: number;
+  /** Checkout-only context. The durable link is stored on appointments.sale_id by the completion RPC. */
+  appointmentId?: string;
 }
 
 export interface DashboardStats {

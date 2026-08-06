@@ -49,6 +49,7 @@ export type Database = {
       }
       appointments: {
         Row: {
+          completed_at: string | null
           client_id: string | null
           created_at: string | null
           customer_id: string | null
@@ -57,6 +58,7 @@ export type Database = {
           id: string
           is_on_duty: boolean | null
           outlet_id: string
+          payment_status: string | null
           reminder_sent: boolean | null
           sale_id: string | null
           service_id: string | null
@@ -65,8 +67,10 @@ export type Database = {
           staff_id: string | null
           status: string | null
           time: string
+          updated_at: string
         }
         Insert: {
+          completed_at?: string | null
           client_id?: string | null
           created_at?: string | null
           customer_id?: string | null
@@ -75,6 +79,7 @@ export type Database = {
           id: string
           is_on_duty?: boolean | null
           outlet_id: string
+          payment_status?: string | null
           reminder_sent?: boolean | null
           sale_id?: string | null
           service_id?: string | null
@@ -83,8 +88,10 @@ export type Database = {
           staff_id?: string | null
           status?: string | null
           time: string
+          updated_at?: string
         }
         Update: {
+          completed_at?: string | null
           client_id?: string | null
           created_at?: string | null
           customer_id?: string | null
@@ -93,6 +100,7 @@ export type Database = {
           id?: string
           is_on_duty?: boolean | null
           outlet_id?: string
+          payment_status?: string | null
           reminder_sent?: boolean | null
           sale_id?: string | null
           service_id?: string | null
@@ -101,6 +109,7 @@ export type Database = {
           staff_id?: string | null
           status?: string | null
           time?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -1667,6 +1676,14 @@ export type Database = {
         Returns: undefined
       }
       complete_merchant_onboarding: { Args: { payload: Json }; Returns: Json }
+      complete_pos_sale: {
+        Args: { p_transaction: Json; p_appointment_id?: string | null }
+        Returns: Json
+      }
+      delete_appointment_and_linked_sale: {
+        Args: { p_appointment_id: string }
+        Returns: Json
+      }
       create_merchant_workspace: {
         Args: {
           p_business_name: string
@@ -1674,6 +1691,10 @@ export type Database = {
           p_phone?: string
           p_request_id: string
         }
+        Returns: Json
+      }
+      void_sale_and_remove_linked_appointments: {
+        Args: { p_transaction_id: string; p_reason: string }
         Returns: Json
       }
       create_outlet_invitation: {

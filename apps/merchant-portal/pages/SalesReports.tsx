@@ -19,7 +19,7 @@ interface SalesReportsProps {
   serviceCategories: string[];
   outletID: string;
   paymentMethods: string[];
-  onVoidTransaction: (id: string) => Promise<void>;
+  onVoidTransaction: (id: string, reason?: string) => Promise<void>;
   onUpdateTransaction?: (id: string, updates: Partial<Transaction>) => Promise<void>;
 }
 
@@ -118,7 +118,8 @@ const SalesReports: React.FC<SalesReportsProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [outletID, startDate, endDate]);
+    // Re-load when shared transactions change (e.g. Schedule deleted a linked sale).
+  }, [outletID, startDate, endDate, transactions]);
 
   // Filter dailySales by category and staff (for the filter bar functionality)
   const filteredData = useMemo(() => {
@@ -496,7 +497,10 @@ const SalesReports: React.FC<SalesReportsProps> = ({
           client={clients.find(c => c.id === selectedTransaction.clientId)}
           staff={staff}
           onClose={() => setSelectedTransaction(null)}
-          onVoid={onVoidTransaction}
+          onVoid={async (id, reason) => {
+            await onVoidTransaction(id, reason);
+            setDailySales((current) => current.filter((transaction) => transaction.id !== id));
+          }}
           onUpdate={onUpdateTransaction}
           paymentMethods={paymentMethods && paymentMethods.length > 0 ? paymentMethods : ['Cash', 'Credit Card', 'E-wallet', 'Other']}
         />

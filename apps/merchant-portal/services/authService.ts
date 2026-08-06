@@ -75,9 +75,21 @@ export const logout = async (): Promise<void> => {
 
 export const resetPassword = async (email: string): Promise<void> => {
   const sb = createBrowserSupabaseClient(viteEnv());
-  const { error } = await sb.auth.resetPasswordForEmail(email.trim().toLowerCase());
+  const redirectTo = viteEnv().VITE_MERCHANT_AUTH_CALLBACK_URL || `${window.location.origin}/auth/callback/merchant`;
+  const { error } = await sb.auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo });
   if (error) throw new Error(error.message);
 };
+
+export const isMerchantOAuthEnabled = (provider: "google" | "facebook") =>
+  viteEnv()[`VITE_AUTH_${provider.toUpperCase()}_ENABLED`] === "true";
+
+export async function loginWithOAuth(provider: "google" | "facebook") {
+  if (!isMerchantOAuthEnabled(provider)) throw new Error(`${provider === "google" ? "Google" : "Facebook"} sign-in is not available yet. Please continue with email.`);
+  sessionStorage.setItem("bookglow.merchant.auth_intent", "login");
+  const redirectTo = viteEnv().VITE_MERCHANT_AUTH_CALLBACK_URL || `${window.location.origin}/auth/callback/merchant`;
+  const { error } = await createBrowserSupabaseClient(viteEnv()).auth.signInWithOAuth({ provider, options: { redirectTo } });
+  if (error) throw new Error(error.message.toLowerCase().includes("provider") ? "Google sign-in is not available yet. Please continue with email." : "Merchant sign-in failed. Please try again.");
+}
 
 export const getCurrentUser = (): PortalAuthUser | null => {
   return null; // session is async; use onAuthStateChange

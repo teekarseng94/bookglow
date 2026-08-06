@@ -20,6 +20,7 @@
     "deploy:functions": "npm run install:functions && cross-env FUNCTIONS_DISCOVERY_TIMEOUT=60 firebase deploy --only functions"
   },
   "dependencies": {
+    "@bookglow/auth-contracts": "file:../../packages/auth-contracts",
     "@bookglow/database-contracts": "file:../../packages/database-contracts",
     "@bookglow/shared-types": "file:../../packages/shared-types",
     "@bookglow/supabase": "file:../../packages/supabase",

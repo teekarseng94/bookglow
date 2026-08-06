@@ -11,6 +11,7 @@ interface LayoutProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   isAdmin?: boolean;
+  isPlatformAdmin?: boolean;
   shopName: string;
   user?: PortalAuthUser | null;
   onLogout?: () => void;
@@ -60,6 +61,7 @@ const Layout: React.FC<LayoutProps> = ({
   activeTab,
   setActiveTab: _setActiveTab,
   isAdmin,
+  isPlatformAdmin,
   shopName,
   user,
   onLogout,
@@ -366,10 +368,8 @@ const Layout: React.FC<LayoutProps> = ({
           <div className={`bookglow-content-frame ${isScheduleRoute ? 'bookglow-content-frame--schedule' : ''}`}>
             <div className="bookglow-page">
               {(() => {
-                const ownerEmail = 'teekarseng94@gmail.com';
-                const isSuperAdmin = (user?.email || '').toLowerCase() === ownerEmail.toLowerCase();
                 const hasOverride = typeof window !== 'undefined' && !!window.localStorage.getItem('adminOverrideOutletId');
-                if (isSuperAdmin && hasOverride) {
+                if (isPlatformAdmin && hasOverride) {
                   return (
                     <div className="mb-4 flex items-center justify-between gap-4 rounded-ui-md border border-[var(--brand-border)] bg-[var(--warning-soft)] p-3 text-sm text-[var(--warning)]">
                       <div className="flex items-center gap-2">

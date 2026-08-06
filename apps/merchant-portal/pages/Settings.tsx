@@ -24,6 +24,7 @@ import {
   SettingsSection,
   type SettingsSectionId,
 } from '../components/settings';
+import { TeamAccess } from '../components/settings/TeamAccess';
 
 const CUSTOMER_SITE_URL = (import.meta.env.VITE_CUSTOMER_SITE_URL || 'https://bookglow-83fb3.web.app').replace(/\/$/, '');
 const BOOKING_BASE_URL = `${CUSTOMER_SITE_URL}/book`;
@@ -864,6 +865,8 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           </div>
         </div>
       </SettingsSection>
+
+      <TeamAccess outletId={effectiveOutletId} accountLimit={Number((propOutlet as any)?.accountLimit || 3)} />
 
       {/* 6. Access & permissions */}
       <div id="settings-access-permissions" className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 scroll-mt-4">

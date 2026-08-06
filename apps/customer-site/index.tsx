@@ -5,6 +5,7 @@ import App from './App';
 import BookingAuth from './apps/booking/BookingAuth';
 import BookingPage from './apps/booking/BookingPage';
 import SignUp from './apps/booking/SignUp';
+import CustomerAuthCallback from './src/auth/CustomerAuthCallback';
 import './src/styles/global.css';
 
 const MERCHANT_LOGIN_URL = 'https://bookglow-83fb3-dashboard.web.app/login';
@@ -48,6 +49,7 @@ ReactDOM.createRoot(rootElement).render(
     <BrowserRouter>
       <Routes>
         <Route path="/book/:bookingPath/auth" element={<BookingAuth />} />
+        <Route path="/auth/callback/customer" element={<CustomerAuthCallback />} />
         <Route path="/book/:bookingPath" element={<BookingPage />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<MerchantRedirect />} />

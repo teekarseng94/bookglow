@@ -1,5 +1,6 @@
 import { createBrowserSupabaseClient } from '@bookglow/supabase';
 import type { MerchantOnboardingPayload, OnboardingDraft, OnboardingStepId } from '../apps/merchant-onboarding/onboardingTypes';
+import { MERCHANT_PROVISION_REQUEST_KEY } from '@bookglow/auth-contracts';
 
 const client = () => createBrowserSupabaseClient(import.meta.env as unknown as Record<string, string | undefined>);
 
@@ -27,8 +28,15 @@ export async function completeMerchantOnboarding(payload: MerchantOnboardingPayl
   }
   const session = (await client().auth.getSession()).data.session;
   if (!session) throw new Error('Your session expired. Sign in again to continue.');
-  const { data, error } = await client().rpc('complete_merchant_onboarding' as never, { payload } as never);
+  let requestId = sessionStorage.getItem(MERCHANT_PROVISION_REQUEST_KEY);
+  if (!requestId) { requestId = crypto.randomUUID(); sessionStorage.setItem(MERCHANT_PROVISION_REQUEST_KEY, requestId); }
+  const businessType = payload.primaryBusinessCategory || payload.businessCategories?.[0] || 'other';
+  const phone = (payload as unknown as { phone?: string }).phone || null;
+  const { data, error } = await client().rpc('create_merchant_workspace' as never, {
+    p_request_id: requestId, p_business_name: payload.businessName, p_business_type: businessType, p_phone: phone,
+  } as never);
   if (error) throw error;
+  sessionStorage.removeItem(MERCHANT_PROVISION_REQUEST_KEY);
   return data as unknown as { outlet_id: string; booking_slug: string; idempotent: boolean };
 }
 

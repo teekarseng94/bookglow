@@ -9,6 +9,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import type { PortalAuthUser } from "../services/authService";
 import { fetchPortalUserProfile } from "../services/supabaseMerchant";
 import { outletService } from "../services/databaseService";
+import { resolveMerchantAccess } from "../src/auth/accessResolver";
 
 export type UserRole = "admin" | "manager" | "cashier";
 
@@ -31,6 +32,7 @@ interface UserContextType {
   loading: boolean;
   error: string | null;
   onboardingRequired: boolean;
+  isPlatformAdmin: boolean;
   refreshUserData: () => Promise<void>;
 }
 
@@ -50,8 +52,6 @@ interface UserContextProviderProps {
   firebaseUser: PortalAuthUser | null;
 }
 
-const OWNER_EMAIL = "teekarseng94@gmail.com";
-
 export const UserContextProvider: React.FC<UserContextProviderProps> = ({
   children,
   firebaseUser: authUser,
@@ -60,14 +60,16 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [onboardingRequired, setOnboardingRequired] = useState(false);
+  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
 
   const fetchUserData = async (user: PortalAuthUser) => {
     try {
       setLoading(true);
       setError(null);
       setOnboardingRequired(false);
-      const email = (user.email || "").toLowerCase();
-      if (email === OWNER_EMAIL.toLowerCase()) {
+      const access = await resolveMerchantAccess();
+      setIsPlatformAdmin(access.state === "platform_admin");
+      if (access.state === "platform_admin") {
         setUserData({
           uid: user.uid,
           email: user.email,
@@ -80,6 +82,13 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = ({
         return;
       }
 
+      if (access.state === "no_workspace") {
+        setUserData({ uid: user.uid, email: user.email, outletId: null, role: null, displayName: user.displayName });
+        setOnboardingRequired(false);
+        return;
+      }
+      if (access.state === "membership_suspended") throw new Error("Your merchant account is suspended.");
+      if (access.state === "outlet_suspended") throw new Error("This merchant workspace has been suspended.");
       const profile = await fetchPortalUserProfile(user.uid);
       if (!profile) {
         setUserData({
@@ -110,9 +119,9 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = ({
           throw new Error("This merchant workspace has been suspended. Please contact platform support.");
         }
       }
-      const rawRole = (profile.role || "cashier").toLowerCase();
+      const rawRole = (access.role || profile.role || "cashier").toLowerCase();
       const role: UserRole =
-        rawRole === "admin" || rawRole === "platform_admin"
+        rawRole === "owner" || rawRole === "admin" || rawRole === "platform_admin"
           ? "admin"
           : rawRole === "manager"
           ? "manager"
@@ -147,6 +156,7 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = ({
       setLoading(false);
       setError(null);
       setOnboardingRequired(false);
+      setIsPlatformAdmin(false);
     }
   }, [authUser]);
 
@@ -159,6 +169,7 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = ({
     loading,
     error,
     onboardingRequired,
+    isPlatformAdmin,
     refreshUserData,
   };
 

@@ -6,12 +6,20 @@ import {
   registerWithFacebookForBooking,
   registerForBooking,
   getAuthErrorMessage,
+  signInForBooking,
+  resetPasswordForBooking,
 } from "../../services/authService";
+import { isCustomerOAuthEnabled } from "../../services/supabaseAuthService";
 
 export default function BookingAuth() {
   const { bookingPath } = useParams<{ bookingPath: string }>();
   const [searchParams] = useSearchParams();
   const [showEmail, setShowEmail] = useState(false);
+  const [mode, setMode] = useState<"signin" | "register">("signin");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [confirmation, setConfirmation] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -19,6 +27,8 @@ export default function BookingAuth() {
   const [error, setError] = useState<string | null>(null);
 
   const loginSource = searchParams.get("loginSource") || "homepage";
+  const googleEnabled = isCustomerOAuthEnabled("google");
+  const facebookEnabled = isCustomerOAuthEnabled("facebook");
   /** Same path the user used (slug or legacy id); strip trailing /auth for OAuth redirect. */
   const bookingUrl =
     typeof window !== "undefined"
@@ -54,12 +64,23 @@ export default function BookingAuth() {
     setError(null);
     setLoading(true);
     try {
-      await registerForBooking({ email, password }, bookingUrl);
+      if (mode === "signin") await signInForBooking({ email, password }, bookingUrl);
+      else {
+        if (password !== confirmation) throw new Error("Passwords do not match.");
+        if (!acceptedTerms) throw new Error("Please accept the terms and privacy notice.");
+        await registerForBooking({ email, password, fullName, phone }, bookingUrl);
+      }
     } catch (err) {
       setError(getAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleReset = async () => {
+    setError(null);
+    try { await resetPasswordForBooking(email); setError("Password reset instructions have been sent if that account exists."); }
+    catch (err) { setError(getAuthErrorMessage(err)); }
   };
 
   return (
@@ -94,15 +115,20 @@ export default function BookingAuth() {
 
           {error && <div className="bookglow-auth-error" role="alert">{error}</div>}
 
+          <div className="bookglow-auth-socials" aria-label="Customer authentication mode">
+            <button type="button" onClick={() => { setMode("signin"); setShowEmail(true); }}>Sign in</button>
+            <button type="button" onClick={() => { setMode("register"); setShowEmail(true); }}>Create account</button>
+          </div>
+
           <div className="bookglow-auth-socials">
-            <button type="button" onClick={handleGoogle} disabled={!!socialLoading} aria-label="Continue with Google">
+            {googleEnabled && <button type="button" onClick={handleGoogle} disabled={!!socialLoading} aria-label="Continue with Google">
               <span className="bookglow-auth-social-mark">G</span>
               <span>{socialLoading === "google" ? "Connecting…" : "Google"}</span>
-            </button>
-            <button type="button" onClick={handleFacebook} disabled={!!socialLoading} aria-label="Continue with Facebook">
+            </button>}
+            {facebookEnabled && <button type="button" onClick={handleFacebook} disabled={!!socialLoading} aria-label="Continue with Facebook">
               <span className="bookglow-auth-social-mark bookglow-auth-social-mark--facebook">f</span>
               <span>{socialLoading === "facebook" ? "Connecting…" : "Facebook"}</span>
-            </button>
+            </button>}
           </div>
 
           <div className="bookglow-auth-divider"><span>or use email</span></div>
@@ -113,6 +139,10 @@ export default function BookingAuth() {
             </button>
           ) : (
             <form onSubmit={handleEmailSubmit} className="bookglow-auth-form">
+              {mode === "register" && <>
+                <div className="bookglow-auth-field"><label htmlFor="booking-full-name">Full name</label><input id="booking-full-name" value={fullName} onChange={(e) => setFullName(e.target.value)} required /></div>
+                <div className="bookglow-auth-field"><label htmlFor="booking-phone">Phone</label><input id="booking-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required /></div>
+              </>}
               <div className="bookglow-auth-field">
                 <label htmlFor="booking-email">Email address</label>
                 <input
@@ -125,6 +155,10 @@ export default function BookingAuth() {
                   required
                 />
               </div>
+              {mode === "register" && <>
+                <div className="bookglow-auth-field"><label htmlFor="booking-confirm-password">Confirm password</label><input id="booking-confirm-password" type="password" value={confirmation} onChange={(e) => setConfirmation(e.target.value)} minLength={6} required /></div>
+                <label><input type="checkbox" checked={acceptedTerms} onChange={(e) => setAcceptedTerms(e.target.checked)} /> I agree to the terms and privacy notice.</label>
+              </>}
               <div className="bookglow-auth-field">
                 <label htmlFor="booking-password">Password</label>
                 <input
@@ -133,7 +167,7 @@ export default function BookingAuth() {
                   placeholder="Minimum 6 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="new-password"
+                  autoComplete={mode === "signin" ? "current-password" : "new-password"}
                   minLength={6}
                   required
                 />
@@ -141,8 +175,11 @@ export default function BookingAuth() {
               <button type="submit" disabled={loading} className="bookglow-auth-primary">
                 {loading ? "Creating profile…" : "Create profile and continue"}
               </button>
+              {mode === "signin" && <button type="button" onClick={handleReset} className="bookglow-auth-primary">Forgot password</button>}
             </form>
           )}
+
+          <a href={bookingUrl} className="bookglow-auth-primary">Continue as guest</a>
 
           <p className="bookglow-auth-context">
             Booking for <strong>{bookingPath}</strong>

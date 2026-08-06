@@ -36,14 +36,12 @@ const SuperAdminAudit = React.lazy(() => import('./pages/SuperAdminAudit'));
 
 const App: React.FC = () => {
   const { user, loading: authLoading, isAuthenticated, logout } = useAuth();
-  const { outletId, outletName, role, loading: userDataLoading } = useUserContext();
+  const { outletId, outletName, role, loading: userDataLoading, isPlatformAdmin } = useUserContext();
   
   // All hooks must be called before any conditional returns (React Rules of Hooks)
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [activeAppointmentForSale, setActiveAppointmentForSale] = useState<Appointment | null>(null);
 
-  const ownerEmail = 'teekarseng94@gmail.com';
-  const isSuperAdmin = (user?.email || '').toLowerCase() === ownerEmail.toLowerCase();
   const overrideOutletId =
     typeof window !== 'undefined'
       ? window.localStorage.getItem('adminOverrideOutletId') || ''
@@ -53,7 +51,7 @@ const App: React.FC = () => {
   // Super admin can optionally override to inspect a specific outlet.
   const currentOutletID = outletId ?? '';
   const effectiveOutletID =
-    isSuperAdmin && overrideOutletId
+    isPlatformAdmin && overrideOutletId
       ? overrideOutletId
       : currentOutletID;
 
@@ -122,7 +120,7 @@ const App: React.FC = () => {
   // ProtectedRoute handles authentication and outletId checks
   return (
     <ProtectedRoute>
-      {isSuperAdmin ? (
+      {isPlatformAdmin ? (
         <React.Suspense
           fallback={
             <div className="min-h-screen flex items-center justify-center bg-slate-950">
@@ -354,6 +352,7 @@ const AppContent: React.FC<AppContentProps> = ({
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isPlatformAdmin } = useUserContext();
 
   // Sync activeTab from URL when on a top-level page (not member-details). Ensures sidebar Link navigation works from any route.
   useEffect(() => {
@@ -720,6 +719,7 @@ const AppContent: React.FC<AppContentProps> = ({
       activeTab={activeTab} 
       setActiveTab={setActiveTab} 
       isAdmin={role === 'admin'} 
+      isPlatformAdmin={isPlatformAdmin}
       shopName={outletSettings.shopName}
       user={user}
       onLogout={handleLogout}

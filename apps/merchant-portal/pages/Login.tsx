@@ -4,7 +4,8 @@
  */
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { login, LoginCredentials } from '../services/authService';
+import { login, loginWithOAuth, isMerchantOAuthEnabled, resetPassword, LoginCredentials } from '../services/authService';
+import { merchantAccessDestination, resolveMerchantAccess } from '../src/auth/accessResolver';
 
 const Login: React.FC = () => {
   const location = useLocation();
@@ -16,6 +17,7 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const googleEnabled = isMerchantOAuthEnabled('google');
 
   // Do not show merchant login when the URL belongs to the public booking route.
   if (isBookingPath) {
@@ -34,6 +36,7 @@ const Login: React.FC = () => {
     try {
       const credentials: LoginCredentials = { email, password };
       await login(credentials);
+      window.location.replace(merchantAccessDestination(await resolveMerchantAccess()));
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Login failed.');
     } finally {
@@ -127,7 +130,10 @@ const Login: React.FC = () => {
             <button type="submit" disabled={loading} className="bookglow-login__submit">
               {loading ? 'Signing in…' : 'Sign in'}
             </button>
+            <button type="button" className="bookglow-login__support" onClick={() => void resetPassword(email).then(() => setError('Password reset instructions have been sent if that account exists.')).catch(() => setError('Password reset is unavailable. Please try again.'))}>Forgot password?</button>
           </form>
+
+          {googleEnabled && <button type="button" className="bookglow-login__submit" onClick={() => void loginWithOAuth('google').catch((cause) => setError(cause instanceof Error ? cause.message : 'Google sign-in is unavailable.'))}>Continue with Google</button>}
 
           <p className="bookglow-login__support">Having trouble signing in? Contact your Bookglow administrator.</p>
         </div>

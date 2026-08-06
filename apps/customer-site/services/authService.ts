@@ -7,6 +7,8 @@ import {
   registerForBookingWithSupabase,
   registerWithFacebookForBookingSupabase,
   registerWithGoogleForBookingSupabase,
+  signInForBookingWithSupabase,
+  resetCustomerPassword,
 } from "./supabaseAuthService";
 
 export const DASHBOARD_URL = "/login";
@@ -14,6 +16,8 @@ export const DASHBOARD_URL = "/login";
 export interface SignUpCredentials {
   email: string;
   password: string;
+  fullName?: string;
+  phone?: string;
 }
 
 const LEGACY_SIGNUP_MSG =
@@ -52,3 +56,6 @@ export async function registerWithGoogleForBooking(redirectUrl: string): Promise
 export async function registerWithFacebookForBooking(redirectUrl: string): Promise<void> {
   await registerWithFacebookForBookingSupabase(redirectUrl);
 }
+
+export const signInForBooking = signInForBookingWithSupabase;
+export const resetPasswordForBooking = resetCustomerPassword;

@@ -38,7 +38,7 @@ const OnboardingRedirect: React.FC<{ email?: string | null }> = ({ email }) => {
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { loading: authLoading, isAuthenticated, user } = useAuth();
-  const { loading: userDataLoading, outletId, error, onboardingRequired } = useUserContext();
+  const { loading: userDataLoading, outletId, error, onboardingRequired, isPlatformAdmin } = useUserContext();
 
   // Show loading spinner while checking authentication and user data
   if (authLoading || userDataLoading) {
@@ -63,16 +63,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  const email = (user?.email || '').toLowerCase();
-  const ownerEmail = 'teekarseng94@gmail.com';
-  const isOwner = email === ownerEmail.toLowerCase();
-
-  if (onboardingRequired && !isOwner) {
+  if (onboardingRequired && !isPlatformAdmin) {
     return <OnboardingRedirect email={user?.email} />;
   }
 
   // If user has no outletId, show unauthorized message (except for true owner super-admin)
-  if (!outletId && !isOwner) {
+  if (!outletId && !isPlatformAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--bg-canvas)] p-4">
         <div className="max-w-md w-full bg-[var(--bg-surface)] rounded-ui-md shadow-ui-md p-6 border border-[var(--line)]">

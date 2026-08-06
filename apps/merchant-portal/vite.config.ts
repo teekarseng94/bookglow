@@ -24,6 +24,12 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': root,
+        // Resolve workspace packages from source so deploy builds don't depend
+        // solely on fragile file: symlinks under node_modules/@bookglow.
+        '@bookglow/auth-contracts': path.resolve(root, '../../packages/auth-contracts/src/index.ts'),
+        '@bookglow/database-contracts': path.resolve(root, '../../packages/database-contracts/src/index.ts'),
+        '@bookglow/shared-types': path.resolve(root, '../../packages/shared-types/src/index.ts'),
+        '@bookglow/supabase': path.resolve(root, '../../packages/supabase/src/index.ts'),
       },
     },
     build: {

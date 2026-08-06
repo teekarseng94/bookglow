@@ -9,6 +9,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Trash2 } from 'lucide-react';
 import { Client, Transaction, TransactionType, Appointment, CartItem, Staff, Service } from '../types';
 import { useMemberDetailsData } from '../hooks/useMemberDetailsData';
+import { clientService, getCurrentOutletID } from '../services/databaseService';
 import {
   MemberBalanceSection,
   MemberHistorySection,
@@ -83,12 +84,49 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
   const [currentOutstandingBalance, setCurrentOutstandingBalance] = useState(0);
   const [selectedSale, setSelectedSale] = useState<Transaction | null>(null);
 
-  const client = useMemo(() => clients.find((c) => c.id === id), [clients, id]);
+  // Local list is only the first page (~50). Search can open members outside that page,
+  // so fall back to a direct getById fetch when the route id is not in props.
+  const clientFromList = useMemo(() => clients.find((c) => c.id === id), [clients, id]);
+  const [fetchedClient, setFetchedClient] = useState<Client | null>(null);
+  const [clientFetchState, setClientFetchState] = useState<'idle' | 'loading' | 'done'>('idle');
+
+  useEffect(() => {
+    setFetchedClient(null);
+    if (!id) {
+      setClientFetchState('done');
+      return;
+    }
+    if (clientFromList) {
+      setClientFetchState('done');
+      return;
+    }
+    let cancelled = false;
+    setClientFetchState('loading');
+    void clientService
+      .getById(id, getCurrentOutletID())
+      .then((row) => {
+        if (!cancelled) {
+          setFetchedClient(row);
+          setClientFetchState('done');
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setFetchedClient(null);
+          setClientFetchState('done');
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, clientFromList]);
+
+  const client = clientFromList ?? fetchedClient;
 
   // Real-time Firestore queries: sales and appointments for this client (onSnapshot)
   const { clientSales, clientAppointments, loading: memberDataLoading, error: memberDataError } = useMemberDetailsData(
     id ?? undefined,
-    client?.outletID ?? undefined
+    client?.outletID || getCurrentOutletID() || undefined
   );
 
   const getStaffName = (staffId: string) => staff.find((s) => s.id === staffId)?.name ?? '—';
@@ -235,6 +273,14 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
   const bgClass = 'bg-[var(--bg-canvas)]';
 
   if (!client) {
+    if (clientFetchState === 'loading' || clientFetchState === 'idle') {
+      return (
+        <div className="min-h-[50vh] flex flex-col items-center justify-center text-[var(--text-secondary)] bg-[var(--bg-canvas)]">
+          <div className="w-10 h-10 border-4 border-[var(--brand)] border-t-transparent rounded-full animate-spin" />
+          <p className="mt-3 text-sm font-medium">Loading member…</p>
+        </div>
+      );
+    }
     return (
       <div className="min-h-[50vh] flex flex-col items-center justify-center text-[var(--text-secondary)] bg-[var(--bg-canvas)]">
         <p className="font-semibold">Member not found.</p>

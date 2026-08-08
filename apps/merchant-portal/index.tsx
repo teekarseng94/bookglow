@@ -4,6 +4,12 @@ import ReactDOM from 'react-dom/client';
 import { HashRouter } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
 
+// Supabase redirects to a real path. Normalize only the merchant callback for
+// this HashRouter app; customer callbacks remain owned by customer-site.
+if (window.location.pathname === '/auth/callback/merchant' && !window.location.hash) {
+  window.history.replaceState(null, '', `/#/auth/callback/merchant${window.location.search}`);
+}
+
 // Lazy-load app (auth + Firebase + routes). Entry stays tiny so build does not OOM.
 const AppBootstrap = React.lazy(() => import('./AppBootstrap'));
 

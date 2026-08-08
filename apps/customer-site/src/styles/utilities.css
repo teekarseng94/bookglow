@@ -1178,6 +1178,11 @@
 .bookglow-auth-primary { width: 100%; min-height: 3rem; padding: 0 1rem; border-radius: 0.85rem; color: var(--color-action-primary-text); background: var(--color-action-primary); font-size: 0.82rem; font-weight: 820; box-shadow: 0 0.7rem 1.6rem rgba(118, 86, 214, 0.2); transition: 150ms ease; }
 .bookglow-auth-primary:hover:not(:disabled) { background: var(--color-action-primary-hover); transform: translateY(-1px); }
 .bookglow-auth-primary:disabled { cursor: not-allowed; opacity: 0.55; }
+.bookglow-auth-secondary--quiet { width: 100%; min-height: 2.8rem; margin-top: -0.15rem; color: var(--color-text-secondary); background: var(--color-surface-subtle, #faf9fc); box-shadow: none; }
+.bookglow-auth-guest { display: flex; width: fit-content; min-height: 2.5rem; margin: 0.45rem auto -0.25rem; align-items: center; justify-content: center; gap: 0.4rem; padding: 0 0.75rem; color: var(--color-text-secondary); font-size: 0.76rem; font-weight: 760; transition: 150ms ease; }
+.bookglow-auth-guest span { color: var(--color-action-primary); font-size: 1rem; transition: transform 150ms ease; }
+.bookglow-auth-guest:hover { color: var(--color-action-primary); }
+.bookglow-auth-guest:hover span { transform: translateX(2px); }
 .bookglow-auth-context, .bookglow-auth-signin, .bookglow-auth-legal { margin: 1.2rem 0 0; color: var(--color-text-muted); text-align: center; font-size: 0.68rem; line-height: 1.5; }
 .bookglow-auth-context strong, .bookglow-auth-signin a, .bookglow-auth-legal a { color: var(--color-action-primary); font-weight: 780; }
 

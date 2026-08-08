@@ -35,7 +35,7 @@ const RootRoutes: React.FC = () => {
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} />
       <Route path="/auth/callback/merchant" element={<MerchantAuthCallback />} />
-      <Route path="/access/no-workspace" element={<AccessStatePage title="No merchant workspace found" message="This identity is valid, but it has no active outlet membership. Ask an owner to invite you, or start merchant signup intentionally." />} />
+      <Route path="/access/no-workspace" element={<AccessStatePage noWorkspace title="No merchant workspace found" message="No Bookglow business workspace is connected to this account." />} />
       <Route path="/access/account-suspended" element={<AccessStatePage title="Account suspended" message="Your outlet membership is suspended. Contact the outlet owner." />} />
       <Route path="/access/workspace-suspended" element={<AccessStatePage title="Workspace access suspended" message="This outlet is currently unavailable. Contact Bookglow support." />} />
       <Route path="*" element={AppComponent ? <AppComponent /> : <RouteSpinner />} />

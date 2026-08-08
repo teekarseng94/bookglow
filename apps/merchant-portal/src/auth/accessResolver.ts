@@ -1,5 +1,6 @@
 import { createBrowserSupabaseClient } from "@bookglow/supabase";
 import type { MerchantAccessContext } from "@bookglow/auth-contracts";
+import { hasCapability, MERCHANT_RETURN_PATH_KEY, validatedMerchantReturnPath } from "@bookglow/auth-contracts";
 
 const env = () => import.meta.env as unknown as Record<string, string | undefined>;
 
@@ -62,11 +63,29 @@ function legacyRole(value: unknown): MerchantAccessContext["role"] {
   return "cashier";
 }
 
-export function merchantAccessDestination(access: MerchantAccessContext): string {
+export function merchantAccessDestination(access: MerchantAccessContext, requestedPath?: string | null): string {
   if (access.state === "platform_admin") return "/admin/dashboard";
-  if (access.state === "active") return "/dashboard";
+  if (access.state === "active") {
+    const saved = validatedMerchantReturnPath(requestedPath ?? sessionStorage.getItem(MERCHANT_RETURN_PATH_KEY));
+    sessionStorage.removeItem(MERCHANT_RETURN_PATH_KEY);
+    if (saved && returnPathAllowed(saved, access.role)) return saved;
+    return access.role === "cashier" ? "/pos" : "/dashboard";
+  }
   if (access.state === "onboarding") return "/onboarding";
   if (access.state === "membership_suspended") return "/access/account-suspended";
   if (access.state === "outlet_suspended") return "/access/workspace-suspended";
   return "/access/no-workspace";
+}
+
+/** Convert an internal destination into this portal's HashRouter URL. */
+export const merchantBrowserDestination = (destination: string) => `/#${destination}`;
+
+function returnPathAllowed(path: string, role: MerchantAccessContext["role"]): boolean {
+  if (path.startsWith("/pos")) return hasCapability(role, "pos.use");
+  if (path.startsWith("/schedule") || path.startsWith("/appointments")) return hasCapability(role, "schedule.view");
+  if (path.startsWith("/member")) return hasCapability(role, "members.view");
+  if (path.startsWith("/sales-reports") || path.startsWith("/report")) return hasCapability(role, "reports.view");
+  if (path.startsWith("/settings")) return hasCapability(role, "settings.view");
+  if (path.startsWith("/staff")) return hasCapability(role, "staff.view");
+  return path === "/dashboard" ? hasCapability(role, "dashboard.view") : role !== "cashier";
 }

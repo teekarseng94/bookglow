@@ -29,6 +29,7 @@ export const CUSTOMER_RETURN_PATH_KEY = "bookglow.customer.return_path";
 export const CUSTOMER_BOOKING_DRAFT_KEY = "bookglow.customer.booking_draft";
 export const MERCHANT_AUTH_INTENT_KEY = "bookglow.merchant.auth_intent";
 export const MERCHANT_PROVISION_REQUEST_KEY = "bookglow.merchant.provision_request_id";
+export const MERCHANT_RETURN_PATH_KEY = "bookglow.merchant.return_path";
 
 export function validatedCustomerReturnPath(value: string | null | undefined): string {
   if (!value || !value.startsWith("/book/") || value.startsWith("//") || /[\\\r\n]/.test(value)) return "/";
@@ -37,6 +38,25 @@ export function validatedCustomerReturnPath(value: string | null | undefined): s
     return parsed.origin === "https://bookglow.invalid" && parsed.pathname.startsWith("/book/")
       ? `${parsed.pathname}${parsed.search}${parsed.hash}` : "/";
   } catch { return "/"; }
+}
+
+const MERCHANT_ROUTE_PREFIXES = [
+  "/dashboard", "/schedule", "/appointments", "/pos", "/member", "/menu",
+  "/sales-reports", "/transactions", "/finance", "/staff", "/settings",
+  "/marketing", "/report", "/admin",
+];
+
+/** Accept only local portal routes; customer booking and auth routes are never valid. */
+export function validatedMerchantReturnPath(value: string | null | undefined): string | null {
+  if (!value || !value.startsWith("/") || value.startsWith("//") || /[\\\r\n]/.test(value)) return null;
+  try {
+    const parsed = new URL(value, "https://bookglow.invalid");
+    const allowed = parsed.origin === "https://bookglow.invalid"
+      && !parsed.pathname.startsWith("/book/")
+      && !parsed.pathname.startsWith("/auth/")
+      && MERCHANT_ROUTE_PREFIXES.some((prefix) => parsed.pathname === prefix || parsed.pathname.startsWith(`${prefix}/`));
+    return allowed ? `${parsed.pathname}${parsed.search}${parsed.hash}` : null;
+  } catch { return null; }
 }
 
 export type MerchantAccessState = "platform_admin" | "active" | "onboarding" | "membership_suspended" | "outlet_suspended" | "no_workspace";

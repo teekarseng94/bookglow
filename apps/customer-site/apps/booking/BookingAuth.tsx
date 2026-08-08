@@ -173,13 +173,13 @@ export default function BookingAuth() {
                 />
               </div>
               <button type="submit" disabled={loading} className="bookglow-auth-primary">
-                {loading ? "Creating profile…" : "Create profile and continue"}
+                {loading ? (mode === "signin" ? "Signing in…" : "Creating profile…") : (mode === "signin" ? "Sign in and continue" : "Create profile and continue")}
               </button>
-              {mode === "signin" && <button type="button" onClick={handleReset} className="bookglow-auth-primary">Forgot password</button>}
+              {mode === "signin" && <button type="button" onClick={handleReset} className="bookglow-auth-secondary bookglow-auth-secondary--quiet">Forgot password</button>}
             </form>
           )}
 
-          <a href={bookingUrl} className="bookglow-auth-primary">Continue as guest</a>
+          <a href={bookingUrl} className="bookglow-auth-guest">Continue as guest <span aria-hidden="true">→</span></a>
 
           <p className="bookglow-auth-context">
             Booking for <strong>{bookingPath}</strong>

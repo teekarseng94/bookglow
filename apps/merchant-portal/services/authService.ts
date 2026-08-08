@@ -3,6 +3,7 @@
  * Auth state uses a single shared subscription multiplexed to listeners.
  */
 import { createBrowserSupabaseClient } from "@bookglow/supabase";
+import { MERCHANT_AUTH_INTENT_KEY } from "@bookglow/auth-contracts";
 
 export interface LoginCredentials {
   email: string;
@@ -148,10 +149,10 @@ export const isMerchantOAuthEnabled = (provider: "google" | "facebook") =>
 export async function loginWithOAuth(provider: "google" | "facebook") {
   if (!isMerchantOAuthEnabled(provider)) {
     throw new Error(
-      `${provider === "google" ? "Google" : "Facebook"} sign-in is not available yet. Please continue with email.`,
+      `${provider === "google" ? "Google" : "Facebook"} sign-in is currently unavailable. Please sign in with your email and password.`,
     );
   }
-  sessionStorage.setItem("bookglow.merchant.auth_intent", "login");
+  sessionStorage.setItem(MERCHANT_AUTH_INTENT_KEY, "login");
   const redirectTo =
     viteEnv().VITE_MERCHANT_AUTH_CALLBACK_URL ||
     `${window.location.origin}/auth/callback/merchant`;
@@ -162,8 +163,8 @@ export async function loginWithOAuth(provider: "google" | "facebook") {
   if (error) {
     throw new Error(
       error.message.toLowerCase().includes("provider")
-        ? "Google sign-in is not available yet. Please continue with email."
-        : "Merchant sign-in failed. Please try again.",
+        ? "Google sign-in is currently unavailable. Please sign in with your email and password."
+        : "We couldn't sign you in with Google. Please try again.",
     );
   }
 }

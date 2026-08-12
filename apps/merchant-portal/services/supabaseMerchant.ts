@@ -40,7 +40,10 @@ function client() {
 
 /** Member list / POS typeahead — excludes notes and marketing blobs. */
 const CLIENT_LIST_COLUMNS =
-  "id,outlet_id,name,email,phone,points,credit,outstanding,member_tier,voucher_count,created_at,birthday,gender,source,tag";
+  "id,outlet_id,name,email,phone,points,credit,outstanding,member_tier,voucher_count,created_at,birthday,gender,source,tag,last_renewed_at,last_renewal_amount";
+
+/** Canonical SALE category for membership renewals (Sales Reports / History). */
+export const MEMBERSHIP_RENEWAL_CATEGORY = "Membership Renewal";
 
 /** Transaction list — excludes heavy `items` JSON until detail open. */
 const TRANSACTION_LIST_COLUMNS =
@@ -736,6 +739,11 @@ function mapClient(row: Record<string, unknown>): Client {
     credit: Number(row.credit ?? 0),
     outstanding: Number(row.outstanding ?? 0),
     lastImportId: (row.last_import_id as string) || undefined,
+    lastRenewedAt: row.last_renewed_at ? String(row.last_renewed_at) : undefined,
+    lastRenewalAmount:
+      row.last_renewal_amount != null && row.last_renewal_amount !== ""
+        ? Number(row.last_renewal_amount)
+        : undefined,
     marketingEmailConsent: Boolean(row.marketing_email_consent),
     marketingSmsConsent: Boolean(row.marketing_sms_consent),
     marketingWhatsappConsent: Boolean(row.marketing_whatsapp_consent),
@@ -903,6 +911,8 @@ export const clientService = {
     if (updates.credit !== undefined) patch.credit = updates.credit;
     if (updates.outstanding !== undefined) patch.outstanding = updates.outstanding;
     if (updates.lastImportId !== undefined) patch.last_import_id = updates.lastImportId;
+    if (updates.lastRenewedAt !== undefined) patch.last_renewed_at = updates.lastRenewedAt;
+    if (updates.lastRenewalAmount !== undefined) patch.last_renewal_amount = updates.lastRenewalAmount;
     if (updates.marketingEmailConsent !== undefined) patch.marketing_email_consent = updates.marketingEmailConsent;
     if (updates.marketingSmsConsent !== undefined) patch.marketing_sms_consent = updates.marketingSmsConsent;
     if (updates.marketingWhatsappConsent !== undefined) patch.marketing_whatsapp_consent = updates.marketingWhatsappConsent;
@@ -1026,6 +1036,214 @@ export const clientService = {
       .select("id");
     if (error) throw error;
     return data?.length ?? 0;
+  },
+
+  /**
+   * Renew membership: creates a SALE transaction (category Membership Renewal)
+   * and updates last_renewed_at / last_renewal_amount on the client.
+   * Prefers atomic RPC; falls back to complete_pos_sale + client update.
+   */
+  renewMembership: async (
+    clientId: string,
+    amount: number,
+    paymentMethod: string,
+    operatorName: string,
+    outletID: string = currentOutletID,
+  ): Promise<{
+    transaction: Transaction;
+    lastRenewedAt: string;
+    lastRenewalAmount: number;
+  }> => {
+    if (!hasValidOutlet(outletID)) throw new Error("outletID is required.");
+    const rounded = Math.round(Number(amount) * 100) / 100;
+    if (!(rounded > 0)) throw new Error("Renewal amount must be greater than 0.");
+    if (Math.round(rounded * 100) !== Math.round(Number(amount) * 100)) {
+      throw new Error("Renewal amount may have at most 2 decimal places.");
+    }
+    const method = (paymentMethod || "Cash").trim() || "Cash";
+    const operator = (operatorName || "").trim();
+
+    const { data, error } = await client().rpc("renew_member_membership", {
+      p_client_id: clientId,
+      p_amount: rounded,
+      p_payment_method: method,
+      p_operator_name: operator || null,
+    } as never);
+
+    if (!error && data) {
+      const payload = data as Record<string, unknown>;
+      const txnId = String(payload.transaction_id || "");
+      const lastRenewedAt = String(payload.last_renewed_at || new Date().toISOString());
+      const lastRenewalAmount = Number(payload.last_renewal_amount ?? rounded);
+      const description = String(payload.description || `Membership Renewal`);
+      const transaction: Transaction = {
+        id: txnId,
+        outletID,
+        date: String(payload.date || lastRenewedAt),
+        type: TransactionType.SALE,
+        clientId,
+        amount: lastRenewalAmount,
+        category: MEMBERSHIP_RENEWAL_CATEGORY,
+        description,
+        paymentMethod: String(payload.payment_method || method),
+        status: "completed",
+        paymentStatus: "paid",
+        outstanding: 0,
+        remarks: payload.remarks != null ? String(payload.remarks) : operator ? `Renewed by ${operator}` : undefined,
+        items: [
+          {
+            id: "membership_renewal",
+            name: "Membership Renewal",
+            price: lastRenewalAmount,
+            quantity: 1,
+            type: "service",
+            points: 0,
+          },
+        ],
+      };
+      return { transaction, lastRenewedAt, lastRenewalAmount };
+    }
+
+    const rpcMissing =
+      error &&
+      (/renew_member_membership/i.test(error.message || "") ||
+        /Could not find the function/i.test(error.message || "") ||
+        error.code === "PGRST202");
+    if (!rpcMissing) {
+      throw error || new Error("Failed to renew membership.");
+    }
+
+    // Fallback when migration RPC is not deployed yet: POS sale + client metadata update.
+    const member = await clientService.getById(clientId, outletID);
+    if (!member) throw new Error("Member not found in active outlet.");
+    const nowIso = new Date().toISOString();
+    const description = `Membership Renewal - ${member.name || "Member"}`;
+    const txnId = newId();
+    const saleTxn: Transaction = {
+      id: txnId,
+      outletID,
+      date: nowIso,
+      type: TransactionType.SALE,
+      clientId,
+      amount: rounded,
+      category: MEMBERSHIP_RENEWAL_CATEGORY,
+      description,
+      paymentMethod: method,
+      status: "completed",
+      paymentStatus: "paid",
+      outstanding: 0,
+      remarks: operator ? `Renewed by ${operator}` : undefined,
+      items: [
+        {
+          id: "membership_renewal",
+          name: "Membership Renewal",
+          price: rounded,
+          quantity: 1,
+          type: "service",
+          points: 0,
+        },
+      ],
+    };
+
+    let savedId: string;
+    try {
+      savedId = await transactionService.completePosSale(saleTxn, outletID);
+    } catch (saleErr) {
+      throw saleErr;
+    }
+
+    try {
+      await clientService.update(
+        clientId,
+        { lastRenewedAt: nowIso, lastRenewalAmount: rounded },
+        outletID,
+      );
+    } catch (metaErr: any) {
+      throw new Error(
+        `Renewal sale was saved (${savedId}) but updating Last Renewed failed: ${metaErr?.message || metaErr}. Apply the member_renewal migration and refresh.`,
+      );
+    }
+
+    return {
+      transaction: { ...saleTxn, id: savedId },
+      lastRenewedAt: nowIso,
+      lastRenewalAmount: rounded,
+    };
+  },
+
+  /**
+   * Recompute last_renewed_at / last_renewal_amount from remaining non-voided
+   * Membership Renewal SALE rows. Clears both fields when none remain.
+   */
+  resyncLastRenewalFromSales: async (
+    clientId: string,
+    outletID: string = currentOutletID,
+    options: { excludeTransactionId?: string } = {},
+  ): Promise<{ lastRenewedAt: string | null; lastRenewalAmount: number | null }> => {
+    if (!hasValidOutlet(outletID) || !clientId) {
+      return { lastRenewedAt: null, lastRenewalAmount: null };
+    }
+
+    // Prefer DB helper when migration is applied.
+    const { error: rpcError } = await client().rpc("recalc_client_last_renewal", {
+      p_outlet_id: outletID,
+      p_client_id: clientId,
+    } as never);
+
+    if (!rpcError) {
+      const refreshed = await clientService.getById(clientId, outletID);
+      return {
+        lastRenewedAt: refreshed?.lastRenewedAt ?? null,
+        lastRenewalAmount:
+          refreshed?.lastRenewalAmount != null ? Number(refreshed.lastRenewalAmount) : null,
+      };
+    }
+
+    const rpcMissing =
+      /recalc_client_last_renewal/i.test(rpcError.message || "") ||
+      /Could not find the function/i.test(rpcError.message || "") ||
+      rpcError.code === "PGRST202";
+    if (!rpcMissing) throw rpcError;
+
+    // Fallback: query remaining renewals and patch client directly.
+    let builder = client()
+      .from("transactions")
+      .select("id,date,amount,status,voided")
+      .eq("outlet_id", outletID)
+      .eq("client_id", clientId)
+      .eq("type", TransactionType.SALE)
+      .eq("category", MEMBERSHIP_RENEWAL_CATEGORY)
+      .order("date", { ascending: false })
+      .limit(20);
+    if (options.excludeTransactionId) {
+      builder = builder.neq("id", options.excludeTransactionId);
+    }
+    const { data, error } = await builder;
+    if (error) throw error;
+
+    const latest = (data || []).find((row) => {
+      const status = String((row as any).status || "").toLowerCase();
+      const voided = (row as any).voided === true;
+      return status !== "void" && status !== "voided" && !voided;
+    }) as { date?: string; amount?: number } | undefined;
+
+    if (!latest) {
+      await clientService.update(
+        clientId,
+        { lastRenewedAt: null, lastRenewalAmount: null },
+        outletID,
+      );
+      return { lastRenewedAt: null, lastRenewalAmount: null };
+    }
+
+    const lastRenewedAt = String(latest.date || "");
+    const lastRenewalAmount = Number(latest.amount ?? 0);
+    await clientService.update(
+      clientId,
+      { lastRenewedAt, lastRenewalAmount },
+      outletID,
+    );
+    return { lastRenewedAt, lastRenewalAmount };
   },
 };
 

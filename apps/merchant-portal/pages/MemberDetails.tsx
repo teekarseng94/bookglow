@@ -6,7 +6,7 @@
 
 import React, { useMemo, useState, useEffect, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Trash2 } from 'lucide-react';
+import { RefreshCw, ShoppingCart, Trash2 } from 'lucide-react';
 import { Client, Transaction, TransactionType, Appointment, CartItem, Staff, Service } from '../types';
 import { useMemberDetailsData } from '../hooks/useMemberDetailsData';
 import { clientService, getCurrentOutletID } from '../services/databaseService';
@@ -14,7 +14,9 @@ import {
   MemberBalanceSection,
   MemberHistorySection,
   MemberSummary,
+  RenewMembershipModal,
 } from '../components/members';
+import Toast from '../components/Toast';
 import { Button, ConfirmationDialog, ModalLoadingFallback } from '../components/ui';
 
 // Lazy load modals to avoid circular dependency
@@ -35,6 +37,7 @@ interface MemberDetailsProps {
   staff: Staff[];
   services: Service[];
   staffName: string;
+  paymentMethods?: string[];
   onDeleteClient: (clientId: string) => Promise<void>;
   onUpdateClientCredit: (
     clientId: string,
@@ -46,6 +49,13 @@ interface MemberDetailsProps {
   ) => Promise<number>;
   onRedeemVoucher?: (clientId: string) => Promise<void>;
   onVoidTransaction?: (id: string, reason?: string) => Promise<void>;
+  /** Renew membership: creates SALE + updates lastRenewedAt. Available to all merchant roles. */
+  onRenewMember?: (
+    clientId: string,
+    amount: number,
+    paymentMethod: string,
+    operatorName: string
+  ) => Promise<{ lastRenewedAt: string; lastRenewalAmount: number }>;
 }
 
 // Placeholder icon when service/product has no image (Lucide-style box)
@@ -55,6 +65,9 @@ const PlaceholderIcon = ({ className }: { className?: string }) => (
   </div>
 );
 
+const formatRM = (n: number): string =>
+  `RM${n.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 const MemberDetails: React.FC<MemberDetailsProps> = ({
   clients,
   transactions,
@@ -62,10 +75,12 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
   staff,
   services,
   staffName,
+  paymentMethods = ['Cash', 'Credit Card', 'E-wallet', 'Other'],
   onDeleteClient,
   onUpdateClientCredit,
   onRedeemVoucher,
-  onVoidTransaction
+  onVoidTransaction,
+  onRenewMember,
 }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -79,10 +94,19 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteInProgress, setDeleteInProgress] = useState(false);
   const [showOverflowMenu, setShowOverflowMenu] = useState(false);
+  const [showRenewModal, setShowRenewModal] = useState(false);
+  const [renewBusy, setRenewBusy] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [currentPointsBalance, setCurrentPointsBalance] = useState(0);
   const [creditBalance, setCreditBalance] = useState(0);
   const [currentOutstandingBalance, setCurrentOutstandingBalance] = useState(0);
   const [selectedSale, setSelectedSale] = useState<Transaction | null>(null);
+  /** Local overlay so Last Renewed updates immediately after renew (list/fetch refresh). */
+  const [renewalOverride, setRenewalOverride] = useState<{
+    lastRenewedAt: string;
+    lastRenewalAmount: number;
+  } | null>(null);
+  const renewalHealKeyRef = React.useRef<string | null>(null);
 
   // Local list is only the first page (~50). Search can open members outside that page,
   // so fall back to a direct getById fetch when the route id is not in props.
@@ -92,6 +116,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
 
   useEffect(() => {
     setFetchedClient(null);
+    setRenewalOverride(null);
     if (!id) {
       setClientFetchState('done');
       return;
@@ -121,13 +146,95 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
     };
   }, [id, clientFromList]);
 
-  const client = clientFromList ?? fetchedClient;
+  const clientBase = clientFromList ?? fetchedClient;
+
+  // Drop optimistic renewal override once list/fetched client has diverged (e.g. void cleared fields).
+  useEffect(() => {
+    if (!renewalOverride || !clientBase) return;
+    const baseAt = clientBase.lastRenewedAt ?? null;
+    const baseAmt = clientBase.lastRenewalAmount ?? null;
+    if (baseAt !== renewalOverride.lastRenewedAt || baseAmt !== renewalOverride.lastRenewalAmount) {
+      setRenewalOverride(null);
+    }
+  }, [clientBase?.lastRenewedAt, clientBase?.lastRenewalAmount, renewalOverride]);
+
+  const client = useMemo(() => {
+    if (!clientBase) return null;
+    if (!renewalOverride) return clientBase;
+    return {
+      ...clientBase,
+      lastRenewedAt: renewalOverride.lastRenewedAt,
+      lastRenewalAmount: renewalOverride.lastRenewalAmount,
+    };
+  }, [clientBase, renewalOverride]);
 
   // Real-time Firestore queries: sales and appointments for this client (onSnapshot)
   const { clientSales, clientAppointments, loading: memberDataLoading, error: memberDataError } = useMemberDetailsData(
     id ?? undefined,
     client?.outletID || getCurrentOutletID() || undefined
   );
+
+  // Prefer non-voided Membership Renewal sales as source of truth for Last Renewed display.
+  const renewalFromSales = useMemo(() => {
+    const renewals = clientSales.filter((t) => t.category === 'Membership Renewal');
+    if (renewals.length === 0) return null;
+    const latest = renewals[0];
+    return {
+      lastRenewedAt: latest.date,
+      lastRenewalAmount: latest.amount,
+    };
+  }, [clientSales]);
+
+  const lastRenewedAtDisplay = !memberDataLoading
+    ? (renewalFromSales?.lastRenewedAt ?? null)
+    : (client?.lastRenewedAt ?? null);
+  const lastRenewalAmountDisplay = !memberDataLoading
+    ? (renewalFromSales?.lastRenewalAmount ?? null)
+    : (client?.lastRenewalAmount ?? null);
+
+  // Heal stale Last Renewed metadata when no active renewal sales remain (e.g. already voided).
+  useEffect(() => {
+    if (memberDataLoading || !client?.id) return;
+    if (renewalFromSales) {
+      renewalHealKeyRef.current = null;
+      return;
+    }
+    if (!client.lastRenewedAt && (client.lastRenewalAmount == null || Number(client.lastRenewalAmount) === 0)) {
+      return;
+    }
+    const healKey = `${client.id}:${client.lastRenewedAt ?? ''}`;
+    if (renewalHealKeyRef.current === healKey) return;
+    renewalHealKeyRef.current = healKey;
+    let cancelled = false;
+    void clientService
+      .resyncLastRenewalFromSales(client.id, client.outletID || getCurrentOutletID())
+      .then((renewal) => {
+        if (cancelled) return;
+        setRenewalOverride(null);
+        setFetchedClient((prev) =>
+          prev && prev.id === client.id
+            ? {
+                ...prev,
+                lastRenewedAt: renewal.lastRenewedAt,
+                lastRenewalAmount: renewal.lastRenewalAmount,
+              }
+            : prev,
+        );
+      })
+      .catch(() => {
+        /* best-effort heal; display already prefers sales */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    memberDataLoading,
+    client?.id,
+    client?.outletID,
+    client?.lastRenewedAt,
+    client?.lastRenewalAmount,
+    renewalFromSales,
+  ]);
 
   const getStaffName = (staffId: string) => staff.find((s) => s.id === staffId)?.name ?? '—';
   const getServiceName = (serviceId: string) => services.find((s) => s.id === serviceId)?.name ?? '—';
@@ -533,6 +640,23 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
           <h2 className="m-member-details-title text-[var(--text-primary)] truncate">Member Details</h2>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
+          {onRenewMember ? (
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              className="hidden sm:inline-flex"
+              onClick={() => {
+                setShowOverflowMenu(false);
+                setShowRenewModal(true);
+              }}
+              title="Renew Member"
+              aria-label="Renew Member"
+            >
+              <RefreshCw className="w-5 h-5" />
+              <span>Renew Member</span>
+            </Button>
+          ) : null}
           <Button
             type="button"
             variant="primary"
@@ -558,6 +682,18 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
             </button>
             {showOverflowMenu ? (
               <div className="absolute right-0 top-full mt-1 z-20 min-w-[160px] rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] shadow-ui-sm p-1">
+                {onRenewMember ? (
+                  <button
+                    type="button"
+                    className="w-full text-left px-3 py-2.5 rounded-ui-sm text-sm font-semibold text-[var(--brand)] hover:bg-[var(--brand-soft)]"
+                    onClick={() => {
+                      setShowOverflowMenu(false);
+                      setShowRenewModal(true);
+                    }}
+                  >
+                    Renew Member
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   className="w-full text-left px-3 py-2.5 rounded-ui-sm text-sm font-semibold text-[var(--danger)] hover:bg-[var(--danger-soft)]"
@@ -579,6 +715,16 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
         name={client.name}
         phone={client.phone}
         joinDateLabel={formatJoinDate(client.createdAt)}
+        lastRenewedLabel={
+          lastRenewedAtDisplay
+            ? formatJoinDate(lastRenewedAtDisplay)
+            : '—'
+        }
+        lastRenewalAmountLabel={
+          lastRenewedAtDisplay && lastRenewalAmountDisplay != null
+            ? formatRM(Number(lastRenewalAmountDisplay))
+            : undefined
+        }
         avatarInitial={client.name.charAt(0)}
       />
 
@@ -832,6 +978,48 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
           />
         </Suspense>
       )}
+
+      {onRenewMember && client ? (
+        <RenewMembershipModal
+          open={showRenewModal}
+          memberName={client.name}
+          lastRenewedAt={lastRenewedAtDisplay ?? client.lastRenewedAt}
+          paymentMethods={paymentMethods}
+          busy={renewBusy}
+          onClose={() => {
+            if (!renewBusy) setShowRenewModal(false);
+          }}
+          onConfirm={async (amount, paymentMethod) => {
+            setRenewBusy(true);
+            try {
+              const result = await onRenewMember(client.id, amount, paymentMethod, staffName);
+              setRenewalOverride({
+                lastRenewedAt: result.lastRenewedAt,
+                lastRenewalAmount: result.lastRenewalAmount,
+              });
+              setFetchedClient((prev) =>
+                prev && prev.id === client.id
+                  ? {
+                      ...prev,
+                      lastRenewedAt: result.lastRenewedAt,
+                      lastRenewalAmount: result.lastRenewalAmount,
+                    }
+                  : prev,
+              );
+              setShowRenewModal(false);
+              setToastMessage(
+                `Membership renewed successfully — ${formatRM(result.lastRenewalAmount)}`,
+              );
+            } finally {
+              setRenewBusy(false);
+            }
+          }}
+        />
+      ) : null}
+
+      {toastMessage ? (
+        <Toast message={toastMessage} type="success" onClose={() => setToastMessage(null)} />
+      ) : null}
     </div>
   );
 };

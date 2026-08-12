@@ -5,6 +5,10 @@ export interface MemberSummaryProps {
   name: string;
   phone?: string;
   joinDateLabel?: string;
+  /** Formatted last renewed date, or "—" / "Never" when never renewed. */
+  lastRenewedLabel?: string;
+  /** Optional amount under last renewed (e.g. RM20.00). */
+  lastRenewalAmountLabel?: string;
   avatarInitial?: string;
   actions?: React.ReactNode;
   className?: string;
@@ -15,6 +19,8 @@ export const MemberSummary: React.FC<MemberSummaryProps> = ({
   name,
   phone,
   joinDateLabel,
+  lastRenewedLabel,
+  lastRenewalAmountLabel,
   avatarInitial,
   actions,
   className,
@@ -41,17 +47,38 @@ export const MemberSummary: React.FC<MemberSummaryProps> = ({
           Joined {joinDateLabel}
         </p>
       ) : null}
-    </div>
-    {joinDateLabel ? (
-      <div className="text-right shrink-0 hidden sm:block">
-        <span className="m-caption text-xs font-medium text-[var(--text-muted)] uppercase tracking-wide">
-          Join Date
-        </span>
-        <p className="m-member-summary__meta text-sm font-semibold text-[var(--text-primary)]">
-          {joinDateLabel}
+      {lastRenewedLabel ? (
+        <p className="m-member-summary__renew text-[var(--text-muted)] mt-0.5 text-[11px] sm:hidden">
+          Last renewed {lastRenewedLabel}
+          {lastRenewalAmountLabel ? ` · ${lastRenewalAmountLabel}` : ''}
         </p>
-      </div>
-    ) : null}
+      ) : null}
+    </div>
+    <div className="text-right shrink-0 hidden sm:flex sm:flex-col sm:items-end sm:gap-2">
+      {joinDateLabel ? (
+        <div>
+          <span className="m-caption text-xs font-medium text-[var(--text-muted)] uppercase tracking-wide">
+            Join Date
+          </span>
+          <p className="m-member-summary__meta text-sm font-semibold text-[var(--text-primary)]">
+            {joinDateLabel}
+          </p>
+        </div>
+      ) : null}
+      {lastRenewedLabel ? (
+        <div>
+          <span className="m-caption text-xs font-medium text-[var(--text-muted)] uppercase tracking-wide">
+            Last Renewed
+          </span>
+          <p className="m-member-summary__meta text-sm font-semibold text-[var(--text-primary)]">
+            {lastRenewedLabel}
+          </p>
+          {lastRenewalAmountLabel ? (
+            <p className="text-xs font-medium text-[var(--brand)] mt-0.5">{lastRenewalAmountLabel}</p>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
     {actions}
   </div>
 );

@@ -17,6 +17,7 @@ import {
   rewardService,
   outletService,
   setCurrentOutletID,
+  MEMBERSHIP_RENEWAL_CATEGORY,
 } from '../services/databaseService';
 import { setCurrentOutletID as setPointTransactionOutletID } from '../services/pointTransactionService';
 import { pointTransactionService } from '../services/pointTransactionService';
@@ -335,6 +336,54 @@ export const useFirestoreData = (
       throw err;
     }
   }, [outletID]);
+
+  const handleRenewMember = useCallback(
+    async (
+      clientId: string,
+      amount: number,
+      paymentMethod: string,
+      operatorName: string,
+    ): Promise<{ lastRenewedAt: string; lastRenewalAmount: number }> => {
+      if (!hasOutlet || !outletID?.trim()) {
+        const msg = 'No outlet assigned. Cannot renew membership.';
+        setError(msg);
+        throw new Error(msg);
+      }
+      try {
+        const result = await clientService.renewMembership(
+          clientId,
+          amount,
+          paymentMethod,
+          operatorName,
+          outletID,
+        );
+        setClients((current) =>
+          current.map((c) =>
+            c.id === clientId
+              ? {
+                  ...c,
+                  lastRenewedAt: result.lastRenewedAt,
+                  lastRenewalAmount: result.lastRenewalAmount,
+                }
+              : c,
+          ),
+        );
+        setTransactions((current) => {
+          if (current.some((t) => t.id === result.transaction.id)) return current;
+          return [result.transaction, ...current];
+        });
+        return {
+          lastRenewedAt: result.lastRenewedAt,
+          lastRenewalAmount: result.lastRenewalAmount,
+        };
+      } catch (err: any) {
+        console.error('Error renewing membership:', err);
+        setError(err.message || 'Failed to renew membership');
+        throw err;
+      }
+    },
+    [outletID, hasOutlet],
+  );
 
   const handleUpdateClientPoints = useCallback(async (clientId: string, pointsChange: number) => {
     try {
@@ -912,6 +961,31 @@ export const useFirestoreData = (
 
       await transactionService.delete(id, outletID);
 
+      if (
+        clientId &&
+        txnData.type === TransactionType.SALE &&
+        txnData.category === MEMBERSHIP_RENEWAL_CATEGORY
+      ) {
+        try {
+          const renewal = await clientService.resyncLastRenewalFromSales(clientId, outletID, {
+            excludeTransactionId: id,
+          });
+          setClients((current) =>
+            current.map((c) =>
+              c.id === clientId
+                ? {
+                    ...c,
+                    lastRenewedAt: renewal.lastRenewedAt,
+                    lastRenewalAmount: renewal.lastRenewalAmount,
+                  }
+                : c,
+            ),
+          );
+        } catch (renewErr: any) {
+          console.warn('Could not resync member Last Renewed after sale delete:', renewErr?.message);
+        }
+      }
+
       const removedApptIds = new Set(linkedAppts.map((a) => a.id));
       const removedTxnIds = new Set<string>([id, ...commissions.map((c) => c.id)]);
       setAppointments((current) => current.filter((a) => !removedApptIds.has(a.id) && a.saleId !== id && a.sourceSaleId !== id));
@@ -1004,6 +1078,29 @@ export const useFirestoreData = (
       const commissions = (await transactionService.listByParentSaleId(id, outletID)).filter((t) => t.category === 'Commission');
       if (commissions.length > 0) {
         console.log('Deleted', commissions.length, 'commission transaction(s) linked to voided sale', id);
+      }
+
+      if (
+        clientId &&
+        txnData.type === TransactionType.SALE &&
+        txnData.category === MEMBERSHIP_RENEWAL_CATEGORY
+      ) {
+        try {
+          const renewal = await clientService.resyncLastRenewalFromSales(clientId, outletID);
+          setClients((current) =>
+            current.map((c) =>
+              c.id === clientId
+                ? {
+                    ...c,
+                    lastRenewedAt: renewal.lastRenewedAt,
+                    lastRenewalAmount: renewal.lastRenewalAmount,
+                  }
+                : c,
+            ),
+          );
+        } catch (renewErr: any) {
+          console.warn('Could not resync member Last Renewed after sale void:', renewErr?.message);
+        }
       }
     } catch (err: any) {
       console.error('Error voiding transaction:', err);
@@ -1229,6 +1326,7 @@ export const useFirestoreData = (
     loadData,
     handleAddClient,
     handleUpdateClient,
+    handleRenewMember,
     handleUpdateClientPoints,
     handleDeleteClient,
     handleDeleteClientsByLastImportId,

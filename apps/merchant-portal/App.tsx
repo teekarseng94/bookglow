@@ -99,7 +99,8 @@ const App: React.FC = () => {
     handleAddServiceCategory,
     handleUpdateServiceCategory,
     handleDeleteServiceCategory,
-    handleReorderServiceCategories
+    handleReorderServiceCategories,
+    handleRenewMember,
   } = useFirestoreData(effectiveOutletID, role, activeTab);
 
   useEffect(() => {
@@ -223,6 +224,7 @@ const App: React.FC = () => {
               handleUpdateServiceCategory={handleUpdateServiceCategory}
               handleDeleteServiceCategory={handleDeleteServiceCategory}
               handleReorderServiceCategories={handleReorderServiceCategories}
+              handleRenewMember={handleRenewMember}
             />
           )}
         </>
@@ -259,6 +261,12 @@ interface AppContentProps {
   logout: () => Promise<void>;
   handleAddClient: (client: Omit<Client, 'id' | 'points' | 'outletID'> & { points?: number; outletID?: string }) => Promise<string | undefined>;
   handleUpdateClient: (id: string, updatedData: Partial<Client>) => Promise<void>;
+  handleRenewMember: (
+    clientId: string,
+    amount: number,
+    paymentMethod: string,
+    operatorName: string,
+  ) => Promise<{ lastRenewedAt: string; lastRenewalAmount: number }>;
   handleUpdateClientPoints: (clientId: string, pointsChange: number) => Promise<void>;
   handleDeleteClient: (clientId: string) => Promise<void>;
   handleUpdateClientCredit: (clientId: string, amount: number, type: 'topup' | 'deduction', staffRemark: string, staffName: string, transactionId?: string) => Promise<number>;
@@ -326,6 +334,7 @@ const AppContent: React.FC<AppContentProps> = ({
   logout,
   handleAddClient,
   handleUpdateClient,
+  handleRenewMember,
   handleUpdateClientPoints,
   handleDeleteClient,
   handleUpdateClientCredit,
@@ -702,10 +711,12 @@ const AppContent: React.FC<AppContentProps> = ({
                   staff={staff}
                   services={services}
                   staffName={user?.displayName || user?.email || 'Staff'}
+                  paymentMethods={outletSettings.paymentMethods}
                   onDeleteClient={handleDeleteClient}
                   onUpdateClientCredit={handleUpdateClientCredit}
                   onRedeemVoucher={handleRedeemVoucher}
                   onVoidTransaction={handleVoidTransaction}
+                  onRenewMember={handleRenewMember}
                 />
               }
             />

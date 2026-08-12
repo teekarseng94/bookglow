@@ -6,3 +6,4 @@ export { MemberSummary } from './MemberSummary';
 export { MemberBalanceSection } from './MemberBalanceSection';
 export { MemberHistorySection } from './MemberHistorySection';
 export { MemberActionBar } from './MemberActionBar';
+export { RenewMembershipModal } from './RenewMembershipModal';

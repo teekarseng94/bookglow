@@ -15,6 +15,7 @@ export const productService = supabaseMerchant.productService;
 export const packageService = supabaseMerchant.packageService;
 export const rewardService = supabaseMerchant.rewardService;
 export const apiIntegrationService = supabaseMerchant.apiIntegrationService;
+export const MEMBERSHIP_RENEWAL_CATEGORY = supabaseMerchant.MEMBERSHIP_RENEWAL_CATEGORY;
 
 export const setCurrentOutletID = (outletID: string) => {
   supabaseMerchant.setCurrentOutletID(outletID);

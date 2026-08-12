@@ -118,6 +118,10 @@ export interface Client {
   outstanding?: number;
   /** Set during CSV import; used to undo a batch via Undo Import */
   lastImportId?: string;
+  /** Most recent membership renewal timestamp (join date remains createdAt). Cleared when all renewals are voided/deleted. */
+  lastRenewedAt?: string | null;
+  /** Amount charged for the most recent membership renewal (RM). */
+  lastRenewalAmount?: number | null;
   marketingEmailConsent?: boolean;
   marketingSmsConsent?: boolean;
   marketingWhatsappConsent?: boolean;

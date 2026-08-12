@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Transaction, TransactionType, Staff, Client } from '../types';
 import TransactionDetailModal from '../components/TransactionDetailModal';
-import { transactionService } from '../services/databaseService';
+import { transactionService, MEMBERSHIP_RENEWAL_CATEGORY } from '../services/databaseService';
 import {
   ReportDateRangeBar,
   ReportEmptyState,
@@ -60,6 +60,15 @@ const SalesReports: React.FC<SalesReportsProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedStaffId, setSelectedStaffId] = useState<string>('ALL');
   const [showFiltersSheet, setShowFiltersSheet] = useState(false);
+
+  const reportCategories = useMemo(() => {
+    const extras = [MEMBERSHIP_RENEWAL_CATEGORY];
+    const merged = [...serviceCategories];
+    for (const cat of extras) {
+      if (!merged.includes(cat)) merged.push(cat);
+    }
+    return merged;
+  }, [serviceCategories]);
   
   // Real-time collection data for selected date (from transactions collection)
   const [dailySales, setDailySales] = useState<Transaction[]>([]);
@@ -338,7 +347,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
               onChange={(e) => setSelectedCategory(e.target.value)}
             >
               <option value="ALL">All Categories</option>
-              {serviceCategories.map(cat => (
+              {reportCategories.map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
             </select>
@@ -473,7 +482,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
             <span className="m-settings-label block uppercase tracking-widest">Category</span>
             <select className="m-settings-control w-full" value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
               <option value="ALL">All Categories</option>
-              {serviceCategories.map((cat) => (
+              {reportCategories.map((cat) => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
             </select>

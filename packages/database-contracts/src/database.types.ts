@@ -261,6 +261,8 @@ export type Database = {
           source: string | null
           tag: string | null
           voucher_count: number | null
+          last_renewed_at: string | null
+          last_renewal_amount: number | null
         }
         Insert: {
           birthday?: string | null
@@ -287,6 +289,8 @@ export type Database = {
           source?: string | null
           tag?: string | null
           voucher_count?: number | null
+          last_renewed_at?: string | null
+          last_renewal_amount?: number | null
         }
         Update: {
           birthday?: string | null
@@ -313,6 +317,8 @@ export type Database = {
           source?: string | null
           tag?: string | null
           voucher_count?: number | null
+          last_renewed_at?: string | null
+          last_renewal_amount?: number | null
         }
         Relationships: [
           {
@@ -1683,6 +1689,19 @@ export type Database = {
       delete_appointment_and_linked_sale: {
         Args: { p_appointment_id: string }
         Returns: Json
+      }
+      renew_member_membership: {
+        Args: {
+          p_client_id: string
+          p_amount: number
+          p_payment_method?: string
+          p_operator_name?: string | null
+        }
+        Returns: Json
+      }
+      recalc_client_last_renewal: {
+        Args: { p_outlet_id: string; p_client_id: string }
+        Returns: undefined
       }
       create_merchant_workspace: {
         Args: {

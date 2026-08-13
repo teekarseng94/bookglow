@@ -6,6 +6,14 @@ import { cx } from '../ui/cx';
 const formatRM = (n: number): string =>
   `RM${n.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+function todayLocalYmd(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 function parseRenewalAmount(raw: string): { ok: true; value: number } | { ok: false; error: string } {
   const trimmed = raw.trim().replace(/,/g, '');
   if (!trimmed) return { ok: false, error: 'Renewal amount is required' };
@@ -37,7 +45,8 @@ export interface RenewMembershipModalProps {
   paymentMethods: string[];
   busy?: boolean;
   onClose: () => void;
-  onConfirm: (amount: number, paymentMethod: string) => Promise<void>;
+  /** amount, paymentMethod, renewalDate (YYYY-MM-DD) */
+  onConfirm: (amount: number, paymentMethod: string, renewalDate: string) => Promise<void>;
 }
 
 export const RenewMembershipModal: React.FC<RenewMembershipModalProps> = ({
@@ -57,6 +66,7 @@ export const RenewMembershipModal: React.FC<RenewMembershipModalProps> = ({
     [paymentMethods],
   );
   const [amountRaw, setAmountRaw] = useState('');
+  const [renewalDate, setRenewalDate] = useState(todayLocalYmd);
   const [paymentMethod, setPaymentMethod] = useState(methods[0] || 'Cash');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -64,6 +74,7 @@ export const RenewMembershipModal: React.FC<RenewMembershipModalProps> = ({
   useEffect(() => {
     if (!open) return;
     setAmountRaw('');
+    setRenewalDate(todayLocalYmd());
     setPaymentMethod(methods[0] || 'Cash');
     setError(null);
     setSubmitting(false);
@@ -80,10 +91,14 @@ export const RenewMembershipModal: React.FC<RenewMembershipModalProps> = ({
       setError(parsed.error);
       return;
     }
+    if (!renewalDate || !/^\d{4}-\d{2}-\d{2}$/.test(renewalDate)) {
+      setError('Renewal date is required');
+      return;
+    }
     setError(null);
     setSubmitting(true);
     try {
-      await onConfirm(parsed.value, paymentMethod);
+      await onConfirm(parsed.value, paymentMethod, renewalDate);
     } catch (err: any) {
       setError(err?.message || 'Failed to renew membership');
       setSubmitting(false);
@@ -129,6 +144,19 @@ export const RenewMembershipModal: React.FC<RenewMembershipModalProps> = ({
           </p>
           <p className="text-sm text-[var(--text-secondary)] mt-0.5">{formatLastRenewedLabel(lastRenewedAt)}</p>
         </div>
+        <Field id="renewal-date" label="Renewal Date" required>
+          <input
+            id="renewal-date"
+            type="date"
+            disabled={locked}
+            className={cx(fieldControlClassName, 'h-11')}
+            value={renewalDate}
+            onChange={(e) => {
+              setRenewalDate(e.target.value);
+              if (error) setError(null);
+            }}
+          />
+        </Field>
         <Field id="renewal-amount" label="Renewal Amount (RM)" required error={error || undefined}>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-[var(--text-muted)] pointer-events-none">

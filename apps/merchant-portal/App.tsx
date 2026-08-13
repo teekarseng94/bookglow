@@ -266,6 +266,7 @@ interface AppContentProps {
     amount: number,
     paymentMethod: string,
     operatorName: string,
+    renewalDateYmd?: string,
   ) => Promise<{ lastRenewedAt: string; lastRenewalAmount: number }>;
   handleUpdateClientPoints: (clientId: string, pointsChange: number) => Promise<void>;
   handleDeleteClient: (clientId: string) => Promise<void>;

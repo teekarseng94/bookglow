@@ -54,7 +54,8 @@ interface MemberDetailsProps {
     clientId: string,
     amount: number,
     paymentMethod: string,
-    operatorName: string
+    operatorName: string,
+    renewalDateYmd?: string,
   ) => Promise<{ lastRenewedAt: string; lastRenewalAmount: number }>;
 }
 
@@ -989,10 +990,10 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
           onClose={() => {
             if (!renewBusy) setShowRenewModal(false);
           }}
-          onConfirm={async (amount, paymentMethod) => {
+          onConfirm={async (amount, paymentMethod, renewalDate) => {
             setRenewBusy(true);
             try {
-              const result = await onRenewMember(client.id, amount, paymentMethod, staffName);
+              const result = await onRenewMember(client.id, amount, paymentMethod, staffName, renewalDate);
               setRenewalOverride({
                 lastRenewedAt: result.lastRenewedAt,
                 lastRenewalAmount: result.lastRenewalAmount,

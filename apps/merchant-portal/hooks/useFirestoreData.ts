@@ -343,6 +343,7 @@ export const useFirestoreData = (
       amount: number,
       paymentMethod: string,
       operatorName: string,
+      renewalDateYmd?: string,
     ): Promise<{ lastRenewedAt: string; lastRenewalAmount: number }> => {
       if (!hasOutlet || !outletID?.trim()) {
         const msg = 'No outlet assigned. Cannot renew membership.';
@@ -356,6 +357,7 @@ export const useFirestoreData = (
           paymentMethod,
           operatorName,
           outletID,
+          renewalDateYmd,
         );
         setClients((current) =>
           current.map((c) =>

@@ -1696,6 +1696,7 @@ export type Database = {
           p_amount: number
           p_payment_method?: string
           p_operator_name?: string | null
+          p_renewed_at?: string | null
         }
         Returns: Json
       }

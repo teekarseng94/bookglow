@@ -45,6 +45,21 @@ const CLIENT_LIST_COLUMNS =
 /** Canonical SALE category for membership renewals (Sales Reports / History). */
 export const MEMBERSHIP_RENEWAL_CATEGORY = "Membership Renewal";
 
+/** Convert YYYY-MM-DD to ISO timestamp; today keeps current clock time, other days use local noon. */
+function renewalDateToIso(renewalDateYmd?: string): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  const todayYmd = `${y}-${m}-${d}`;
+  const ymd = (renewalDateYmd || "").trim();
+  if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd) || ymd === todayYmd) {
+    return now.toISOString();
+  }
+  const [yy, mm, dd] = ymd.split("-").map(Number);
+  return new Date(yy, mm - 1, dd, 12, 0, 0).toISOString();
+}
+
 /** Transaction list — excludes heavy `items` JSON until detail open. */
 const TRANSACTION_LIST_COLUMNS =
   "id,outlet_id,date,type,client_id,amount,category,description,payment_method,parent_sale_id,status,voided,remarks,payment_status,outstanding,created_at";
@@ -1042,6 +1057,7 @@ export const clientService = {
    * Renew membership: creates a SALE transaction (category Membership Renewal)
    * and updates last_renewed_at / last_renewal_amount on the client.
    * Prefers atomic RPC; falls back to complete_pos_sale + client update.
+   * @param renewalDateYmd optional YYYY-MM-DD (defaults to today local)
    */
   renewMembership: async (
     clientId: string,
@@ -1049,6 +1065,7 @@ export const clientService = {
     paymentMethod: string,
     operatorName: string,
     outletID: string = currentOutletID,
+    renewalDateYmd?: string,
   ): Promise<{
     transaction: Transaction;
     lastRenewedAt: string;
@@ -1062,18 +1079,20 @@ export const clientService = {
     }
     const method = (paymentMethod || "Cash").trim() || "Cash";
     const operator = (operatorName || "").trim();
+    const renewedAtIso = renewalDateToIso(renewalDateYmd);
 
     const { data, error } = await client().rpc("renew_member_membership", {
       p_client_id: clientId,
       p_amount: rounded,
       p_payment_method: method,
       p_operator_name: operator || null,
+      p_renewed_at: renewedAtIso,
     } as never);
 
     if (!error && data) {
       const payload = data as Record<string, unknown>;
       const txnId = String(payload.transaction_id || "");
-      const lastRenewedAt = String(payload.last_renewed_at || new Date().toISOString());
+      const lastRenewedAt = String(payload.last_renewed_at || renewedAtIso);
       const lastRenewalAmount = Number(payload.last_renewal_amount ?? rounded);
       const description = String(payload.description || `Membership Renewal`);
       const transaction: Transaction = {
@@ -1108,6 +1127,7 @@ export const clientService = {
       error &&
       (/renew_member_membership/i.test(error.message || "") ||
         /Could not find the function/i.test(error.message || "") ||
+        /p_renewed_at/i.test(error.message || "") ||
         error.code === "PGRST202");
     if (!rpcMissing) {
       throw error || new Error("Failed to renew membership.");
@@ -1116,13 +1136,12 @@ export const clientService = {
     // Fallback when migration RPC is not deployed yet: POS sale + client metadata update.
     const member = await clientService.getById(clientId, outletID);
     if (!member) throw new Error("Member not found in active outlet.");
-    const nowIso = new Date().toISOString();
     const description = `Membership Renewal - ${member.name || "Member"}`;
     const txnId = newId();
     const saleTxn: Transaction = {
       id: txnId,
       outletID,
-      date: nowIso,
+      date: renewedAtIso,
       type: TransactionType.SALE,
       clientId,
       amount: rounded,
@@ -1155,7 +1174,7 @@ export const clientService = {
     try {
       await clientService.update(
         clientId,
-        { lastRenewedAt: nowIso, lastRenewalAmount: rounded },
+        { lastRenewedAt: renewedAtIso, lastRenewalAmount: rounded },
         outletID,
       );
     } catch (metaErr: any) {
@@ -1166,7 +1185,7 @@ export const clientService = {
 
     return {
       transaction: { ...saleTxn, id: savedId },
-      lastRenewedAt: nowIso,
+      lastRenewedAt: renewedAtIso,
       lastRenewalAmount: rounded,
     };
   },

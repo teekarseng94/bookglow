@@ -689,6 +689,7 @@ const AppContent: React.FC<AppContentProps> = ({
       outletId={currentOutletID}
       outletName={outletName}
       role={role}
+      memberCount={clients.length}
     >
       <div className="animate-fadeIn">
         <React.Suspense

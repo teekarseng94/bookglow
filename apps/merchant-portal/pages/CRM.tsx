@@ -714,11 +714,6 @@ const CRM: React.FC<CRMProps> = ({
       <div className="hidden sm:block">
         <MemberPageHeader clientCount={clients.length} />
       </div>
-      <div className="sm:hidden -mt-1 flex items-center justify-end">
-        <span className="m-caption flex-shrink-0 font-medium text-[var(--text-muted)] tabular-nums">
-          {clients.length.toLocaleString()} members
-        </span>
-      </div>
       {/* Recent import toast: show last import count + Undo button */}
       {lastImportToast && (
         <div className="fixed bottom-6 right-6 z-[70] max-w-sm animate-fadeIn">
@@ -804,7 +799,7 @@ const CRM: React.FC<CRMProps> = ({
                 key={tab}
                 onClick={() => setSortFilter(tab)}
                 className={`m-member-sort-tab flex-1 sm:flex-none whitespace-nowrap px-3 md:px-4 rounded-lg text-xs md:text-sm font-medium transition-colors ${
-                  sortFilter === tab ? 'bg-[var(--bg-surface)] text-[var(--brand)] shadow-ui-xs' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                  sortFilter === tab ? 'm-member-sort-tab--active bg-[var(--bg-surface)] text-[var(--brand)] shadow-ui-xs' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
                 }`}
               >
                 {tab}

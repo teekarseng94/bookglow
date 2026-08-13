@@ -720,11 +720,11 @@ const Dashboard: React.FC<DashboardProps> = ({
   const marginPct = dashboardData.stats.revenue > 0 ? (dashboardData.stats.profit / dashboardData.stats.revenue) * 100 : null;
 
   return (
-    <div className="dashboard-today space-y-5 animate-fadeIn pb-6">
+    <div className="dashboard-today space-y-3 lg:space-y-5 animate-fadeIn pb-6">
       {/* 1. Greeting + top actions */}
       <TodayHeader
+        className="dashboard-today-header"
         title={<>{greeting} <span aria-hidden>👋</span></>}
-        dateLabel="Here's what's happening with your business today."
         titleClassName="text-app-page sm:text-app-page-lg"
         actions={
           <>
@@ -756,6 +756,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
       {/* 2. Four KPI cards — replaces the old full-width revenue banner */}
       <DashboardKpiCards
+        className="dashboard-kpis"
         cards={[
           {
             id: 'revenue',

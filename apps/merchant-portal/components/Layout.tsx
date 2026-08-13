@@ -18,6 +18,7 @@ interface LayoutProps {
   outletId?: string | null;
   outletName?: string | null;
   role?: UserRole | null;
+  memberCount?: number;
 }
 
 type NavItem = {
@@ -68,6 +69,7 @@ const Layout: React.FC<LayoutProps> = ({
   outletId,
   outletName,
   role,
+  memberCount,
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -326,7 +328,12 @@ const Layout: React.FC<LayoutProps> = ({
 
           <div className="min-w-0 flex-1 text-center">
             <p className="truncate m-shell-meta font-medium">{resolvedOutletName}</p>
-            <h1 className="truncate text-sm font-semibold text-[var(--text-primary)]">{currentPageTitle}</h1>
+            <h1 className="bookglow-mobile-header__title truncate font-semibold text-[var(--text-primary)]">
+              {currentPageTitle}
+              {activeTab === 'member' && typeof memberCount === 'number' ? (
+                <span className="bookglow-mobile-header__count"> · {memberCount.toLocaleString()} members</span>
+              ) : null}
+            </h1>
           </div>
 
           <div className="relative" ref={mobileProfileMenuRef}>

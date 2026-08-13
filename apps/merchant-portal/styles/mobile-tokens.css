@@ -26,7 +26,7 @@
   --mobile-leading-caption: 1.35;
 
   /* Spacing */
-  --mobile-page-padding: 24px;
+  --mobile-page-padding: 16px;
   --mobile-page-padding-compact: 16px;
 
   --mobile-space-1: 4px;
@@ -481,7 +481,27 @@ textarea.m-settings-control {
 
   /* ——— Shell / content padding ——— */
   .bookglow-content-frame:not(.bookglow-content-frame--schedule) {
-    padding: var(--mobile-page-padding-compact) var(--mobile-page-padding);
+    padding: 12px var(--mobile-page-padding-compact);
+  }
+
+  .bookglow-mobile-header {
+    height: 68px;
+    padding: 8px 16px;
+  }
+
+  .bookglow-main-scroll {
+    padding-top: 68px;
+  }
+
+  .bookglow-mobile-header__title {
+    font-size: 18px;
+    line-height: 1.2;
+  }
+
+  .bookglow-mobile-header__count {
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: var(--mobile-font-regular);
   }
 
   .bookglow-main-scroll {
@@ -629,6 +649,65 @@ textarea.m-settings-control {
   .m-member-fab:focus-visible {
     outline: none;
     box-shadow: var(--shadow-focus-strong, 0 0 0 3px rgba(118, 86, 214, 0.28));
+  }
+
+  .m-member-page {
+    gap: 12px !important;
+  }
+
+  .m-member-toolbar,
+  .m-member-toolbar .m-filter-toolbar {
+    gap: 10px;
+  }
+
+  .m-member-toolbar .m-filter-toolbar-row {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .m-member-toolbar .m-filter-search {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .m-member-toolbar .m-filter-controls,
+  .m-member-toolbar .m-filter-actions {
+    flex: 0 0 auto;
+  }
+
+  .m-member-toolbar .m-icon-btn--md {
+    width: 44px;
+    height: 44px;
+    color: var(--brand);
+    border-radius: var(--mobile-radius-md);
+  }
+
+  .m-member-sort-tabs {
+    width: 100%;
+    min-height: 44px;
+    padding: 4px;
+    gap: 0;
+    border: 1px solid var(--line);
+    background: var(--bg-surface);
+    border-radius: var(--mobile-radius-lg);
+  }
+
+  .m-member-sort-tab {
+    min-height: 36px;
+    padding: 6px 4px;
+    border-radius: var(--mobile-radius-md);
+    font-size: 13px !important;
+  }
+
+  .m-member-sort-tab--active {
+    color: #fff !important;
+    background: var(--brand) !important;
+  }
+
+  .m-member-row .m-member-points {
+    color: var(--brand) !important;
+    font-size: 14px;
   }
 
   /* ——— Settings accordion ——— */
@@ -1549,15 +1628,15 @@ textarea.m-settings-control {
 
   /* POS mobile catalogue card (full-width row: media | details | price/action) */
   .m-pos-mobile-card {
-    min-height: var(--mobile-pos-card-min-height);
-    padding: var(--mobile-pos-card-padding);
-    gap: var(--mobile-pos-card-gap);
+    min-height: 82px;
+    padding: 10px;
+    gap: 10px;
     border-radius: var(--mobile-radius-lg);
   }
 
   .m-pos-mobile-card__thumb {
-    width: var(--mobile-pos-thumbnail-size);
-    height: var(--mobile-pos-thumbnail-size);
+    width: 50px;
+    height: 50px;
     border-radius: var(--mobile-radius-md);
   }
 
@@ -1579,10 +1658,10 @@ textarea.m-settings-control {
   }
 
   .m-pos-mobile-card__add {
-    width: var(--mobile-pos-add-size);
-    height: var(--mobile-pos-add-size);
-    min-width: var(--mobile-pos-add-size);
-    min-height: var(--mobile-pos-add-size);
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    min-height: 38px;
   }
 
   /* POS sticky cart */
@@ -1591,30 +1670,214 @@ textarea.m-settings-control {
   }
 
   .m-pos-sticky-cart__btn {
-    min-height: 56px;
-    padding: var(--mobile-space-3) var(--mobile-page-padding-compact);
-    gap: var(--mobile-space-3);
+    min-height: 68px;
+    padding: 8px var(--mobile-page-padding-compact);
   }
 
   .m-pos-sticky-cart__count {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     font-size: var(--mobile-text-secondary);
     font-weight: var(--mobile-font-bold);
     border-radius: var(--mobile-radius-pill);
   }
 
   .m-pos-sticky-cart__total {
-    font-size: var(--mobile-text-list-title);
+    font-size: 14px;
     font-weight: var(--mobile-font-bold);
+  }
+
+  .m-pos-sticky-cart__items {
+    font-size: 14px;
+    font-weight: var(--mobile-font-bold);
+    line-height: 1.2;
+  }
+
+  .m-pos-sticky-cart__label {
+    margin-top: 2px;
+    color: var(--text-muted);
+    font-size: 11px;
+  }
+
+  .m-pos-sticky-cart__badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    display: grid;
+    min-width: 18px;
+    height: 18px;
+    place-items: center;
+    padding: 0 4px;
+    border: 2px solid #fff;
+    border-radius: 999px;
+    color: #fff;
+    background: var(--brand);
+    font-size: 10px;
+    font-weight: 700;
   }
 
   .m-pos-sticky-cart__cta {
     min-height: 40px;
-    padding: 8px var(--mobile-space-5);
+    padding: 8px 12px;
     border-radius: var(--mobile-radius-md);
     font-size: var(--mobile-text-secondary);
     font-weight: var(--mobile-font-bold);
+  }
+
+  .m-pos-page {
+    padding-bottom: 76px;
+  }
+
+  .m-pos-page .m-pos-toolbar {
+    gap: 10px;
+  }
+
+  /* Sales Reports: mobile composition mirrors the approved compact report. */
+  .m-sales-date-toolbar {
+    min-height: 52px;
+  }
+
+  .m-report-date-bar__arrow,
+  .m-report-date-bar__action {
+    display: inline-flex;
+    height: 36px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--brand);
+    background: var(--bg-surface);
+  }
+
+  .m-report-date-bar__arrow {
+    width: 34px;
+    color: var(--text-primary);
+  }
+
+  .m-report-date-bar__action {
+    gap: 4px;
+    padding: 0 8px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .m-report-date-bar__date {
+    display: flex;
+    height: 36px;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .m-report-date-bar__date input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    opacity: 0;
+  }
+
+  .m-sales-collection {
+    padding: 16px !important;
+  }
+
+  .m-sales-collection__title {
+    margin-bottom: 8px !important;
+    color: var(--text-muted) !important;
+    font-size: 12px !important;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+
+  .m-sales-collection__total {
+    margin-bottom: 12px !important;
+    font-size: 30px !important;
+  }
+
+  .m-sales-payment-list {
+    gap: 0 !important;
+  }
+
+  .m-sales-payment-row {
+    min-height: 48px;
+    border-top: 1px solid var(--line-soft);
+  }
+
+  .m-sales-payment-row:first-child {
+    border-top: 0;
+  }
+
+  .m-sales-payment-row > span {
+    font-size: 15px !important;
+  }
+
+  .m-sales-metrics {
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--mobile-radius-lg);
+    background: var(--bg-surface);
+  }
+
+  .m-sales-metric {
+    display: flex;
+    min-height: 82px;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border-right: 1px solid var(--line-soft);
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .m-sales-metric:nth-child(2n) { border-right: 0; }
+  .m-sales-metric:nth-child(n+3) { border-bottom: 0; }
+
+  .m-sales-metric__icon {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 999px;
+    color: var(--brand);
+    background: var(--brand-soft);
+  }
+
+  .m-sales-metric__label {
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+  }
+
+  .m-sales-metric__value {
+    margin-top: 2px;
+    color: var(--text-primary);
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .m-sales-asof {
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--mobile-radius-lg);
+    color: var(--text-muted);
+    background: var(--bg-surface);
+    font-size: 12px;
+  }
+
+  .m-sales-asof strong {
+    color: var(--brand);
+    font-weight: 600;
   }
 
   /* POS cart sheet — compact mobile Order Summary */
@@ -2037,6 +2300,75 @@ textarea.m-settings-control {
   }
 
   /* ——— Phase 4: Staff / Dashboard / Sales + Reports ——— */
+
+  /* Compact Today dashboard. Presentation only; desktop remains unchanged. */
+  .dashboard-mobile-header-actions > :first-child {
+    margin-right: auto;
+  }
+
+  .dashboard-mobile-header-actions > :last-child {
+    flex: 0 0 auto;
+  }
+
+  .dashboard-today .dashboard-primary,
+  .dashboard-today .dashboard-secondary {
+    gap: 12px;
+  }
+
+  .dashboard-today .dashboard-kpis {
+    gap: 10px;
+  }
+
+  .dashboard-today .dashboard-kpis > div {
+    min-height: 98px;
+    padding: 12px;
+    gap: 4px;
+  }
+
+  .dashboard-today .dashboard-kpis svg.w-12 {
+    display: none;
+  }
+
+  .dashboard-today .dashboard-kpis p.text-base {
+    font-size: 17px;
+    white-space: nowrap;
+  }
+
+  .dashboard-today .dashboard-kpis .m-caption {
+    font-size: 11px !important;
+  }
+
+  .dashboard-today > section.lg\:hidden {
+    gap: 8px;
+  }
+
+  .dashboard-today > section.lg\:hidden > h3 {
+    margin-bottom: 0;
+  }
+
+  .dashboard-today > section.lg\:hidden button {
+    min-height: 64px;
+    padding-top: 9px;
+    padding-bottom: 9px;
+  }
+
+  .dashboard-today .dashboard-primary section {
+    gap: 8px;
+  }
+
+  .dashboard-today .dashboard-primary .m-card > .text-center {
+    padding: 16px;
+  }
+
+  .dashboard-today .dashboard-primary .m-card > .text-center > div:first-child {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 8px;
+  }
+
+  .dashboard-today .dashboard-primary .m-card > .text-center .mt-3 {
+    margin-top: 8px;
+  }
 
   .m-staff-card {
     padding: var(--mobile-space-3) var(--mobile-space-4);

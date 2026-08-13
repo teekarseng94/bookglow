@@ -207,6 +207,12 @@ const SalesReports: React.FC<SalesReportsProps> = ({
     window.print();
   };
 
+  const reportAsOfLabel = `${formatDate(endDate)} ${new Date().toLocaleTimeString('en-MY', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  })}`;
+
   const maskPhone = (phone: string) => {
     if (!phone || phone.length < 4) return phone;
     return '...' + phone.slice(-4);
@@ -225,8 +231,8 @@ const SalesReports: React.FC<SalesReportsProps> = ({
           .no-print { display: none !important; }
         }
       `}</style>
-      <div className="m-page-with-bottom-nav space-y-4 sales-report-print-area">
-      <div className="no-print">
+      <div className="m-page-with-bottom-nav m-sales-report-page space-y-3 sm:space-y-4 sales-report-print-area">
+      <div className="no-print hidden sm:block">
         <ReportPageHeader
           title="Sales Reports"
           description="Collection totals and daily breakdown."
@@ -237,12 +243,24 @@ const SalesReports: React.FC<SalesReportsProps> = ({
           }
         />
       </div>
-      <div className="flex flex-col lg:flex-row gap-6 animate-fadeIn">
+      <ReportDateRangeBar
+        className="m-sales-date-toolbar no-print sm:hidden"
+        startDate={startDate}
+        endDate={endDate}
+        onStartDateChange={setStartDate}
+        onEndDateChange={setEndDate}
+        onPrev={() => navigateDate('prev')}
+        onNext={() => navigateDate('next')}
+        onPrint={handlePrint}
+        onOpenFilters={() => setShowFiltersSheet(true)}
+        rangeLabel={startDate === endDate ? formatDate(startDate) : `${formatDate(startDate)} – ${formatDate(endDate)}`}
+      />
+      <div className="flex flex-col lg:flex-row gap-3 sm:gap-6 animate-fadeIn">
       {/* Collection Summary Sidebar - included in print */}
-      <div className="w-full lg:w-80 flex-shrink-0 space-y-4 print:block">
+      <div className="w-full lg:w-80 flex-shrink-0 space-y-3 sm:space-y-4 print:block">
         {/* Collection Card */}
-        <div className="bg-gradient-to-br from-[var(--brand-soft)] to-[var(--bg-soft)] rounded-ui-md border border-[var(--brand-border)] shadow-ui-xs p-6">
-          <h3 className="m-settings-subhead text-[var(--text-primary)] mb-4">Collection</h3>
+        <div className="m-sales-collection bg-gradient-to-br from-[var(--brand-soft)] to-[var(--bg-soft)] rounded-ui-md border border-[var(--brand-border)] shadow-ui-xs p-6">
+          <h3 className="m-sales-collection__title m-settings-subhead text-[var(--text-primary)] mb-4">Collection</h3>
           {collectionLoading ? (
             <div className="mb-6 flex items-center gap-3 text-[var(--brand)]">
               <svg className="animate-spin h-8 w-8 flex-shrink-0" fill="none" viewBox="0 0 24 24" aria-hidden="true">
@@ -258,19 +276,19 @@ const SalesReports: React.FC<SalesReportsProps> = ({
               </p>
             </div>
           ) : (
-            <p className="m-dash-hero-value text-[var(--brand)] mb-6 tabular-nums">
+            <p className="m-sales-collection__total m-dash-hero-value text-[var(--brand)] mb-6 tabular-nums">
               RM {collectionTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           )}
 
-          <div className={`space-y-3 ${collectionLoading ? 'opacity-50 pointer-events-none' : ''}`}>
+          <div className={`m-sales-payment-list space-y-3 ${collectionLoading ? 'opacity-50 pointer-events-none' : ''}`}>
             {(paymentMethods && paymentMethods.length > 0 ? paymentMethods : ['Cash', 'Credit Card', 'E-wallet', 'Other']).map((method, idx) => {
               const amount = collectionByMethod[method] ?? 0;
               const label = paymentMethodDisplayLabel(method);
               const iconColor = COLLECTION_ICON_COLORS[idx % COLLECTION_ICON_COLORS.length];
               const textColor = COLLECTION_TEXT_COLORS[idx % COLLECTION_TEXT_COLORS.length];
               return (
-                <div key={method} className="flex items-center justify-between">
+                <div key={method} className="m-sales-payment-row flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className={`w-8 h-8 ${iconColor} rounded-lg flex items-center justify-center`}>
                       <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -290,7 +308,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
         </div>
 
         <ReportSummaryStrip
-          className="!grid-cols-2"
+          className="hidden !grid-cols-2 sm:grid"
           items={[
             { label: 'Orders', value: String(collectionSummary.orderCount), tone: 'neutral' },
             { label: 'Items', value: String(collectionSummary.itemCount), tone: 'neutral' },
@@ -298,11 +316,38 @@ const SalesReports: React.FC<SalesReportsProps> = ({
             { label: 'Staff', value: String(collectionSummary.staffCount), tone: 'neutral' },
           ]}
         />
+        <div className="m-sales-metrics grid grid-cols-2 sm:hidden">
+          {[
+            ['Orders', collectionSummary.orderCount],
+            ['Items', collectionSummary.itemCount],
+            ['Customers', collectionSummary.customerCount],
+            ['Staff', collectionSummary.staffCount],
+          ].map(([label, value]) => (
+            <div key={String(label)} className="m-sales-metric">
+              <span className="m-sales-metric__icon" aria-hidden>
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 7h14l-1 11H6L5 7zm3 0V5a4 4 0 018 0v2" />
+                </svg>
+              </span>
+              <span>
+                <span className="m-sales-metric__label block">{label}</span>
+                <span className="m-sales-metric__value block tabular-nums">{value}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className="m-sales-asof flex items-center gap-2 sm:hidden">
+          <svg className="h-4 w-4 shrink-0 text-[var(--brand)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>All data is as of <strong>{reportAsOfLabel}</strong></span>
+        </div>
       </div>
 
       {/* Main Content */}
       <div className="flex-1 space-y-4 sm:space-y-6 min-w-0">
         <ReportDateRangeBar
+          className="hidden sm:flex"
           startDate={startDate}
           endDate={endDate}
           onStartDateChange={setStartDate}

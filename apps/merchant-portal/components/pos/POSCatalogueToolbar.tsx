@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { cx } from '../ui/cx';
 
 export type POSCatalogTab = 'all' | 'services' | 'products' | 'packages';
@@ -71,7 +72,7 @@ const FilterSortControl: React.FC<{
         aria-label="Catalogue filters and sort"
         aria-expanded={open}
         aria-haspopup="dialog"
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => flushSync(() => setOpen((value) => !value))}
         className={cx(
           'inline-flex h-10 w-10 items-center justify-center rounded-ui-md border transition-colors',
           'focus-visible:shadow-ui-focus-strong posd:h-11 posd:w-11',
@@ -225,8 +226,8 @@ export const POSCatalogueToolbar: React.FC<POSCatalogueToolbarProps> = ({
       )}
     >
       {/* Mobile / tablet */}
-      <div className="space-y-3 posd:hidden">
-        <div className="m-card flex items-center gap-2 rounded-ui-md bg-[var(--bg-surface)] p-2.5">
+      <div className="space-y-2.5 posd:hidden">
+        <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">{renderSearchField()}</div>
           <FilterSortControl
             activeCatalog={activeCatalog}

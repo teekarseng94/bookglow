@@ -650,7 +650,7 @@ const POS: React.FC<POSProps> = ({
     activeCatalog === 'products' ? 'Products' : activeCatalog === 'packages' ? 'Packages' : 'Services';
 
   return (
-    <div className="m-page-with-sticky-action flex h-full min-h-0 flex-col gap-4 sm:pb-[calc(var(--mobile-bottom-nav-height)+var(--mobile-safe-area-bottom))] lg:pb-0 posd:gap-3">
+    <div className="m-page-with-sticky-action m-pos-page flex h-full min-h-0 flex-col gap-3 sm:pb-[calc(var(--mobile-bottom-nav-height)+var(--mobile-safe-area-bottom))] lg:pb-0 posd:gap-3">
       <POSPageHeader
         shopName={outletSettings.shopName}
         banner={
@@ -671,7 +671,7 @@ const POS: React.FC<POSProps> = ({
       {/* Phone: stacked. Tablet: split. Desktop: catalogue + 360px Order Summary. */}
       <div className="flex min-h-0 flex-1 flex-col gap-4 sm:flex-row sm:items-start sm:gap-3 posd:grid posd:grid-cols-[minmax(0,1fr)_360px] posd:gap-5">
         <div className="flex min-h-0 min-w-0 flex-1 flex-col sm:max-h-[calc(100vh-8.75rem)] lg:max-h-[calc(100vh-7.5rem)]">
-          <div className="shrink-0 space-y-3 pb-3">
+          <div className="shrink-0 pb-2.5">
             <POSCatalogueToolbar
               search={globalSearch}
               onSearchChange={setGlobalSearch}
@@ -686,7 +686,7 @@ const POS: React.FC<POSProps> = ({
             />
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto pr-1 scrollbar-thin">
+          <div className="min-h-0 flex-1 overflow-visible sm:overflow-y-auto sm:pr-1 scrollbar-thin">
             <POSCatalogueList>
               {(activeCatalog === 'all' || activeCatalog === 'services') && (
                 <POSCatalogueSection

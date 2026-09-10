@@ -6,7 +6,7 @@ import { StaffPermissionSection } from './StaffPermissionSection';
 import { StaffCommissionSection } from './StaffCommissionSection';
 import { cx } from '../ui/cx';
 import type { StaffPermissions, StaffWeeklyHours } from '../../utils/staffExtras';
-import { formatShiftLabel, normalizeStaffPermissions, permissionsSummary } from '../../utils/staffExtras';
+import { formatShiftLabel, normalizeStaffPermissions } from '../../utils/staffExtras';
 
 export type StaffDetailTab =
   | 'overview'
@@ -204,10 +204,10 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
         </div>
       ) : null}
 
-      <div className="p-4 sm:p-5 xl:p-6 border-b border-[var(--line)]">
+      <div className="p-4 sm:p-5 border-b border-[var(--line)]">
         <div className="flex justify-between items-start gap-3">
           <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 xl:w-20 xl:h-20 rounded-full bg-[var(--brand-soft)] text-[var(--brand-deep)] flex items-center justify-center font-bold overflow-hidden shrink-0 border-2 border-white shadow-ui-sm">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[var(--brand-soft)] text-[var(--brand-deep)] flex items-center justify-center font-bold overflow-hidden shrink-0 border-2 border-white shadow-ui-sm">
               {member.profilePicture ? (
                 <img src={member.profilePicture} alt="" className="w-full h-full object-cover" />
               ) : (
@@ -216,20 +216,18 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
             </div>
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h3 className="m-staff-detail-name sm:text-xl xl:text-2xl text-[var(--text-primary)] truncate">
+                <h3 className="m-staff-detail-name sm:text-xl text-[var(--text-primary)] truncate">
                   {member.name}
                 </h3>
                 <StaffStatusBadge status={member.status} />
               </div>
               <p className="text-sm font-semibold text-[var(--text-secondary)] mt-0.5">{member.role}</p>
-              <p className="m-staff-card__meta sm:text-xs mt-1 truncate">
-                {[member.email, member.phone].filter(Boolean).join(' · ') || 'No contact details'}
+              <p className="m-staff-card__meta text-[var(--brand)] mt-1">
+                Today · {formatShiftLabel(member.weeklyHours)}
               </p>
-              <p className="m-staff-card__meta mt-0.5">
-                Staff ID: {member.id} · Joined {joined}
-              </p>
-              <p className="m-staff-card__meta text-[var(--brand)] mt-0.5">
-                Today: {formatShiftLabel(member.weeklyHours)}
+              <p className="m-staff-card__meta mt-0.5">Joined {joined}</p>
+              <p className="m-staff-card__meta sm:text-xs mt-0.5 truncate">
+                {[member.phone, member.email].filter(Boolean).join(' · ') || 'No contact details'}
               </p>
             </div>
           </div>
@@ -241,18 +239,41 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
                 </Button>
               ) : null}
               {onDelete ? (
-                <Button type="button" variant="ghost" size="sm" onClick={onDelete}>
-                  Remove
-                </Button>
+                <details className="relative">
+                  <summary
+                    className="list-none w-9 h-9 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] inline-flex items-center justify-center cursor-pointer text-xl leading-none"
+                    aria-label="More staff actions"
+                  >
+                    ⋯
+                  </summary>
+                  <div className="absolute right-0 top-10 z-20 min-w-[140px] rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] p-1 shadow-ui-md">
+                    {onEdit ? (
+                      <button
+                        type="button"
+                        onClick={onEdit}
+                        className="w-full rounded-ui-sm px-3 py-2 text-left text-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-soft)]"
+                      >
+                        Edit
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={onDelete}
+                      className="w-full rounded-ui-sm px-3 py-2 text-left text-sm font-semibold text-red-600 hover:bg-red-50"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </details>
               ) : null}
             </div>
           )}
         </div>
       </div>
 
-      <div className="px-3 sm:px-5 xl:px-6 border-b border-[var(--line)]">
+      <div className="px-3 sm:px-4 border-b border-[var(--line)] overflow-x-auto">
         <nav
-          className="grid grid-cols-2 sm:flex sm:flex-wrap sm:gap-0.5 sm:min-w-0"
+          className="grid grid-cols-2 sm:flex sm:flex-nowrap sm:gap-0.5 sm:min-w-max"
           aria-label="Staff profile sections"
         >
           {TABS.map((t) => (
@@ -263,7 +284,7 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
               aria-label={t.label}
               title={t.label}
               className={cx(
-                'm-staff-tab px-2 py-2.5 text-center sm:px-3 sm:py-3 sm:text-xs sm:text-left',
+                'm-staff-tab px-2 py-2.5 text-center sm:px-2.5 sm:py-2.5 sm:text-xs sm:text-left',
                 'border-b-2 transition-colors min-w-0',
                 tab === t.id
                   ? 'border-[var(--brand)] text-[var(--brand)]'
@@ -277,7 +298,7 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
         </nav>
       </div>
 
-      <div className="flex-1 p-4 sm:p-5 xl:p-6 overflow-y-auto pb-24 sm:pb-6">
+      <div className="flex-1 p-4 sm:p-5 overflow-y-auto pb-24 sm:pb-5">
         {tab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
             <section className="rounded-ui-md border border-[var(--line)] p-4 space-y-3">
@@ -287,7 +308,9 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
               <dl className="space-y-2 text-sm">
                 <div className="flex justify-between gap-3">
                   <dt className="text-[var(--text-muted)]">Staff ID</dt>
-                  <dd className="font-semibold text-[var(--text-primary)] truncate">{member.id}</dd>
+                  <dd className="max-w-[70%] font-mono text-xs font-semibold text-[var(--text-secondary)] truncate" title={member.id}>
+                    {member.id}
+                  </dd>
                 </div>
                 <div className="flex justify-between gap-3">
                   <dt className="text-[var(--text-muted)]">Joined</dt>
@@ -317,7 +340,7 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
                 </div>
                 <div className="min-w-0 overflow-hidden rounded-ui-sm bg-[var(--brand-soft)] p-2 sm:p-3 text-center">
                   <p className="m-staff-kpi-label text-[var(--brand)] truncate" title="Commission">
-                    Comm.
+                    Commission
                   </p>
                   <p className="m-staff-kpi-value tabular-nums text-[var(--brand)] mt-0.5 truncate">
                     ${member.totalCommission.toLocaleString()}
@@ -370,17 +393,6 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
               </p>
             </section>
 
-            <section className="rounded-ui-md border border-[var(--line)] p-4 space-y-2 lg:col-span-2">
-              <h4 className="m-staff-section-title">
-                Access & permissions
-              </h4>
-              <p className="text-sm text-[var(--text-secondary)]">
-                {permissionsSummary(normalizeStaffPermissions(member.permissions, member.role))}
-              </p>
-              <p className="text-xs text-[var(--text-muted)]">
-                Today’s shift: {formatShiftLabel(member.weeklyHours)}
-              </p>
-            </section>
           </div>
         )}
 

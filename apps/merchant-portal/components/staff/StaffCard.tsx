@@ -56,7 +56,7 @@ export const StaffCard: React.FC<StaffCardProps> = ({
           : undefined
       }
       className={cx(
-        'm-staff-card m-card m-entity-row !p-3.5 rounded-ui-md border cursor-pointer transition-all',
+        'm-staff-card m-card m-entity-row !px-3.5 !py-3 rounded-ui-md border cursor-pointer transition-all',
         selected
           ? 'bg-[var(--brand-soft)] border-[var(--brand)] shadow-ui-xs ring-1 ring-[var(--brand)]/20'
           : 'm-card-interactive bg-[var(--bg-surface)] border-[var(--line)] hover:border-[var(--brand-border)] shadow-ui-xs xl:shadow-none',
@@ -84,13 +84,13 @@ export const StaffCard: React.FC<StaffCardProps> = ({
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-1.5">
+              <div>
                 <p className="m-staff-card__name truncate text-[var(--text-primary)]">
                   {name}
                 </p>
-                <span className="m-staff-card__role bg-[var(--brand-soft)] text-[var(--brand-deep)]">
+                <p className="m-staff-card__role mt-0.5 text-[var(--text-muted)] truncate">
                   {role}
-                </span>
+                </p>
               </div>
               {metaSecondary ? (
                 <p className="m-staff-card__meta mt-1 truncate">
@@ -104,7 +104,7 @@ export const StaffCard: React.FC<StaffCardProps> = ({
           </div>
 
           {hasStats ? (
-            <div className="mt-2.5 grid grid-cols-3 gap-1.5 sm:gap-2 pt-2 border-t border-[var(--line)]">
+            <div className="mt-2 grid grid-cols-3 gap-1.5 sm:gap-2 pt-2 border-t border-[var(--line)]">
               <div className="min-w-0 overflow-hidden">
                 <p className="m-staff-stat-label truncate">Today</p>
                 <p className="m-staff-stat-value text-[var(--text-primary)] truncate">
@@ -113,7 +113,7 @@ export const StaffCard: React.FC<StaffCardProps> = ({
               </div>
               <div className="min-w-0 overflow-hidden">
                 <p className="m-staff-stat-label truncate" title="Commission">
-                  Comm.
+                  Commission
                 </p>
                 <p className="m-staff-stat-value tabular-nums text-[var(--brand)] truncate">
                   {commissionLabel ?? revenueLabel ?? '—'}

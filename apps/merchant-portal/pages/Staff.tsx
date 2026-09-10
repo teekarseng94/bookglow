@@ -3,7 +3,6 @@ import { Staff, Transaction, TransactionType, RoleCommission, Service } from '..
 import { uploadImage, getStaffProfileImagePath } from '../services/storageService';
 import { Icons } from '../constants';
 import { ConfirmationDialog } from '../components/ui/ConfirmationDialog';
-import { FilterToolbar } from '../components/ui/FilterToolbar';
 import {
   defaultStaffPermissions,
   emptyWeeklyHours,
@@ -46,6 +45,15 @@ interface StaffProps {
 }
 
 type PerformancePeriod = 'month' | 'year' | 'all' | 'custom';
+type StaffEditorTab = 'profile' | 'services' | 'schedule' | 'commission' | 'permissions';
+
+const STAFF_EDITOR_TABS: { id: StaffEditorTab; label: string }[] = [
+  { id: 'profile', label: 'Profile' },
+  { id: 'services', label: 'Services' },
+  { id: 'schedule', label: 'Schedule' },
+  { id: 'commission', label: 'Commission' },
+  { id: 'permissions', label: 'Permissions' },
+];
 
 const StaffPage: React.FC<StaffProps> = ({ 
   staff, 
@@ -95,6 +103,7 @@ const StaffPage: React.FC<StaffProps> = ({
 
   // Qualified services search filter (Add/Edit modal)
   const [serviceSearch, setServiceSearch] = useState('');
+  const [editorTab, setEditorTab] = useState<StaffEditorTab>('profile');
   // Page-level success toast shown after a successful save
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -305,7 +314,7 @@ const StaffPage: React.FC<StaffProps> = ({
       },
       {
         id: 'commission',
-        label: 'Period Commission',
+        label: 'Commission',
         value: `$${periodCommissionTotal.toLocaleString()}`,
         hint: periodLabel,
         icon: (
@@ -318,7 +327,7 @@ const StaffPage: React.FC<StaffProps> = ({
         id: 'rating',
         label: 'Avg. Rating',
         value: '—',
-        hint: 'Not tracked yet',
+        hint: 'Not tracked',
         emphasize: true,
         icon: (
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -512,6 +521,7 @@ const StaffPage: React.FC<StaffProps> = ({
     setPhotoPreview(member.profilePicture || null);
     setUploadError(null);
     setServiceSearch('');
+    setEditorTab('profile');
     setShowModal(true);
   };
 
@@ -697,6 +707,7 @@ const StaffPage: React.FC<StaffProps> = ({
             setPhotoPreview(null);
             setUploadError(null);
             setServiceSearch('');
+            setEditorTab('profile');
             setShowModal(true);
           }}
         />
@@ -706,8 +717,8 @@ const StaffPage: React.FC<StaffProps> = ({
         <StaffSummaryCards cards={summaryCards} />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 xl:gap-5">
-        <div className={`xl:col-span-5 ${mobileDetailOpen ? 'hidden xl:block' : ''}`}>
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(520px,5fr)_minmax(0,7fr)] gap-4 xl:gap-5">
+        <div className={mobileDetailOpen ? 'hidden xl:block' : ''}>
           <StaffRoster
             empty={paginatedStaff.length === 0}
             emptyTitle={staff.length === 0 ? 'No staff members registered.' : 'No staff match your filters.'}
@@ -718,9 +729,8 @@ const StaffPage: React.FC<StaffProps> = ({
             }
             toolbar={
               <div className="space-y-3">
-                <FilterToolbar
-                  search={
-                    <div className="relative">
+                <div className="grid grid-cols-1 gap-2 xl:grid-cols-[minmax(196px,1fr)_150px_150px] xl:gap-3">
+                  <div className="relative min-w-0">
                       <svg
                         className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]"
                         fill="none"
@@ -741,14 +751,11 @@ const StaffPage: React.FC<StaffProps> = ({
                         placeholder="Search staff by name or role..."
                         className="w-full pl-9 pr-3 py-2.5 min-h-[44px] xl:min-h-[40px] bg-[var(--bg-surface)] xl:bg-[var(--bg-soft)] border border-[var(--line)] rounded-ui-md xl:rounded-ui-sm outline-none focus:ring-2 focus:ring-[var(--brand)] text-sm"
                       />
-                    </div>
-                  }
-                  filters={
-                    <div className="hidden xl:flex flex-wrap items-center gap-2">
+                  </div>
                       <select
                         value={roleFilter}
                         onChange={(e) => setRoleFilter(e.target.value)}
-                        className="min-h-[40px] px-3 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)] text-xs font-bold text-[var(--text-primary)]"
+                        className="hidden xl:block min-h-[40px] w-full px-3 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)] text-xs font-bold text-[var(--text-primary)]"
                         aria-label="Filter by role"
                       >
                         <option value="all">All Roles</option>
@@ -761,7 +768,7 @@ const StaffPage: React.FC<StaffProps> = ({
                       <select
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value as 'all' | StaffStatusKind)}
-                        className="min-h-[40px] px-3 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)] text-xs font-bold text-[var(--text-primary)]"
+                        className="hidden xl:block min-h-[40px] w-full px-3 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)] text-xs font-bold text-[var(--text-primary)]"
                         aria-label="Filter by status"
                       >
                         <option value="all">All Statuses</option>
@@ -769,9 +776,7 @@ const StaffPage: React.FC<StaffProps> = ({
                         <option value="active">Active</option>
                         <option value="idle">No sales</option>
                       </select>
-                    </div>
-                  }
-                />
+                </div>
 
                 {/* Mobile filter chips */}
                 <div className="xl:hidden space-y-2">
@@ -864,15 +869,9 @@ const StaffPage: React.FC<StaffProps> = ({
           >
             {paginatedStaff.map((member) => {
               const qs = member.qualifiedServices ?? [];
-              const names = qs
-                .map((id) => services.find((s) => s.id === id)?.name)
-                .filter((n): n is string => Boolean(n));
-              const specialty =
-                names.length === 0
-                  ? `${member.totalServices} services this period`
-                  : names.length <= 2
-                    ? names.join(', ')
-                    : `${names.slice(0, 2).join(', ')} +${names.length - 2}`;
+              const specialty = qs.length === 0
+                ? `${services.length} services`
+                : `${qs.length} qualified service${qs.length === 1 ? '' : 's'}`;
               return (
                 <StaffCard
                   key={member.id}
@@ -896,7 +895,7 @@ const StaffPage: React.FC<StaffProps> = ({
           </StaffRoster>
         </div>
 
-        <div className={`xl:col-span-7 ${mobileDetailOpen ? '' : 'hidden xl:block'}`}>
+        <div className={mobileDetailOpen ? '' : 'hidden xl:block'}>
           <StaffDetailPanel
             member={
               activeStaff
@@ -944,7 +943,12 @@ const StaffPage: React.FC<StaffProps> = ({
         saving={uploadLoading}
         saveLabel={editingMember ? 'Save Changes' : 'Add Staff'}
         saveStatus={uploadLoading ? 'saving' : uploadError ? 'failed' : 'idle'}
+        tabs={STAFF_EDITOR_TABS}
+        activeTab={editorTab}
+        onTabChange={(tab) => setEditorTab(tab as StaffEditorTab)}
       >
+        {editorTab === 'profile' ? (
+          <>
         <StaffProfileSection
           photoSlot={
             editingMember ? (
@@ -999,7 +1003,7 @@ const StaffPage: React.FC<StaffProps> = ({
           </div>
         </StaffProfileSection>
 
-        <StaffEditorSection title="Role" description="Assign a commission role for this staff member.">
+        <StaffEditorSection title="Role">
           <div>
             <label className={editorLabelClass}>Assigned role</label>
             <select
@@ -1049,7 +1053,10 @@ const StaffPage: React.FC<StaffProps> = ({
             </div>
           </div>
         </StaffEditorSection>
+          </>
+        ) : null}
 
+        {editorTab === 'services' ? (
         <StaffServicesSection
           selectedCount={qualifiedCount}
           toolbar={
@@ -1095,7 +1102,7 @@ const StaffPage: React.FC<StaffProps> = ({
             </div>
           }
         >
-          <div className="mt-1 space-y-3 max-h-48 sm:max-h-56 overflow-y-auto">
+          <div className="mt-1 space-y-3 max-h-[min(50vh,28rem)] overflow-y-auto pr-1">
             {(Object.entries(filteredServicesByCategory) as [string, Service[]][]).map(
               ([cat, list]) => (
                 <div key={cat}>
@@ -1142,18 +1149,24 @@ const StaffPage: React.FC<StaffProps> = ({
             )}
           </div>
         </StaffServicesSection>
+        ) : null}
 
+        {editorTab === 'schedule' ? (
         <StaffScheduleSection
           weeklyHours={formData.weeklyHours}
           onChange={(weeklyHours) => setFormData((prev) => ({ ...prev, weeklyHours }))}
         />
+        ) : null}
 
+        {editorTab === 'permissions' ? (
         <StaffPermissionSection
           roleLabel={formData.role || ''}
           permissions={formData.permissions}
           onChange={(permissions) => setFormData((prev) => ({ ...prev, permissions }))}
         />
+        ) : null}
 
+        {editorTab === 'commission' ? (
         <StaffCommissionSection
           roleLabel={formData.role || ''}
           ratePercent={typeof editorRoleRate === 'number' ? editorRoleRate : null}
@@ -1162,6 +1175,7 @@ const StaffPage: React.FC<StaffProps> = ({
             setShowCommissionModal(true);
           }}
         />
+        ) : null}
 
         {uploadError ? (
           <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-ui-sm px-3 py-2 mt-2">

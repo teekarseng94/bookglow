@@ -34,7 +34,7 @@ export const StaffSummaryCards: React.FC<StaffSummaryCardsProps> = ({ cards, cla
         className={cx(
           'min-w-0',
           'rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] shadow-ui-xs',
-          'px-3 py-2.5 xl:px-4 xl:py-3.5',
+          'px-3 py-2.5 xl:px-4 xl:py-3',
         )}
       >
         <div className="flex items-center gap-2.5 min-w-0">
@@ -49,13 +49,13 @@ export const StaffSummaryCards: React.FC<StaffSummaryCardsProps> = ({ cards, cla
             {card.icon}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-baseline justify-between gap-2 min-w-0">
-              <p className="m-staff-kpi-label truncate">{card.label}</p>
+            <p className="m-staff-kpi-label whitespace-nowrap">{card.label}</p>
+            <div className="mt-0.5 flex items-baseline gap-2 min-w-0">
               <p className="m-staff-kpi-value xl:text-xl tabular-nums text-[var(--text-primary)] shrink-0">
                 {card.value}
               </p>
+              <p className="m-staff-kpi-hint truncate">{card.hint}</p>
             </div>
-            <p className="m-staff-kpi-hint mt-0.5 truncate">{card.hint}</p>
           </div>
         </div>
       </div>

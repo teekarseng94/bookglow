@@ -1,5 +1,5 @@
 import React from 'react';
-import { AppModal } from '../ui/AppModal';
+import { AppModal, type AppModalSize } from '../ui/AppModal';
 
 export interface StaffDialogShellProps {
   open: boolean;
@@ -13,6 +13,7 @@ export interface StaffDialogShellProps {
   /** When false, backdrop click does not close (e.g. while saving). */
   closeOnBackdrop?: boolean;
   mobileFullscreen?: boolean;
+  size?: AppModalSize;
 }
 
 /**
@@ -28,13 +29,14 @@ export const StaffDialogShell: React.FC<StaffDialogShellProps> = ({
   className,
   closeOnBackdrop = true,
   mobileFullscreen = false,
+  size = 'md',
 }) => (
   <AppModal
     open={open}
     onClose={onClose}
     title={title}
     footer={footer}
-    size="md"
+    size={size}
     zIndexClass={zIndexClass}
     className={className}
     closeOnBackdrop={closeOnBackdrop}

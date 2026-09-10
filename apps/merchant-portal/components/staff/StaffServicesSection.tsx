@@ -14,7 +14,7 @@ export const StaffServicesSection: React.FC<StaffServicesSectionProps> = ({
 }) => (
   <StaffEditorSection
     title="Qualified services"
-    description={`${selectedCount} selected · services this staff member is trained to perform`}
+    description={`${selectedCount} selected · Services this staff can perform.`}
   >
     {toolbar}
     {children}

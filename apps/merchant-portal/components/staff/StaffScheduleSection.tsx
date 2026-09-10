@@ -44,7 +44,7 @@ export const StaffScheduleSection: React.FC<StaffScheduleSectionProps> = ({
       title="Schedule"
       description={
         editable
-          ? 'Set this staff member’s usual weekly hours. Used for today’s shift on the roster.'
+          ? 'Weekly working hours'
           : 'Usual weekly availability for this team member.'
       }
     >
@@ -70,11 +70,11 @@ export const StaffScheduleSection: React.FC<StaffScheduleSectionProps> = ({
                 <div
                   key={day}
                   className={cx(
-                    'flex flex-nowrap items-center gap-1.5 sm:gap-2 rounded-ui-sm border border-[var(--line)] px-2.5 py-1.5',
+                    'grid grid-cols-[2rem_1.5rem_minmax(0,1fr)_auto_minmax(0,1fr)] sm:grid-cols-[3rem_2rem_9rem_1rem_9rem] items-center gap-1.5 sm:gap-2 rounded-ui-sm border border-[var(--line)] px-2.5 min-h-[44px]',
                     !slot.isOpen && 'opacity-60 bg-[var(--bg-soft)]',
                   )}
                 >
-                  <span className="w-8 shrink-0 m-staff-stat-value text-[var(--text-primary)]">
+                  <span className="m-staff-stat-value text-[var(--text-primary)]">
                     {weekdayLabel(day)}
                   </span>
                   {editable ? (
@@ -86,21 +86,27 @@ export const StaffScheduleSection: React.FC<StaffScheduleSectionProps> = ({
                         className="shrink-0 rounded border-[var(--line)] text-[var(--brand)] focus:ring-[var(--brand)]"
                         aria-label={`${weekdayLabel(day)} working`}
                       />
-                      <input
-                        type="time"
-                        disabled={!slot.isOpen}
-                        value={slot.open}
-                        onChange={(e) => updateDay(day, { open: e.target.value })}
-                        className="m-hours-row__time min-w-0 flex-1 max-w-[6.5rem] px-1 border border-[var(--line)] bg-[var(--bg-surface)] font-semibold disabled:opacity-40"
-                      />
-                      <span className="text-[var(--text-muted)] m-caption shrink-0">–</span>
-                      <input
-                        type="time"
-                        disabled={!slot.isOpen}
-                        value={slot.close}
-                        onChange={(e) => updateDay(day, { close: e.target.value })}
-                        className="m-hours-row__time min-w-0 flex-1 max-w-[6.5rem] px-1 border border-[var(--line)] bg-[var(--bg-surface)] font-semibold disabled:opacity-40"
-                      />
+                      {slot.isOpen ? (
+                        <>
+                          <input
+                            type="time"
+                            value={slot.open}
+                            onChange={(e) => updateDay(day, { open: e.target.value })}
+                            className="m-hours-row__time min-w-0 sm:min-w-[144px] w-full px-2 pr-8 border border-[var(--line)] bg-[var(--bg-surface)] font-semibold"
+                            aria-label={`${weekdayLabel(day)} start time`}
+                          />
+                          <span className="text-[var(--text-muted)] m-caption text-center">–</span>
+                          <input
+                            type="time"
+                            value={slot.close}
+                            onChange={(e) => updateDay(day, { close: e.target.value })}
+                            className="m-hours-row__time min-w-0 sm:min-w-[144px] w-full px-2 pr-8 border border-[var(--line)] bg-[var(--bg-surface)] font-semibold"
+                            aria-label={`${weekdayLabel(day)} end time`}
+                          />
+                        </>
+                      ) : (
+                        <span className="col-span-3 text-sm font-semibold text-[var(--text-muted)]">Closed</span>
+                      )}
                     </>
                   ) : (
                     <span className="m-staff-card__meta truncate">

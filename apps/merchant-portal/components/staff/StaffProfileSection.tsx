@@ -10,7 +10,7 @@ export interface StaffProfileSectionProps {
 export const StaffProfileSection: React.FC<StaffProfileSectionProps> = ({
   children,
   photoSlot,
-  description = 'Name and photo for this team member.',
+  description,
 }) => (
   <StaffEditorSection title="Profile" description={description}>
     {photoSlot}

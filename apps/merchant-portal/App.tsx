@@ -510,8 +510,9 @@ const AppContent: React.FC<AppContentProps> = ({
       );
     }
 
-    // Walk-in sales intentionally do not create calendar appointments. When this
-    // sale came from Schedule, handleAddTransaction atomically completes that row.
+    // Walk-in sales create Schedule appointments for service lines with staff
+    // (isOnDuty + saleId) inside handleAddTransaction. Sales that started from
+    // Schedule only complete the existing appointment row via complete_pos_sale.
   };
 
   // Appointment handlers are now from useFirestoreData hook

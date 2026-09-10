@@ -40,6 +40,34 @@ export { domainsForRoute } from './outletDataDomains';
 
 const NO_OUTLET_ERROR = 'No outlet assigned. Each user must be mapped to an outlet in the users collection.';
 
+/** Add minutes to HH:mm (local clock; wraps past midnight). */
+function addMinutesToHHmm(time: string, minutes: number): string {
+  const [hRaw, mRaw] = (time || '00:00').split(':');
+  const h = Number(hRaw) || 0;
+  const m = Number(mRaw) || 0;
+  const total = (((h * 60 + m + minutes) % (24 * 60)) + 24 * 60) % (24 * 60);
+  const nh = Math.floor(total / 60);
+  const nm = total % 60;
+  return `${String(nh).padStart(2, '0')}:${String(nm).padStart(2, '0')}`;
+}
+
+function saleDateParts(isoOrDate: string): { date: string; time: string } {
+  const d = new Date(isoOrDate);
+  if (isNaN(d.getTime())) {
+    const now = new Date();
+    return {
+      date: now.toISOString().slice(0, 10),
+      time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
+    };
+  }
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return { date: `${y}-${mo}-${day}`, time: `${hh}:${mm}` };
+}
+
 const DEFAULT_SERVICE_CATEGORIES = ['Massage', 'Facial', 'Nails', 'Aromatherapy', 'Packages'];
 
 /** Sale document IDs we've already created commissions for this session (prevents duplicate if handler runs twice) */
@@ -694,6 +722,89 @@ export const useFirestoreData = (
       }
       console.log('✅ Transaction added successfully with ID:', id);
 
+      // Keep local sales cache with line items (staffId) so Reports/Schedule consumers see them immediately.
+      if (transactionWithOutlet.type === TransactionType.SALE) {
+        setTransactions((current) => {
+          const next: Transaction = { ...transactionWithOutlet, id };
+          if (current.some((t) => t.id === id)) {
+            return current.map((t) => (t.id === id ? { ...t, ...next, items: next.items ?? t.items } : t));
+          }
+          return [next, ...current];
+        });
+      }
+
+      // Walk-in POS: create Schedule appointments for each service line with assigned staff.
+      // Skip when sale already came from Schedule (appointmentId), membership renewals, products, packages.
+      if (
+        transactionWithOutlet.type === TransactionType.SALE &&
+        !transactionWithOutlet.appointmentId &&
+        transactionWithOutlet.category !== MEMBERSHIP_RENEWAL_CATEGORY &&
+        transactionWithOutlet.items?.length
+      ) {
+        try {
+          const existingLinked = await appointmentService.listBySaleId(id, outletID);
+          if (existingLinked.length === 0) {
+            const { date: saleDay, time: saleTime } = saleDateParts(transactionWithOutlet.date);
+            let cursorTime = saleTime;
+            const created: Appointment[] = [];
+            for (const item of transactionWithOutlet.items) {
+              if (item.type !== 'service' || !item.staffId) continue;
+              if (item.id === 'membership_renewal') continue;
+              const catalog = services.find((s) => s.id === item.id);
+              const unitMinutes = Math.max(1, Number(catalog?.duration) || 60);
+              const durationMinutes = unitMinutes * Math.max(1, Number(item.quantity) || 1);
+              const startTime = cursorTime;
+              const endTime = addMinutesToHHmm(startTime, durationMinutes);
+              const apptId = await appointmentService.add(
+                {
+                  outletID,
+                  clientId: transactionWithOutlet.clientId || 'guest',
+                  staffId: item.staffId,
+                  serviceId: item.id,
+                  date: saleDay,
+                  time: startTime,
+                  endTime,
+                  status: 'completed',
+                  paymentStatus: 'paid',
+                  reminderSent: false,
+                  isOnDuty: true,
+                  sourceSaleId: id,
+                  saleId: id,
+                  source: 'pos',
+                  completedAt: new Date().toISOString(),
+                },
+                outletID,
+              );
+              created.push({
+                id: apptId,
+                outletID,
+                clientId: transactionWithOutlet.clientId || 'guest',
+                staffId: item.staffId,
+                serviceId: item.id,
+                date: saleDay,
+                time: startTime,
+                endTime,
+                status: 'completed',
+                paymentStatus: 'paid',
+                reminderSent: false,
+                isOnDuty: true,
+                sourceSaleId: id,
+                saleId: id,
+                source: 'pos',
+                completedAt: new Date().toISOString(),
+              });
+              cursorTime = endTime;
+            }
+            if (created.length > 0) {
+              setAppointments((current) => [...created, ...current.filter((a) => !created.some((c) => c.id === a.id))]);
+              console.log('✅ Schedule appointments created from POS sale:', created.length);
+            }
+          }
+        } catch (apptErr: any) {
+          console.warn('Sale saved but could not create Schedule appointments from POS:', apptErr?.message || apptErr);
+        }
+      }
+
       // Voucher redemption sale: decrement member voucher count by 1 (voucher already paid in the past).
       if (
         transactionWithOutlet.type === TransactionType.SALE &&
@@ -863,7 +974,7 @@ export const useFirestoreData = (
       alert(`Failed to save transaction: ${errorMsg}\n\nCheck browser console for details.`);
       throw err;
     }
-  }, [outletID, hasOutlet, staff, packages]);
+  }, [outletID, hasOutlet, staff, packages, services]);
 
   const handleUpdateTransaction = useCallback(async (id: string, updatedData: Partial<Transaction>) => {
     try {

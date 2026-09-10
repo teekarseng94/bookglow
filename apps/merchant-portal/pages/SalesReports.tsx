@@ -60,6 +60,9 @@ const SalesReports: React.FC<SalesReportsProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedStaffId, setSelectedStaffId] = useState<string>('ALL');
   const [showFiltersSheet, setShowFiltersSheet] = useState(false);
+  const [dailySales, setDailySales] = useState<Transaction[]>([]);
+  const [collectionError, setCollectionError] = useState<string | null>(null);
+  const [collectionLoading, setCollectionLoading] = useState<boolean>(true);
 
   const reportCategories = useMemo(() => {
     const extras = [MEMBERSHIP_RENEWAL_CATEGORY];
@@ -69,11 +72,23 @@ const SalesReports: React.FC<SalesReportsProps> = ({
     }
     return merged;
   }, [serviceCategories]);
-  
-  // Real-time collection data for selected date (from transactions collection)
-  const [dailySales, setDailySales] = useState<Transaction[]>([]);
-  const [collectionError, setCollectionError] = useState<string | null>(null);
-  const [collectionLoading, setCollectionLoading] = useState<boolean>(true);
+
+  /** Open detail with full line items (staffId etc.) even if a stale list row omitted them. */
+  const openTransactionDetail = async (txn: Transaction) => {
+    setSelectedTransaction(txn);
+    if (txn.items && txn.items.length > 0) return;
+    try {
+      const full = await transactionService.getById(txn.id, outletID);
+      if (full) {
+        setSelectedTransaction(full);
+        setDailySales((current) =>
+          current.map((row) => (row.id === full.id ? { ...row, items: full.items } : row)),
+        );
+      }
+    } catch (err) {
+      console.warn('Could not load full sale detail for items/staff:', err);
+    }
+  };
 
   // Sales for date range: Supabase poll or Firestore realtime
   useEffect(() => {
@@ -109,7 +124,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
           startOfRange.toISOString(),
           endOfRange.toISOString(),
           outletID,
-          { limit: 500, offset: 0, type: TransactionType.SALE },
+          { limit: 500, offset: 0, type: TransactionType.SALE, includeItems: true },
         );
         if (cancelled) return;
         setDailySales(filterNonVoidedSales(inRange));
@@ -436,7 +451,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
                     statusLabel="Sale"
                     statusTone="success"
                     description={`${txn.items?.length || 0} items`}
-                    onClick={() => setSelectedTransaction(txn)}
+                    onClick={() => void openTransactionDetail(txn)}
                   />
                 );
               })}
@@ -455,7 +470,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
               return (
                 <div
                   key={txn.id}
-                  onClick={() => setSelectedTransaction(txn)}
+                  onClick={() => void openTransactionDetail(txn)}
                   className="p-4 hover:bg-[var(--bg-soft)] transition-colors cursor-pointer"
                 >
                   <div className="flex items-start justify-between gap-4">

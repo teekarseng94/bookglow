@@ -543,6 +543,8 @@ export const appointmentService = {
       source_sale_id: rest.sourceSaleId || null,
       sale_id: rest.saleId || null,
       source: rest.source || null,
+      payment_status: rest.paymentStatus || null,
+      completed_at: rest.completedAt || null,
     });
     if (error) throw error;
     return id;
@@ -1509,22 +1511,25 @@ export const transactionService = {
     );
   },
 
-  /** Date-bounded list (ISO timestamps) without line-item JSON. */
+  /** Date-bounded list (ISO timestamps). Omit `items` by default; pass includeItems for Sales Reports. */
   getInDateRange: async (
     startIso: string,
     endIso: string,
     outletID: string = currentOutletID,
-    options: { limit?: number; offset?: number; type?: string } = {},
+    options: { limit?: number; offset?: number; type?: string; includeItems?: boolean } = {},
   ): Promise<Transaction[]> => {
     if (!hasValidOutlet(outletID)) return [];
     const limit = options.limit ?? DEFAULT_LIST_PAGE_SIZE;
     const offset = options.offset ?? 0;
+    const columns = options.includeItems
+      ? `${TRANSACTION_LIST_COLUMNS},items`
+      : TRANSACTION_LIST_COLUMNS;
     return withQueryTelemetry(
       { queryName: "transactionService.getInDateRange", resource: "transactions", trigger: "pagination" },
       async () => {
         let builder = client()
           .from("transactions")
-          .select(TRANSACTION_LIST_COLUMNS)
+          .select(columns)
           .eq("outlet_id", outletID)
           .gte("date", startIso)
           .lte("date", endIso)
@@ -1611,7 +1616,7 @@ export const transactionService = {
       async () => {
         const { data, error } = await client()
           .from("transactions")
-          .select(TRANSACTION_LIST_COLUMNS)
+          .select(`${TRANSACTION_LIST_COLUMNS},items`)
           .eq("outlet_id", outletID)
           .eq("type", TransactionType.SALE)
           .gte("date", start.toISOString())

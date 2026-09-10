@@ -55,20 +55,21 @@ describe('Marketing', () => {
     getByOutlet.mockResolvedValue(vouchers);
   });
 
-  it('renders an honest overview from existing voucher records', async () => {
+  it('renders the voucher workspace directly without campaign or audience navigation', async () => {
     render(<Marketing outletID="outlet-1" services={services} role="admin" />);
 
-    expect(await screen.findByText('Recorded value')).toBeInTheDocument();
-    expect(screen.getAllByText(/RM\s*168/).length).toBeGreaterThan(0);
-    expect(screen.getByText('Recent vouchers')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Vouchers' })).toBeInTheDocument();
+    expect(screen.getByText('Wellness Gift')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Campaigns/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Audiences/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Vouchers/ })).not.toBeInTheDocument();
     expect(getByOutlet).toHaveBeenCalledWith('outlet-1');
   });
 
   it('filters the voucher workspace by search', async () => {
     render(<Marketing outletID="outlet-1" services={services} role="admin" />);
-    await screen.findByText('Recorded value');
+    await screen.findByRole('heading', { name: 'Vouchers' });
 
-    fireEvent.click(screen.getByRole('button', { name: /Vouchers/ }));
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search vouchers' }), {
       target: { value: 'Aromatherapy' },
     });
@@ -77,10 +78,23 @@ describe('Marketing', () => {
     expect(screen.queryByText('Wellness Gift')).not.toBeInTheDocument();
   });
 
+  it('filters vouchers by the retained status chips', async () => {
+    render(<Marketing outletID="outlet-1" services={services} role="admin" />);
+    await screen.findByRole('heading', { name: 'Vouchers' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Active · 1' }));
+    expect(screen.getByText('Relax Package')).toBeInTheDocument();
+    expect(screen.queryByText('Wellness Gift')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sold · 1' }));
+    expect(screen.getByText('Wellness Gift')).toBeInTheDocument();
+    expect(screen.queryByText('Relax Package')).not.toBeInTheDocument();
+  });
+
   it('creates a voucher from the dedicated drawer', async () => {
     create.mockResolvedValue(undefined);
     render(<Marketing outletID="outlet-1" services={services} role="admin" />);
-    await screen.findByText('Recorded value');
+    await screen.findByRole('heading', { name: 'Vouchers' });
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Create voucher' }).at(-1)!);
     fireEvent.change(screen.getByLabelText('Voucher name'), {

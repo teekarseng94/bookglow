@@ -1496,14 +1496,20 @@ export const transactionService = {
     if (error) throw error;
     return Array.isArray((data as any)?.appointment_ids) ? (data as any).appointment_ids.map(String) : [];
   },
-  getAll: async (outletID: string = currentOutletID): Promise<Transaction[]> => {
+  getAll: async (
+    outletID: string = currentOutletID,
+    options: { includeItems?: boolean } = {},
+  ): Promise<Transaction[]> => {
     if (!hasValidOutlet(outletID)) return [];
+    const columns = options.includeItems
+      ? `${TRANSACTION_LIST_COLUMNS},items`
+      : TRANSACTION_LIST_COLUMNS;
     return withQueryTelemetry(
       { queryName: "transactionService.getAll", resource: "transactions" },
       async () => {
         const { data, error } = await client()
           .from("transactions")
-          .select(TRANSACTION_LIST_COLUMNS)
+          .select(columns)
           .eq("outlet_id", outletID)
           .order("date", { ascending: false });
         if (error) throw error;

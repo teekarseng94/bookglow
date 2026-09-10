@@ -7,6 +7,7 @@ import { StaffCommissionSection } from './StaffCommissionSection';
 import { cx } from '../ui/cx';
 import type { StaffPermissions, StaffWeeklyHours } from '../../utils/staffExtras';
 import { formatShiftLabel, normalizeStaffPermissions } from '../../utils/staffExtras';
+import { formatMYR } from '../../utils/staffPerformance';
 
 export type StaffDetailTab =
   | 'overview'
@@ -82,11 +83,11 @@ function HistoryTable({ history }: { history: StaffHistoryLine[] }) {
                 </p>
               </div>
               <div className="text-right shrink-0">
-                <p className="m-staff-stat-value text-[var(--brand)] tabular-nums">
-                  ${(item.commissionEarned ?? 0).toFixed(2)}
+                <p className="m-staff-stat-value text-emerald-600 tabular-nums">
+                  {formatMYR(item.commissionEarned ?? 0)}
                 </p>
                 <p className="m-staff-card__meta tabular-nums">
-                  Price ${item.price}
+                  Price {formatMYR(item.price)}
                 </p>
               </div>
             </div>
@@ -118,10 +119,10 @@ function HistoryTable({ history }: { history: StaffHistoryLine[] }) {
                 </td>
                 <td className="py-3 text-sm font-bold text-[var(--text-primary)]">{item.name}</td>
                 <td className="py-3 text-sm font-bold text-[var(--text-secondary)] text-right tabular-nums">
-                  ${item.price}
+                  {formatMYR(item.price)}
                 </td>
-                <td className="py-3 m-staff-stat-value text-[var(--brand)] text-right tabular-nums">
-                  ${(item.commissionEarned ?? 0).toFixed(2)}
+                <td className="py-3 m-staff-stat-value text-emerald-600 text-right tabular-nums">
+                  {formatMYR(item.commissionEarned ?? 0)}
                   {item.type === 'product' && item.commissionEarned ? (
                     <span className="ml-2 inline-flex items-center rounded-full bg-[var(--bg-soft)] m-staff-card__role text-[var(--text-muted)]">
                       Fixed
@@ -335,15 +336,15 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
                 <div className="min-w-0 overflow-hidden rounded-ui-sm bg-[var(--bg-soft)] p-2 sm:p-3 text-center">
                   <p className="m-staff-kpi-label truncate">Revenue</p>
                   <p className="m-staff-kpi-value tabular-nums mt-0.5 truncate">
-                    ${member.totalRevenue.toLocaleString()}
+                    {formatMYR(member.totalRevenue)}
                   </p>
                 </div>
                 <div className="min-w-0 overflow-hidden rounded-ui-sm bg-[var(--brand-soft)] p-2 sm:p-3 text-center">
                   <p className="m-staff-kpi-label text-[var(--brand)] truncate" title="Commission">
                     Commission
                   </p>
-                  <p className="m-staff-kpi-value tabular-nums text-[var(--brand)] mt-0.5 truncate">
-                    ${member.totalCommission.toLocaleString()}
+                  <p className="m-staff-kpi-value tabular-nums text-emerald-600 mt-0.5 whitespace-nowrap">
+                    {formatMYR(member.totalCommission)}
                   </p>
                 </div>
               </div>
@@ -387,8 +388,8 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
                 </span>
                 {' · '}
                 Period earnings{' '}
-                <span className="font-bold text-[var(--brand)] tabular-nums">
-                  ${member.totalCommission.toLocaleString()}
+                <span className="font-bold text-emerald-600 tabular-nums">
+                  {formatMYR(member.totalCommission)}
                 </span>
               </p>
             </section>
@@ -433,15 +434,15 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
                   Rev.
                 </p>
                 <p className="m-staff-kpi-value sm:text-xl tabular-nums mt-1 truncate">
-                  ${member.totalRevenue.toLocaleString()}
+                  {formatMYR(member.totalRevenue)}
                 </p>
               </div>
               <div className="min-w-0 overflow-hidden rounded-ui-md bg-[var(--brand)] p-2.5 sm:p-4 text-white">
                 <p className="m-staff-kpi-label text-white/80 truncate" title="Commission">
                   Comm.
                 </p>
-                <p className="m-staff-kpi-value sm:text-xl tabular-nums mt-1 truncate">
-                  ${member.totalCommission.toLocaleString()}
+                <p className="m-staff-kpi-value sm:text-xl tabular-nums mt-1 whitespace-nowrap">
+                  {formatMYR(member.totalCommission)}
                 </p>
               </div>
               <div className="min-w-0 overflow-hidden rounded-ui-md border border-[var(--line)] p-2.5 sm:p-4">
@@ -475,8 +476,8 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
                 <h4 className="m-staff-section-title">
                   Commission earned
                 </h4>
-                <p className="m-staff-kpi-value text-[var(--brand)] tabular-nums">
-                  ${member.totalCommission.toLocaleString()}
+                <p className="m-staff-kpi-value text-emerald-600 tabular-nums">
+                  {formatMYR(member.totalCommission)}
                 </p>
               </div>
               <HistoryTable history={member.history} />

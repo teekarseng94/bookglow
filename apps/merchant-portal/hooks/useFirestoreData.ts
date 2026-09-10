@@ -111,6 +111,7 @@ export const useFirestoreData = (
   /** Domains successfully loaded for this outlet (kept across navigations). */
   const loadedDomainsRef = useRef<Set<OutletDataDomain>>(new Set());
   const pendingTablesRef = useRef<Set<string>>(new Set());
+  const transactionItemsLoadedRef = useRef(false);
 
   /** Ref to delete transaction (set after handleDeleteTransaction is defined) so handleDeleteAppointment can delete the linked sale from Sales History. */
   const deleteTransactionRef = useRef<((id: string) => Promise<void>) | null>(null);
@@ -139,6 +140,7 @@ export const useFirestoreData = (
   useEffect(() => {
     loadedDomainsRef.current = new Set();
     pendingTablesRef.current = new Set();
+    transactionItemsLoadedRef.current = false;
     setClients([]);
     setStaff([]);
     setAppointments([]);
@@ -191,21 +193,29 @@ export const useFirestoreData = (
         const appointmentsData = await appointmentService.getInDateRange(startDate, endDate, outletID);
         setAppointments(appointmentsData.filter((a) => !a.id.startsWith('app_onduty_')));
       } else if (domain === 'transactions') {
-        // Default: last 62 days of ledger rows (list projection, no items JSON).
-        const end = new Date();
-        const start = new Date();
-        start.setDate(start.getDate() - 62);
-        const transactionsData = await transactionService.getInDateRange(
-          start.toISOString(),
-          end.toISOString(),
-          outletID,
-          { limit: 500, offset: 0 },
-        );
+        const isStaffPerformance = activeRoute.replace(/^\//, '').split('/')[0] === 'staff';
+        // Staff performance needs the canonical line-level staffId and the full selectable history.
+        // Ledger routes keep their compact rolling projection.
+        let transactionsData: Transaction[];
+        if (isStaffPerformance) {
+          transactionsData = await transactionService.getAll(outletID, { includeItems: true });
+        } else {
+          const end = new Date();
+          const start = new Date();
+          start.setDate(start.getDate() - 62);
+          transactionsData = await transactionService.getInDateRange(
+            start.toISOString(),
+            end.toISOString(),
+            outletID,
+            { limit: 500, offset: 0 },
+          );
+        }
         setTransactions(transactionsData);
+        transactionItemsLoadedRef.current = isStaffPerformance;
       }
       loadedDomainsRef.current.add(domain);
     },
-    [hasOutlet, outletID],
+    [activeRoute, hasOutlet, outletID],
   );
 
   const loadData = useCallback(async () => {
@@ -231,6 +241,10 @@ export const useFirestoreData = (
     const run = async () => {
       const needed = domainsForRoute(activeRoute);
       const missing = [...needed].filter((d) => !loadedDomainsRef.current.has(d));
+      const isStaffRoute = activeRoute.replace(/^\//, '').split('/')[0] === 'staff';
+      if (isStaffRoute && !transactionItemsLoadedRef.current && !missing.includes('transactions')) {
+        missing.push('transactions');
+      }
       // Always ensure catalog on first paint
       if (!loadedDomainsRef.current.has('catalog') && !missing.includes('catalog')) {
         missing.unshift('catalog');
@@ -872,7 +886,13 @@ export const useFirestoreData = (
         commissionCreatedForSaleIds.add(id);
 
         // Only items with assigned staff get commission; never create "Commission: Service" without staff
-        const commissionByKey = new Map<string, { staffId: string; name: string; amount: number }>();
+        const commissionByKey = new Map<string, {
+          staffId: string;
+          serviceId: string;
+          name: string;
+          type: 'service' | 'product' | 'package';
+          amount: number;
+        }>();
         for (const item of transactionWithOutlet.items) {
           if (!item.staffId || !item.commissionEarned || item.commissionEarned <= 0) continue;
           const key = `${item.staffId}|${item.id}`;
@@ -880,7 +900,9 @@ export const useFirestoreData = (
           const amount = (existingGroup?.amount ?? 0) + item.commissionEarned;
           commissionByKey.set(key, {
             staffId: item.staffId,
+            serviceId: item.id,
             name: existingGroup?.name ?? item.name,
+            type: existingGroup?.type ?? item.type,
             amount
           });
         }
@@ -904,7 +926,18 @@ export const useFirestoreData = (
           amount: totalCommission,
           category: 'Commission',
           description,
-          parentSaleId: id
+          parentSaleId: id,
+          // Reuse the canonical CartItem.staffId relationship so future commission rows
+          // remain attributable even if a staff display name changes.
+          items: Array.from(commissionByKey.values()).map((group) => ({
+            id: group.serviceId,
+            name: group.name,
+            price: 0,
+            quantity: 1,
+            type: group.type,
+            staffId: group.staffId,
+            commissionEarned: group.amount,
+          })),
         };
         // Re-check right before write to avoid race where another tab/process created commission
         const recheck = await listCommissionsForSale();

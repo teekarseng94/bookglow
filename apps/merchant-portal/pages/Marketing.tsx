@@ -1,16 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ArrowUpRight,
-  CalendarClock,
   Check,
   Copy,
   Gift,
   Megaphone,
   Plus,
   Search,
-  Sparkles,
-  TicketCheck,
-  WalletCards,
 } from 'lucide-react';
 import { Service, Voucher, VoucherStatus } from '../types';
 import { voucherService } from '../services/voucherService';
@@ -24,7 +19,6 @@ import {
   PageHeader,
   StatusBadge,
 } from '../components/ui';
-import { MarketingGrowthWorkspace } from '../components/marketing/MarketingGrowthWorkspace';
 
 interface MarketingProps {
   outletID: string;
@@ -32,8 +26,7 @@ interface MarketingProps {
   role: 'admin' | 'cashier' | null;
 }
 
-type MarketingView = 'overview' | 'campaigns' | 'audiences' | 'vouchers';
-type VoucherFilter = 'all' | VoucherStatus | 'expiring';
+type VoucherFilter = 'all' | VoucherStatus;
 
 const currency = new Intl.NumberFormat('en-MY', {
   style: 'currency',
@@ -49,7 +42,6 @@ const isExpiringSoon = (voucher: Voucher) => {
 
 const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
-  const [view, setView] = useState<MarketingView>('overview');
   const [filter, setFilter] = useState<VoucherFilter>('all');
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -101,27 +93,18 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
   }, [loadVouchers]);
 
   const metrics = useMemo(() => {
-    const sold = vouchers.filter((voucher) => voucher.status === 'sold');
-    const redeemed = vouchers.filter((voucher) => voucher.status === 'redeemed');
     return {
       total: vouchers.length,
       active: vouchers.filter((voucher) => voucher.status === 'active').length,
-      sold: sold.length,
-      redeemed: redeemed.length,
-      expiring: vouchers.filter(isExpiringSoon).length,
-      recordedValue: [...sold, ...redeemed].reduce((sum, voucher) => sum + voucher.price, 0),
+      sold: vouchers.filter((voucher) => voucher.status === 'sold').length,
+      redeemed: vouchers.filter((voucher) => voucher.status === 'redeemed').length,
     };
   }, [vouchers]);
 
   const visibleVouchers = useMemo(() => {
     const query = search.trim().toLowerCase();
     return vouchers.filter((voucher) => {
-      const matchesFilter =
-        filter === 'all'
-          ? true
-          : filter === 'expiring'
-            ? isExpiringSoon(voucher)
-            : voucher.status === filter;
+      const matchesFilter = filter === 'all' || voucher.status === filter;
       const serviceNames = voucher.serviceIds
         .map((id) => serviceNameMap.get(id) || id)
         .join(' ');
@@ -219,7 +202,6 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
       });
       resetEditor();
       setIsEditorOpen(false);
-      setView('vouchers');
       setSuccess(`${name.trim()} was created successfully.`);
       await loadVouchers();
     } catch (createError: any) {
@@ -243,34 +225,22 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
       <div className="space-y-6 animate-fadeIn">
         <PageHeader
           title="Marketing"
-          description="Grow customer relationships with promotions and campaigns."
+          description="Create and manage customer vouchers."
         />
         <EmptyState
           icon={<Megaphone size={28} />}
           title="Marketing access is restricted"
-          description="Ask an administrator to give you access to create and manage promotions."
+          description="Ask an administrator for access to create and manage vouchers."
         />
       </div>
     );
   }
 
-  const metricCards = [
-    { label: 'Active vouchers', value: metrics.active, icon: Gift, tone: 'text-[var(--brand)]' },
-    { label: 'Sold', value: metrics.sold, icon: WalletCards, tone: 'text-[var(--status-success)]' },
-    { label: 'Redeemed', value: metrics.redeemed, icon: TicketCheck, tone: 'text-[var(--status-info)]' },
-    {
-      label: 'Recorded value',
-      value: currency.format(metrics.recordedValue),
-      icon: Sparkles,
-      tone: 'text-[var(--status-warning)]',
-    },
-  ];
-
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="mx-auto max-w-5xl space-y-4 animate-fadeIn">
       <PageHeader
         title="Marketing"
-        description="Create promotions, monitor voucher activity, and turn customer interest into bookings."
+        description="Create and manage customer vouchers."
         actions={
           <Button type="button" onClick={() => setIsEditorOpen(true)}>
             <Plus size={16} aria-hidden="true" />
@@ -295,159 +265,19 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
         </Alert>
       ) : null}
 
-      <nav
-        aria-label="Marketing sections"
-        className="flex gap-1 overflow-x-auto rounded-ui-lg border border-[var(--line)] bg-[var(--bg-surface)] p-1 shadow-ui-xs"
-      >
-        {[
-          { id: 'overview' as const, label: 'Overview' },
-          { id: 'campaigns' as const, label: 'Campaigns' },
-          { id: 'audiences' as const, label: 'Audiences' },
-          { id: 'vouchers' as const, label: 'Vouchers', count: metrics.total },
-        ].map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => setView(item.id)}
-            aria-current={view === item.id ? 'page' : undefined}
-            className={`min-h-10 rounded-ui-md px-4 text-sm font-semibold transition-colors ${
-              view === item.id
-                ? 'bg-[var(--brand-soft)] text-[var(--brand)]'
-                : 'text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]'
-            }`}
-          >
-            {item.label}
-            {item.count !== undefined ? (
-              <span className="ml-2 rounded-full bg-[var(--bg-soft)] px-2 py-0.5 text-xs">
-                {item.count}
-              </span>
-            ) : null}
-          </button>
-        ))}
-      </nav>
-
       {isLoading ? (
-        <div className="rounded-ui-lg border border-[var(--line)] bg-[var(--bg-surface)] p-6">
-          <LoadingSkeleton rows={6} />
-        </div>
-      ) : view === 'overview' ? (
-        <>
-          <section aria-label="Marketing overview" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {metricCards.map(({ label, value, icon: Icon, tone }) => (
-              <article
-                key={label}
-                className="rounded-ui-lg border border-[var(--line)] bg-[var(--bg-surface)] p-5 shadow-ui-xs"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-[var(--text-muted)]">{label}</p>
-                    <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-                      {value}
-                    </p>
-                  </div>
-                  <span className={`rounded-ui-md bg-[var(--bg-soft)] p-2.5 ${tone}`}>
-                    <Icon size={19} aria-hidden="true" />
-                  </span>
-                </div>
-              </article>
-            ))}
-          </section>
-
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(18rem,0.7fr)]">
-            <section className="rounded-ui-lg border border-[var(--line)] bg-[var(--bg-surface)] shadow-ui-xs">
-              <div className="flex items-center justify-between gap-3 border-b border-[var(--line)] px-5 py-4">
-                <div>
-                  <h2 className="text-base font-semibold text-[var(--text-primary)]">Recent vouchers</h2>
-                  <p className="text-sm text-[var(--text-muted)]">Latest promotion activity</p>
-                </div>
-                <Button type="button" size="sm" variant="ghost" onClick={() => setView('vouchers')}>
-                  View all <ArrowUpRight size={15} aria-hidden="true" />
-                </Button>
-              </div>
-              {vouchers.length ? (
-                <div className="divide-y divide-[var(--line)]">
-                  {vouchers.slice(0, 5).map((voucher) => (
-                    <div key={voucher.id} className="flex items-center gap-3 px-5 py-4">
-                      <span className="rounded-ui-md bg-[var(--brand-soft)] p-2 text-[var(--brand)]">
-                        <Gift size={17} aria-hidden="true" />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-[var(--text-primary)]">
-                          {voucher.name}
-                        </p>
-                        <p className="text-xs text-[var(--text-muted)]">
-                          {currency.format(voucher.price)} · expires {voucher.expiryDate}
-                        </p>
-                      </div>
-                      {statusBadge(voucher)}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <EmptyState
-                  title="No voucher activity yet"
-                  description="Create your first voucher to start a promotion."
-                  className="m-5"
-                  action={<Button onClick={() => setIsEditorOpen(true)}>Create voucher</Button>}
-                />
-              )}
-            </section>
-
-            <aside className="space-y-4">
-              <section className="rounded-ui-lg border border-[var(--line)] bg-[var(--bg-surface)] p-5 shadow-ui-xs">
-                <h2 className="text-base font-semibold text-[var(--text-primary)]">Needs attention</h2>
-                <div className="mt-4 flex items-start gap-3 rounded-ui-md bg-[var(--bg-soft)] p-4">
-                  <CalendarClock className="mt-0.5 text-[var(--status-warning)]" size={19} />
-                  <div>
-                    <p className="text-sm font-semibold text-[var(--text-primary)]">
-                      {metrics.expiring} expiring soon
-                    </p>
-                    <p className="mt-1 text-xs text-[var(--text-muted)]">
-                      Active vouchers expiring in the next 14 days.
-                    </p>
-                    {metrics.expiring ? (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        className="mt-2"
-                        onClick={() => {
-                          setFilter('expiring');
-                          setView('vouchers');
-                        }}
-                      >
-                        Review vouchers
-                      </Button>
-                    ) : null}
-                  </div>
-                </div>
-              </section>
-
-              <section className="rounded-ui-lg border border-[var(--line)] bg-[var(--brand-soft)] p-5">
-                <Sparkles className="text-[var(--brand)]" size={21} aria-hidden="true" />
-                <h2 className="mt-3 text-base font-semibold text-[var(--text-primary)]">
-                  Marketing workspace
-                </h2>
-                <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                  Campaigns, reusable audiences and automated journeys will build on this promotion hub.
-                </p>
-              </section>
-            </aside>
-          </div>
-        </>
-      ) : view === 'campaigns' || view === 'audiences' ? (
-        <MarketingGrowthWorkspace outletID={outletID} section={view} />
+        <section className="rounded-ui-lg border border-[var(--line)] bg-[var(--bg-surface)] p-5 shadow-ui-xs">
+          <LoadingSkeleton rows={4} />
+        </section>
       ) : (
         <section className="overflow-hidden rounded-ui-lg border border-[var(--line)] bg-[var(--bg-surface)] shadow-ui-xs">
           <div className="border-b border-[var(--line)] p-4 sm:p-5">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-base font-semibold text-[var(--text-primary)]">Vouchers</h2>
-                <p className="text-sm text-[var(--text-muted)]">
-                  Search, review and manage every voucher promotion.
-                </p>
+                <p className="text-sm text-[var(--text-muted)]">Manage every customer voucher.</p>
               </div>
-              <label className="relative block w-full lg:max-w-sm">
+              <label className="relative block w-full sm:max-w-sm">
                 <Search
                   size={17}
                   className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
@@ -458,25 +288,25 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
                   type="search"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search voucher or service"
-                  className="min-h-10 w-full rounded-ui-md border border-[var(--line)] bg-[var(--bg-soft)] pl-10 pr-3 text-sm outline-none focus-visible:shadow-ui-focus-strong"
+                  placeholder="Search vouchers..."
+                  className="min-h-11 w-full rounded-ui-md border border-[var(--line)] bg-[var(--bg-soft)] pl-10 pr-3 text-sm outline-none focus-visible:shadow-ui-focus-strong"
                 />
               </label>
             </div>
-            <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+            <div className="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 pb-1">
               {(
                 [
                   ['all', 'All', metrics.total],
                   ['active', 'Active', metrics.active],
                   ['sold', 'Sold', metrics.sold],
                   ['redeemed', 'Redeemed', metrics.redeemed],
-                  ['expiring', 'Expiring soon', metrics.expiring],
                 ] as const
               ).map(([id, label, count]) => (
                 <button
                   key={id}
                   type="button"
                   onClick={() => setFilter(id)}
+                  aria-pressed={filter === id}
                   className={`min-h-9 shrink-0 rounded-full border px-3 text-xs font-semibold ${
                     filter === id
                       ? 'border-[var(--brand)] bg-[var(--brand-soft)] text-[var(--brand)]'
@@ -490,32 +320,32 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
           </div>
 
           {visibleVouchers.length ? (
-            <div className="divide-y divide-[var(--line)]">
+            <div className="grid gap-3 p-3 sm:p-4 lg:grid-cols-2">
               {visibleVouchers.map((voucher) => (
                 <article
                   key={voucher.id}
-                  className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center"
+                  className="min-w-0 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] p-4"
                 >
-                  <div className="flex min-w-0 gap-3">
-                    <span className="h-fit rounded-ui-md bg-[var(--brand-soft)] p-2.5 text-[var(--brand)]">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <span className="shrink-0 rounded-ui-md bg-[var(--brand-soft)] p-2.5 text-[var(--brand)]">
                       <Gift size={18} aria-hidden="true" />
                     </span>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-semibold text-[var(--text-primary)]">{voucher.name}</h3>
                         {statusBadge(voucher)}
                         {isExpiringSoon(voucher) ? <StatusBadge tone="warning">Expiring soon</StatusBadge> : null}
                       </div>
-                      <p className="mt-1 text-sm text-[var(--text-secondary)]">
+                      <h3 className="mt-2 break-words font-semibold text-[var(--text-primary)]">{voucher.name}</h3>
+                      <p className="mt-1 break-words text-sm text-[var(--text-secondary)]">
                         {voucher.serviceIds.map((id) => serviceNameMap.get(id) || id).join(', ')}
                       </p>
-                      <p className="mt-1 text-xs text-[var(--text-muted)]">
-                        {currency.format(voucher.price)} · expires {voucher.expiryDate}
+                      <p className="mt-1 text-xs font-medium text-[var(--text-muted)]">
+                        {currency.format(voucher.price)} · Expires {voucher.expiryDate}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
                     <Button
                       type="button"
                       size="sm"
@@ -536,7 +366,7 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
                       </Button>
                     ) : null}
                     {voucher.status === 'active' && voucher.secretCode ? (
-                      <>
+                      <div className="flex min-w-0 flex-1 flex-wrap gap-2 sm:flex-nowrap">
                         <label className="sr-only" htmlFor={`voucher-code-${voucher.id}`}>
                           Confirm sale code for {voucher.name}
                         </label>
@@ -550,7 +380,7 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
                             }))
                           }
                           placeholder="Secret code"
-                          className="min-h-9 w-32 rounded-ui-md border border-[var(--line)] bg-[var(--bg-soft)] px-3 text-sm outline-none focus-visible:shadow-ui-focus-strong"
+                          className="min-h-9 min-w-0 flex-1 rounded-ui-md border border-[var(--line)] bg-[var(--bg-soft)] px-3 text-sm outline-none focus-visible:shadow-ui-focus-strong"
                         />
                         <Button
                           type="button"
@@ -560,7 +390,7 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
                         >
                           {confirmingVoucherId === voucher.id ? 'Confirming…' : 'Confirm sold'}
                         </Button>
-                      </>
+                      </div>
                     ) : voucher.status !== 'active' ? (
                       <Button
                         type="button"
@@ -578,14 +408,13 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
             </div>
           ) : (
             <EmptyState
-              icon={<Search size={25} />}
-              title={vouchers.length ? 'No vouchers match these filters' : 'No vouchers created yet'}
+              title={vouchers.length ? 'No vouchers match these filters' : 'No vouchers yet.'}
               description={
                 vouchers.length
                   ? 'Try another search or clear the current status filter.'
-                  : 'Create a voucher to launch your first promotion.'
+                  : 'Create a voucher to get started.'
               }
-              className="m-5"
+              className="m-4"
               action={
                 vouchers.length ? (
                   <Button
@@ -598,7 +427,10 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
                     Clear filters
                   </Button>
                 ) : (
-                  <Button onClick={() => setIsEditorOpen(true)}>Create voucher</Button>
+                  <Button onClick={() => setIsEditorOpen(true)}>
+                    <Plus size={16} aria-hidden="true" />
+                    Create voucher
+                  </Button>
                 )
               }
             />

@@ -28,6 +28,7 @@ import {
   type StaffStatusKind,
   type StaffSummaryCardItem,
 } from '../components/staff';
+import { buildStaffPerformance, formatMYR } from '../utils/staffPerformance';
 
 const MAX_PHOTO_SIZE_MB = 2;
 const MAX_PHOTO_BYTES = MAX_PHOTO_SIZE_MB * 1024 * 1024;
@@ -134,46 +135,20 @@ const StaffPage: React.FC<StaffProps> = ({
   }, [staff, selectedStaffId]);
 
   const staffStats = useMemo(() => {
-    return staff.map(member => {
-      const filteredHistory = transactions.flatMap(t => {
-        // Staff performance & commission should only count ACTIVE sales.
-        // When a sale is voided in Sales Reports we mark it as status: 'voided' (and remove it from Sales History view),
-        // so it must be excluded here as well.
-        const status = (t as Transaction & { status?: string }).status;
-        if (t.type !== TransactionType.SALE) return [];
-        if (status === 'voided') return [];
-
-        const d = new Date(t.date);
-        const now = new Date();
-        let matches = false;
-        
-        if (period === 'all') {
-          matches = true;
-        } else if (period === 'custom') {
-          const start = new Date(startDate);
-          const end = new Date(endDate);
-          end.setHours(23, 59, 59, 999); // Include entire end date
-          matches = d >= start && d <= end;
-        } else if (period === 'month') {
-          matches = d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-        } else if (period === 'year') {
-          matches = d.getFullYear() === now.getFullYear();
-        }
-        
-        if (!matches) return [];
-        return (t.items || [])
-          .filter(item => item.staffId === member.id)
-          .map(item => ({ ...item, date: t.date }));
-      });
-
-      return {
-        ...member,
-        totalServices: filteredHistory.length,
-        totalRevenue: filteredHistory.reduce((sum, item) => sum + (item.price * item.quantity), 0),
-        totalCommission: filteredHistory.reduce((sum, item) => sum + (item.commissionEarned || 0), 0),
-        history: filteredHistory
-      };
+    const performance = buildStaffPerformance(staff, transactions, {
+      period,
+      startDate,
+      endDate,
     });
+    return staff.map((member) => ({
+      ...member,
+      ...(performance.get(member.id) ?? {
+        totalServices: 0,
+        totalRevenue: 0,
+        totalCommission: 0,
+        history: [],
+      }),
+    }));
   }, [staff, transactions, period, startDate, endDate]);
 
   const staffStatusFor = (member: { totalCommission: number; totalServices: number }): StaffStatusKind => {
@@ -315,7 +290,7 @@ const StaffPage: React.FC<StaffProps> = ({
       {
         id: 'commission',
         label: 'Commission',
-        value: `$${periodCommissionTotal.toLocaleString()}`,
+        value: formatMYR(periodCommissionTotal),
         hint: periodLabel,
         icon: (
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -881,8 +856,8 @@ const StaffPage: React.FC<StaffProps> = ({
                   status={staffStatusFor(member)}
                   metaSecondary={specialty}
                   shiftLabel={formatShiftLabel(member.weeklyHours)}
-                  revenueLabel={`$${member.totalRevenue.toLocaleString()}`}
-                  commissionLabel={`$${member.totalCommission.toLocaleString()}`}
+                  revenueLabel={formatMYR(member.totalRevenue)}
+                  commissionLabel={formatMYR(member.totalCommission)}
                   selected={selectedStaffId === member.id}
                   onSelect={() => {
                     setSelectedStaffId(member.id);

@@ -115,7 +115,7 @@ export const StaffCard: React.FC<StaffCardProps> = ({
                 <p className="m-staff-stat-label truncate" title="Commission">
                   Commission
                 </p>
-                <p className="m-staff-stat-value tabular-nums text-[var(--brand)] truncate">
+                <p className="m-staff-stat-value tabular-nums text-emerald-600 whitespace-nowrap">
                   {commissionLabel ?? revenueLabel ?? '—'}
                 </p>
               </div>

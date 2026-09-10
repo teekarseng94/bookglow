@@ -152,7 +152,7 @@ const Layout: React.FC<LayoutProps> = ({
     { id: 'menu', label: 'Menu & Inventory', shortLabel: 'Menu', icon: <Icons.Services /> },
     { id: 'sales-reports', label: 'Sales Reports', shortLabel: 'Reports', icon: <Icons.Reports /> },
     { id: 'transactions', label: 'Sales History', icon: <Icons.Finance /> },
-    { id: 'finance', label: 'Expenses', icon: <Icons.Finance /> },
+    { id: 'finance', label: 'Finance', icon: <Icons.Finance /> },
     { id: 'marketing', label: 'Marketing', icon: <Icons.Marketing /> },
     { id: 'staff', label: 'Staff & Team', icon: <Icons.Staff /> },
     { id: 'settings', label: 'Settings', icon: <Icons.Settings /> },

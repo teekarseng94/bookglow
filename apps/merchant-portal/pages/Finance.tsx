@@ -20,6 +20,7 @@ interface FinanceProps {
   onAddCategory: (category: string) => void;
   onDeleteCategory: (category: string) => void;
   isLocked?: boolean;
+  isDeleteLocked?: boolean;
 }
 
 const Finance: React.FC<FinanceProps> = ({ 
@@ -29,7 +30,8 @@ const Finance: React.FC<FinanceProps> = ({
   expenseCategories,
   onAddCategory,
   onDeleteCategory,
-  isLocked
+  isLocked,
+  isDeleteLocked = false,
 }) => {
   if (isLocked) {
     return (
@@ -102,6 +104,7 @@ const Finance: React.FC<FinanceProps> = ({
         onOpenCategories={() => setShowCategoryModal(true)}
         onRecordExpense={() => setShowExpenseModal(true)}
         onDeleteExpense={onDeleteTransaction}
+        canDelete={!isDeleteLocked}
       />
 
       <AppModal

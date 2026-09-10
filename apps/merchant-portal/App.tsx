@@ -659,7 +659,7 @@ const AppContent: React.FC<AppContentProps> = ({
       case 'appointments':
         return <AppointmentsCalendar appointments={appointments} staff={staff} clients={clients} services={services} roleCommissions={roleCommissions} onAddAppointment={handleAddAppointment} onUpdateAppointmentStatus={handleUpdateAppointmentStatusWithPOS} onDeleteAppointment={handleDeleteAppointment} onStartPOSSale={handleStartPOSSale} onMarkReminderSent={handleMarkReminderSent} outletSettings={outletSettings} />;
       case 'finance':
-        return <Finance transactions={transactions} onAddTransaction={handleAddTransaction} onDeleteTransaction={handleDeleteTransaction} expenseCategories={expenseCategories} onAddCategory={handleAddExpenseCategory} onDeleteCategory={handleDeleteExpenseCategory} isLocked={isFeatureLocked('finance-view')} />;
+        return <Finance transactions={transactions} onAddTransaction={handleAddTransaction} onDeleteTransaction={handleDeleteTransactionWithLock} expenseCategories={expenseCategories} onAddCategory={handleAddExpenseCategory} onDeleteCategory={handleDeleteExpenseCategory} isLocked={isFeatureLocked('finance-view')} isDeleteLocked={isFeatureLocked('delete-transaction')} />;
       case 'settings':
         return <Settings settings={outletSettings} onUpdateSettings={handleUpdateOutletSettings} outletId={currentOutletID} />;
       case 'marketing':

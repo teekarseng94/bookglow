@@ -1465,6 +1465,7 @@ function mapTransaction(row: Record<string, unknown>): Transaction {
     remarks: (row.remarks as string) || undefined,
     paymentStatus: (row.payment_status as string) || undefined,
     outstanding: row.outstanding != null ? Number(row.outstanding) : undefined,
+    createdAt: row.created_at ? String(row.created_at) : undefined,
   };
 }
 
@@ -1506,7 +1507,7 @@ export const transactionService = {
           .eq("outlet_id", outletID)
           .order("date", { ascending: false });
         if (error) throw error;
-        return (data || []).map((r) => mapTransaction(r as Record<string, unknown>));
+        return (data || []).map((r) => mapTransaction(r as unknown as Record<string, unknown>));
       },
     );
   },
@@ -1539,7 +1540,7 @@ export const transactionService = {
         if (options.type) builder = builder.eq("type", options.type);
         const { data, error } = await builder;
         if (error) throw error;
-        return (data || []).map((r) => mapTransaction(r as Record<string, unknown>));
+        return (data || []).map((r) => mapTransaction(r as unknown as Record<string, unknown>));
       },
     );
   },

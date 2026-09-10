@@ -196,6 +196,8 @@ export interface Transaction {
   outstanding?: number;
   /** Checkout-only context. The durable link is stored on appointments.sale_id by the completion RPC. */
   appointmentId?: string;
+  /** Database creation timestamp, when supplied by the active repository. */
+  createdAt?: string;
 }
 
 export interface DashboardStats {

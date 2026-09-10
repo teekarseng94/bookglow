@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
 import { ArrowDown, BarChart3, CalendarDays, ChevronDown, HandCoins, Package, ReceiptText, Search, SlidersHorizontal, Trash2, UsersRound, WalletCards } from 'lucide-react';
 import type { Transaction } from '../../types';
-import { AppSheet, Button, Field, fieldControlClassName, ModalFooterActions } from '../ui';
+import { AppSheet, Button, ConfirmationDialog, Field, fieldControlClassName, ModalFooterActions } from '../ui';
 import { cx } from '../ui/cx';
+import ExpenseDetailsSheet from './ExpenseDetailsSheet';
 import {
   buildExpenseTrend,
   expensePeriodTotals,
@@ -20,6 +20,7 @@ interface MobileFinanceOverviewProps {
   onOpenCategories: () => void;
   onRecordExpense: () => void;
   onDeleteExpense: (id: string) => void | Promise<void>;
+  canDelete: boolean;
 }
 
 const emptyFilters: ExpenseLedgerFilters = { query: '', category: '', source: 'all', startDate: '', endDate: '', minimumAmount: '', maximumAmount: '' };
@@ -37,7 +38,7 @@ const PeriodCard: React.FC<{ label: string; amount: number; icon: React.ReactNod
     <div className={cx('mb-2 grid h-9 w-9 shrink-0 place-items-center rounded-ui-sm sm:mb-0', tone)}>{icon}</div>
     <div className="min-w-0">
       <p className="truncate text-[11px] font-semibold text-[var(--text-muted)] sm:text-xs">{label}</p>
-      <p className="mt-0.5 break-words text-[12px] font-bold leading-4 tabular-nums text-[var(--danger)] sm:text-base">-{money(amount)}</p>
+      <p className="mt-0.5 whitespace-nowrap text-[clamp(10px,2.8vw,16px)] font-bold leading-4 tabular-nums text-[var(--danger)]">-{money(amount)}</p>
     </div>
   </article>
 );
@@ -54,11 +55,49 @@ const ExpenseIcon: React.FC<{ transaction: Transaction }> = ({ transaction }) =>
   return <span className={cx('grid h-11 w-11 shrink-0 place-items-center rounded-ui-md', config.className)} aria-hidden>{config.icon}</span>;
 };
 
-export const MobileFinanceOverview: React.FC<MobileFinanceOverviewProps> = ({ expenses, categories, onOpenCategories, onRecordExpense, onDeleteExpense }) => {
+const ExpenseTrendChart: React.FC<{ data: Array<{ label: string; amount: number }> }> = ({ data }) => {
+  const maximum = Math.max(...data.map((point) => point.amount), 1);
+  const points = data.map((point, index) => ({
+    ...point,
+    x: data.length === 1 ? 50 : (index / (data.length - 1)) * 100,
+    y: 92 - (point.amount / maximum) * 84,
+  }));
+  const linePoints = points.map((point) => `${point.x},${point.y}`).join(' ');
+  const labelStep = Math.max(1, Math.ceil(data.length / 5));
+  const labels = points.filter((_, index) => index === 0 || index === points.length - 1 || index % labelStep === 0);
+  const compact = (value: number) => value >= 1000 ? `${Math.round(value / 100) / 10}k` : Math.round(value).toLocaleString('en-MY');
+
+  return (
+    <div className="relative h-full min-w-0" role="img" aria-label={`Expense trend from ${data[0]?.label} to ${data[data.length - 1]?.label}`}>
+      <span className="absolute left-0 top-0 text-[9px] tabular-nums text-[var(--text-muted)]">{compact(maximum)}</span>
+      <span className="absolute bottom-5 left-0 text-[9px] tabular-nums text-[var(--text-muted)]">0</span>
+      <svg className="absolute left-9 top-1 h-[calc(100%-1.75rem)] w-[calc(100%-2.75rem)] overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
+        <line x1="0" y1="8" x2="100" y2="8" stroke="var(--line-soft)" strokeDasharray="3 4" vectorEffect="non-scaling-stroke" />
+        <line x1="0" y1="50" x2="100" y2="50" stroke="var(--line-soft)" strokeDasharray="3 4" vectorEffect="non-scaling-stroke" />
+        <line x1="0" y1="92" x2="100" y2="92" stroke="var(--line-soft)" vectorEffect="non-scaling-stroke" />
+        <polygon points={`0,92 ${linePoints} 100,92`} fill="var(--brand-soft)" opacity="0.8" />
+        {points.length > 1 ? <polyline points={linePoints} fill="none" stroke="var(--brand)" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" /> : null}
+        {points.map((point, index) => (
+          <circle key={`${point.label}-${index}`} cx={point.x} cy={point.y} r={points.length === 1 ? 2.2 : 1.25} fill="var(--brand)" stroke="white" strokeWidth="1.5" vectorEffect="non-scaling-stroke">
+            <title>{point.label}: {money(point.amount)}</title>
+          </circle>
+        ))}
+      </svg>
+      <div className="absolute inset-x-9 bottom-0 flex justify-between gap-2 text-[9px] text-[var(--text-muted)]">
+        {labels.map((point, index) => <span key={`${point.label}-${index}`} className="whitespace-nowrap">{point.label}</span>)}
+      </div>
+    </div>
+  );
+};
+
+export const MobileFinanceOverview: React.FC<MobileFinanceOverviewProps> = ({ expenses, categories, onOpenCategories, onRecordExpense, onDeleteExpense, canDelete }) => {
   const [period, setPeriod] = useState<FinancePeriod>('this-month');
   const [filters, setFilters] = useState<ExpenseLedgerFilters>(emptyFilters);
   const [filterOpen, setFilterOpen] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<Transaction | null>(null);
+  const [deletingExpense, setDeletingExpense] = useState<Transaction | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
   const summary = useMemo(() => summarizeExpensePeriod(expenses, period), [expenses, period]);
   const trend = useMemo(() => buildExpenseTrend(expenses, period), [expenses, period]);
   const periodTotals = useMemo(() => expensePeriodTotals(expenses), [expenses]);
@@ -66,15 +105,30 @@ export const MobileFinanceOverview: React.FC<MobileFinanceOverviewProps> = ({ ex
   const visibleExpenses = showAll ? filtered : filtered.slice(0, 6);
   const activeFilterCount = [filters.category, filters.source !== 'all' ? filters.source : '', filters.startDate, filters.endDate, filters.minimumAmount, filters.maximumAmount].filter(Boolean).length;
   const clearFilters = () => { setFilters(emptyFilters); setShowAll(false); };
+  const requestDelete = (expense: Transaction) => {
+    if (!canDelete || (getExpenseSource(expense) === 'commission' && expense.parentSaleId)) return;
+    setDeletingExpense(expense);
+  };
+  const confirmDelete = async () => {
+    if (!deletingExpense) return;
+    setDeleteBusy(true);
+    try {
+      await onDeleteExpense(deletingExpense.id);
+      setDeletingExpense(null);
+      setSelectedExpense((current) => current?.id === deletingExpense.id ? null : current);
+    } finally {
+      setDeleteBusy(false);
+    }
+  };
 
   return (
-    <div className="m-page-with-bottom-nav mx-auto w-full max-w-[1440px] space-y-4 bg-[var(--bg-canvas)] pb-[calc(var(--mobile-bottom-nav-height)+var(--mobile-safe-area-bottom)+1.5rem)] sm:space-y-5 sm:pb-8 lg:space-y-6">
+    <div className="m-page-with-bottom-nav mx-auto w-full max-w-[1440px] space-y-4 bg-[var(--bg-canvas)] pb-[calc(var(--mobile-bottom-nav-height)+var(--mobile-safe-area-bottom)+0.75rem)] sm:space-y-5 sm:pb-8 lg:space-y-6">
       <div className="grid grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] gap-2.5 sm:ml-auto sm:w-full sm:max-w-md">
         <Button variant="outline" className="h-11 min-w-0 px-3" onClick={onOpenCategories}>Categories</Button>
         <Button className="h-11 min-w-0 px-3" onClick={onRecordExpense}>Record Expense</Button>
       </div>
 
-      <section className="overflow-hidden rounded-ui-lg border border-[#ded5f5] bg-gradient-to-br from-white via-[#fbf9ff] to-[#f4efff] p-4 text-[var(--text-primary)] shadow-ui-sm sm:p-6 lg:p-7">
+      <section className="rounded-ui-lg border border-[#ded5f5] bg-gradient-to-br from-white via-[#fbf9ff] to-[#f4efff] p-4 text-[var(--text-primary)] shadow-ui-sm sm:p-5 lg:p-6">
         <div className="flex items-center justify-between gap-3">
           <h2 className="flex min-w-0 items-center gap-2 text-base font-bold sm:text-xl"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-ui-sm bg-[var(--brand-soft)] text-[var(--brand)]"><BarChart3 className="h-5 w-5" /></span> Cashflow Overview</h2>
           <label className="relative shrink-0">
@@ -86,33 +140,26 @@ export const MobileFinanceOverview: React.FC<MobileFinanceOverviewProps> = ({ ex
           </label>
         </div>
 
-        <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(280px,0.75fr)_minmax(0,1.45fr)] lg:items-end">
-          <div className="grid grid-cols-2 divide-x divide-[var(--line)] rounded-ui-md border border-[var(--line-soft)] bg-white/75 p-4 sm:p-5">
-          <div className="min-w-0 pr-4">
+        <div className="mt-4 grid min-w-0 gap-4 lg:grid-cols-[minmax(280px,0.75fr)_minmax(0,1.45fr)] lg:items-end">
+          <div className="grid grid-cols-[minmax(0,1.25fr)_minmax(72px,0.75fr)] divide-x divide-[var(--line)] rounded-ui-md border border-[var(--line-soft)] bg-white/75 p-4">
+          <div className="min-w-0 pr-3">
             <p className="text-xs font-semibold text-[var(--text-muted)]">Total Expenses</p>
-            <p className="mt-1 truncate text-xl font-bold tabular-nums text-[var(--danger)] sm:text-2xl">-{money(summary.total)}</p>
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-[var(--text-muted)]"><span>vs previous</span><ChangeBadge value={summary.amountChangePercent} /></div>
+            <p className="mt-1 whitespace-nowrap text-[clamp(20px,6vw,30px)] font-bold leading-[1.1] tabular-nums text-[var(--danger)]">-{money(summary.total)}</p>
+            <div className="mt-2 flex flex-col items-start gap-1 text-[11px] text-[var(--text-muted)] sm:flex-row sm:items-center sm:gap-2"><ChangeBadge value={summary.amountChangePercent} /><span>vs previous</span></div>
           </div>
-          <div className="min-w-0 pl-4">
+          <div className="min-w-0 pl-3">
             <p className="text-xs font-semibold text-[var(--text-muted)]">Transactions</p>
             <p className="mt-1 text-xl font-bold tabular-nums text-[var(--text-primary)] sm:text-2xl">{summary.current.length}</p>
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-[var(--text-muted)]"><span>vs previous</span><ChangeBadge value={summary.transactionChangePercent} /></div>
+            <div className="mt-2 flex flex-col items-start gap-1 text-[11px] text-[var(--text-muted)] sm:flex-row sm:items-center sm:gap-2"><ChangeBadge value={summary.transactionChangePercent} /><span>vs previous</span></div>
           </div>
           </div>
 
-        <div className="h-28 rounded-ui-md bg-white/55 p-2 sm:h-36 lg:h-40">
+        <div className="h-[156px] min-w-0 rounded-ui-md border border-[var(--line-soft)] bg-white/75 px-1 pb-1 pt-2 sm:h-40">
           {trend.length >= 1 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trend} margin={{ top: 6, right: 4, bottom: 2, left: 4 }}>
-                <defs><linearGradient id="finance-mobile-area" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#6d45d8" stopOpacity={0.22} /><stop offset="100%" stopColor="#6d45d8" stopOpacity={0.015} /></linearGradient></defs>
-                <CartesianGrid vertical={false} stroke="var(--line-soft)" strokeDasharray="4 6" />
-                <Tooltip formatter={(value: number) => money(Number(value))} labelFormatter={(_, payload) => payload?.[0]?.payload?.label || ''} contentStyle={{ border: '1px solid var(--line)', borderRadius: 10, fontSize: 11, boxShadow: 'var(--shadow-ui-sm)' }} />
-                <Area type="monotone" dataKey="amount" stroke="#6337cf" strokeWidth={3.5} fill="url(#finance-mobile-area)" dot={trend.length === 1 ? { r: 5, fill: '#6337cf', stroke: '#fff', strokeWidth: 3 } : false} activeDot={{ r: 5, fill: '#6337cf', stroke: '#fff', strokeWidth: 3 }} />
-              </AreaChart>
-            </ResponsiveContainer>
+            <ExpenseTrendChart data={trend} />
           ) : (
             <div className="flex h-full items-center justify-center rounded-ui-md border border-dashed border-[var(--line)] px-4 text-center text-xs text-[var(--text-muted)]">
-              No expenses in this period yet.
+              No expenses recorded for this period.
             </div>
           )}
         </div>
@@ -143,17 +190,32 @@ export const MobileFinanceOverview: React.FC<MobileFinanceOverviewProps> = ({ ex
 
         <div className="mt-4 grid gap-2.5 lg:grid-cols-2 lg:gap-3">
           {visibleExpenses.map((expense) => (
-            <article key={expense.id} className="flex min-w-0 items-center gap-3 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] p-3">
+            <article
+              key={expense.id}
+              role="button"
+              tabIndex={0}
+              aria-label={`View expense details for ${expense.description}`}
+              onClick={() => setSelectedExpense(expense)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  setSelectedExpense(expense);
+                }
+              }}
+              className="grid min-h-[82px] min-w-0 cursor-pointer grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-3 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] p-3 transition-colors hover:bg-[var(--bg-soft)] focus-visible:outline-none focus-visible:shadow-ui-focus-strong"
+            >
               <ExpenseIcon transaction={expense} />
               <div className="min-w-0 flex-1">
-                <h3 className="truncate text-sm font-bold text-[var(--text-primary)]">{expense.description}</h3>
-                <p className="mt-1 truncate text-[11px] text-[var(--text-muted)]">{new Date(expense.date).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })} · {expense.category || 'Expense'}</p>
+                <h3 className="line-clamp-2 text-sm font-semibold leading-5 text-[var(--text-primary)]">{expense.description}</h3>
+                <p className="mt-1 text-[11px] leading-4 text-[var(--text-muted)]">{new Date(expense.date).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })} · {new Date(expense.date).toLocaleTimeString('en-MY', { hour: 'numeric', minute: '2-digit' })}</p>
+                <p className="text-[11px] leading-4 text-[var(--text-muted)]">{expense.category || 'Expense'}</p>
               </div>
-              <div className="shrink-0 text-right">
-                <p className="text-sm font-bold tabular-nums text-[var(--danger)]">-{money(expense.amount)}</p>
-                <span className="mt-1 inline-flex rounded-full bg-[var(--danger-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--danger)]">Expense</span>
+              <div className="flex h-full shrink-0 flex-col items-end justify-between text-right">
+                <p className="whitespace-nowrap text-sm font-bold tabular-nums text-[var(--danger)]">-{money(expense.amount)}</p>
+                {canDelete && !(getExpenseSource(expense) === 'commission' && expense.parentSaleId) ? (
+                  <button type="button" onClick={(event) => { event.stopPropagation(); requestDelete(expense); }} className="grid h-9 w-9 shrink-0 place-items-center rounded-ui-sm text-[var(--text-muted)] hover:bg-[var(--danger-soft)] hover:text-[var(--danger)]" aria-label={`Delete ${expense.description}`}><Trash2 className="h-4 w-4" /></button>
+                ) : <span className="text-lg text-[var(--text-muted)]" aria-hidden>›</span>}
               </div>
-              <button type="button" onClick={() => onDeleteExpense(expense.id)} className="grid h-11 w-11 shrink-0 place-items-center rounded-ui-sm text-[var(--text-muted)] hover:bg-[var(--danger-soft)] hover:text-[var(--danger)]" aria-label={`Delete ${expense.description}`}><Trash2 className="h-4 w-4" /></button>
             </article>
           ))}
         </div>
@@ -175,6 +237,30 @@ export const MobileFinanceOverview: React.FC<MobileFinanceOverviewProps> = ({ ex
           <div className="grid grid-cols-2 gap-3"><Field id="finance-filter-min" label="Minimum RM"><input id="finance-filter-min" type="number" min="0" step="0.01" className={fieldControlClassName} value={filters.minimumAmount} onChange={(event) => setFilters((current) => ({ ...current, minimumAmount: event.target.value }))} /></Field><Field id="finance-filter-max" label="Maximum RM"><input id="finance-filter-max" type="number" min="0" step="0.01" className={fieldControlClassName} value={filters.maximumAmount} onChange={(event) => setFilters((current) => ({ ...current, maximumAmount: event.target.value }))} /></Field></div>
         </div>
       </AppSheet>
+
+      <ExpenseDetailsSheet
+        expense={selectedExpense}
+        canDelete={canDelete}
+        onClose={() => setSelectedExpense(null)}
+        onRequestDelete={requestDelete}
+      />
+
+      <ConfirmationDialog
+        open={Boolean(deletingExpense)}
+        onClose={() => { if (!deleteBusy) setDeletingExpense(null); }}
+        onConfirm={confirmDelete}
+        title="Delete expense?"
+        confirmLabel="Delete Expense"
+        tone="danger"
+        busy={deleteBusy}
+        description={deletingExpense ? (
+          <div>
+            <p className="font-semibold text-[var(--text-primary)]">{deletingExpense.description}</p>
+            <p className="mt-1 whitespace-nowrap font-bold tabular-nums text-[var(--danger)]">-{money(deletingExpense.amount)}</p>
+            <p className="mt-3">This action cannot be undone.</p>
+          </div>
+        ) : undefined}
+      />
     </div>
   );
 };

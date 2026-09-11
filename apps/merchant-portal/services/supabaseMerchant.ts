@@ -1348,6 +1348,21 @@ export const pointTransactionService = {
     });
     if (error) throw error;
   },
+
+  /** Reverse a MANUAL Topup/Redeem: wallet + ledger update atomically in Postgres. */
+  reverseManual: async (
+    transactionId: string,
+    outletID: string = currentOutletID
+  ): Promise<number> => {
+    if (!hasValidOutlet(outletID)) throw new Error("outletID is required.");
+    if (!transactionId) throw new Error("Transaction id is required.");
+    const { data, error } = await client().rpc("merchant_reverse_manual_point_transaction", {
+      p_transaction_id: transactionId,
+      p_outlet_id: outletID,
+    });
+    if (error) throw error;
+    return Number(data ?? 0);
+  },
 };
 
 export const outstandingTransactionService = {
@@ -1560,9 +1575,10 @@ export const transactionService = {
     return withQueryTelemetry(
       { queryName: "transactionService.getByClient", resource: "transactions" },
       async () => {
+        // Include items so Member Details Sales can show real line counts (list cols omit items).
         const { data, error } = await client()
           .from("transactions")
-          .select(TRANSACTION_LIST_COLUMNS)
+          .select(`${TRANSACTION_LIST_COLUMNS},items`)
           .eq("outlet_id", outletID)
           .eq("client_id", clientId)
           .order("date", { ascending: false })

@@ -459,12 +459,25 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
 
   // —— Render Sales view
   if (activeView === 'sales') {
+    const memberLabel = `${client.name} (${client.phone ? '•••' + client.phone.slice(-4) : '—'})`;
+    const formatSaleDateTimeDesktop = (iso: string) => {
+      const d = new Date(iso);
+      return d.toLocaleString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+    };
+
     return (
       <div className={bgClass}>
-        <div className="max-w-2xl mx-auto pb-8">
+        <div className="max-w-2xl md:max-w-5xl mx-auto w-full pb-8 px-0 md:px-4">
           {renderDetailHeader('Sales', () => setActiveView('summary'))}
           <div className="px-4 pt-4">
-            <div className="flex gap-2 flex-wrap mb-4">
+            <div className="flex gap-2 flex-wrap md:flex-nowrap mb-4">
               {(['<30 days', '<180 days', '>180 days', 'All'] as const).map((label, i) => {
                 const key = ['<30', '<180', '>180', 'All'][i] as SalesTimeFilter;
                 return (
@@ -488,14 +501,15 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
                   return (
                     <div key={monthKey}>
                       <p className="text-sm font-medium text-slate-500 mb-2">{monthLabel}</p>
-                      <div className="space-y-2">
+
+                      {/* Mobile card list — unchanged */}
+                      <div className="space-y-2 md:hidden">
                         {txs.map((tx, idx) => (
                           <button
                             key={tx.id}
                             type="button"
                             onClick={() => setSelectedSale(tx)}
                             onTouchEnd={(e) => {
-                              // Open sale detail on touch (iPad/tablet): fire immediately so it works without relying on delayed click
                               e.preventDefault();
                               setSelectedSale(tx);
                             }}
@@ -513,11 +527,38 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
                               <span>{new Date(tx.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}, {formatDateHeader(tx.date.split('T')[0] || tx.date)}</span>
                               <span>{(tx.items?.length || 0)} Items</span>
                             </div>
-                            <p className="text-xs text-slate-400 mt-1">
-                              {client.name} ({client.phone ? '***' + client.phone.slice(-4) : '—'})
-                            </p>
+                            <p className="text-xs text-slate-400 mt-1">{memberLabel}</p>
                           </button>
                         ))}
+                      </div>
+
+                      {/* Desktop structured list */}
+                      <div className="hidden md:block rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] overflow-hidden">
+                        <div className="grid grid-cols-[minmax(7rem,1.1fr)_minmax(9rem,1.4fr)_minmax(8rem,1.4fr)_4.5rem_6.5rem] gap-3 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] border-b border-[var(--line)] bg-[var(--bg-soft)]">
+                          <span>Order</span>
+                          <span>Date &amp; Time</span>
+                          <span>Member / Customer</span>
+                          <span className="text-right">Items</span>
+                          <span className="text-right">Total</span>
+                        </div>
+                        <div className="divide-y divide-[var(--line)]">
+                          {txs.map((tx, idx) => (
+                            <button
+                              key={tx.id}
+                              type="button"
+                              onClick={() => setSelectedSale(tx)}
+                              className="grid grid-cols-[minmax(7rem,1.1fr)_minmax(9rem,1.4fr)_minmax(8rem,1.4fr)_4.5rem_6.5rem] gap-3 w-full px-4 py-3.5 text-left items-center hover:bg-[var(--bg-soft)] transition-colors"
+                            >
+                              <span className="font-mono text-sm text-[var(--text-primary)] truncate">{receiptNumber(tx, idx)}</span>
+                              <span className="text-sm text-[var(--text-secondary)]">{formatSaleDateTimeDesktop(tx.date)}</span>
+                              <span className="text-sm text-[var(--text-secondary)] truncate">{memberLabel}</span>
+                              <span className="text-sm text-[var(--text-secondary)] text-right tabular-nums">{tx.items?.length || 0}</span>
+                              <span className="text-sm font-bold text-[var(--brand)] text-right tabular-nums">
+                                RM{tx.amount.toFixed(2)}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   );

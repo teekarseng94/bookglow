@@ -1792,6 +1792,13 @@ export type Database = {
         }
         Returns: string
       }
+      merchant_reverse_manual_point_transaction: {
+        Args: {
+          p_outlet_id: string
+          p_transaction_id: string
+        }
+        Returns: number
+      }
       merchant_credit_points_for_sale: {
         Args: {
           p_client_id: string

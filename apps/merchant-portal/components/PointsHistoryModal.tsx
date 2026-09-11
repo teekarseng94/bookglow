@@ -8,6 +8,7 @@ import { PointTransaction } from '../types';
 import {
   AppModal,
   Button,
+  ConfirmationDialog,
   Field,
   fieldControlClassName,
   FormSection,
@@ -22,6 +23,12 @@ interface PointsHistoryModalProps {
   onClose: () => void;
   onBalanceUpdate: (newBalance: number) => void;
 }
+
+const isManualAdjust = (tx: PointTransaction) => {
+  if (!tx.isManual) return false;
+  const t = String(tx.type || '');
+  return t === 'Topup' || t === 'Redeem' || /^topup/i.test(t) || /^redeem/i.test(t);
+};
 
 const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
   clientId,
@@ -38,6 +45,9 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
   const [amount, setAmount] = useState('');
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<PointTransaction | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Load history only — wallet balance stays on clients.points (currentBalance prop).
   // Do NOT overwrite with ledger newBalance; POS sale credits historically omitted ledger rows.
@@ -130,6 +140,23 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
     }
   };
 
+  const handleConfirmDelete = async () => {
+    if (!pendingDelete || deleting) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const { pointTransactionService } = await import('../services/pointTransactionService');
+      const newBalance = await pointTransactionService.reverseManual(pendingDelete.id, outletID);
+      onBalanceUpdate(newBalance);
+      setPendingDelete(null);
+      await refreshAfterAdjust();
+    } catch (err: any) {
+      setDeleteError(err?.message || 'Failed to delete adjustment');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   // Group transactions by month
   const transactionsByMonth = useMemo(() => {
     const groups: Record<string, PointTransaction[]> = {};
@@ -151,12 +178,49 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
     return `${time}, ${dateStr}`;
   };
 
+  const formatConfirmWhen = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  };
+
   const closeNested = () => {
     setShowTopupModal(false);
     setShowRedeemModal(false);
     setAmount('');
     setError(null);
   };
+
+  const deleteConfirmCopy = (() => {
+    if (!pendingDelete) return { title: 'Delete point adjustment?', description: null as React.ReactNode };
+    const isTopup =
+      pendingDelete.type === 'Topup' || /^topup/i.test(String(pendingDelete.type || ''));
+    const label = isTopup ? 'Top Up (Manual)' : 'Redeem (Manual)';
+    const signed = isTopup ? `+${pendingDelete.amount}` : `−${pendingDelete.amount}`;
+    const effect = isTopup
+      ? `Deleting this adjustment will remove ${pendingDelete.amount} points from this member's balance.`
+      : `Deleting this adjustment will restore ${pendingDelete.amount} points to this member.`;
+    return {
+      title: 'Delete point adjustment?',
+      description: (
+        <div className="space-y-3">
+          <div>
+            <p className="font-semibold text-[var(--text-primary)]">{label}</p>
+            <p className="tabular-nums">{signed} points</p>
+            <p className="text-[var(--text-muted)]">{formatConfirmWhen(pendingDelete.timestamp)}</p>
+          </div>
+          <p>{effect}</p>
+          {deleteError ? <p className="text-[var(--danger)]">{deleteError}</p> : null}
+        </div>
+      ),
+    };
+  })();
 
   return (
     <>
@@ -166,6 +230,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
         title="Points"
         description="Loyalty balance and transaction history."
         size="md"
+        className="!max-w-[560px]"
         zIndexClass="z-[50]"
         headerActions={
           <div className="relative">
@@ -240,7 +305,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
                 <p className="text-xs font-medium text-[var(--text-muted)] mb-3 uppercase tracking-wider">{month}</p>
                 <div className="space-y-3">
                   {monthTransactions.map((tx) => (
-                    <div key={tx.id} className="flex items-start gap-3">
+                    <div key={tx.id} className="flex items-start gap-2 sm:gap-3">
                       <div className="w-10 h-10 rounded-full bg-[var(--success-soft)] text-[var(--success)] flex items-center justify-center flex-shrink-0">
                         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
                           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
@@ -267,6 +332,24 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
                           {tx.newBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                         </p>
                       </div>
+                      {isManualAdjust(tx) ? (
+                        <IconButton
+                          label="Delete adjustment"
+                          size="sm"
+                          variant="ghost"
+                          className="flex-shrink-0 mt-0.5 text-[var(--text-muted)] hover:text-[var(--danger)]"
+                          onClick={() => {
+                            setDeleteError(null);
+                            setPendingDelete(tx);
+                          }}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3m-7 0h8" />
+                          </svg>
+                        </IconButton>
+                      ) : (
+                        <span className="w-8 flex-shrink-0" aria-hidden />
+                      )}
                     </div>
                   ))}
                 </div>
@@ -275,6 +358,23 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
           </div>
         )}
       </AppModal>
+
+      <ConfirmationDialog
+        open={Boolean(pendingDelete)}
+        onClose={() => {
+          if (deleting) return;
+          setPendingDelete(null);
+          setDeleteError(null);
+        }}
+        onConfirm={() => void handleConfirmDelete()}
+        title={deleteConfirmCopy.title}
+        description={deleteConfirmCopy.description}
+        confirmLabel="Delete adjustment"
+        cancelLabel="Cancel"
+        tone="danger"
+        busy={deleting}
+        zIndexClass="z-[100]"
+      />
 
       <AppModal
         open={showTopupModal}

@@ -12,6 +12,7 @@ export interface ConfirmationDialogProps {
   cancelLabel?: string;
   tone?: 'danger' | 'primary';
   busy?: boolean;
+  zIndexClass?: string;
 }
 
 /**
@@ -27,12 +28,14 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   cancelLabel = 'Cancel',
   tone = 'danger',
   busy = false,
+  zIndexClass,
 }) => (
   <Modal
     open={open}
     onClose={busy ? () => undefined : onClose}
     title={title}
     size="sm"
+    zIndexClass={zIndexClass}
     footer={
       <div className="m-modal-footer-actions flex justify-end gap-2">
         <Button variant="secondary" size="sm" onClick={onClose} disabled={busy}>

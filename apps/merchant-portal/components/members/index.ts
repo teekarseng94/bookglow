@@ -7,3 +7,8 @@ export { MemberBalanceSection } from './MemberBalanceSection';
 export { MemberHistorySection } from './MemberHistorySection';
 export { MemberActionBar } from './MemberActionBar';
 export { RenewMembershipModal } from './RenewMembershipModal';
+export {
+  MemberActivityView,
+  MemberActivitySegmented,
+  MEMBER_ACTIVITY_MAX_WIDTH_CLASS,
+} from './MemberActivityView';

@@ -11,6 +11,8 @@ import { Client, Transaction, TransactionType, Appointment, CartItem, Staff, Ser
 import { useMemberDetailsData } from '../hooks/useMemberDetailsData';
 import { clientService, getCurrentOutletID } from '../services/databaseService';
 import {
+  MemberActivitySegmented,
+  MemberActivityView,
   MemberBalanceSection,
   MemberHistorySection,
   MemberSummary,
@@ -290,6 +292,27 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
     }
   };
 
+  /** Activity group labels: denser, readable on desktop lists. */
+  const formatActivityGroupDate = (dateStr: string) => {
+    try {
+      return new Date(dateStr).toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const appointmentStatusLabel = (status: string) => {
+    if (status === 'no-show') return 'No Show';
+    if (status === 'completed') return 'Completed';
+    if (status === 'scheduled') return 'Upcoming';
+    if (status === 'cancelled') return 'Cancelled';
+    return status || '—';
+  };
+
   // All hooks must run before any conditional return (Rules of Hooks)
   // —— Recent detail view: line items grouped by date, tabs Service / Product / Package / Discount
   const flattenedLineItems = useMemo(() => {
@@ -397,63 +420,86 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
     );
   }
 
-  const renderDetailHeader = (title: string, onBack: () => void) => (
-    <div className="m-member-subview-header flex items-center justify-between bg-[var(--bg-surface)] border-b border-[var(--line)] sticky top-0 z-10 rounded-t-2xl">
-      <button onClick={onBack} className="m-member-details-back grid place-items-center -ml-1 hover:bg-[var(--bg-soft)] text-[var(--brand)] transition-colors" aria-label="Back">
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-      </button>
-      <h2 className="m-member-subview-title text-[var(--text-primary)]">{title}</h2>
-      <div className="w-10" />
-    </div>
-  );
-
   // —— Render Recent view
   if (activeView === 'recent') {
     return (
-      <div className={bgClass}>
-        <div className="max-w-2xl mx-auto pb-8">
-          {renderDetailHeader('Recent', () => setActiveView('summary'))}
-          <div className="px-4 pt-4">
-            <div className="flex gap-1 p-1 bg-slate-200 rounded-xl mb-4">
-              {(['Service', 'Product', 'Package', 'Discount'] as RecentTab[]).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setRecentTab(tab)}
-                  className={`m-member-filter-chip flex-1 transition-colors ${recentTab === tab ? 'bg-[var(--bg-surface)] text-[var(--brand)] shadow-sm' : 'text-[var(--text-muted)]'}`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-            <div className="space-y-6">
-              {recentByDate.length === 0 ? (
-                <p className="text-slate-500 text-center py-8">No {recentTab.toLowerCase()} items.</p>
-              ) : (
-                recentByDate.map(([date, items]) => (
-                  <div key={date}>
-                    <p className="text-sm font-medium text-slate-500 mb-2">{formatDateHeader(date)}</p>
-                    <div className="space-y-2">
-                      {items.map((item, idx) => (
-                        <div
-                          key={`${date}-${item.transactionId}-${idx}`}
-                          className="m-member-detail-row bg-[var(--bg-surface)] border border-[var(--line)] shadow-ui-xs flex items-center"
-                        >
-                          <PlaceholderIcon className="w-12 h-12 flex-shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <p className="m-list-title text-[var(--text-primary)] truncate">{item.name}</p>
-                            <p className="m-secondary font-medium text-[var(--brand)]">{item.price.toFixed(2)} {item.quantity > 1 ? `× ${item.quantity}` : ''}</p>
-                          </div>
-                          <svg className="w-5 h-5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                        </div>
-                      ))}
+      <MemberActivityView
+        title="Recent"
+        onBack={() => setActiveView('summary')}
+        controls={
+          <MemberActivitySegmented
+            options={[
+              { value: 'Service' as RecentTab, label: 'Service' },
+              { value: 'Product' as RecentTab, label: 'Product' },
+              { value: 'Package' as RecentTab, label: 'Package' },
+              { value: 'Discount' as RecentTab, label: 'Discount' },
+            ]}
+            value={recentTab}
+            onChange={setRecentTab}
+          />
+        }
+      >
+        <div className="space-y-5">
+          {recentByDate.length === 0 ? (
+            <p className="text-slate-500 text-center py-8">No {recentTab.toLowerCase()} items.</p>
+          ) : (
+            recentByDate.map(([date, items]) => (
+              <div key={date}>
+                <p className="text-sm font-medium text-slate-500 mb-2">{formatActivityGroupDate(date)}</p>
+
+                {/* Mobile cards */}
+                <div className="space-y-2 lg:hidden">
+                  {items.map((item, idx) => (
+                    <div
+                      key={`${date}-${item.transactionId}-${idx}`}
+                      className="m-member-detail-row bg-[var(--bg-surface)] border border-[var(--line)] shadow-ui-xs flex items-center"
+                    >
+                      <PlaceholderIcon className="w-12 h-12 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="m-list-title text-[var(--text-primary)] truncate">{item.name}</p>
+                        <p className="m-secondary font-medium text-[var(--brand)]">
+                          {item.price.toFixed(2)} {item.quantity > 1 ? `× ${item.quantity}` : ''}
+                        </p>
+                      </div>
+                      <svg className="w-5 h-5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
                     </div>
+                  ))}
+                </div>
+
+                {/* Desktop structured list */}
+                <div className="hidden lg:block rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] overflow-hidden">
+                  <div className="grid grid-cols-[minmax(0,1.6fr)_7rem_7.5rem_2rem] gap-3 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] border-b border-[var(--line)] bg-[var(--bg-soft)]">
+                    <span>Item</span>
+                    <span>Type</span>
+                    <span className="text-right">Price</span>
+                    <span />
                   </div>
-                ))
-              )}
-            </div>
-          </div>
+                  <div className="divide-y divide-[var(--line)]">
+                    {items.map((item, idx) => (
+                      <div
+                        key={`${date}-${item.transactionId}-${idx}-desk`}
+                        className="grid grid-cols-[minmax(0,1.6fr)_7rem_7.5rem_2rem] gap-3 px-4 py-3 items-center"
+                      >
+                        <p className="text-sm font-medium text-[var(--text-primary)] truncate">{item.name}</p>
+                        <p className="text-sm text-[var(--text-secondary)]">{recentTab}</p>
+                        <p className="text-sm font-semibold text-[var(--brand)] text-right tabular-nums">
+                          RM{item.price.toFixed(2)}
+                          {item.quantity > 1 ? ` × ${item.quantity}` : ''}
+                        </p>
+                        <svg className="w-4 h-4 text-slate-400 justify-self-end" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
-      </div>
+      </MemberActivityView>
     );
   }
 
@@ -473,189 +519,236 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
     };
 
     return (
-      <div className={bgClass}>
-        <div className="max-w-2xl md:max-w-5xl mx-auto w-full pb-8 px-0 md:px-4">
-          {renderDetailHeader('Sales', () => setActiveView('summary'))}
-          <div className="px-4 pt-4">
-            <div className="flex gap-2 flex-wrap md:flex-nowrap mb-4">
-              {(['<30 days', '<180 days', '>180 days', 'All'] as const).map((label, i) => {
-                const key = ['<30', '<180', '>180', 'All'][i] as SalesTimeFilter;
-                return (
-                  <button
-                    key={key}
-                    onClick={() => setSalesFilter(key)}
-                    className={`m-member-filter-chip transition-colors ${salesFilter === key ? 'bg-[var(--bg-soft)] text-[var(--brand)]' : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border border-[var(--line)]'}`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="space-y-6">
-              {salesByMonth.length === 0 ? (
-                <p className="text-slate-500 text-center py-8">No sales in this period.</p>
-              ) : (
-                salesByMonth.map(([monthKey, txs]) => {
-                  const [y, m] = monthKey.split('-');
-                  const monthLabel = new Date(Number(y), Number(m) - 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-                  return (
-                    <div key={monthKey}>
-                      <p className="text-sm font-medium text-slate-500 mb-2">{monthLabel}</p>
+      <MemberActivityView
+        title="Sales"
+        onBack={() => setActiveView('summary')}
+        controls={
+          <MemberActivitySegmented
+            options={[
+              { value: '<30' as SalesTimeFilter, label: '<30 days' },
+              { value: '<180' as SalesTimeFilter, label: '<180 days' },
+              { value: '>180' as SalesTimeFilter, label: '>180 days' },
+              { value: 'All' as SalesTimeFilter, label: 'All' },
+            ]}
+            value={salesFilter}
+            onChange={setSalesFilter}
+          />
+        }
+        footer={
+          selectedSale && client ? (
+            <Suspense fallback={<ModalLoadingFallback />}>
+              <TransactionDetailModal
+                transaction={selectedSale}
+                client={client}
+                staff={staff}
+                onClose={() => setSelectedSale(null)}
+                onVoid={async (id) => {
+                  if (onVoidTransaction) {
+                    await onVoidTransaction(id);
+                  }
+                  setSelectedSale(null);
+                }}
+              />
+            </Suspense>
+          ) : null
+        }
+      >
+        <div className="space-y-5">
+          {salesByMonth.length === 0 ? (
+            <p className="text-slate-500 text-center py-8">No sales in this period.</p>
+          ) : (
+            salesByMonth.map(([monthKey, txs]) => {
+              const [y, m] = monthKey.split('-');
+              const monthLabel = new Date(Number(y), Number(m) - 1).toLocaleDateString('en-GB', {
+                month: 'long',
+                year: 'numeric',
+              });
+              return (
+                <div key={monthKey}>
+                  <p className="text-sm font-medium text-slate-500 mb-2">{monthLabel}</p>
 
-                      {/* Mobile card list — unchanged */}
-                      <div className="space-y-2 md:hidden">
-                        {txs.map((tx, idx) => (
-                          <button
-                            key={tx.id}
-                            type="button"
-                            onClick={() => setSelectedSale(tx)}
-                            onTouchEnd={(e) => {
-                              e.preventDefault();
-                              setSelectedSale(tx);
-                            }}
-                            style={{ touchAction: 'manipulation' }}
-                            className="m-member-detail-row w-full text-left bg-[var(--bg-surface)] border border-[var(--line)] shadow-ui-xs hover:border-[var(--brand)] hover:shadow-ui-sm active:bg-[var(--bg-soft)] transition-all cursor-pointer"
-                          >
-                            <div className="flex justify-between items-start">
-                              <div className="flex items-center gap-2">
-                                <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-                                <span className="font-mono text-sm text-slate-600">{receiptNumber(tx, idx)}</span>
-                              </div>
-                              <span className="text-lg font-bold text-[var(--brand)]">{tx.amount.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between items-center mt-2 text-sm text-slate-500">
-                              <span>{new Date(tx.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}, {formatDateHeader(tx.date.split('T')[0] || tx.date)}</span>
-                              <span>{(tx.items?.length || 0)} Items</span>
-                            </div>
-                            <p className="text-xs text-slate-400 mt-1">{memberLabel}</p>
-                          </button>
-                        ))}
-                      </div>
+                  {/* Mobile card list — unchanged */}
+                  <div className="space-y-2 lg:hidden">
+                    {txs.map((tx, idx) => (
+                      <button
+                        key={tx.id}
+                        type="button"
+                        onClick={() => setSelectedSale(tx)}
+                        onTouchEnd={(e) => {
+                          e.preventDefault();
+                          setSelectedSale(tx);
+                        }}
+                        style={{ touchAction: 'manipulation' }}
+                        className="m-member-detail-row w-full text-left bg-[var(--bg-surface)] border border-[var(--line)] shadow-ui-xs hover:border-[var(--brand)] hover:shadow-ui-sm active:bg-[var(--bg-soft)] transition-all cursor-pointer"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-center gap-2">
+                            <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span className="font-mono text-sm text-slate-600">{receiptNumber(tx, idx)}</span>
+                          </div>
+                          <span className="text-lg font-bold text-[var(--brand)]">{tx.amount.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center mt-2 text-sm text-slate-500">
+                          <span>
+                            {new Date(tx.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })},{' '}
+                            {formatDateHeader(tx.date.split('T')[0] || tx.date)}
+                          </span>
+                          <span>{tx.items?.length || 0} Items</span>
+                        </div>
+                        <p className="text-xs text-slate-400 mt-1">{memberLabel}</p>
+                      </button>
+                    ))}
+                  </div>
 
-                      {/* Desktop structured list */}
-                      <div className="hidden md:block rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] overflow-hidden">
-                        <div className="grid grid-cols-[minmax(7rem,1.1fr)_minmax(9rem,1.4fr)_minmax(8rem,1.4fr)_4.5rem_6.5rem] gap-3 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] border-b border-[var(--line)] bg-[var(--bg-soft)]">
-                          <span>Order</span>
-                          <span>Date &amp; Time</span>
-                          <span>Member / Customer</span>
-                          <span className="text-right">Items</span>
-                          <span className="text-right">Total</span>
-                        </div>
-                        <div className="divide-y divide-[var(--line)]">
-                          {txs.map((tx, idx) => (
-                            <button
-                              key={tx.id}
-                              type="button"
-                              onClick={() => setSelectedSale(tx)}
-                              className="grid grid-cols-[minmax(7rem,1.1fr)_minmax(9rem,1.4fr)_minmax(8rem,1.4fr)_4.5rem_6.5rem] gap-3 w-full px-4 py-3.5 text-left items-center hover:bg-[var(--bg-soft)] transition-colors"
-                            >
-                              <span className="font-mono text-sm text-[var(--text-primary)] truncate">{receiptNumber(tx, idx)}</span>
-                              <span className="text-sm text-[var(--text-secondary)]">{formatSaleDateTimeDesktop(tx.date)}</span>
-                              <span className="text-sm text-[var(--text-secondary)] truncate">{memberLabel}</span>
-                              <span className="text-sm text-[var(--text-secondary)] text-right tabular-nums">{tx.items?.length || 0}</span>
-                              <span className="text-sm font-bold text-[var(--brand)] text-right tabular-nums">
-                                RM{tx.amount.toFixed(2)}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                  {/* Desktop structured list */}
+                  <div className="hidden lg:block rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] overflow-hidden">
+                    <div className="grid grid-cols-[minmax(7rem,1.1fr)_minmax(9rem,1.4fr)_minmax(8rem,1.4fr)_4.5rem_6.5rem] gap-3 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)] border-b border-[var(--line)] bg-[var(--bg-soft)]">
+                      <span>Order</span>
+                      <span>Date &amp; Time</span>
+                      <span>Member / Customer</span>
+                      <span className="text-right">Items</span>
+                      <span className="text-right">Total</span>
                     </div>
-                  );
-                })
-              )}
-            </div>
-
-            {/* Sale detail side modal – visible directly from Sales view */}
-            {selectedSale && client && (
-              <Suspense fallback={<ModalLoadingFallback />}>
-                <TransactionDetailModal
-                  transaction={selectedSale}
-                  client={client}
-                  staff={staff}
-                  onClose={() => setSelectedSale(null)}
-                  onVoid={async (id) => {
-                    if (onVoidTransaction) {
-                      await onVoidTransaction(id);
-                    }
-                    setSelectedSale(null);
-                  }}
-                />
-              </Suspense>
-            )}
-          </div>
+                    <div className="divide-y divide-[var(--line)]">
+                      {txs.map((tx, idx) => (
+                        <button
+                          key={tx.id}
+                          type="button"
+                          onClick={() => setSelectedSale(tx)}
+                          className="grid grid-cols-[minmax(7rem,1.1fr)_minmax(9rem,1.4fr)_minmax(8rem,1.4fr)_4.5rem_6.5rem] gap-3 w-full px-4 py-3 text-left items-center hover:bg-[var(--bg-soft)] transition-colors"
+                        >
+                          <span className="font-mono text-sm text-[var(--text-primary)] truncate">{receiptNumber(tx, idx)}</span>
+                          <span className="text-sm text-[var(--text-secondary)]">{formatSaleDateTimeDesktop(tx.date)}</span>
+                          <span className="text-sm text-[var(--text-secondary)] truncate">{memberLabel}</span>
+                          <span className="text-sm text-[var(--text-secondary)] text-right tabular-nums">{tx.items?.length || 0}</span>
+                          <span className="text-sm font-bold text-[var(--brand)] text-right tabular-nums">
+                            RM{tx.amount.toFixed(2)}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
-      </div>
+      </MemberActivityView>
     );
   }
 
   // —— Render Appointments view
   if (activeView === 'appointments') {
     return (
-      <div className={bgClass}>
-        <div className="max-w-2xl mx-auto pb-8">
-          {renderDetailHeader('Appointment', () => setActiveView('summary'))}
-          <div className="px-4 pt-4">
-            <div className="flex gap-1 p-1 bg-slate-200 rounded-xl mb-4">
-              {(['Upcoming', 'Past', 'No Show'] as AppointmentsFilter[]).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setAppointmentsFilter(tab)}
-                  className={`m-member-filter-chip flex-1 transition-colors ${appointmentsFilter === tab ? 'bg-[var(--bg-surface)] text-[var(--brand)] shadow-sm' : 'text-[var(--text-muted)]'}`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-            <div className="space-y-6">
-              {appointmentsFiltered.length === 0 ? (
-                <p className="text-slate-500 text-center py-8">No {appointmentsFilter.toLowerCase()} appointments.</p>
-              ) : (
-                (() => {
-                  const byDate: Record<string, typeof appointmentsFiltered> = {};
-                  appointmentsFiltered.forEach((a) => {
-                    if (!byDate[a.date]) byDate[a.date] = [];
-                    byDate[a.date].push(a);
-                  });
-                  return Object.entries(byDate)
-                    .sort(([a], [b]) => b.localeCompare(a))
-                    .map(([date, list]) => (
-                      <div key={date}>
-                        <p className="text-sm font-medium text-slate-500 mb-2">{formatDateHeader(date)}</p>
-                        <div className="space-y-3">
-                          {list.map((apt) => (
-                            <div
-                              key={apt.id}
-                              className="m-member-detail-row border-2 border-red-200 shadow-ui-xs bg-red-50/30"
-                            >
-                              <div className="flex justify-between items-start">
-                                <p className="m-list-title text-[var(--text-primary)]">{client.name}</p>
-                                {apt.status === 'completed' && (
-                                  <div className="w-6 h-6 rounded-full bg-[var(--success)] flex items-center justify-center flex-shrink-0">
-                                    <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                                  </div>
-                                )}
+      <MemberActivityView
+        title="Appointment"
+        onBack={() => setActiveView('summary')}
+        controls={
+          <MemberActivitySegmented
+            options={[
+              { value: 'Upcoming' as AppointmentsFilter, label: 'Upcoming' },
+              { value: 'Past' as AppointmentsFilter, label: 'Past' },
+              { value: 'No Show' as AppointmentsFilter, label: 'No Show' },
+            ]}
+            value={appointmentsFilter}
+            onChange={setAppointmentsFilter}
+          />
+        }
+      >
+        <div className="space-y-5">
+          {appointmentsFiltered.length === 0 ? (
+            <p className="text-slate-500 text-center py-8">No {appointmentsFilter.toLowerCase()} appointments.</p>
+          ) : (
+            (() => {
+              const byDate: Record<string, typeof appointmentsFiltered> = {};
+              appointmentsFiltered.forEach((a) => {
+                if (!byDate[a.date]) byDate[a.date] = [];
+                byDate[a.date].push(a);
+              });
+              return Object.entries(byDate)
+                .sort(([a], [b]) => b.localeCompare(a))
+                .map(([date, list]) => (
+                  <div key={date}>
+                    <p className="text-sm font-medium text-slate-500 mb-2">{formatActivityGroupDate(date)}</p>
+
+                    {/* Mobile cards — preserve existing stacked layout */}
+                    <div className="space-y-3 lg:hidden">
+                      {list.map((apt) => (
+                        <div
+                          key={apt.id}
+                          className="m-member-detail-row border-2 border-red-200 shadow-ui-xs bg-red-50/30"
+                        >
+                          <div className="flex justify-between items-start">
+                            <p className="m-list-title text-[var(--text-primary)]">{client.name}</p>
+                            {apt.status === 'completed' && (
+                              <div className="w-6 h-6 rounded-full bg-[var(--success)] flex items-center justify-center flex-shrink-0">
+                                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
                               </div>
-                              <p className="text-sm text-slate-600 mt-1">{getServiceName(apt.serviceId)}</p>
-                              <div className="flex items-center gap-2 mt-2 text-sm text-slate-500">
-                                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                <span>{apt.time || '—'} - {apt.endTime || '—'}</span>
-                              </div>
-                              <div className="flex items-center gap-2 mt-1 text-sm text-slate-500">
-                                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                                <span>{getStaffName(apt.staffId)}</span>
-                              </div>
-                            </div>
-                          ))}
+                            )}
+                          </div>
+                          <p className="text-sm text-slate-600 mt-1">{getServiceName(apt.serviceId)}</p>
+                          <div className="flex items-center gap-2 mt-2 text-sm text-slate-500">
+                            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>
+                              {apt.time || '—'} - {apt.endTime || '—'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 mt-1 text-sm text-slate-500">
+                            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            <span>{getStaffName(apt.staffId)}</span>
+                          </div>
                         </div>
-                      </div>
-                    ));
-                })()
-              )}
-            </div>
-          </div>
+                      ))}
+                    </div>
+
+                    {/* Desktop horizontal rows */}
+                    <div className="hidden lg:block rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] overflow-hidden divide-y divide-[var(--line)]">
+                      {list.map((apt) => {
+                        const status = appointmentStatusLabel(apt.status);
+                        const statusClass =
+                          apt.status === 'no-show'
+                            ? 'bg-[var(--danger-soft,rgba(239,68,68,0.12))] text-[var(--danger)]'
+                            : apt.status === 'completed'
+                              ? 'bg-[var(--success-soft)] text-[var(--success)]'
+                              : apt.status === 'scheduled'
+                                ? 'bg-[var(--brand-soft,rgba(99,102,241,0.12))] text-[var(--brand)]'
+                                : 'bg-[var(--bg-soft)] text-[var(--text-secondary)]';
+                        return (
+                          <div
+                            key={apt.id}
+                            className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1.2fr)_auto] gap-4 px-4 py-3 items-center"
+                          >
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{client.name}</p>
+                              <p className="text-sm text-[var(--text-secondary)] truncate">{getServiceName(apt.serviceId)}</p>
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm text-[var(--text-primary)] tabular-nums">
+                                {apt.time || '—'} – {apt.endTime || '—'}
+                              </p>
+                              <p className="text-sm text-[var(--text-muted)] truncate">Staff: {getStaffName(apt.staffId)}</p>
+                            </div>
+                            <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap ${statusClass}`}>
+                              {status}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ));
+            })()
+          )}
         </div>
-      </div>
+      </MemberActivityView>
     );
   }
 

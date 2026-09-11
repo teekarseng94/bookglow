@@ -39,7 +39,8 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Real-time / polled listener for point transactions
+  // Load history only — wallet balance stays on clients.points (currentBalance prop).
+  // Do NOT overwrite with ledger newBalance; POS sale credits historically omitted ledger rows.
   useEffect(() => {
     if (!clientId || !outletID) {
       setLoading(false);
@@ -54,7 +55,6 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
         if (cancelled) return;
         setTransactions(data);
         setLoading(false);
-        if (data.length > 0) onBalanceUpdate(data[0].newBalance);
       } catch (err) {
         console.error("Error loading point transactions:", err);
         if (!cancelled) {
@@ -69,8 +69,20 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
       cancelled = true;
       window.clearInterval(timer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clientId, outletID]); // Removed onBalanceUpdate and currentBalance from deps to avoid re-subscription
+  }, [clientId, outletID]);
+
+  const refreshAfterAdjust = async () => {
+    const { pointTransactionService } = await import('../services/pointTransactionService');
+    const { clientService } = await import('../services/databaseService');
+    const [data, client] = await Promise.all([
+      pointTransactionService.getAll(clientId, outletID),
+      clientService.getById(clientId, outletID),
+    ]);
+    setTransactions(data);
+    if (client) {
+      onBalanceUpdate(Number(client.points ?? 0));
+    }
+  };
 
   const handleTopup = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -83,11 +95,11 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
     setProcessing(true);
     setError(null);
     try {
-      // Import from separate service file to avoid circular dependency
       const { pointTransactionService } = await import('../services/pointTransactionService');
       await pointTransactionService.add(clientId, 'Topup', points, outletID);
       setShowTopupModal(false);
       setAmount('');
+      await refreshAfterAdjust();
     } catch (err: any) {
       setError(err.message || 'Failed to add points');
     } finally {
@@ -106,11 +118,11 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
     setProcessing(true);
     setError(null);
     try {
-      // Import from separate service file to avoid circular dependency
       const { pointTransactionService } = await import('../services/pointTransactionService');
       await pointTransactionService.add(clientId, 'Redeem', points, outletID);
       setShowRedeemModal(false);
       setAmount('');
+      await refreshAfterAdjust();
     } catch (err: any) {
       setError(err.message || 'Failed to redeem points');
     } finally {
@@ -206,6 +218,13 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
           <p className="text-app-page font-bold text-[var(--success)] tabular-nums">
             {currentBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </p>
+          {!loading &&
+          transactions.length > 0 &&
+          Math.abs(Number(transactions[0].newBalance) - Number(currentBalance)) > 0.01 ? (
+            <p className="mt-2 text-xs text-[var(--text-muted)]">
+              History may be incomplete for older sale credits. The balance above is the member wallet.
+            </p>
+          ) : null}
         </div>
 
         {loading ? (

@@ -36,6 +36,17 @@ const ORDER_BY: Record<string, string> = {
   lowest: "rating",
 };
 
+/** Actions that require a merchant JWT plus outlet admin rights. */
+const MERCHANT_ACTIONS = new Set([
+  "status",
+  "oauth_start",
+  "locations",
+  "select_location",
+  "refresh",
+  "visibility",
+  "disconnect",
+]);
+
 const PUBLIC_PAGE_SIZE = 10;
 /** How long a cached page counts as fresh. */
 const FIRST_PAGE_TTL_SECONDS = 15 * 60;
@@ -611,14 +622,19 @@ Deno.serve(async (request) => {
       });
     }
 
+    if (!MERCHANT_ACTIONS.has(action)) return json({ error: "Unsupported action." }, 400);
+
     const outletId = String(body.outletId || "").trim();
 
-    // `status` must work before Google is configured so the card can explain setup.
+    // Authorize before anything else, so an unauthenticated caller learns
+    // nothing about this outlet or the server's Google configuration state.
+    const gate = await requireOutletAdmin({ supabaseUrl, anonKey, serviceKey } as Env, request, outletId);
+    if ("error" in gate) return gate.error;
+    const { admin, user } = gate;
+
+    // `status` must answer before Google is configured so the card can explain setup.
     if (action === "status") {
-      const baseEnv = { supabaseUrl, anonKey, serviceKey } as Env;
-      const gate = await requireOutletAdmin(baseEnv, request, outletId);
-      if ("error" in gate) return gate.error;
-      const row = await loadConnection(gate.admin, outletId);
+      const row = await loadConnection(admin, outletId);
       return json({ connection: connectionSummary(row, Boolean(env), missing) });
     }
 
@@ -626,9 +642,6 @@ Deno.serve(async (request) => {
       return json({ error: "Google Business Profile is not configured yet.", missingConfig: missing }, 503);
     }
 
-    const gate = await requireOutletAdmin(env, request, outletId);
-    if ("error" in gate) return gate.error;
-    const { admin, user } = gate;
     await admin.rpc("google_business_purge_expired");
 
     switch (action) {

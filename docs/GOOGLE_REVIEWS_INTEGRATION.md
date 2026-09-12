@@ -125,10 +125,21 @@ variable, a frontend bundle, a log line, or a committed file.
 | `GOOGLE_BUSINESS_CLIENT_SECRET` | OAuth web client secret |
 | `GOOGLE_BUSINESS_REDIRECT_URI` | Must match §2.4 exactly |
 | `GOOGLE_TOKEN_ENCRYPTION_KEY` | base64 of 32 random bytes; encrypts stored tokens (AES-GCM) |
-| `MERCHANT_APP_URL` | Merchant portal origin the callback redirects back to, e.g. `https://bookglow-dashboard.web.app` |
+| `MERCHANT_APP_URL` | Merchant portal origin the OAuth callback redirects back to |
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are injected
 by the platform.
+
+`MERCHANT_APP_URL` must be the **stable production origin of the merchant
+portal**, since it is where the callback sends the merchant after Google
+consent. The repo is moving to Vercel, where the customer site (`dist-booking`)
+and the merchant portal (`dist-dashboard`) need separate projects — `vercel.json`
+currently builds the customer site only. Use the merchant project's production
+domain, for example `https://bookglow-dashboard.vercel.app`, not a preview URL,
+because preview hostnames change per deployment. Local development uses
+`http://localhost:5173`. If the value is missing or unparseable the callback
+returns a plain-text notice instead of redirecting, so authorization is never
+silently lost.
 
 ```bash
 # 32-byte key
@@ -139,7 +150,7 @@ supabase secrets set \
   GOOGLE_BUSINESS_CLIENT_SECRET="…" \
   GOOGLE_BUSINESS_REDIRECT_URI="https://uecphpjymbgtttrizhgy.supabase.co/functions/v1/google-business/callback" \
   GOOGLE_TOKEN_ENCRYPTION_KEY="…" \
-  MERCHANT_APP_URL="https://bookglow-dashboard.web.app" \
+  MERCHANT_APP_URL="https://bookglow-dashboard.vercel.app" \
   --project-ref uecphpjymbgtttrizhgy
 
 supabase functions deploy google-business --project-ref uecphpjymbgtttrizhgy

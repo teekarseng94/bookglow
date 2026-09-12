@@ -29,6 +29,9 @@ vi.mock("../services/googleReviewsService", () => ({
   refreshGoogleReviews,
 }));
 
+const openExternalUrl = vi.hoisted(() => vi.fn());
+vi.mock("../src/native/androidShell", () => ({ openExternalUrl }));
+
 import GoogleReviewsIntegrationPage from "./GoogleReviewsIntegrationPage";
 
 const disconnected = {
@@ -58,6 +61,7 @@ beforeEach(() => {
   refreshGoogleReviews.mockReset();
   getGoogleConnection.mockResolvedValue(disconnected);
   startGoogleAuthorization.mockResolvedValue("https://accounts.google.com/o/oauth2/v2/auth?state=abc");
+  openExternalUrl.mockReset();
   window.history.replaceState(null, "", "/");
 });
 
@@ -79,12 +83,10 @@ describe("Google Reviews integration page", () => {
   });
 
   it("starts Google OAuth from Connect", async () => {
-    const assign = vi.fn();
-    Object.defineProperty(window, "location", { value: { ...window.location, assign }, writable: true });
     renderPage();
     fireEvent.click(await screen.findByRole("button", { name: "Connect" }));
     await waitFor(() => expect(startGoogleAuthorization).toHaveBeenCalledWith("outlet_002"));
-    expect(assign).toHaveBeenCalledWith("https://accounts.google.com/o/oauth2/v2/auth?state=abc");
+    expect(openExternalUrl).toHaveBeenCalledWith("https://accounts.google.com/o/oauth2/v2/auth?state=abc");
   });
 
   it("disables Connect in the selector until a business is chosen", async () => {

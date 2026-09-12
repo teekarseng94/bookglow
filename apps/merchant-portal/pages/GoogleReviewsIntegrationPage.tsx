@@ -18,6 +18,7 @@ import {
   type GoogleBusinessLocation,
   type GoogleReviewsConnection,
 } from "../services/googleReviewsService";
+import { openExternalUrl } from "../src/native/androidShell";
 
 type TabId = "about" | "instructions";
 
@@ -107,7 +108,7 @@ const GoogleReviewsIntegrationPage: React.FC = () => {
     run("connect", async () => {
       if (!outletId) return;
       const authorizationUrl = await startGoogleAuthorization(outletId);
-      window.location.assign(authorizationUrl);
+      await openExternalUrl(authorizationUrl);
     });
 
   const openSelector = useCallback(

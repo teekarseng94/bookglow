@@ -5,6 +5,7 @@ import { Alert, Button, EmptyState, ErrorState, LoadingSkeleton, StatusBadge } f
 import { outletService } from '../services/databaseService';
 import { platformOperationsService, type PlatformSubscription } from '../services/platformOperationsService';
 import type { Outlet } from '../types';
+import { openExternalUrl } from '../src/native/androidShell';
 
 const SuperAdminSubscriptions: React.FC = () => {
   const [outlets, setOutlets] = useState<Outlet[]>([]);
@@ -53,7 +54,7 @@ const SuperAdminSubscriptions: React.FC = () => {
       const url = existing
         ? await platformOperationsService.createBillingPortal(outletId)
         : await platformOperationsService.createCheckout(outletId, import.meta.env.VITE_STRIPE_PRICE_ID);
-      window.location.assign(url);
+      await openExternalUrl(url);
     } catch (billingError) {
       setActionError(billingError instanceof Error ? billingError.message : 'Billing action failed.');
       setBusyOutlet(null);

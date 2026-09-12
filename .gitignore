@@ -99,6 +99,17 @@ Desktop.ini
 *.swo
 *~
 
+# Local Android/JDK toolchains (not part of the app)
+.tools/
+
+# --- Android / Capacitor signing (never commit keys or passwords) ---
+*.jks
+*.keystore
+keystore.properties
+apps/merchant-portal/android/local.properties
+apps/merchant-portal/android/app/release/
+*.aab
+
 # --- Misc ---
 *.orig
 *.tmp

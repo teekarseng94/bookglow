@@ -1,4 +1,5 @@
 import { createBrowserSupabaseClient } from '@bookglow/supabase';
+import { merchantPublicOrigin } from '../src/native/androidShell';
 
 export interface PlatformSubscription {
   id: string;
@@ -38,7 +39,7 @@ export const platformOperationsService = {
 
   createCheckout: async (outletId: string, priceId?: string): Promise<string> => {
     const { data, error } = await client().functions.invoke('billing-admin', {
-      body: { action: 'create_checkout', outletId, priceId, appUrl: window.location.origin },
+      body: { action: 'create_checkout', outletId, priceId, appUrl: merchantPublicOrigin() },
     });
     if (error) throw error;
     if (!data?.url) throw new Error('Stripe Checkout URL was not returned.');
@@ -47,7 +48,7 @@ export const platformOperationsService = {
 
   createBillingPortal: async (outletId: string): Promise<string> => {
     const { data, error } = await client().functions.invoke('billing-admin', {
-      body: { action: 'create_portal', outletId, appUrl: window.location.origin },
+      body: { action: 'create_portal', outletId, appUrl: merchantPublicOrigin() },
     });
     if (error) throw error;
     if (!data?.url) throw new Error('Stripe billing portal URL was not returned.');

@@ -36,6 +36,7 @@
     "node_modules",
     "dist",
     "functions",
+    "android",
     "pages/ExternalIntegrations.tsx",
     "services/firestoreService.ts"
   ]

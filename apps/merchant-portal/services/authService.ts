@@ -4,6 +4,7 @@
  */
 import { createBrowserSupabaseClient } from "@bookglow/supabase";
 import { MERCHANT_AUTH_INTENT_KEY } from "@bookglow/auth-contracts";
+import { isNativeApp, merchantOAuthRedirectUrl, openExternalUrl } from "../src/native/androidShell";
 
 export interface LoginCredentials {
   email: string;
@@ -153,12 +154,11 @@ export async function loginWithOAuth(provider: "google" | "facebook") {
     );
   }
   sessionStorage.setItem(MERCHANT_AUTH_INTENT_KEY, "login");
-  const redirectTo =
-    viteEnv().VITE_MERCHANT_AUTH_CALLBACK_URL ||
-    `${window.location.origin}/auth/callback/merchant`;
-  const { error } = await createBrowserSupabaseClient(viteEnv()).auth.signInWithOAuth({
+  const redirectTo = merchantOAuthRedirectUrl();
+  const skipBrowserRedirect = isNativeApp();
+  const { data, error } = await createBrowserSupabaseClient(viteEnv()).auth.signInWithOAuth({
     provider,
-    options: { redirectTo },
+    options: skipBrowserRedirect ? { redirectTo, skipBrowserRedirect: true } : { redirectTo },
   });
   if (error) {
     throw new Error(
@@ -166,6 +166,9 @@ export async function loginWithOAuth(provider: "google" | "facebook") {
         ? "Google sign-in is currently unavailable. Please sign in with your email and password."
         : "We couldn't sign you in with Google. Please try again.",
     );
+  }
+  if (skipBrowserRedirect && data?.url) {
+    await openExternalUrl(data.url);
   }
 }
 

@@ -18,6 +18,14 @@ coverage
 .env.*
 !.env.example
 
+# Android / Capacitor signing
+*.jks
+*.keystore
+keystore.properties
+android/local.properties
+android/app/release/
+*.aab
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

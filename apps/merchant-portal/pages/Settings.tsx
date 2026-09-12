@@ -1,20 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+﻿import React, { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { OutletSettings, Outlet, ApiIntegration } from '../types';
+import { OutletSettings, Outlet } from '../types';
 import { Icons } from '../constants';
 import { useUserContext } from '../contexts/UserContext';
-import { outletService, apiIntegrationService } from '../services/databaseService';
-import { generateApiKey, sha256Hex } from '../utils/apiKeyHash';
+import { outletService } from '../services/databaseService';
 import { shopNameToBookingSlug, isValidBookingSlug } from '../utils/bookingSlug';
-import {
-  AppModal,
-  Button,
-  Field,
-  fieldControlClassName,
-  FormSection,
-  ModalFooterActions,
-} from '../components/ui';
 import {
   OperatingHoursRow,
   SETTINGS_NAV_ITEMS,
@@ -25,15 +15,11 @@ import {
   type SettingsSectionId,
 } from '../components/settings';
 import { TeamAccess } from '../components/settings/TeamAccess';
-import { GoogleReviewsCard } from '../components/settings/GoogleReviewsCard';
 
 import { customerSiteOrigin } from '../utils/customerSiteUrl';
 
 const CUSTOMER_SITE_URL = customerSiteOrigin();
 const BOOKING_BASE_URL = CUSTOMER_SITE_URL ? `${CUSTOMER_SITE_URL}/book` : '';
-// Supabase Edge Function (Firestore retired). Old Firebase CF URL still proxies here.
-const CHATBOT_WEBHOOK_URL =
-  'https://uecphpjymbgtttrizhgy.supabase.co/functions/v1/chatbot-webhook';
 
 const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
 
@@ -78,12 +64,6 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
   const [bookingSlug, setBookingSlug] = useState('');
   const [bookingSlugError, setBookingSlugError] = useState<string | null>(null);
   const [bookingInfoStatus, setBookingInfoStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
-  const [showApiModal, setShowApiModal] = useState(false);
-  const [apiIntegration, setApiIntegration] = useState<ApiIntegration | null>(null);
-  const [apiLoading, setApiLoading] = useState(false);
-  const [apiError, setApiError] = useState<string | null>(null);
-  const [apiRevealedKey, setApiRevealedKey] = useState<string | null>(null);
-  const [copyField, setCopyField] = useState<'outlet' | 'key' | 'webhook' | null>(null);
   const [activeSection, setActiveSection] = useState<SettingsSectionId>('business-profile');
 
   // Load outlet data using outletId
@@ -310,59 +290,6 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
     { id: 'finance-view', label: 'Expense & Profit Access', description: 'Limits access to financial charts and expense recording.' },
   ];
 
-  const handleOpenApiModal = async () => {
-    if (!effectiveOutletId) return;
-    setShowApiModal(true);
-    setApiLoading(true);
-    setApiError(null);
-    setApiRevealedKey(null);
-    try {
-      const data = await apiIntegrationService.get(effectiveOutletId);
-      setApiIntegration(data);
-    } catch (err) {
-      console.error('Failed to load API integration:', err);
-      setApiError(err instanceof Error ? err.message : 'Failed to load API integration');
-    } finally {
-      setApiLoading(false);
-    }
-  };
-
-  const handleGenerateOrRegenerateKey = async () => {
-    if (!effectiveOutletId) return;
-    setApiLoading(true);
-    setApiError(null);
-    setApiRevealedKey(null);
-    try {
-      const rawKey = generateApiKey();
-      const hash = await sha256Hex(rawKey);
-      const prefix = rawKey.slice(0, 12) + '...';
-      await apiIntegrationService.setApiKey(effectiveOutletId, hash, prefix, effectiveOutletId);
-      setApiRevealedKey(rawKey);
-      setApiIntegration((prev) => ({
-        ...(prev || { outletID: effectiveOutletId }),
-        outletID: effectiveOutletId,
-        apiKeyHash: hash,
-        keyPrefix: prefix,
-      }));
-    } catch (err) {
-      console.error('Failed to generate API key:', err);
-      setApiError(err instanceof Error ? err.message : 'Failed to generate API key');
-    } finally {
-      setApiLoading(false);
-    }
-  };
-
-  const handleCopyField = async (value: string, field: 'outlet' | 'key' | 'webhook') => {
-    if (!value) return;
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopyField(field);
-      setTimeout(() => setCopyField(null), 2000);
-    } catch {
-      setCopyField(null);
-    }
-  };
-
   const scrollToSection = (id: SettingsSectionId) => {
     setActiveSection(id);
     const el = document.getElementById(`settings-${id}`);
@@ -407,15 +334,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
 
   return (
     <div className="m-page-with-bottom-nav animate-fadeIn sm:pb-20">
-      <SettingsPageHeader
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" size="sm" onClick={handleOpenApiModal}>
-              API Integration
-            </Button>
-          </div>
-        }
-      />
+      <SettingsPageHeader />
 
       <div className="mt-4 lg:mt-6 flex gap-6 items-start">
         <SettingsNavigation activeId={activeSection} onSelect={scrollToSection} />
@@ -466,7 +385,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
             <div className="m-settings-field">
               <label htmlFor="settings-team-size" className="m-settings-label block">Team size</label>
               <select id="settings-team-size" className="m-settings-control" value={settings.teamSize || ''} onChange={(event) => onUpdateSettings({ ...settings, teamSize: event.target.value as OutletSettings['teamSize'] })}>
-                <option value="">Not set</option><option value="independent">Independent</option><option value="2-5">2–5 people</option><option value="6-10">6–10 people</option><option value="11-20">11–20 people</option><option value="20-plus">20+ people</option>
+                <option value="">Not set</option><option value="independent">Independent</option><option value="2-5">2â€“5 people</option><option value="6-10">6â€“10 people</option><option value="11-20">11â€“20 people</option><option value="20-plus">20+ people</option>
               </select>
             </div>
           </div>
@@ -546,7 +465,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                   </div>
                 </div>
                 <p className="m-settings-hint">
-                  Customers open this link to view services and book — no login required.
+                  Customers open this link to view services and book â€” no login required.
                 </p>
               </div>
               <div className="flex flex-col items-center gap-2 p-3 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] shrink-0 justify-self-start">
@@ -556,7 +475,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
             </div>
           </div>
         ) : (
-          <p className="text-[var(--text-muted)] text-sm">Loading your outlet link…</p>
+          <p className="text-[var(--text-muted)] text-sm">Loading your outlet linkâ€¦</p>
         )}
 
         {effectiveOutletId && (
@@ -608,11 +527,11 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       >
         {settings.businessHoursConfigured === false && (
           <div className="mb-3 rounded-ui-sm border border-[var(--warning)]/30 bg-[var(--warning-soft)] p-3 text-sm text-[var(--warning)]" role="status">
-            Operating hours are not configured yet. Set each day’s hours and availability, then save outlet details.
+            Operating hours are not configured yet. Set each dayâ€™s hours and availability, then save outlet details.
           </div>
         )}
         {!effectiveOutletId ? (
-          <p className="text-sm text-[var(--danger)] font-semibold">Outlet ID missing — cannot save hours.</p>
+          <p className="text-sm text-[var(--danger)] font-semibold">Outlet ID missing â€” cannot save hours.</p>
         ) : (contextLoading || outletLoading) ? (
           <div className="flex items-center justify-center py-6">
             <div className="w-8 h-8 border-4 border-[var(--brand)] border-t-transparent rounded-full animate-spin" />
@@ -962,31 +881,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         </SettingsSection>
       </div>
 
-      {/* 7. Integrations */}
-      <SettingsSection
-        id="settings-integrations"
-        iconWrap="bg-sky-50 text-sky-600"
-        title="Integrations"
-        description="Chatbot API access and Google reviews for this outlet."
-        icon={<Icons.Calendar />}
-      >
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
-          <GoogleReviewsCard outletId={effectiveOutletId} />
-          <button
-            type="button"
-            onClick={handleOpenApiModal}
-            className="flex items-start gap-3 p-4 rounded-xl border border-[var(--brand)]/30 bg-[var(--brand-soft)] hover:bg-[var(--bg-selection)] transition-colors text-left"
-          >
-            <svg className="w-5 h-5 text-[var(--brand)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
-            <div className="flex flex-col gap-1">
-              <p className="m-settings-value text-sm">Chatbot API Integration</p>
-              <p className="text-xs text-[var(--text-muted)] mt-0.5">Outlet ID, API key, and webhook URL</p>
-            </div>
-          </button>
-        </div>
-      </SettingsSection>
-
-      {/* 8. Advanced */}
+      {/* 7. Advanced */}
       <SettingsSection
         id="settings-advanced"
         iconWrap="bg-[var(--danger-soft)] text-[var(--danger)]"
@@ -1025,152 +920,6 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       </SettingsSection>
         </div>
       </div>
-
-      <AppModal
-        open={showApiModal}
-        onClose={() => setShowApiModal(false)}
-        title="Chatbot API Integration"
-        description="Use these details to connect MyChatBot (or other bots) to this outlet."
-        size="md"
-        mobileFullscreen
-        busy={apiLoading}
-        footer={
-          <ModalFooterActions>
-            <Button variant="secondary" onClick={() => setShowApiModal(false)}>
-              Close
-            </Button>
-            <Button onClick={handleGenerateOrRegenerateKey} disabled={apiLoading}>
-              {apiIntegration?.apiKeyHash
-                ? apiLoading
-                  ? 'Regenerating…'
-                  : 'Regenerate Key'
-                : apiLoading
-                  ? 'Generating…'
-                  : 'Generate API Key'}
-            </Button>
-          </ModalFooterActions>
-        }
-      >
-        {apiError && (
-          <div className="rounded-ui-md border border-[var(--danger-border)] bg-[var(--danger-soft)] px-3 py-2 text-xs text-[var(--danger)]">
-            {apiError}
-          </div>
-        )}
-
-        <FormSection>
-          <Field id="chatbot-outlet-id" label="Outlet ID">
-            <div className="flex gap-2">
-              <input
-                id="chatbot-outlet-id"
-                type="text"
-                readOnly
-                value={effectiveOutletId}
-                className={`${fieldControlClassName} flex-1 font-mono`}
-              />
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => handleCopyField(effectiveOutletId, 'outlet')}
-              >
-                {copyField === 'outlet' ? 'Copied' : 'Copy'}
-              </Button>
-            </div>
-          </Field>
-
-          <Field
-            id="chatbot-api-key"
-            label="API Access Key"
-            hint={
-              <>
-                Use this in the <code className="bg-[var(--bg-soft)] px-1 rounded">X-API-Key</code>{' '}
-                header. We never store the raw key, only its hash.
-              </>
-            }
-          >
-            <div className="flex flex-col gap-2">
-              <div className="flex gap-2">
-                <input
-                  id="chatbot-api-key"
-                  type="text"
-                  readOnly
-                  value={
-                    apiRevealedKey ||
-                    apiIntegration?.keyPrefix ||
-                    (apiLoading ? 'Loading…' : 'No key generated yet.')
-                  }
-                  className={`${fieldControlClassName} flex-1 font-mono`}
-                />
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => apiRevealedKey && handleCopyField(apiRevealedKey, 'key')}
-                  disabled={!apiRevealedKey}
-                >
-                  {copyField === 'key' ? 'Copied' : 'Copy'}
-                </Button>
-              </div>
-              {apiIntegration?.keyPrefix && !apiRevealedKey && (
-                <p className="text-xs text-[var(--text-muted)]">
-                  Current key prefix:{' '}
-                  <span className="font-mono">{apiIntegration.keyPrefix}</span>. The full key is
-                  only shown right after generation.
-                </p>
-              )}
-            </div>
-          </Field>
-
-          <Field
-            id="chatbot-webhook-url"
-            label="Webhook URL"
-            hint="MyChatBot can call this endpoint to verify the key and talk to your POS."
-          >
-            <div className="flex gap-2">
-              <input
-                id="chatbot-webhook-url"
-                type="text"
-                readOnly
-                value={CHATBOT_WEBHOOK_URL}
-                className={`${fieldControlClassName} flex-1 font-mono text-xs`}
-              />
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => handleCopyField(CHATBOT_WEBHOOK_URL, 'webhook')}
-              >
-                {copyField === 'webhook' ? 'Copied' : 'Copy'}
-              </Button>
-            </div>
-          </Field>
-        </FormSection>
-
-        <div className="m-settings-prose rounded-ui-md bg-[var(--bg-soft)] border border-[var(--line)] p-3 text-xs text-[var(--text-secondary)]">
-          <p className="font-semibold text-[var(--text-primary)]">Setup Guide (MyChatBot)</p>
-          <ul className="m-settings-list list-disc list-inside">
-            <li>
-              Paste the <span className="font-mono">Outlet ID</span> into the bot&apos;s outlet /
-              location field.
-            </li>
-            <li>
-              Paste the <span className="font-mono">API Access Key</span> into the bot&apos;s API
-              key field. This is used as the <span className="font-mono">X-API-Key</span> header.
-            </li>
-            <li>
-              Use the <span className="font-mono">Webhook URL</span> where MyChatBot should send
-              verification or booking requests.
-            </li>
-            <li>
-              For advanced options or to change the outbound webhook URL, open the full{' '}
-              <Link
-                to="/settings/api-integration"
-                className="text-[var(--brand)] underline"
-              >
-                API Integration Management
-              </Link>{' '}
-              page.
-            </li>
-          </ul>
-        </div>
-      </AppModal>
     </div>
   );
 };

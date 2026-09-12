@@ -43,7 +43,7 @@ export function validatedCustomerReturnPath(value: string | null | undefined): s
 const MERCHANT_ROUTE_PREFIXES = [
   "/dashboard", "/schedule", "/appointments", "/pos", "/member", "/menu",
   "/sales-reports", "/transactions", "/finance", "/staff", "/settings",
-  "/marketing", "/report", "/admin",
+  "/integrations", "/marketing", "/report", "/admin",
 ];
 
 /** Accept only local portal routes; customer booking and auth routes are never valid. */

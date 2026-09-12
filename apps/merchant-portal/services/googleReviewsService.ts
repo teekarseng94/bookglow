@@ -77,7 +77,7 @@ export async function getGoogleConnection(outletId: string): Promise<GoogleRevie
 
 export async function startGoogleAuthorization(outletId: string): Promise<string> {
   const data = await invoke<{ authorizationUrl: string }>(
-    { action: "oauth_start", outletId, returnTo: window.location.href },
+    { action: "oauth_start", outletId, returnTo: "/integrations/google-reviews" },
     "Google authorization could not be started.",
   );
   return data.authorizationUrl;

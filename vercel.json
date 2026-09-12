@@ -29,7 +29,7 @@
       "status": 404
     },
     {
-      "src": "/(?:auth/callback/merchant|login|dashboard|settings|staff|finance|schedule|pos|crm|marketing|services|reports|member-details(?:/.*)?|access(?:/.*)?)/?",
+      "src": "/(?:auth/callback/merchant|login|dashboard|settings|staff|finance|schedule|pos|crm|marketing|services|reports|integrations(?:/.*)?|member-details(?:/.*)?|access(?:/.*)?)/?",
       "dest": "/index.html"
     },
     {
@@ -47,7 +47,8 @@
       "VITE_AUTH_PROVIDER": "supabase",
       "VITE_CUSTOMER_SITE_URL": "https://bookglow.vercel.app",
       "VITE_CUSTOMER_AUTH_CALLBACK_URL": "https://bookglow.vercel.app/auth/callback/customer",
-      "VITE_MERCHANT_PORTAL_URL": "https://bookglow-merchant-kar-sengs-projects.vercel.app"
+      "VITE_MERCHANT_PORTAL_URL": "https://bookglow-merchant-kar-sengs-projects.vercel.app",
+      "VITE_MERCHANT_AUTH_CALLBACK_URL": "https://bookglow-merchant-kar-sengs-projects.vercel.app/auth/callback/merchant"
     }
   },
   "env": {
@@ -59,6 +60,7 @@
     "VITE_AUTH_PROVIDER": "supabase",
     "VITE_CUSTOMER_SITE_URL": "https://bookglow.vercel.app",
     "VITE_CUSTOMER_AUTH_CALLBACK_URL": "https://bookglow.vercel.app/auth/callback/customer",
-    "VITE_MERCHANT_PORTAL_URL": "https://bookglow-merchant-kar-sengs-projects.vercel.app"
+    "VITE_MERCHANT_PORTAL_URL": "https://bookglow-merchant-kar-sengs-projects.vercel.app",
+    "VITE_MERCHANT_AUTH_CALLBACK_URL": "https://bookglow-merchant-kar-sengs-projects.vercel.app/auth/callback/merchant"
   }
 }

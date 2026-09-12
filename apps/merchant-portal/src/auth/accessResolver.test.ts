@@ -16,6 +16,10 @@ describe('merchant access destination', () => {
     expect(merchantAccessDestination({ state: 'no_workspace', outletId: null, role: null, onboardingStatus: null, accessStatus: null })).toBe('/access/no-workspace');
     expect(merchantAccessDestination({ state: 'platform_admin', outletId: null, role: null, onboardingStatus: null, accessStatus: 'active' })).toBe('/admin/dashboard');
   });
+  it('accepts integrations as a permitted return path for owners', () => {
+    expect(merchantAccessDestination(active('owner'), '/integrations/google-reviews')).toBe('/integrations/google-reviews');
+    expect(merchantAccessDestination(active('cashier'), '/integrations')).toBe('/pos');
+  });
   it('accepts only permitted internal return paths', () => {
     expect(merchantAccessDestination(active('manager'), '/schedule?day=today')).toBe('/schedule?day=today');
     expect(merchantAccessDestination(active('cashier'), '/settings')).toBe('/pos');

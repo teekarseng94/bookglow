@@ -23,6 +23,9 @@ const Transactions = React.lazy(() => import('./pages/Transactions'));
 const Services = React.lazy(() => import('./pages/Services'));
 const StaffPage = React.lazy(() => import('./pages/Staff'));
 const Settings = React.lazy(() => import('./pages/Settings'));
+const Integrations = React.lazy(() => import('./pages/Integrations'));
+const GoogleReviewsIntegrationPage = React.lazy(() => import('./pages/GoogleReviewsIntegrationPage'));
+const ChatbotApiIntegrationPage = React.lazy(() => import('./pages/ChatbotApiIntegrationPage'));
 const AppointmentsCalendar = React.lazy(() => import('./pages/AppointmentsCalendar'));
 const SalesReports = React.lazy(() => import('./pages/SalesReports'));
 const Marketing = React.lazy(() => import('./pages/Marketing'));
@@ -234,10 +237,10 @@ const App: React.FC = () => {
 };
 
 // Tab IDs that are admin-only; cashiers are redirected to POS if they try to access these
-const ADMIN_ONLY_TABS = ['dashboard', 'transactions', 'finance', 'staff', 'settings', 'marketing', 'report'] as const;
+const ADMIN_ONLY_TABS = ['dashboard', 'transactions', 'finance', 'staff', 'integrations', 'settings', 'marketing', 'report'] as const;
 
 // Valid top-level path segments (sidebar links use these as absolute paths, e.g. /dashboard, /pos)
-const VALID_TAB_IDS = ['dashboard', 'pos', 'schedule', 'appointments', 'member', 'menu', 'sales-reports', 'transactions', 'finance', 'staff', 'settings', 'marketing', 'report'] as const;
+const VALID_TAB_IDS = ['dashboard', 'pos', 'schedule', 'appointments', 'member', 'menu', 'sales-reports', 'transactions', 'finance', 'staff', 'integrations', 'settings', 'marketing', 'report'] as const;
 
 // Separate component for app content to keep App.tsx clean
 interface AppContentProps {
@@ -660,6 +663,8 @@ const AppContent: React.FC<AppContentProps> = ({
         return <AppointmentsCalendar appointments={appointments} staff={staff} clients={clients} services={services} roleCommissions={roleCommissions} onAddAppointment={handleAddAppointment} onUpdateAppointmentStatus={handleUpdateAppointmentStatusWithPOS} onDeleteAppointment={handleDeleteAppointment} onStartPOSSale={handleStartPOSSale} onMarkReminderSent={handleMarkReminderSent} outletSettings={outletSettings} />;
       case 'finance':
         return <Finance transactions={transactions} onAddTransaction={handleAddTransaction} onDeleteTransaction={handleDeleteTransactionWithLock} expenseCategories={expenseCategories} onAddCategory={handleAddExpenseCategory} onDeleteCategory={handleDeleteExpenseCategory} isLocked={isFeatureLocked('finance-view')} isDeleteLocked={isFeatureLocked('delete-transaction')} />;
+      case 'integrations':
+        return <Integrations />;
       case 'settings':
         return <Settings settings={outletSettings} onUpdateSettings={handleUpdateOutletSettings} outletId={currentOutletID} />;
       case 'marketing':
@@ -704,6 +709,9 @@ const AppContent: React.FC<AppContentProps> = ({
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/appointments" element={<Navigate to="/schedule" replace />} />
+            <Route path="/integrations" element={<Integrations />} />
+            <Route path="/integrations/google-reviews" element={<GoogleReviewsIntegrationPage />} />
+            <Route path="/integrations/chatbot-api" element={<ChatbotApiIntegrationPage />} />
             <Route
               path="/member-details/:id"
               element={

@@ -184,9 +184,8 @@ async function describeGoogleError(response: Response): Promise<GoogleErrorShape
   if (response.status === 401) code = "unauthorized";
   else if (response.status === 403) code = "forbidden";
   else if (response.status === 429) code = "rate_limited";
-  if (code === "rate_limited") {
-    message =
-      "Google rejected the request for quota reasons. Confirm the Cloud project has approved Business Profile API access (quota above 0 requests/minute).";
+  if (code === "rate_limited" || code === "forbidden" || response.status >= 500) {
+    message = "Google Business Profile connection is currently unavailable. Please try again later.";
   }
   return { code, message, status: response.status };
 }
@@ -249,6 +248,7 @@ type ConnectionRow = {
   location_title: string | null;
   location_address: string | null;
   maps_uri: string | null;
+  google_place_id: string | null;
   refresh_token_encrypted: string | null;
   access_token_encrypted: string | null;
   access_token_expires_at: string | null;
@@ -775,6 +775,7 @@ Deno.serve(async (request) => {
             .filter((part) => typeof part === "string" && part.trim())
             .join(", "),
           maps_uri: typeof metadata?.mapsUri === "string" ? metadata.mapsUri : null,
+          show_on_booking_page: true,
           average_rating: null,
           total_review_count: null,
           last_error_code: null,
@@ -782,6 +783,13 @@ Deno.serve(async (request) => {
           last_error_at: null,
           updated_at: new Date().toISOString(),
         }).eq("outlet_id", outletId);
+
+        if (typeof metadata?.placeId === "string" && metadata.placeId) {
+          await admin
+            .from("google_business_connections")
+            .update({ google_place_id: metadata.placeId })
+            .eq("outlet_id", outletId);
+        }
 
         const refreshed = await loadConnection(admin, outletId);
         if (refreshed) {
@@ -868,7 +876,7 @@ async function handleCallback(request: Request, env: Env | null, missing: string
 
   const merchantAppUrl = Deno.env.get("MERCHANT_APP_URL") || "";
 
-  /** Sends the merchant back to Settings (HashRouter) with a one-off notice. */
+  /** Sends the merchant back to Google Reviews (HashRouter) with a one-off notice. */
   const redirect = (status: string, detail?: string) => {
     const query = new URLSearchParams({ google: status });
     if (detail) query.set("google_detail", detail.slice(0, 140));
@@ -876,15 +884,14 @@ async function handleCallback(request: Request, env: Env | null, missing: string
     let location: string | null = null;
     try {
       const target = new URL(merchantAppUrl);
-      target.hash = `/settings?${query.toString()}`;
+      target.hash = `/integrations/google-reviews?${query.toString()}`;
       location = target.toString();
     } catch {
       location = null;
     }
     if (!location) {
-      // Without MERCHANT_APP_URL we cannot redirect anywhere safe.
       return new Response(
-        "Google authorization finished, but MERCHANT_APP_URL is not configured. Return to BookGlow settings manually.",
+        "Google authorization finished, but MERCHANT_APP_URL is not configured. Return to BookGlow Integrations manually.",
         { status: 200, headers: { ...cors, "Content-Type": "text/plain" } },
       );
     }

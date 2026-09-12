@@ -1,7 +1,7 @@
 # Google Reviews integration (read-only)
 
 Merchants connect their outlet's Google Business Profile location in
-**Settings → Integrations → Google Reviews**. When enabled, the public booking
+**Integrations → Google Reviews**. When enabled, the public booking
 page shows Google's own rating, total review count and individual reviews with
 pagination.
 
@@ -231,16 +231,16 @@ unreachable from any browser.
 
 ## 5. Merchant experience
 
-Settings → Integrations → **Google Reviews** —
-*"Show your Google rating and customer reviews on your booking page."*
+Settings no longer hosts this integration. Use **Integrations → Google Reviews** —
+*"Show Google reviews on your Booking Page."*
 
 | State | Shown |
 | --- | --- |
-| Setup required | Which server keys are missing, pointing at this document |
-| Not connected | Optional Google Maps listing URL memo + **Connect Google Business Profile** |
-| Choose a location | List of managed locations with name and address, confirmation block, **Use this location** |
-| Connected | Business name and address, status, Google rating and total count, last refresh, authorizing account, **Show Google reviews on booking page** toggle, **Refresh** / **Change location** / **Disconnect** |
-| Reconnect required | **Reconnect Google** when authorization expires |
+| Setup required | Merchant-safe unavailable message; server logs name the missing keys |
+| Not connected | About / Instructions tabs and **Connect** |
+| Choose a location | Selector of managed Google Business Profiles; **Connect** stays disabled until one is chosen |
+| Connected | Business name and address, Google rating, review count, last synced, **Sync now** / **Disconnect** |
+| Reconnect required | **Reconnect** when authorization expires |
 
 Only roles with the `settings.manage` capability (owner/admin) see the controls;
 anyone else sees an explanatory line. The server enforces the same rule.
@@ -252,9 +252,9 @@ anyone else sees an explanatory line. The server enforces the same rule.
 In the existing **Reviews** tab (`#reviews`), so tab navigation, the Address
 section, the map and the appointment flow are unchanged:
 
-* Header **Google reviews** plus the sort control.
+* Header **Google Reviews** plus the sort control.
 * Summary: large rating, fractional stars, `N Google reviews`, the Google mark
-  with "Reviews from Google" and a link to the listing. Values come from Google's
+  with "Google Reviews" attribution and a link to the listing. Values come from Google's
   `averageRating` / `totalReviewCount`, not from the loaded cards.
 * Cards: reviewer name, avatar with initials fallback, stars, relative or
   absolute date, "From Google", review text, **Read more** past 280 characters,

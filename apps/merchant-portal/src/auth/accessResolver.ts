@@ -85,7 +85,7 @@ function returnPathAllowed(path: string, role: MerchantAccessContext["role"]): b
   if (path.startsWith("/schedule") || path.startsWith("/appointments")) return hasCapability(role, "schedule.view");
   if (path.startsWith("/member")) return hasCapability(role, "members.view");
   if (path.startsWith("/sales-reports") || path.startsWith("/report")) return hasCapability(role, "reports.view");
-  if (path.startsWith("/settings")) return hasCapability(role, "settings.view");
+  if (path.startsWith("/settings") || path.startsWith("/integrations")) return hasCapability(role, "settings.view");
   if (path.startsWith("/staff")) return hasCapability(role, "staff.view");
   return path === "/dashboard" ? hasCapability(role, "dashboard.view") : role !== "cashier";
 }

@@ -4,10 +4,14 @@ import ReactDOM from 'react-dom/client';
 import { HashRouter } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
 
-// Supabase redirects to a real path. Normalize only the merchant callback for
-// this HashRouter app; customer callbacks remain owned by customer-site.
-if (window.location.pathname === '/auth/callback/merchant' && !window.location.hash) {
-  window.history.replaceState(null, '', `/#/auth/callback/merchant${window.location.search}`);
+// Supabase redirects to a real path. HashRouter apps need the pathname copied
+// into the hash so Vercel SPA refreshes (including /integrations) land correctly.
+if (!window.location.hash) {
+  const path = window.location.pathname;
+  const isAsset = /\.(?:js|css|map|png|jpe?g|svg|ico|woff2?)$/i.test(path) || path.startsWith('/assets/');
+  if (path !== '/' && !isAsset) {
+    window.history.replaceState(null, '', `/#${path}${window.location.search}`);
+  }
 }
 
 // Lazy-load app (auth + Firebase + routes). Entry stays tiny so build does not OOM.

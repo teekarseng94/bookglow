@@ -1325,10 +1325,11 @@
 .booking-google__message--soft { font-size: .78rem; }
 .booking-google__message a { color: var(--brand); text-decoration: underline; }
 
-.booking-google__list { display: flex; flex-direction: column; gap: .75rem; margin: 0; padding: 0; list-style: none; min-width: 0; }
+.booking-google__list { display: flex; flex-direction: row; gap: .75rem; margin: 0; padding: 0 .15rem .5rem; list-style: none; min-width: 0; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
 
 .booking-google-review {
   display: flex; flex-direction: column; gap: .5rem; padding: .9rem; min-width: 0;
+  flex: 0 0 min(100%, 20.5rem); scroll-snap-align: start;
   border: 1px solid var(--line); border-radius: var(--radius-md); background: #fff;
 }
 .booking-google-review__head { display: flex; align-items: center; gap: .65rem; min-width: 0; }
@@ -1364,6 +1365,8 @@
 
 /* Use the available booking-page width instead of a narrow mobile-sized panel. */
 @media (min-width: 640px) {
+  .booking-google__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; scroll-snap-type: none; padding: 0; }
+  .booking-google-review { flex: none; }
   .booking-google__summary { flex-direction: row; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 1.15rem 1.35rem; }
   .booking-google__score { flex: 0 1 auto; align-items: baseline; }
   .booking-google__count { flex: 1 1 100%; }
@@ -1374,8 +1377,12 @@
   .booking-google { gap: 1.15rem; }
   .booking-google__title { font-size: 1.15rem; }
   .booking-google__score-value { font-size: 2.9rem; }
-  .booking-google__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .9rem; align-items: start; }
+  .booking-google__list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .9rem; align-items: start; }
   .booking-google-review { padding: 1.05rem; }
+}
+
+@media (min-width: 1280px) {
+  .booking-google__list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 /* Keep the last reviews and "Load more" clear of the sticky mobile Book dock. */

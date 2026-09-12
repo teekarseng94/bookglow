@@ -8,7 +8,6 @@ export type SettingsSectionId =
   | 'notifications'
   | 'receipt-payment'
   | 'access-permissions'
-  | 'integrations'
   | 'advanced';
 
 export const SETTINGS_NAV_ITEMS: { id: SettingsSectionId; label: string }[] = [
@@ -18,7 +17,6 @@ export const SETTINGS_NAV_ITEMS: { id: SettingsSectionId; label: string }[] = [
   { id: 'notifications', label: 'Notifications & reminders' },
   { id: 'receipt-payment', label: 'Receipt & payment' },
   { id: 'access-permissions', label: 'Access & permissions' },
-  { id: 'integrations', label: 'Integrations' },
   { id: 'advanced', label: 'Advanced settings' },
 ];
 

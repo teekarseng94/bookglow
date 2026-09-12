@@ -221,7 +221,7 @@ export function BookingGoogleReviews({ bookingSlug, fallback = null }: BookingGo
     return (
       <div className="booking-google">
         <div className="booking-google__header">
-          <h3 className="booking-google__title">Google reviews</h3>
+          <h3 className="booking-google__title">Google Reviews</h3>
           <span className="booking-google__brand">
             <GoogleMark className="booking-google__mark" />
             <span>Google</span>
@@ -246,11 +246,17 @@ export function BookingGoogleReviews({ bookingSlug, fallback = null }: BookingGo
   const ratingLabel = formatAggregateRating(page.averageRating);
   const countLabel = formatReviewCount(page.totalReviewCount);
   const sortOptions = GOOGLE_REVIEW_SORTS.filter((option) => page.supportedSorts.includes(option.id));
+  const hasPublicReviews =
+    (typeof page.totalReviewCount === "number" && page.totalReviewCount > 0) || reviews.length > 0;
+
+  if (!hasPublicReviews && !loading && !page.stale) {
+    return <>{fallback}</>;
+  }
 
   return (
     <div className="booking-google">
       <div className="booking-google__header">
-        <h3 className="booking-google__title">Google reviews</h3>
+        <h3 className="booking-google__title">Google Reviews</h3>
         {/* Only orders Google applies across the whole collection are offered. */}
         {sortOptions.length > 1 ? (
           <label className="booking-google__sort">
@@ -287,7 +293,7 @@ export function BookingGoogleReviews({ bookingSlug, fallback = null }: BookingGo
         <div className="booking-google__attribution">
           <span className="booking-google__brand">
             <GoogleMark className="booking-google__mark" />
-            <span>Reviews from Google</span>
+            <span>Google Reviews</span>
           </span>
           {page.mapsUri ? (
             <a href={page.mapsUri} target="_blank" rel="noopener noreferrer" className="booking-google__link">
@@ -319,7 +325,7 @@ export function BookingGoogleReviews({ bookingSlug, fallback = null }: BookingGo
 
       {cursor && !loading ? (
         <button type="button" className="booking-google__more" onClick={handleLoadMore} disabled={loadingMore}>
-          {loadingMore ? "Loading…" : "Load more reviews"}
+          {loadingMore ? "Loading…" : "Show more reviews"}
         </button>
       ) : null}
 

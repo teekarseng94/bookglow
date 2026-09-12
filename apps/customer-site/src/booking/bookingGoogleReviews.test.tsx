@@ -95,13 +95,14 @@ describe("BookingGoogleReviews", () => {
     render(<BookingGoogleReviews bookingSlug="spa" />);
     expect(await screen.findByText("4.8")).toBeTruthy();
     expect(screen.getByText("194 Google reviews")).toBeTruthy();
-    expect(screen.getByText("Google reviews")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Google Reviews" })).toBeTruthy();
   });
 
   it("includes Google attribution and a source link, and no write-a-review action", async () => {
     invoke.mockResolvedValue(readyPage());
     render(<BookingGoogleReviews bookingSlug="spa" />);
-    expect(await screen.findByText("Reviews from Google")).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Google Reviews" })).toBeTruthy();
+    expect(screen.getAllByText("Google Reviews").length).toBeGreaterThan(0);
     expect(screen.getByText("View on Google Maps").getAttribute("href")).toBe("https://maps.google.com/?cid=1");
     expect(screen.getByText("From Google")).toBeTruthy();
     expect(screen.queryByText(/write a review/i)).toBeNull();
@@ -155,9 +156,9 @@ describe("BookingGoogleReviews", () => {
       .mockResolvedValueOnce(readyPage({ reviews: [review({ id: "b" }), review({ id: "c" })], nextCursor: null }));
 
     render(<BookingGoogleReviews bookingSlug="spa" />);
-    fireEvent.click(await screen.findByText("Load more reviews"));
+    fireEvent.click(await screen.findByText("Show more reviews"));
 
-    await waitFor(() => expect(screen.queryByText("Load more reviews")).toBeNull());
+    await waitFor(() => expect(screen.queryByText("Show more reviews")).toBeNull());
     expect(invoke.mock.calls[1][1].body.cursor).toBe("c1");
     expect(screen.getAllByText("Nurul Aisyah")).toHaveLength(3);
   });
@@ -176,7 +177,14 @@ describe("BookingGoogleReviews", () => {
     invoke.mockResolvedValue({ data: { enabled: false, reason: "disabled" }, error: null });
     render(<BookingGoogleReviews bookingSlug="spa" fallback={<p>BookGlow reviews</p>} />);
     expect(await screen.findByText("BookGlow reviews")).toBeTruthy();
-    expect(screen.queryByText("Google reviews")).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Google Reviews" })).toBeNull();
+  });
+
+  it("hides the public Google section when the connected location has no reviews", async () => {
+    invoke.mockResolvedValue(readyPage({ averageRating: null, totalReviewCount: 0, reviews: [] }));
+    render(<BookingGoogleReviews bookingSlug="spa" fallback={<p>BookGlow reviews</p>} />);
+    expect(await screen.findByText("BookGlow reviews")).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Google Reviews" })).toBeNull();
   });
 
   it("shows a concise unavailable state instead of a false zero count", async () => {

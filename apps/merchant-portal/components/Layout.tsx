@@ -67,6 +67,7 @@ const pageTitles: Record<string, string> = {
   finance: 'Finance',
   marketing: 'Marketing',
   staff: 'Staff & Team',
+  integrations: 'Integrations',
   settings: 'Settings',
   report: 'Report',
 };
@@ -142,6 +143,7 @@ const TooltipNavLink: React.FC<{
         className={({ isActive: routeActive }) =>
           `bookglow-nav-link ${routeActive ? 'bookglow-nav-link--active' : ''}`
         }
+        end={item.id !== 'integrations'}
         title={collapsed ? item.label : undefined}
         aria-label={collapsed ? item.label : undefined}
         onMouseEnter={showTooltip}
@@ -321,6 +323,7 @@ const Layout: React.FC<LayoutProps> = ({
     { id: 'finance', label: 'Finance', icon: <Icons.Finance /> },
     { id: 'marketing', label: 'Marketing', icon: <Icons.Marketing /> },
     { id: 'staff', label: 'Staff & Team', icon: <Icons.Staff /> },
+    { id: 'integrations', label: 'Integrations', icon: <Icons.Integrations /> },
     { id: 'settings', label: 'Settings', icon: <Icons.Settings /> },
     { id: 'report', label: 'Report', icon: <Icons.Flag /> },
   ];
@@ -329,7 +332,7 @@ const Layout: React.FC<LayoutProps> = ({
     { label: 'Workday', ids: ['dashboard', 'schedule', 'pos'] },
     { label: 'Customers', ids: ['member', 'marketing'] },
     { label: 'Business', ids: ['menu', 'sales-reports', 'transactions', 'finance', 'staff'] },
-    { label: 'Workspace', ids: ['settings', 'report'] },
+    { label: 'Workspace', ids: ['integrations', 'settings', 'report'] },
   ];
 
   const navItems = allNavItems.filter((item) => isTabAllowed(role, item.id));
@@ -364,7 +367,11 @@ const Layout: React.FC<LayoutProps> = ({
 
   const currentPageTitle = location.pathname.startsWith('/member-details/')
     ? 'Member details'
-    : pageTitles[activeTab] || activeTab.replaceAll('-', ' ');
+    : location.pathname.startsWith('/integrations/google-reviews')
+      ? 'Google Reviews'
+      : location.pathname.startsWith('/integrations/chatbot-api')
+        ? 'Chatbot API'
+        : pageTitles[activeTab] || activeTab.replaceAll('-', ' ');
 
   const resolvedOutletName = outletName || shopName || outletId || 'Bookglow';
   const todayLabel = useMemo(
@@ -844,6 +851,7 @@ const Layout: React.FC<LayoutProps> = ({
                   <NavLink
                     key={item.id}
                     to={`/${item.id}`}
+                    end={item.id !== 'integrations'}
                     onClick={() => setIsMoreMenuOpen(false)}
                     className={({ isActive: routeActive }) =>
                       `bookglow-more-link ${routeActive ? 'bookglow-more-link--active' : ''}`

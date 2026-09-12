@@ -29,6 +29,7 @@ export const rolePermissions: Record<
       "transactions",
       "finance",
       "staff",
+      "integrations",
       "settings",
       "marketing",
       "report",

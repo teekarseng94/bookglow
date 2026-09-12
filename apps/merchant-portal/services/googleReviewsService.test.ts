@@ -50,7 +50,11 @@ describe('google reviews merchant service', () => {
   it('returns a Google authorization URL rather than performing the redirect itself', async () => {
     invoke.mockResolvedValue(ok({ authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth?state=abc' }));
     await expect(startGoogleAuthorization('outlet_002')).resolves.toContain('accounts.google.com');
-    expect(invoke.mock.calls[0][1].body.action).toBe('oauth_start');
+    expect(invoke.mock.calls[0][1].body).toEqual({
+      action: "oauth_start",
+      outletId: "outlet_002",
+      returnTo: "/integrations/google-reviews",
+    });
   });
 
   it('never carries a client secret or token in the request body', async () => {

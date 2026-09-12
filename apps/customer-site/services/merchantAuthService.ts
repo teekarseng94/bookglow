@@ -3,9 +3,22 @@ import { createBrowserSupabaseClient } from '@bookglow/supabase';
 const env = () => import.meta.env as unknown as Record<string, string | undefined>;
 const client = () => createBrowserSupabaseClient(env());
 export const isMerchantProviderEnabled = (provider: 'google' | 'facebook') =>
-  env()[`VITE_${provider.toUpperCase()}_AUTH_ENABLED`] === 'true';
+  (env()[`VITE_AUTH_${provider.toUpperCase()}_ENABLED`] ?? env()[`VITE_${provider.toUpperCase()}_AUTH_ENABLED`]) === 'true';
 
-export async function getMerchantSession() { return (await client().auth.getSession()).data.session; }
+export async function getMerchantSession() {
+  const { data, error } = await client().auth.getSession();
+  if (error) throw error;
+  return data.session;
+}
+
+export function merchantOAuthReturnError(): string {
+  const params = [new URLSearchParams(window.location.search), new URLSearchParams(window.location.hash.slice(1))];
+  const failure = params.find((value) => value.has('error') || value.has('error_description'));
+  if (!failure) return '';
+  return failure.get('error') === 'access_denied'
+    ? 'Google sign-up was cancelled or access was denied. Try again or continue with email.'
+    : 'Sign-up could not be completed. Please try again or continue with email.';
+}
 
 export async function registerMerchantWithEmail(email: string, password: string) {
   const normalized = email.trim().toLowerCase();

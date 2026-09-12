@@ -4,6 +4,7 @@ export { BookingSectionTabs } from "./BookingSectionTabs";
 export { BookingServiceCard } from "./BookingServiceCard";
 export { BookingStickyAction } from "./BookingStickyAction";
 export { BookingEmptyState } from "./BookingEmptyState";
+export { BookingGoogleReviews } from "./BookingGoogleReviews";
 export { ANY_AVAILABLE_STAFF, friendlyBookingError } from "./bookingMessages";
 export {
   filterPublicServices,

@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "installCommand": "npm ci --include=dev && npm --prefix apps/customer-site ci --include=dev",
+  "buildCommand": "npm run build:customer",
+  "outputDirectory": "dist-booking",
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/", "dest": "/index.html" },
+    { "src": "/signup/?", "dest": "/index.html" },
+    { "src": "/(?:auth/callback/customer|login|loginbackend|admin(?:/.*)?)/?", "dest": "/index.html" },
+    { "src": "/book/[^/]+(?:/auth)?/?", "dest": "/index.html" }
+  ]
+}

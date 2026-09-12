@@ -6,6 +6,8 @@ import PricingHero from './components/pricing/PricingHero';
 import { LANDING_PRICING_PLANS } from './components/pricing/pricingData';
 import { LandingNavbar, Hero, IndustryStrip, type LandingView } from './components/landing';
 
+import { BrandLogo } from './components/BrandLogo';
+
 type ViewType = LandingView;
 
 const VALUE_CARDS = [
@@ -120,21 +122,19 @@ const IntegrationsView: React.FC = () => {
   ];
 
   const IntegrationCard = ({
-    icon,
     title,
     description,
   }: {
-    icon: string;
     title: string;
     description: string;
   }) => (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-50 flex items-start gap-5 hover:shadow-md transition-all cursor-pointer">
+    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-50 flex items-start gap-5 hover:shadow-md transition-all">
       <div className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0 shadow-inner bg-slate-50">
-        <img src={icon} alt={title} className="w-8 h-8 object-contain" />
+        <BrandLogo name={title} />
       </div>
       <div>
         <h4 className="font-bold text-slate-900 mb-1">{title}</h4>
-        <p className="text-slate-500 text-xs leading-relaxed">{description}</p>
+        <p className="text-slate-500 text-xs leading-relaxed">{description}</p><p className="text-xs text-slate-500 mt-2">Availability subject to setup — not connected</p>
       </div>
     </div>
   );
@@ -143,13 +143,12 @@ const IntegrationsView: React.FC = () => {
     <div className="pt-24 pb-20 bg-[#f8fafc] min-h-screen">
       <section className="max-w-7xl mx-auto px-6 pt-16 pb-24 grid lg:grid-cols-2 gap-16 items-center">
         <div>
-          <h1 className="text-[52px] font-bold leading-tight mb-8 text-slate-900">Integrate your favorite apps</h1>
+          <h1 className="text-4xl sm:text-[52px] font-bold leading-tight mb-8 text-slate-900">Integrate your favorite apps</h1>
           <p className="text-slate-600 mb-6 leading-relaxed max-w-lg font-medium">
             Create connections that last by personalizing how you engage with your audience and vice versa.
           </p>
           <p className="text-slate-600 mb-10 leading-relaxed max-w-lg">
-            Using Bookglow&apos;s integrations, you can automate daily processes, book more appointments and offer top-tier
-            customer service.
+            Explore tools for your booking workflow. This catalog is a preview; listed tools are not connected to your account.
           </p>
           <a href="/signup">
             <Button size="lg" className="rounded-md px-10">
@@ -158,35 +157,25 @@ const IntegrationsView: React.FC = () => {
           </a>
         </div>
         <div className="relative h-[450px]">
-          <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 gap-6 opacity-80">
-            {[
-              'https://upload.wikimedia.org/wikipedia/commons/3/33/Square_Inc._logo.svg',
-              'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_Color_Icon.svg',
-              'https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg',
-              'https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg',
-              'https://upload.wikimedia.org/wikipedia/commons/d/df/Shopping_Cart_Icon.svg',
-              'https://upload.wikimedia.org/wikipedia/commons/b/b1/Wix.com_Logo.svg',
-              'https://upload.wikimedia.org/wikipedia/commons/c/c5/Shopify_logo2.svg',
-              'https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg',
-              'https://upload.wikimedia.org/wikipedia/commons/5/51/Facebook_f_logo_%282019%29.svg',
-            ].map((icon, i) => (
+          <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 gap-3 sm:gap-6">
+            {['Square', 'Google', 'Stripe', 'Facebook', 'Website booking', 'Wix', 'Shopify', 'WhatsApp', 'Instagram'].map((name, i) => (
               <div
                 key={i}
                 className="bg-white p-4 rounded-xl shadow-sm border border-slate-50 flex items-center justify-center"
                 style={{ animationDelay: `${i * 150}ms` }}
               >
-                <img src={icon} className="h-8 w-8 object-contain grayscale hover:grayscale-0 transition-all" alt="App" />
+                <BrandLogo name={name} />
               </div>
             ))}
           </div>
-          <div className="absolute bottom-4 right-4 w-[55%] z-10">
+          <div className="absolute bottom-4 right-4 w-[85%] sm:w-[55%] z-10">
             <ProductPreviewPanel
-              title="Connected tools"
-              subtitle="Integrations"
+              title="Explore integrations"
+              subtitle="Illustrative preview"
               rows={[
-                { label: 'Calendar sync', meta: 'On' },
-                { label: 'Online booking', meta: 'Live' },
-                { label: 'Payments', meta: 'Ready' },
+                { label: 'Calendar sync', meta: 'Preview' },
+                { label: 'Online booking', meta: 'Preview' },
+                { label: 'Payments', meta: 'Preview' },
               ]}
             />
           </div>
@@ -231,17 +220,14 @@ const IntegrationsView: React.FC = () => {
         </div>
         <div className="grid md:grid-cols-3 gap-8">
           <IntegrationCard
-            icon="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png"
             title="Facebook"
             description="Get booked directly from your Facebook business profile."
           />
           <IntegrationCard
-            icon="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png"
             title="Instagram"
             description="Encourage new bookings by streaming posts to your Booking Page."
           />
           <IntegrationCard
-            icon="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png"
             title="Instagram booking"
             description="Let customers book appointments from your Instagram profile and ads."
           />
@@ -259,22 +245,18 @@ const IntegrationsView: React.FC = () => {
         </div>
         <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-8">
           <IntegrationCard
-            icon="https://upload.wikimedia.org/wikipedia/commons/3/33/Square_Inc._logo.svg"
             title="Square"
             description="Get paid for your services with Square, Cash App and more."
           />
           <IntegrationCard
-            icon="https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg"
             title="Stripe"
             description="Collect debit or credit card payments on booking."
           />
           <IntegrationCard
-            icon="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg"
             title="PayPal"
             description="Let your customers pay online via their PayPal wallet."
           />
           <IntegrationCard
-            icon="https://upload.wikimedia.org/wikipedia/commons/4/4b/LawPay_Logo.svg"
             title="LawPay"
             description="Enable leads and clients to pay in advance through your Booking Page."
           />

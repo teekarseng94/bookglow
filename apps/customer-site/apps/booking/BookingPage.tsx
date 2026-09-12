@@ -21,6 +21,7 @@ import { createBrowserSupabaseClient } from "@bookglow/supabase";
 import {
   ANY_AVAILABLE_STAFF,
   BookingEmptyState,
+  BookingGoogleReviews,
   BookingMerchantHeader,
   BookingSectionTabs,
   BookingServiceCard,
@@ -1064,7 +1065,9 @@ export function BookingPage() {
             </a>
           </section>
 
-          {/* Reviews */}
+          {/* Reviews — Google reviews when the merchant has connected and enabled
+              them, otherwise the outlet's own BookGlow reviews. Ratings from the
+              two sources are never mixed. */}
           <section id="reviews" className="booking-section" aria-labelledby="tab-reviews">
             <div className="booking-section__header">
               <div>
@@ -1072,6 +1075,10 @@ export function BookingPage() {
                 <h2>Reviews</h2>
               </div>
             </div>
+            <BookingGoogleReviews
+              bookingSlug={pathSegment}
+              fallback={
+                <>
             {(outlet?.reviews?.length ?? 0) > 0 ? (
               <ul className="space-y-3 mb-4">
                 {(outlet?.reviews || []).map((r, i) => (
@@ -1166,6 +1173,9 @@ export function BookingPage() {
                 </div>
               </form>
             )}
+                </>
+              }
+            />
           </section>
 
           {/* Address + Map */}

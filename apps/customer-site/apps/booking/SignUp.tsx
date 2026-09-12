@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import './SignUp.css';
 import { Logo } from '../../constants';
 import MerchantOnboardingWizard from '../merchant-onboarding/MerchantOnboardingWizard';
 import {
-  getMerchantSession, isMerchantProviderEnabled, merchantAuthError,
+  getMerchantSession, isMerchantProviderEnabled, merchantAuthError, merchantOAuthReturnError,
   registerMerchantWithEmail, registerMerchantWithProvider, signInMerchantForOnboarding,
 } from '../../services/merchantAuthService';
 
@@ -18,15 +19,32 @@ export default function SignUp() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const connecting = useRef(false);
+  const [error, setError] = useState(merchantOAuthReturnError);
   const [confirmationRequired, setConfirmationRequired] = useState(false);
 
-  useEffect(() => { getMerchantSession().then((session) => setSessionEmail(session?.user.email || '')).finally(() => setChecking(false)); }, []);
+  useEffect(() => {
+    getMerchantSession().then((session) => setSessionEmail(session?.user.email || ''))
+      .catch((cause) => setError(merchantAuthError(cause))).finally(() => setChecking(false));
+    const restore = () => { connecting.current = false; setLoading(false); };
+    window.addEventListener('pageshow', restore);
+    return () => window.removeEventListener('pageshow', restore);
+  }, []);
+
+  const connectProvider = async (provider: 'google' | 'facebook') => {
+    if (connecting.current || loading) return;
+    connecting.current = true;
+    setLoading(true); setError('');
+    try { await registerMerchantWithProvider(provider); }
+    catch (cause) { setError(merchantAuthError(cause)); connecting.current = false; setLoading(false); }
+  };
   if (checking) return <div className="bookglow-state-screen"><div className="bookglow-state-card" role="status">Loading secure sign-up…</div></div>;
   if (sessionEmail) return <MerchantOnboardingWizard email={sessionEmail} />;
 
   const submit = async (event: React.FormEvent) => {
-    event.preventDefault(); setError('');
+    event.preventDefault();
+    if (loading || connecting.current) return;
+    setError('');
     if (!resumeMode && password.length < 8) { setError('Password must be at least 8 characters.'); return; }
     if (!resumeMode && password !== confirmPassword) { setError('Passwords do not match.'); return; }
     setLoading(true);
@@ -52,11 +70,11 @@ export default function SignUp() {
           <div className="bookglow-auth-card__heading"><span className="bookglow-auth-eyebrow">{resumeMode ? 'Resume your workspace' : 'Start your workspace'}</span><h2>{resumeMode ? 'Continue business setup' : 'Create your merchant account'}</h2><p>{resumeMode ? 'Sign in with your existing merchant account. Your saved onboarding progress will be restored.' : 'Choose a secure sign-up method, then tell us about your business.'}</p></div>
           {error && <div className="bookglow-auth-error" role="alert">{error}</div>}
           {confirmationRequired ? <div className="bookglow-auth-confirmation" role="status"><h3>Check your email</h3><p>We sent a confirmation link to <strong>{email.trim().toLowerCase()}</strong>. Confirm it, then return here to continue setup.</p><button type="button" className="bookglow-auth-secondary" onClick={() => window.location.reload()}>I’ve confirmed my email</button></div> : <>
-            {!resumeMode && <div className="bookglow-auth-socials bookglow-auth-socials--stacked">
-              {isMerchantProviderEnabled('google') && <button type="button" onClick={() => registerMerchantWithProvider('google').catch((cause) => setError(merchantAuthError(cause)))}><span className="bookglow-auth-social-mark">G</span>Continue with Google</button>}
-              {isMerchantProviderEnabled('facebook') && <button type="button" onClick={() => registerMerchantWithProvider('facebook').catch((cause) => setError(merchantAuthError(cause)))}><span className="bookglow-auth-social-mark bookglow-auth-social-mark--facebook">f</span>Continue with Facebook</button>}
-            </div>}
-            {!resumeMode && (isMerchantProviderEnabled('google') || isMerchantProviderEnabled('facebook')) && <div className="bookglow-auth-divider"><span>or use email</span></div>}
+            <div className="bookglow-auth-socials bookglow-auth-socials--stacked">
+              {isMerchantProviderEnabled('google') && <button type="button" disabled={loading} aria-busy={loading} onClick={() => connectProvider('google')}><img src="/brands/google.png" width="20" height="20" alt="" />{loading ? 'Connecting…' : 'Continue with Google'}</button>}
+              {isMerchantProviderEnabled('facebook') && <button type="button" disabled={loading} onClick={() => connectProvider('facebook')}><span className="bookglow-auth-social-mark bookglow-auth-social-mark--facebook">f</span>Continue with Facebook</button>}
+            </div>
+            {(isMerchantProviderEnabled('google') || isMerchantProviderEnabled('facebook')) && <div className="bookglow-auth-divider"><span>or</span></div>}
             {!emailMode ? <button type="button" onClick={() => setEmailMode(true)} className="bookglow-auth-secondary">Continue with email</button> : <form onSubmit={submit} className="bookglow-auth-form">
               <div className="bookglow-auth-field"><label htmlFor="signup-email">Email address</label><input id="signup-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" required /></div>
               <div className="bookglow-auth-field"><label htmlFor="signup-password">Password</label><input id="signup-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete={resumeMode ? 'current-password' : 'new-password'} minLength={resumeMode ? undefined : 8} required /></div>

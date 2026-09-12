@@ -1289,3 +1289,97 @@
   .merchant-onboarding__two-fields { grid-template-columns: 1fr; gap: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .merchant-onboarding__progress span, .merchant-onboarding__choices button { transition: none; } }
+
+/* ---------------------------------------------------------------------------
+   Google reviews on the public booking page.
+   Mobile first: summary and list stack, the list uses natural page scrolling
+   (no nested scroller), and every text node can wrap so long reviewer names or
+   comments never cause horizontal overflow at 320px.
+--------------------------------------------------------------------------- */
+.booking-google { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+
+.booking-google__header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem; min-width: 0; }
+.booking-google__title { margin: 0; color: var(--text-primary); font-size: 1.05rem; font-weight: 760; letter-spacing: -.02em; }
+
+.booking-google__sort select {
+  min-height: 2.5rem; padding: .35rem 2rem .35rem .7rem; border: 1px solid var(--line-strong, var(--line));
+  border-radius: .7rem; color: var(--text-secondary); background: #fff; font-size: .8rem; font-weight: 700;
+}
+.booking-google__sort select:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+.booking-google__summary {
+  display: flex; flex-direction: column; gap: .85rem; padding: 1rem; min-width: 0;
+  border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--bg-soft, #faf9fc);
+}
+.booking-google__score { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .7rem; min-width: 0; }
+.booking-google__score-value { color: var(--text-primary); font-size: 2.35rem; font-weight: 800; line-height: 1; letter-spacing: -.03em; }
+.booking-google__score-value--empty { color: var(--text-muted); }
+.booking-google__count { flex: 1 1 100%; color: var(--text-secondary); font-size: .82rem; font-weight: 600; }
+
+.booking-google__attribution { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .9rem; min-width: 0; }
+.booking-google__brand { display: inline-flex; align-items: center; gap: .4rem; color: var(--text-muted); font-size: .75rem; font-weight: 700; }
+.booking-google__mark { width: .95rem; height: .95rem; flex: 0 0 auto; }
+.booking-google__link { color: var(--brand); font-size: .75rem; font-weight: 700; text-decoration: underline; overflow-wrap: anywhere; }
+
+.booking-google__message { margin: 0; color: var(--text-muted); font-size: .84rem; line-height: 1.55; overflow-wrap: anywhere; }
+.booking-google__message--soft { font-size: .78rem; }
+.booking-google__message a { color: var(--brand); text-decoration: underline; }
+
+.booking-google__list { display: flex; flex-direction: column; gap: .75rem; margin: 0; padding: 0; list-style: none; min-width: 0; }
+
+.booking-google-review {
+  display: flex; flex-direction: column; gap: .5rem; padding: .9rem; min-width: 0;
+  border: 1px solid var(--line); border-radius: var(--radius-md); background: #fff;
+}
+.booking-google-review__head { display: flex; align-items: center; gap: .65rem; min-width: 0; }
+.booking-google-review__avatar { width: 2.35rem; height: 2.35rem; flex: 0 0 auto; border-radius: 50%; object-fit: cover; background: var(--bg-soft, #f2f0f7); }
+.booking-google-review__avatar--fallback { display: grid; place-items: center; color: var(--brand); background: var(--brand-soft); font-size: .8rem; font-weight: 800; }
+.booking-google-review__meta { min-width: 0; }
+.booking-google-review__author { margin: 0; color: var(--text-primary); font-size: .88rem; font-weight: 700; overflow-wrap: anywhere; }
+.booking-google-review__submeta { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; margin: .1rem 0 0; color: var(--text-muted); font-size: .72rem; font-weight: 600; }
+.booking-google-review__text { margin: 0; color: var(--text-secondary); font-size: .86rem; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.booking-google-review__actions { display: flex; flex-wrap: wrap; gap: .25rem .9rem; }
+.booking-google-review__actions button { color: var(--brand); background: none; border: 0; padding: 0; font-size: .78rem; font-weight: 700; text-decoration: underline; }
+.booking-google-review__note { margin: 0; color: var(--text-muted); font-size: .72rem; font-weight: 600; overflow-wrap: anywhere; }
+
+.booking-google-stars { display: inline-flex; gap: .05rem; line-height: 1; }
+.booking-google-star { position: relative; display: inline-block; color: var(--line-strong, #d9d5e4); font-size: .95rem; }
+.booking-google-stars--lg .booking-google-star { font-size: 1.2rem; }
+.booking-google-star__fill { position: absolute; inset: 0; overflow: hidden; color: #fbbc05; white-space: nowrap; }
+
+.booking-google__more {
+  align-self: flex-start; min-height: 2.75rem; padding: .6rem 1.15rem; border: 1px solid var(--line-strong, var(--line));
+  border-radius: .8rem; color: var(--text-secondary); background: #fff; font-size: .84rem; font-weight: 760;
+}
+.booking-google__more:disabled { opacity: .6; }
+
+.booking-google-skeleton { display: flex; flex-direction: column; gap: .65rem; }
+.booking-google-skeleton__summary { height: 5.5rem; border-radius: var(--radius-md); }
+.booking-google-skeleton__line { height: 3.75rem; border-radius: var(--radius-md); }
+.booking-google-skeleton__line--short { height: 3rem; }
+.booking-google-skeleton > * { background: linear-gradient(90deg, #f1eff6 25%, #e7e4ef 50%, #f1eff6 75%); background-size: 200% 100%; animation: bookingGoogleShimmer 1.4s ease-in-out infinite; }
+
+@keyframes bookingGoogleShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .booking-google-skeleton > * { animation: none; } }
+
+/* Use the available booking-page width instead of a narrow mobile-sized panel. */
+@media (min-width: 640px) {
+  .booking-google__summary { flex-direction: row; align-items: center; justify-content: space-between; gap: 1.5rem; padding: 1.15rem 1.35rem; }
+  .booking-google__score { flex: 0 1 auto; align-items: baseline; }
+  .booking-google__count { flex: 1 1 100%; }
+  .booking-google__attribution { flex-direction: column; align-items: flex-end; gap: .3rem; text-align: right; }
+}
+
+@media (min-width: 1024px) {
+  .booking-google { gap: 1.15rem; }
+  .booking-google__title { font-size: 1.15rem; }
+  .booking-google__score-value { font-size: 2.9rem; }
+  .booking-google__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .9rem; align-items: start; }
+  .booking-google-review { padding: 1.05rem; }
+}
+
+/* Keep the last reviews and "Load more" clear of the sticky mobile Book dock. */
+@media (max-width: 1023px) {
+  #reviews .booking-google { padding-bottom: .5rem; }
+}
+

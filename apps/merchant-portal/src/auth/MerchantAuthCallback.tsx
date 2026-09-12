@@ -12,6 +12,7 @@ export default function MerchantAuthCallback() {
 
   useEffect(() => { void (async () => {
     const params = new URLSearchParams(route.search);
+    const invitation = params.get("invitation");
     try {
       const oauthError = params.get("error") || params.get("error_code");
       if (oauthError) {
@@ -19,7 +20,7 @@ export default function MerchantAuthCallback() {
         window.location.replace(`/#/login?oauth_error=${cancelled ? "cancelled" : "callback"}`);
         return;
       }
-      if (sessionStorage.getItem(MERCHANT_AUTH_INTENT_KEY) !== "login") {
+      if (sessionStorage.getItem(MERCHANT_AUTH_INTENT_KEY) !== "login" && !invitation) {
         throw new Error("Missing merchant login intent");
       }
       const sb = createBrowserSupabaseClient(env());
@@ -30,8 +31,6 @@ export default function MerchantAuthCallback() {
       }
       const { data: session, error: sessionError } = await sb.auth.getSession();
       if (sessionError || !session.session) throw sessionError || new Error("No merchant session");
-
-      const invitation = params.get("invitation");
       if (invitation) {
         const { error: invitationError } = await sb.rpc("accept_outlet_invitation", { invitation_token: invitation });
         if (invitationError) throw invitationError;
@@ -42,7 +41,9 @@ export default function MerchantAuthCallback() {
     } catch (cause) {
       if (import.meta.env.DEV) console.error("Merchant callback failed", cause);
       sessionStorage.removeItem(MERCHANT_AUTH_INTENT_KEY);
-      setError("We couldn't finish signing you in with Google. Please return to login and try again.");
+      setError(invitation
+        ? "We couldn't accept this invitation. Sign in with the invited email or ask an admin to send a new invite."
+        : "We couldn't finish signing you in with Google. Please return to login and try again.");
     }
   })(); }, [route.search]);
 

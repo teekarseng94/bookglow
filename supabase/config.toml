@@ -59,5 +59,13 @@ verify_jwt = true
 [functions.account-admin]
 verify_jwt = true
 
+[functions.invite-outlet-member]
+verify_jwt = true
+
 [functions.marketing-dispatch]
 verify_jwt = true
+
+# Serves the Google OAuth browser redirect and anonymous booking-page review
+# reads alongside merchant actions, so JWT verification happens per action.
+[functions.google-business]
+verify_jwt = false

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   signUp: vi.fn(),
   signInWithPassword: vi.fn(),
+  signInWithOAuth: vi.fn(),
 }));
 
 vi.mock('@bookglow/supabase', () => ({
@@ -10,12 +11,14 @@ vi.mock('@bookglow/supabase', () => ({
     auth: {
       signUp: mocks.signUp,
       signInWithPassword: mocks.signInWithPassword,
+      signInWithOAuth: mocks.signInWithOAuth,
     },
   }),
 }));
 
 import {
   registerMerchantWithEmail,
+  registerMerchantWithProvider, isMerchantProviderEnabled, merchantOAuthReturnError,
   signInMerchantForOnboarding,
 } from '../../services/merchantAuthService';
 
@@ -23,6 +26,32 @@ describe('merchant email authentication', () => {
   beforeEach(() => {
     mocks.signUp.mockReset();
     mocks.signInWithPassword.mockReset();
+    vi.unstubAllEnvs();
+    mocks.signInWithOAuth.mockReset();
+    window.history.replaceState(null, '', '/signup');
+  });
+
+  it('uses the documented Google flag and returns OAuth to signup', async () => {
+    vi.stubEnv('VITE_AUTH_GOOGLE_ENABLED', 'true');
+    mocks.signInWithOAuth.mockResolvedValue({ error: null });
+    await registerMerchantWithProvider('google');
+    expect(mocks.signInWithOAuth).toHaveBeenCalledWith({ provider: 'google', options: { redirectTo: `${window.location.origin}/signup` } });
+  });
+
+  it('keeps legacy flags compatible but respects an explicit disabled canonical flag', () => {
+    vi.stubEnv('VITE_GOOGLE_AUTH_ENABLED', 'true');
+    expect(isMerchantProviderEnabled('google')).toBe(true);
+    vi.stubEnv('VITE_AUTH_GOOGLE_ENABLED', 'false');
+    expect(isMerchantProviderEnabled('google')).toBe(false);
+  });
+
+  it('surfaces provider failures and cancellation without exposing callback details', async () => {
+    vi.stubEnv('VITE_AUTH_GOOGLE_ENABLED', 'true');
+    mocks.signInWithOAuth.mockResolvedValue({ error: new Error('Provider unavailable') });
+    await expect(registerMerchantWithProvider('google')).rejects.toThrow('Provider unavailable');
+    window.history.replaceState(null, '', '/signup#error=access_denied&error_description=private');
+    expect(merchantOAuthReturnError()).toContain('cancelled');
+    expect(merchantOAuthReturnError()).not.toContain('private');
   });
 
   it('returns email confirmation to the customer-site signup route', async () => {

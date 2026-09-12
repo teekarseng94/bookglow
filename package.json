@@ -1,6 +1,7 @@
 {
   "name": "bookglow",
   "private": true,
+  "engines": { "node": "22.x" },
   "workspaces": [
     "packages/*"
   ],

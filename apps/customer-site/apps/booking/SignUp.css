@@ -1,0 +1,25 @@
+.bookglow-auth-page--merchant-signup .bookglow-auth-main {
+  min-height: auto;
+  padding: clamp(1.5rem, 4vw, 3.5rem) 0;
+  gap: clamp(1.5rem, 4vw, 4rem);
+}
+.bookglow-auth-page--merchant-signup .bookglow-auth-intro h1 {
+  font-family: inherit;
+  font-size: clamp(1.8rem, 3.5vw, 3.25rem);
+  font-weight: 750;
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+}
+.bookglow-auth-page--merchant-signup .bookglow-auth-secondary { width: 100%; }
+.bookglow-auth-page--merchant-signup button:focus-visible,
+.bookglow-auth-page--merchant-signup a:focus-visible { outline: 3px solid #7656d6; outline-offset: 3px; }
+.bookglow-auth-page--merchant-signup .bookglow-auth-header__login { display: inline-flex; }
+.bookglow-auth-page--merchant-signup .bookglow-auth-card { min-width: 0; }
+@media (max-width: 800px) {
+  .bookglow-auth-page--merchant-signup .bookglow-auth-main { grid-template-columns: minmax(0, 1fr); }
+  .bookglow-auth-page--merchant-signup .bookglow-auth-product-preview { display: none; }
+}
+@media (max-width: 375px) {
+  .bookglow-auth-page--merchant-signup .bookglow-auth-header { gap: .5rem; flex-wrap: wrap; padding: .75rem 0; }
+  .bookglow-auth-page--merchant-signup .bookglow-auth-card { padding: 1rem; }
+}

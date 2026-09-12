@@ -25,6 +25,7 @@ import {
   type SettingsSectionId,
 } from '../components/settings';
 import { TeamAccess } from '../components/settings/TeamAccess';
+import { GoogleReviewsCard } from '../components/settings/GoogleReviewsCard';
 
 const CUSTOMER_SITE_URL = (import.meta.env.VITE_CUSTOMER_SITE_URL || 'https://bookglow-83fb3.web.app').replace(/\/$/, '');
 const BOOKING_BASE_URL = `${CUSTOMER_SITE_URL}/book`;
@@ -964,10 +965,11 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         id="settings-integrations"
         iconWrap="bg-sky-50 text-sky-600"
         title="Integrations"
-        description="Chatbot API access for this outlet."
+        description="Chatbot API access and Google reviews for this outlet."
         icon={<Icons.Calendar />}
       >
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
+          <GoogleReviewsCard outletId={effectiveOutletId} />
           <button
             type="button"
             onClick={handleOpenApiModal}

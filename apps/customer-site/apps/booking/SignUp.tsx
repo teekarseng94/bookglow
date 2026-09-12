@@ -6,8 +6,9 @@ import {
   getMerchantSession, isMerchantProviderEnabled, merchantAuthError, merchantOAuthReturnError,
   registerMerchantWithEmail, registerMerchantWithProvider, signInMerchantForOnboarding,
 } from '../../services/merchantAuthService';
+import { customerPublicEnv } from '../../src/customerPublicEnv';
 
-const merchantPortalUrl = (import.meta.env as unknown as Record<string, string | undefined>).VITE_MERCHANT_PORTAL_URL || 'http://localhost:5173';
+const merchantPortalUrl = customerPublicEnv.VITE_MERCHANT_PORTAL_URL;
 
 const GoogleIcon = () => (
   <svg className="bookglow-auth-google-icon" viewBox="0 0 24 24" aria-hidden="true">

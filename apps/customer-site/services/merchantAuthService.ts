@@ -1,9 +1,12 @@
 import { createBrowserSupabaseClient } from '@bookglow/supabase';
+import { customerBrowserEnv, customerPublicEnv } from '../src/customerPublicEnv';
 
-const env = () => import.meta.env as unknown as Record<string, string | undefined>;
+const env = () => customerBrowserEnv();
 const client = () => createBrowserSupabaseClient(env());
 export const isMerchantProviderEnabled = (provider: 'google' | 'facebook') =>
-  (env()[`VITE_AUTH_${provider.toUpperCase()}_ENABLED`] ?? env()[`VITE_${provider.toUpperCase()}_AUTH_ENABLED`]) === 'true';
+  provider === 'google'
+    ? customerPublicEnv.VITE_AUTH_GOOGLE_ENABLED === 'true'
+    : customerPublicEnv.VITE_AUTH_FACEBOOK_ENABLED === 'true';
 
 export async function getMerchantSession() {
   const { data, error } = await client().auth.getSession();

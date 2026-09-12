@@ -6,6 +6,7 @@ import { createBrowserSupabaseClient } from "@bookglow/supabase";
 import { resolveAuthProvider } from "@bookglow/shared-types";
 import { upsertFrontendCustomerProfileFromSupabase } from "./supabasePublicBooking";
 import { CUSTOMER_RETURN_PATH_KEY, validatedCustomerReturnPath } from "@bookglow/auth-contracts";
+import { customerBrowserEnv, customerPublicEnv } from "../src/customerPublicEnv";
 
 type SignUpCredentials = {
   email: string;
@@ -15,7 +16,7 @@ type SignUpCredentials = {
 };
 
 function viteEnv(): Record<string, string | undefined> {
-  return import.meta.env as unknown as Record<string, string | undefined>;
+  return customerBrowserEnv();
 }
 
 export function customerAuthClient() {
@@ -25,7 +26,9 @@ export function customerAuthClient() {
 const client = customerAuthClient;
 
 export const isCustomerOAuthEnabled = (provider: "google" | "facebook") =>
-  viteEnv()[`VITE_AUTH_${provider.toUpperCase()}_ENABLED`] === "true";
+  provider === "google"
+    ? customerPublicEnv.VITE_AUTH_GOOGLE_ENABLED === "true"
+    : customerPublicEnv.VITE_AUTH_FACEBOOK_ENABLED === "true";
 
 function callbackUrl(): string {
   const configured = viteEnv().VITE_CUSTOMER_AUTH_CALLBACK_URL?.trim();

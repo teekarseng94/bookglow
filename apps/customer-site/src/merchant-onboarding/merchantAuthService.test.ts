@@ -38,8 +38,8 @@ describe('merchant email authentication', () => {
     expect(mocks.signInWithOAuth).toHaveBeenCalledWith({ provider: 'google', options: { redirectTo: `${window.location.origin}/signup` } });
   });
 
-  it('keeps legacy flags compatible but respects an explicit disabled canonical flag', () => {
-    vi.stubEnv('VITE_GOOGLE_AUTH_ENABLED', 'true');
+  it('defaults Google on and respects an explicit disabled flag', () => {
+    vi.unstubAllEnvs();
     expect(isMerchantProviderEnabled('google')).toBe(true);
     vi.stubEnv('VITE_AUTH_GOOGLE_ENABLED', 'false');
     expect(isMerchantProviderEnabled('google')).toBe(false);

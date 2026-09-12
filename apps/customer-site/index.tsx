@@ -6,11 +6,12 @@ import BookingAuth from './apps/booking/BookingAuth';
 import BookingPage from './apps/booking/BookingPage';
 import SignUp from './apps/booking/SignUp';
 import CustomerAuthCallback from './src/auth/CustomerAuthCallback';
+import { customerPublicEnv } from './src/customerPublicEnv';
 import './src/styles/global.css';
 
 const merchantPortalOrigin =
-  (import.meta.env.VITE_MERCHANT_PORTAL_URL as string | undefined)
-    ?.trim()
+  customerPublicEnv.VITE_MERCHANT_PORTAL_URL
+    .trim()
     .replace(/\/+$/, '');
 
 const MERCHANT_LOGIN_URL =

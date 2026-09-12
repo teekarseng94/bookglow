@@ -7,14 +7,15 @@ vi.mock('../../apps/merchant-onboarding/MerchantOnboardingWizard', () => ({ defa
 import SignUp from '../../apps/booking/SignUp';
 beforeEach(() => { vi.resetAllMocks(); auth.getMerchantSession.mockResolvedValue(null); window.history.replaceState(null, '', '/signup'); });
 afterEach(cleanup);
-it('locks Google submissions while redirecting and bundles the official logo', async () => {
+it('locks Google submissions while redirecting and shows the Google mark', async () => {
   auth.registerMerchantWithProvider.mockReturnValue(new Promise(() => {}));
   render(<SignUp />);
   const button = await screen.findByRole('button', { name: 'Continue with Google' });
-  expect(button.querySelector('img')?.getAttribute('src')).toBe('/brands/google.png');
+  expect(button.querySelector('svg')).toBeTruthy();
   fireEvent.click(button); fireEvent.click(button);
   expect(auth.registerMerchantWithProvider).toHaveBeenCalledTimes(1);
-  expect((screen.getByRole('button', { name: 'Connecting…' }) as HTMLButtonElement).disabled).toBe(true);
+  expect((screen.getByRole('button', { name: 'Continue with Google' }) as HTMLButtonElement).disabled).toBe(true);
+  expect(button).toHaveProperty('textContent', expect.stringContaining('Connecting to Google'));
 });
 it('shows failures and allows another attempt', async () => {
   auth.registerMerchantWithProvider.mockRejectedValue(new Error('Connection failed'));
@@ -31,8 +32,7 @@ it('restores authenticated users into existing onboarding', async () => {
 it('preserves email confirmation', async () => {
   auth.registerMerchantWithEmail.mockResolvedValue({ confirmationRequired: true });
   render(<SignUp />);
-  fireEvent.click(await screen.findByRole('button', { name: 'Continue with email' }));
-  fireEvent.change(screen.getByLabelText('Email address'), { target: { value: 'merchant@example.com' } });
+  fireEvent.change(await screen.findByLabelText('Email address'), { target: { value: 'merchant@example.com' } });
   fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'password123' } });
   fireEvent.change(screen.getByLabelText('Confirm password'), { target: { value: 'password123' } });
   fireEvent.click(screen.getByRole('button', { name: 'Create account' }));

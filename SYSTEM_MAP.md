@@ -131,8 +131,8 @@ Outcome:
 - Dashboard deploys cannot overwrite booking files.
 
 Suggested access URLs:
-- Booking: `https://bookglow-83fb3.web.app`
-- Dashboard: `https://bookglow-83fb3-dashboard.web.app/#/login`
+- Booking: `https://bookglow.vercel.app`
+- Dashboard: merchant Vercel `/login` (not Firebase Hosting)
 
 ### Alternate setup: one site with subdirectory rewrites (not preferred here)
 

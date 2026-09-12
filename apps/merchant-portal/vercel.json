@@ -1,0 +1,29 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "installCommand": "npm ci --include=dev --prefix ../.. && npm ci --include=dev",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "routes": [
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/assets/(.*)",
+      "status": 404
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "env": {
+    "VITE_SUPABASE_URL": "https://uecphpjymbgtttrizhgy.supabase.co",
+    "VITE_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_B6tTdRL9dDtvWZdZ18ScrA_9FnZ-T6b",
+    "VITE_AUTH_GOOGLE_ENABLED": "true",
+    "VITE_AUTH_FACEBOOK_ENABLED": "false",
+    "VITE_DATA_PROVIDER": "supabase",
+    "VITE_AUTH_PROVIDER": "supabase",
+    "VITE_CUSTOMER_SITE_URL": "https://bookglow.vercel.app"
+  }
+}

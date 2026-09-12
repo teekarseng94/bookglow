@@ -1,14 +1,50 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
-  "installCommand": "npm ci --include=dev && npm --prefix apps/customer-site ci --include=dev",
-  "buildCommand": "npm run build:customer",
-  "outputDirectory": "dist-booking",
+  "installCommand": "node scripts/vercel-frontend.mjs install",
+  "buildCommand": "node scripts/vercel-frontend.mjs build",
+  "outputDirectory": "dist-vercel",
   "routes": [
-    { "handle": "filesystem" },
-    { "src": "/", "dest": "/index.html" },
-    { "src": "/signup/?", "dest": "/index.html" },
-    { "src": "/(?:auth/callback/customer|login|loginbackend|admin(?:/.*)?)/?", "dest": "/index.html" },
-    { "src": "/book/[^/]+(?:/auth)?/?", "dest": "/index.html" }
-  ]
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/signup/?",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/(?:auth/callback/customer|login|loginbackend|admin(?:/.*)?)/?",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/book/[^/]+(?:/auth)?/?",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/assets/(.*)",
+      "status": 404
+    },
+    {
+      "src": "/(?:auth/callback/merchant|login|dashboard|settings|staff|finance|schedule|pos|crm|marketing|services|reports|member-details(?:/.*)?|access(?:/.*)?)/?",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "env": {
+    "VITE_SUPABASE_URL": "https://uecphpjymbgtttrizhgy.supabase.co",
+    "VITE_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_B6tTdRL9dDtvWZdZ18ScrA_9FnZ-T6b",
+    "VITE_AUTH_GOOGLE_ENABLED": "true",
+    "VITE_AUTH_FACEBOOK_ENABLED": "false",
+    "VITE_DATA_PROVIDER": "supabase",
+    "VITE_AUTH_PROVIDER": "supabase",
+    "VITE_CUSTOMER_SITE_URL": "https://bookglow.vercel.app",
+    "VITE_CUSTOMER_AUTH_CALLBACK_URL": "https://bookglow.vercel.app/auth/callback/customer"
+  }
 }

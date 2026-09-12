@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { CalendarHeart, Check, Copy } from 'lucide-react';
 import { outletService } from '../../services/databaseService';
+import { customerSiteOrigin } from '../../utils/customerSiteUrl';
 import { cx } from '../ui/cx';
 
 // Matches the booking URL Settings.tsx already builds from the same outlet doc — kept as a local
-// constant here rather than importing from Settings.tsx (a page module) to avoid a page-to-page dependency.
-const BOOKING_BASE_URL = 'https://bookglow-83fb3.web.app/book';
+// helper here rather than importing from Settings.tsx (a page module) to avoid a page-to-page dependency.
+const customerOrigin = customerSiteOrigin();
+const BOOKING_BASE_URL = customerOrigin ? `${customerOrigin}/book` : '';
 
 export interface BookingLinkCardProps {
   outletId?: string | null;
@@ -36,7 +38,7 @@ export const BookingLinkCard: React.FC<BookingLinkCardProps> = ({ outletId, clas
     };
   }, [outletId]);
 
-  const bookingUrl = outletId ? `${BOOKING_BASE_URL}/${bookingSlug || outletId}` : '';
+  const bookingUrl = outletId && BOOKING_BASE_URL ? `${BOOKING_BASE_URL}/${bookingSlug || outletId}` : '';
 
   const handleShare = async () => {
     if (!bookingUrl) return;

@@ -1,6 +1,6 @@
 # Phase C — Production Supabase cutover
 
-**Status:** Deployed — monitor 24–48h before Phase D  
+**Status:** Historical Firebase Hosting cutover. Production frontend hosting later moved to Vercel (`https://bookglow.vercel.app` + merchant Vercel project).
 **Date:** 2026-07-26  
 **Firebase project:** `bookglow-83fb3`  
 **Supabase project:** `bookglow` (`uecphpjymbgtttrizhgy`)

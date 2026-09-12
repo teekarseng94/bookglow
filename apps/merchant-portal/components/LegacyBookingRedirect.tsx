@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { customerSiteOrigin } from '../utils/customerSiteUrl';
 
-const CUSTOMER_BOOKING_ORIGIN = 'https://bookglow-83fb3.web.app';
+const CUSTOMER_BOOKING_ORIGIN = customerSiteOrigin();
 
 /**
  * Legacy merchant-host booking URL → customer-site booking.
@@ -12,7 +13,7 @@ const LegacyBookingRedirect: React.FC = () => {
 
   useEffect(() => {
     const segment = (id || '').trim();
-    if (!segment) return;
+    if (!segment || !CUSTOMER_BOOKING_ORIGIN) return;
     const query = typeof window !== 'undefined' ? window.location.search : '';
     const target = `${CUSTOMER_BOOKING_ORIGIN}/book/${encodeURIComponent(segment)}${query}`;
     window.location.replace(target);
@@ -25,7 +26,9 @@ const LegacyBookingRedirect: React.FC = () => {
       aria-live="polite"
     >
       <p className="text-sm font-medium text-[var(--text-secondary,#475569)]">
-        Redirecting to booking page…
+        {CUSTOMER_BOOKING_ORIGIN
+          ? 'Redirecting to booking page…'
+          : 'Booking origin is not configured. Set VITE_CUSTOMER_SITE_URL and rebuild the merchant portal.'}
       </p>
     </div>
   );

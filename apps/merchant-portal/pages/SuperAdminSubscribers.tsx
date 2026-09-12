@@ -10,6 +10,7 @@ import { auditService, AuditEvent } from '../services/auditService';
 import { Outlet } from '../types';
 import { PlatformPageHeader } from '../components/admin';
 import { Button, EmptyState, ErrorState, LoadingSkeleton } from '../components/ui';
+import { customerSiteOrigin } from '../utils/customerSiteUrl';
 
 interface PortalUser {
   uid: string;
@@ -804,7 +805,12 @@ const SuperAdminSubscribers: React.FC = () => {
                         type="button"
                         onClick={() => {
                           const slug = selectedOutlet.bookingSlug || selectedOutlet.outletID;
-                          navigator.clipboard.writeText(`https://bookglow-83fb3.web.app/book/${slug}`);
+                          const origin = customerSiteOrigin();
+                          if (!origin) {
+                            alert('Customer site URL is not configured (VITE_CUSTOMER_SITE_URL).');
+                            return;
+                          }
+                          navigator.clipboard.writeText(`${origin}/book/${slug}`);
                           alert('Booking link copied to clipboard!');
                         }}
                         className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors font-semibold shadow-sm"
@@ -812,7 +818,7 @@ const SuperAdminSubscribers: React.FC = () => {
                         Copy URL
                       </button>
                       <a
-                        href={`https://bookglow-83fb3.web.app/book/${selectedOutlet.bookingSlug || selectedOutlet.outletID}`}
+                        href={customerSiteOrigin() ? `${customerSiteOrigin()}/book/${selectedOutlet.bookingSlug || selectedOutlet.outletID}` : undefined}
                         target="_blank"
                         rel="noreferrer"
                         className="px-3 py-1.5 rounded-lg bg-violet-600 text-white font-semibold hover:bg-violet-700 transition-colors shadow-sm text-center"

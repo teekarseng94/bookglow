@@ -4,8 +4,8 @@ Canonical route reference for customer booking flow and merchant flow.
 
 ## Domains
 
-- Booking + marketing: `https://bookglow-83fb3.web.app`
-- Merchant dashboard: `https://bookglow-83fb3-dashboard.web.app`
+- Booking + marketing: `https://bookglow.vercel.app`
+- Merchant dashboard: Vercel project `bookglow-merchant` (not Firebase Hosting)
 
 ## 1) Booking Site (`zenspa Frontend/index.tsx`)
 

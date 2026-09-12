@@ -22,6 +22,8 @@
     "typecheck": "npm run typecheck:packages && npm --prefix apps/merchant-portal run typecheck && npm --prefix apps/customer-site run typecheck",
     "deploy": "deploy-all.bat",
     "deploy:hosting": "firebase deploy --only hosting",
+    "deploy:hosting:legacy": "firebase deploy --only hosting",
+    "deploy:functions": "npm --prefix apps/merchant-portal run deploy:functions",
     "supabase:status": "npx supabase --workdir migration status",
     "supabase:start": "npx supabase --workdir migration start",
     "supabase:stop": "npx supabase --workdir migration stop",

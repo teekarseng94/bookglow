@@ -8,7 +8,15 @@ import SignUp from './apps/booking/SignUp';
 import CustomerAuthCallback from './src/auth/CustomerAuthCallback';
 import './src/styles/global.css';
 
-const MERCHANT_LOGIN_URL = 'https://bookglow-83fb3-dashboard.web.app/login';
+const merchantPortalOrigin =
+  (import.meta.env.VITE_MERCHANT_PORTAL_URL as string | undefined)
+    ?.trim()
+    .replace(/\/+$/, '');
+
+const MERCHANT_LOGIN_URL =
+  merchantPortalOrigin
+    ? `${merchantPortalOrigin}/login`
+    : null;
 
 // Backward compatibility for legacy hash URLs.
 if (typeof window !== 'undefined' && window.location.hash) {
@@ -26,8 +34,21 @@ if (typeof window !== 'undefined' && window.location.hash) {
 
 const MerchantRedirect: React.FC = () => {
   useEffect(() => {
-    window.location.replace(MERCHANT_LOGIN_URL);
+    if (MERCHANT_LOGIN_URL) {
+      window.location.replace(MERCHANT_LOGIN_URL);
+    }
   }, []);
+
+  if (!MERCHANT_LOGIN_URL) {
+    return (
+      <div className="bookglow-state-screen">
+        <div className="bookglow-state-card" role="alert">
+          <p>Merchant login is not configured.</p>
+          <p>Set VITE_MERCHANT_PORTAL_URL to the merchant portal origin and rebuild the customer site.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bookglow-state-screen">

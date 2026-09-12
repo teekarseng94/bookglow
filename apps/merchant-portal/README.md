@@ -19,22 +19,21 @@ A comprehensive CRM, POS, and financial tracking system for service businesses w
 2. Set `GEMINI_API_KEY` in `.env.local` for AI insights (optional).
 3. Run locally: `npm run dev`
 4. Build: `npm run build`
-5. Deploy: `npm run deploy` (hosting) or `npm run deploy:all` (hosting + Firestore)
+5. Deploy frontend on Vercel (merchant project `bookglow-merchant`). Firebase Functions: `npm run deploy:functions`. Legacy Firebase Hosting only: `npm run deploy:hosting:legacy`.
 
 ---
 
 ## When do I need to deploy to Firebase?
 
+Production **frontend** hosting is Vercel. Firebase Hosting is legacy only.
+
 You do **not** need to redeploy for every code change. Deploy only what changed:
 
 | What changed | Deploy command | When |
 |--------------|----------------|------|
-| **App code** (React, TS, UI, logic) | `npm run build` then `firebase deploy --only hosting` or `npm run deploy` | So users get the new app in the browser. |
-| **Firestore security rules** (`firestore.rules`) | `firebase deploy --only firestore:rules` or `npm run deploy:rules` | After changing who can read/write which collections. |
-| **Firestore indexes** (`firestore.indexes.json`) | `firebase deploy --only firestore:indexes` or `npm run deploy:indexes` | After adding or changing composite indexes for queries. |
-| **New fields or collections in code** | No Firestore deploy needed | Firestore is schemaless; your app just reads/writes the new structure. Deploy **hosting** so users get the new code. |
-
-So: change app code → deploy **hosting**. Change rules or indexes → deploy **firestore** (rules or indexes). Adding new fields/collections in code only needs a **hosting** deploy, not a Firestore one.
+| **App code** (React, TS, UI, logic) | Deploy the merchant Vercel project (`bookglow-merchant`) | So users get the new app in the browser. |
+| **Cloud Functions** | `firebase deploy --only functions` or `npm run deploy:functions` | After changing Functions APIs. |
+| **Legacy Firebase Hosting** | `npm run deploy:hosting:legacy` | Only if a leftover Firebase Hosting site must be updated. Do not use this for production frontend. |
 
 ---
 
@@ -47,7 +46,7 @@ cd functions && npm install && cd ..
 firebase deploy --only functions
 ```
 
-Then deploy hosting as usual (`npm run build` then `firebase deploy --only hosting`). Full options (Cloud Functions vs CORS): **[STORAGE_CORS_SETUP.md](STORAGE_CORS_SETUP.md)**.
+Then deploy the merchant frontend on Vercel. Full options (Cloud Functions vs CORS): **[STORAGE_CORS_SETUP.md](STORAGE_CORS_SETUP.md)**.
 
 ---
 

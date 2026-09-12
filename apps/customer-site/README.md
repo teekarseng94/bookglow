@@ -15,14 +15,16 @@ Customer booking and marketing site for Bookglow.
 
 ## Deploy (Booking site)
 
-1. **One-time:** link the hosting target to your Firebase site:
-   ```bash
-   firebase target:apply hosting booking-site zenspabookingsystem
-   ```
-   (Use your actual Hosting site ID if different; default is usually the project ID.)
+Production customer hosting is Vercel: `https://bookglow.vercel.app`.
 
-2. Build and deploy:
-   ```bash
-   npm run build
-   firebase deploy --only hosting:booking-site
-   ```
+Firebase Hosting is legacy frontend only. Firebase Functions remain on Firebase:
+
+```bash
+npm run deploy:functions
+```
+
+Legacy Firebase Hosting (not production):
+
+```bash
+npm run deploy:hosting:legacy
+```

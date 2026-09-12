@@ -27,8 +27,10 @@ import {
 import { TeamAccess } from '../components/settings/TeamAccess';
 import { GoogleReviewsCard } from '../components/settings/GoogleReviewsCard';
 
-const CUSTOMER_SITE_URL = (import.meta.env.VITE_CUSTOMER_SITE_URL || 'https://bookglow-83fb3.web.app').replace(/\/$/, '');
-const BOOKING_BASE_URL = `${CUSTOMER_SITE_URL}/book`;
+import { customerSiteOrigin } from '../utils/customerSiteUrl';
+
+const CUSTOMER_SITE_URL = customerSiteOrigin();
+const BOOKING_BASE_URL = CUSTOMER_SITE_URL ? `${CUSTOMER_SITE_URL}/book` : '';
 // Supabase Edge Function (Firestore retired). Old Firebase CF URL still proxies here.
 const CHATBOT_WEBHOOK_URL =
   'https://uecphpjymbgtttrizhgy.supabase.co/functions/v1/chatbot-webhook';
@@ -232,7 +234,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
   };
 
   const bookingPathSegment = (bookingSlug || '').trim() || effectiveOutletId;
-  const bookingUrl = effectiveOutletId ? `${BOOKING_BASE_URL}/${bookingPathSegment}` : '';
+  const bookingUrl = effectiveOutletId && BOOKING_BASE_URL ? `${BOOKING_BASE_URL}/${bookingPathSegment}` : '';
 
   const handleCopyLink = async () => {
     if (!bookingUrl) return;

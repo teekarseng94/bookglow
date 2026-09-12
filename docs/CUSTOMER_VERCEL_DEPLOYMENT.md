@@ -4,7 +4,7 @@
 
 The root npm workspace list contains only `packages/*`. A root install does not install either app's dependencies. The default root build invokes the merchant build first, whose Vite configuration imports its app-local `@vitejs/plugin-react`. Running that build after only a root install explains the reported missing package. Installing the plugin at the root would mask the incomplete app install.
 
-The customer deployment now installs the root workspaces and the customer app from their existing lockfiles, explicitly including devDependencies. This makes the customer's `file:../../packages/*` links and their transitive dependencies available. Shared packages export TypeScript source directly; Vite compiles it, so there is no separate shared-package build. The combined build and merchant files are unchanged by this fix.
+The customer deployment now installs the root workspaces and the selected frontend app from their existing lockfiles, explicitly including devDependencies. Root `scripts/vercel-frontend.mjs` builds the customer site unless `VERCEL_PROJECT_NAME` is `bookglow-merchant` (or `BOOKGLOW_VERCEL_APP=merchant`). Shared packages export TypeScript source directly; Vite compiles it, so there is no separate shared-package build.
 
 ## Exact Vercel settings
 
@@ -14,19 +14,19 @@ Apply to the customer Vercel project, using the repository-root `vercel.json`:
 | --- | --- |
 | Root Directory | `.` (repository root; leave the dashboard field empty) |
 | Framework Preset | Vite |
-| Install Command | `npm ci --include=dev && npm --prefix apps/customer-site ci --include=dev` |
-| Build Command | `npm run build:customer` |
-| Output Directory | `dist-booking` |
+| Install Command | `node scripts/vercel-frontend.mjs install` (customer project installs `apps/customer-site`; merchant project `bookglow-merchant` installs `apps/merchant-portal`) |
+| Build Command | `node scripts/vercel-frontend.mjs build` |
+| Output Directory | `dist-vercel` |
 | Node.js version | 22.x |
 | Include source files outside Root Directory | Not needed; both apps and shared packages are inside the repository root |
 
 Remove conflicting dashboard command overrides. Root `engines.node` and `.nvmrc` select Node 22. Verification used 22.18.0, compatible with the locked Vite/plugin/React Router versions. The Node 24/superstatic warning is separate from the missing-plugin failure. Dependencies were not upgraded.
 
-Filesystem routing runs first. The root, signup, booking, booking auth, existing customer auth callback and merchant redirect routes serve `index.html`. Real JS/CSS/images retain their content types; missing assets return 404 instead of HTML. Configuration reference: https://vercel.com/docs/project-configuration
+Filesystem routing runs first. Customer routes (`/`, `/signup`, `/login`, `/loginbackend`, `/admin/*`, `/book/:bookingPath`, `/book/:bookingPath/auth`, `/auth/callback/customer`) serve `index.html`. Additional SPA fallbacks cover merchant routes when this file is used by `bookglow-merchant`. Real JS/CSS/images retain their content types; missing `/assets/*` paths return 404 instead of HTML. Configuration reference: https://vercel.com/docs/project-configuration
 
 ## Vercel environment values
 
-Set these for Production, and for any Preview environment explicitly authorized for OAuth. Redeploy after changing build-time variables.
+Root `vercel.json` now ships the customer build-time public env block (`VITE_SUPABASE_URL`, publishable key, `VITE_AUTH_GOOGLE_ENABLED=true`, providers, customer site URL, and customer callback). Set `VITE_MERCHANT_PORTAL_URL` to the merchant Vercel origin after that project exists, then redeploy the customer app. Dashboard env values still win when set for the same key.
 
 | Variable | Value |
 | --- | --- |
@@ -35,8 +35,9 @@ Set these for Production, and for any Preview environment explicitly authorized 
 | `VITE_SUPABASE_ANON_KEY` | Optional legacy alternative only if no publishable key is supplied |
 | `VITE_AUTH_GOOGLE_ENABLED` | `true` after completing provider setup below |
 | `VITE_AUTH_FACEBOOK_ENABLED` | `false` unless Facebook is separately configured |
-| `VITE_MERCHANT_PORTAL_URL` | `https://bookglow-83fb3-dashboard.web.app` (current configured merchant origin) |
-| `VITE_CUSTOMER_AUTH_CALLBACK_URL` | `https://<customer-production-domain>/auth/callback/customer` for existing customer booking OAuth |
+| `VITE_MERCHANT_PORTAL_URL` | Merchant Vercel production origin, with no trailing slash (for example `https://bookglow-merchant.vercel.app`). Never a Firebase Hosting `web.app` URL. |
+| `VITE_CUSTOMER_SITE_URL` | `https://bookglow.vercel.app` for merchant booking-link generation |
+| `VITE_CUSTOMER_AUTH_CALLBACK_URL` | `https://bookglow.vercel.app/auth/callback/customer` for existing customer booking OAuth |
 | `VITE_DATA_PROVIDER` | `supabase` |
 | `VITE_AUTH_PROVIDER` | `supabase` |
 
@@ -48,15 +49,15 @@ Merchant Google and email confirmation always return to `${window.location.origi
 
 ## Required dashboard setup
 
-The public Auth settings endpoint was checked on 2026-09-12: **Google is disabled; email is enabled**. The connected Supabase account exposes a different project, so this project's provider settings could not be edited. No Vercel project/domain binding or authenticated Vercel deployment credentials are configured in this checkout.
+The public Auth settings endpoint was rechecked on 2026-09-12: **Google is still disabled; email is enabled**. Enabling Google requires Google Cloud credentials in the Bookglow Supabase dashboard (project `uecphpjymbgtttrizhgy`).
 
 1. In Google Cloud / Google Auth Platform, configure consent branding/audience, with `openid`, email and profile scopes. Add test users if the app remains in testing.
-2. Create a Web application OAuth client. Add the exact production customer origin under authorized JavaScript origins.
+2. Create a Web application OAuth client. Add `https://bookglow.vercel.app` (and local origins you use) under authorized JavaScript origins.
 3. Register `https://uecphpjymbgtttrizhgy.supabase.co/auth/v1/callback` as the Google authorized redirect URI. If Supabase uses a custom auth domain, copy the exact callback shown in its Google provider page instead.
 4. In this Supabase project's Authentication → Sign In / Providers → Google, enter the Google client ID and client secret and enable Google. Do not put either secret into Vercel frontend variables.
-5. In Authentication → URL Configuration, set Site URL to the exact customer production origin. Allow `https://<customer-production-domain>/signup` and the existing booking callback `https://<customer-production-domain>/auth/callback/customer`. Preserve any existing merchant callback allowlist entries.
+5. In Authentication → URL Configuration, set Site URL to `https://bookglow.vercel.app`. Allow `https://bookglow.vercel.app/signup` and `https://bookglow.vercel.app/auth/callback/customer`. Preserve any existing merchant callback allowlist entries.
 6. Retain development redirects `http://localhost:3000/signup`, `http://localhost:5174/signup`, and `http://localhost:5174/auth/callback/customer`; add other exact localhost callback origins only when used. Avoid broadly allowing untrusted preview domains.
-7. Set the Vercel variables above, redeploy, then complete a real Google consent flow. Verify `/signup` restores the session, new merchants enter onboarding, drafts resume, and returning workspace members reach merchant login. Test cancellation, refresh, email confirmation and resume setup with dedicated test accounts.
+7. Redeploy the customer app so `vercel.json` env and the signup Google button ship together. Complete a real Google consent flow. Verify `/signup` restores the session, new merchants enter onboarding, drafts resume, and returning workspace members reach merchant login. Test cancellation, refresh, email confirmation and resume setup with dedicated test accounts.
 
 Official setup and flow reference: https://supabase.com/docs/guides/auth/social-login/auth-google
 

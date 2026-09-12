@@ -15,10 +15,14 @@ Facebook is optional and follows the same rule: leave `VITE_AUTH_FACEBOOK_ENABLE
 
 In Authentication → URL Configuration:
 
-- Set the Site URL to the intended primary production origin.
-- Add `https://bookglow-83fb3.web.app/auth/callback/customer`.
+- Set the Site URL to `https://bookglow.vercel.app` (or your preferred primary production origin).
+- Add `https://bookglow.vercel.app/signup`.
+- Add `https://bookglow.vercel.app/auth/callback/customer`.
+- Add `https://<merchant-vercel-domain>/auth/callback/merchant` for the merchant Vercel production origin.
+- Keep `https://bookglow-83fb3.web.app/auth/callback/customer` only if that legacy Firebase host is still receiving traffic.
+- Keep `https://bookglow-83fb3-dashboard.web.app/auth/callback/merchant` only if that legacy Firebase host is still receiving traffic.
 - Add `http://localhost:5174/auth/callback/customer`.
-- Add `https://bookglow-83fb3-dashboard.web.app/auth/callback/merchant`.
+- Add `http://localhost:5174/signup` and `http://localhost:3000/signup`.
 - Add `http://localhost:5173/auth/callback/merchant`.
 
 Set application variables per environment:

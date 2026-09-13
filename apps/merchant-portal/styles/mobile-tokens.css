@@ -105,7 +105,8 @@
   --mobile-card-padding: var(--mobile-space-4);
   --mobile-sheet-content-padding: var(--mobile-page-padding-compact);
   --mobile-sticky-footer-height: 68px;
-  --mobile-safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --mobile-safe-area-top: var(--safe-top, env(safe-area-inset-top, 0px));
+  --mobile-safe-area-bottom: var(--safe-bottom, env(safe-area-inset-bottom, 0px));
 
   /* Settings content rhythm. These roles are intentionally opt-in. */
   --settings-section-content-gap: var(--mobile-space-6);
@@ -485,12 +486,20 @@ textarea.m-settings-control {
   }
 
   .bookglow-mobile-header {
+    height: calc(68px + var(--mobile-safe-area-top));
+  }
+
+  .bookglow-mobile-safe-area-top {
+    padding-top: var(--mobile-safe-area-top);
+  }
+
+  .bookglow-mobile-header__inner {
     height: 68px;
-    padding: 8px 16px;
+    padding: 8px max(16px, var(--safe-right)) 8px max(16px, var(--safe-left));
   }
 
   .bookglow-main-scroll {
-    padding-top: 68px;
+    padding-top: calc(68px + var(--mobile-safe-area-top));
   }
 
   .bookglow-mobile-header__title {
@@ -505,7 +514,7 @@ textarea.m-settings-control {
   }
 
   .bookglow-main-scroll {
-    padding-bottom: calc(var(--mobile-bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 8px);
+    padding-bottom: calc(var(--mobile-bottom-nav-height) + var(--mobile-safe-area-bottom) + 8px);
   }
 
   /* ——— Bottom navigation ——— */

@@ -32,6 +32,34 @@ const Login: React.FC = () => {
     if (returnPath) sessionStorage.setItem(MERCHANT_RETURN_PATH_KEY, returnPath);
   }, [location.search]);
 
+  useEffect(() => {
+    // Capacitor Browser / Custom Tab return: clear stuck "Connecting to Google…" without a full reload.
+    const restore = () => setGoogleLoading(false);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') restore();
+    };
+    window.addEventListener('pageshow', restore);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.removeEventListener('pageshow', restore);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, []);
+
+  // Cap Browser / Custom Tab can return without navigation; clear stuck Google loading.
+  useEffect(() => {
+    const restore = () => setGoogleLoading(false);
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') restore();
+    };
+    window.addEventListener('pageshow', restore);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('pageshow', restore);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, []);
+
   if (location.pathname.startsWith('/book/')) {
     return <div className="bookglow-login bookglow-login--loading"><div className="bookglow-login__loader" aria-hidden="true" /><p>Loading booking…</p></div>;
   }

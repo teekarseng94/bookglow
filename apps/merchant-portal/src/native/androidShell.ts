@@ -25,6 +25,12 @@ export function merchantPublicOrigin(): string {
   return 'https://bookglow-merchant-kar-sengs-projects.vercel.app';
 }
 
+/**
+ * OAuth redirectTo for Supabase.
+ * Native Android must use the custom scheme (allowlisted in Supabase Redirect URLs).
+ * If the scheme is missing from the allowlist, Supabase falls back to Site URL
+ * (bookglow.vercel.app marketing homepage) — that is the Android Google-login bug.
+ */
 export function merchantOAuthRedirectUrl(): string {
   if (isNativeApp()) return NATIVE_MERCHANT_OAUTH_REDIRECT;
   return viteEnv().VITE_MERCHANT_AUTH_CALLBACK_URL || `${window.location.origin}/auth/callback/merchant`;
@@ -57,8 +63,11 @@ function nativeCallbackHash(url: string): string | null {
   if (!url.startsWith(`${NATIVE_APP_ID}:`)) return null;
   try {
     const parsed = new URL(url);
-    const path = `/${parsed.host}${parsed.pathname}`.replace(/\/{2,}/g, '/').replace(/\/$/, '');
-    return `/#${path}${parsed.search}`;
+    // com.bookglow.merchant://auth/callback/merchant?code=… → host=auth, path=/callback/merchant
+    const path = `/${parsed.host}${parsed.pathname}`.replace(/\/{2,}/g, '/').replace(/\/$/, '') || '/auth/callback/merchant';
+    const search = parsed.search || '';
+    if (!path.includes('/auth/callback/merchant')) return null;
+    return `/#${path}${search}`;
   } catch {
     return null;
   }
@@ -74,6 +83,7 @@ export async function initAndroidShell(): Promise<void> {
   ]);
 
   try {
+    await StatusBar.setOverlaysWebView({ overlay: false });
     await StatusBar.setBackgroundColor({ color: '#ffffff' });
     await StatusBar.setStyle({ style: Style.Light });
   } catch {

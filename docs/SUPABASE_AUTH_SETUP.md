@@ -15,15 +15,31 @@ Facebook is optional and follows the same rule: leave `VITE_AUTH_FACEBOOK_ENABLE
 
 In Authentication → URL Configuration:
 
-- Set the Site URL to `https://bookglow.vercel.app` (or your preferred primary production origin).
+- Set the Site URL to `https://bookglow.vercel.app` (customer marketing / signup origin).
+- **Required for Android merchant Google login:** add the native deep link exactly:
+  `com.bookglow.merchant://auth/callback/merchant`
+  If this URI is missing, Supabase falls back to Site URL and Cap Browser opens the
+  public marketing homepage after Google auth.
+- Add merchant HTTPS callback:
+  `https://bookglow-merchant-kar-sengs-projects.vercel.app/auth/callback/merchant`
+  (or your current merchant Vercel origin + `/auth/callback/merchant`).
 - Add `https://bookglow.vercel.app/signup`.
 - Add `https://bookglow.vercel.app/auth/callback/customer`.
-- Add `https://<merchant-vercel-domain>/auth/callback/merchant` for the merchant Vercel production origin.
 - Keep `https://bookglow-83fb3.web.app/auth/callback/customer` only if that legacy Firebase host is still receiving traffic.
 - Keep `https://bookglow-83fb3-dashboard.web.app/auth/callback/merchant` only if that legacy Firebase host is still receiving traffic.
 - Add `http://localhost:5174/auth/callback/customer`.
 - Add `http://localhost:5174/signup` and `http://localhost:3000/signup`.
 - Add `http://localhost:5173/auth/callback/merchant`.
+
+### Android merchant Google login (Capacitor)
+
+1. App starts OAuth with `redirectTo=com.bookglow.merchant://auth/callback/merchant` and opens Capacitor Browser.
+2. After Google consent, Supabase must redirect to that native scheme (allowlisted above).
+3. `appUrlOpen` converts it to `/#/auth/callback/merchant?code=…`.
+4. `MerchantAuthCallback` exchanges the code, runs `resolveMerchantAccess`:
+   - existing merchant → dashboard/POS
+   - no workspace → `/access/no-workspace` → existing “Create your business” → customer `/signup` (`create_merchant_workspace`)
+5. Do **not** treat marketing `/` as a merchant post-login destination.
 
 Set application variables per environment:
 

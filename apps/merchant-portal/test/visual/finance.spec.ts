@@ -29,6 +29,41 @@ test('Finance remains usable across supported responsive sizes', async ({ page }
   }
 });
 
+test('shared mobile shell consumes top and bottom safe-area insets', async ({ page }) => {
+  const topInset = 28;
+  const bottomInset = 24;
+
+  for (const width of [320, 360, 375, 390, 412, 430]) {
+    await page.setViewportSize({ width, height: 844 });
+    await openFinance(page);
+    await page.evaluate(({ top, bottom }) => {
+      document.documentElement.style.setProperty('--safe-top', `${top}px`);
+      document.documentElement.style.setProperty('--safe-bottom', `${bottom}px`);
+    }, { top: topInset, bottom: bottomInset });
+
+    const geometry = await page.evaluate(() => {
+      const header = document.querySelector<HTMLElement>('.bookglow-mobile-header');
+      const headerInner = document.querySelector<HTMLElement>('.bookglow-mobile-header__inner');
+      const main = document.querySelector<HTMLElement>('.bookglow-main-scroll');
+      const navInner = document.querySelector<HTMLElement>('.bookglow-mobile-nav__inner');
+      if (!header || !headerInner || !main || !navInner) throw new Error('Mobile shell is incomplete');
+      return {
+        header: header.getBoundingClientRect().toJSON(),
+        headerInner: headerInner.getBoundingClientRect().toJSON(),
+        mainPaddingTop: Number.parseFloat(getComputedStyle(main).paddingTop),
+        navInnerBottom: navInner.getBoundingClientRect().bottom,
+        viewportHeight: window.innerHeight,
+      };
+    });
+
+    expect(geometry.headerInner.top).toBeGreaterThanOrEqual(topInset);
+    expect(geometry.header.height).toBe(geometry.headerInner.height + topInset);
+    expect(geometry.mainPaddingTop).toBe(geometry.header.height);
+    expect(geometry.navInnerBottom).toBeLessThanOrEqual(geometry.viewportHeight - bottomInset);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  }
+});
+
 test('captures Finance mobile top, ledger, and details', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await openFinance(page);

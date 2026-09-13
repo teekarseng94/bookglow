@@ -28,7 +28,7 @@ export const ScheduleDateStrip: React.FC<ScheduleDateStripProps> = ({
 }) => (
   <div
     className={cx(
-      'md:hidden sticky top-0 z-30 bg-[var(--bg-surface)] border-b border-[var(--line)]',
+      'bookglow-mobile-safe-area-top md:hidden sticky top-0 z-30 bg-[var(--bg-surface)] border-b border-[var(--line)]',
       className,
     )}
   >

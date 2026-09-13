@@ -658,46 +658,48 @@ const Layout: React.FC<LayoutProps> = ({
       {/* ── Main workspace ─────────────────────────────────── */}
       <div className="bookglow-workspace">
         {/* Mobile header */}
-        <header className={`${isScheduleRoute ? 'hidden' : 'flex'} bookglow-mobile-header lg:hidden`}>
-          {moreNavItems.length > 0 ? (
-            <button
-              type="button"
-              data-more-menu-trigger
-              onClick={() => setIsMoreMenuOpen((open) => !open)}
-              className="bookglow-icon-button"
-              aria-label="Open navigation"
-              aria-expanded={isMoreMenuOpen}
-            >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-          ) : (
-            <div className="h-11 w-11" aria-hidden />
-          )}
+        <header className={`${isScheduleRoute ? 'hidden' : 'flex'} bookglow-mobile-header bookglow-mobile-safe-area-top lg:hidden`}>
+          <div className="bookglow-mobile-header__inner">
+            {moreNavItems.length > 0 ? (
+              <button
+                type="button"
+                data-more-menu-trigger
+                onClick={() => setIsMoreMenuOpen((open) => !open)}
+                className="bookglow-icon-button"
+                aria-label="Open navigation"
+                aria-expanded={isMoreMenuOpen}
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            ) : (
+              <div className="h-11 w-11" aria-hidden />
+            )}
 
-          <div className="min-w-0 flex-1 text-center">
-            <p className="truncate m-shell-meta font-medium">{resolvedOutletName}</p>
-            <h1 className="bookglow-mobile-header__title truncate font-semibold text-[var(--text-primary)]">
-              {currentPageTitle}
-              {activeTab === 'member' && typeof memberCount === 'number' ? (
-                <span className="bookglow-mobile-header__count"> · {memberCount.toLocaleString()} members</span>
-              ) : null}
-            </h1>
-          </div>
+            <div className="min-w-0 flex-1 text-center">
+              <p className="truncate m-shell-meta font-medium">{resolvedOutletName}</p>
+              <h1 className="bookglow-mobile-header__title truncate font-semibold text-[var(--text-primary)]">
+                {currentPageTitle}
+                {activeTab === 'member' && typeof memberCount === 'number' ? (
+                  <span className="bookglow-mobile-header__count"> · {memberCount.toLocaleString()} members</span>
+                ) : null}
+              </h1>
+            </div>
 
-          <div className="relative" ref={mobileProfileMenuRef}>
-            <button
-              type="button"
-              onClick={() => setShowMobileProfileMenu((open) => !open)}
-              className="bookglow-mobile-avatar"
-              aria-label="Open user menu"
-              aria-expanded={showMobileProfileMenu}
-              aria-haspopup="menu"
-            >
-              {getUserInitials()}
-            </button>
-            {showMobileProfileMenu && <MobileProfileMenu />}
+            <div className="relative" ref={mobileProfileMenuRef}>
+              <button
+                type="button"
+                onClick={() => setShowMobileProfileMenu((open) => !open)}
+                className="bookglow-mobile-avatar"
+                aria-label="Open user menu"
+                aria-expanded={showMobileProfileMenu}
+                aria-haspopup="menu"
+              >
+                {getUserInitials()}
+              </button>
+              {showMobileProfileMenu && <MobileProfileMenu />}
+            </div>
           </div>
         </header>
 

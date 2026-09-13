@@ -7,6 +7,7 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: false,
     webContentsDebuggingEnabled: false,
+    adjustMarginsForEdgeToEdge: 'auto',
   },
   server: {
     androidScheme: 'https',
@@ -22,6 +23,7 @@ const config: CapacitorConfig = {
     StatusBar: {
       style: 'LIGHT',
       backgroundColor: '#ffffff',
+      overlaysWebView: false,
     },
   },
 };

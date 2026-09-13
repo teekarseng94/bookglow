@@ -49,8 +49,7 @@ export default function MerchantAuthCallback() {
       }
       const access = await resolveMerchantAccess();
       sessionStorage.removeItem(MERCHANT_AUTH_INTENT_KEY);
-      // Existing merchants → dashboard/POS. New Google users with no outlet → /access/no-workspace
-      // (existing CTA opens customer /signup provisioning). Never send to marketing /.
+      // Existing merchants → dashboard/POS. New Google users with no outlet → /onboarding.
       window.location.replace(merchantBrowserDestination(merchantAccessDestination(access)));
     } catch (cause) {
       if (import.meta.env.DEV) console.error("Merchant callback failed", cause);

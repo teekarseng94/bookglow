@@ -65,13 +65,13 @@ function legacyRole(value: unknown): MerchantAccessContext["role"] {
 
 export function merchantAccessDestination(access: MerchantAccessContext, requestedPath?: string | null): string {
   if (access.state === "platform_admin") return "/admin/dashboard";
-  if (access.state === "active") {
+  if (access.state === "active" || (access.state === "onboarding" && access.outletId)) {
     const saved = validatedMerchantReturnPath(requestedPath ?? sessionStorage.getItem(MERCHANT_RETURN_PATH_KEY));
     sessionStorage.removeItem(MERCHANT_RETURN_PATH_KEY);
     if (saved && returnPathAllowed(saved, access.role)) return saved;
     return access.role === "cashier" ? "/pos" : "/dashboard";
   }
-  if (access.state === "onboarding") return "/onboarding";
+  if (access.state === "onboarding" || access.state === "no_workspace") return "/onboarding";
   if (access.state === "membership_suspended") return "/access/account-suspended";
   if (access.state === "outlet_suspended") return "/access/workspace-suspended";
   return "/access/no-workspace";

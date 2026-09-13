@@ -435,7 +435,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
               { value: 'Discount' as RecentTab, label: 'Discount' },
             ]}
             value={recentTab}
-            onChange={setRecentTab}
+            onChange={(value) => setRecentTab(value as RecentTab)}
           />
         }
       >
@@ -531,7 +531,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
               { value: 'All' as SalesTimeFilter, label: 'All' },
             ]}
             value={salesFilter}
-            onChange={setSalesFilter}
+            onChange={(value) => setSalesFilter(value as SalesTimeFilter)}
           />
         }
         footer={
@@ -653,7 +653,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
               { value: 'No Show' as AppointmentsFilter, label: 'No Show' },
             ]}
             value={appointmentsFilter}
-            onChange={setAppointmentsFilter}
+            onChange={(value) => setAppointmentsFilter(value as AppointmentsFilter)}
           />
         }
       >

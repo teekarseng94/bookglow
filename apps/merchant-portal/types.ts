@@ -296,6 +296,8 @@ export interface Outlet {
   createdAt?: string;
   updatedAt?: string;
   isActive?: boolean;
+  /** Merchant portal access; independent from public booking publication. */
+  accessStatus?: 'active' | 'suspended' | string;
   settings?: OutletSettings;
   /** Service/menu categories (e.g. Massage, Facial). Persisted per outlet. */
   serviceCategories?: string[];

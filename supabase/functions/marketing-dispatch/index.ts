@@ -337,6 +337,12 @@ Deno.serve(async (request) => {
   if (!platformAdmin && campaign.outlet_id !== portalUser.outlet_id) {
     return json(403, { error: "Campaign belongs to another outlet" });
   }
+  const { data: allowed, error: permissionError } = await admin.rpc("can_manage_outlet_integrations", {
+    p_outlet_id: campaign.outlet_id,
+    p_user_id: authData.user.id,
+  });
+  if (permissionError) return json(500, { error: "Could not verify outlet permissions" });
+  if (allowed !== true) return json(403, { error: "Outlet or account access is disabled" });
 
   try {
     const queued = await queueCampaign(admin, campaign as CampaignRow);

@@ -42,23 +42,12 @@ Deno.serve(async (request) => {
     if (!outletId) return json({ error: "Choose a workspace first." }, 400);
 
     const admin = createClient(url, service, { auth: { persistSession: false } });
-    const { data: caller } = await admin
-      .from("outlet_members")
-      .select("role,status")
-      .eq("outlet_id", outletId)
-      .eq("user_id", auth.user.id)
-      .maybeSingle();
-    const { data: callerProfile } = await admin
-      .from("users")
-      .select("role,outlet_id")
-      .eq("uid", auth.user.id)
-      .maybeSingle();
-    const membershipAllows =
-      caller?.status === "active" && ["owner", "admin"].includes(String(caller.role));
-    const profileAllows =
-      callerProfile?.outlet_id === outletId &&
-      ["admin", "platform_admin"].includes(String(callerProfile.role || "").toLowerCase());
-    if (!membershipAllows && !profileAllows) {
+    const { data: allowed, error: permissionError } = await admin.rpc("can_manage_outlet_integrations", {
+      p_outlet_id: outletId,
+      p_user_id: auth.user.id,
+    });
+    if (permissionError) return json({ error: "Could not verify outlet permissions." }, 500);
+    if (allowed !== true) {
       return json({ error: "Only an outlet admin can manage team invitations." }, 403);
     }
 

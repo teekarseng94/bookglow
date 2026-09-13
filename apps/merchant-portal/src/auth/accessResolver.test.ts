@@ -10,10 +10,11 @@ describe('merchant access destination', () => {
   });
   it('routes an active cashier to POS', () => expect(merchantAccessDestination(active('cashier'))).toBe('/pos'));
   it('routes access states deterministically', () => {
-    expect(merchantAccessDestination({ ...active('owner'), state: 'onboarding' })).toBe('/onboarding');
+    expect(merchantAccessDestination({ ...active('owner'), state: 'onboarding' })).toBe('/dashboard');
     expect(merchantAccessDestination({ ...active('owner'), state: 'membership_suspended' })).toBe('/access/account-suspended');
     expect(merchantAccessDestination({ ...active('owner'), state: 'outlet_suspended' })).toBe('/access/workspace-suspended');
-    expect(merchantAccessDestination({ state: 'no_workspace', outletId: null, role: null, onboardingStatus: null, accessStatus: null })).toBe('/access/no-workspace');
+    expect(merchantAccessDestination({ state: 'no_workspace', outletId: null, role: null, onboardingStatus: null, accessStatus: null })).toBe('/onboarding');
+    expect(merchantAccessDestination({ ...active('owner'), state: 'onboarding', outletId: null })).toBe('/onboarding');
     expect(merchantAccessDestination({ state: 'platform_admin', outletId: null, role: null, onboardingStatus: null, accessStatus: 'active' })).toBe('/admin/dashboard');
   });
   it('accepts integrations as a permitted return path for owners', () => {

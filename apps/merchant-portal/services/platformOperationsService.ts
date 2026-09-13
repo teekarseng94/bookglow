@@ -8,7 +8,29 @@ export interface PlatformSubscription {
   status: string;
   cancelAtPeriodEnd: boolean;
   currentPeriodEnd: string | null;
+  unitAmount: number | null;
+  currency: string | null;
+  recurringInterval: string | null;
+  intervalCount: number | null;
+  quantity: number | null;
+  discountPercent: number | null;
+  mrrReliable: boolean;
 }
+
+export interface BillingReadiness {
+  state: 'subscription_data_unavailable' | 'provider_not_configured' | 'configured_unverified' | 'readiness_verified' | 'billing_service_error';
+  provider: 'stripe';
+  subscriptionDataAvailable: boolean;
+  subscriptionCount?: number;
+  priceVerified?: boolean;
+  webhook: 'verified' | 'secret_present_endpoint_unverified' | 'not_configured' | 'unverified';
+  checkoutReady: boolean;
+  portalReady: boolean;
+  checkedAt?: string;
+  detail?: string;
+}
+
+export interface RemoteAccessContext { outletId: string; outletName: string; accessStatus: string; }
 
 export interface PlatformMonitoringEvent {
   id: string;
@@ -34,7 +56,34 @@ export const platformOperationsService = {
       status: row.status,
       cancelAtPeriodEnd: Boolean(row.cancel_at_period_end),
       currentPeriodEnd: row.current_period_end,
+      unitAmount: row.unit_amount == null ? null : Number(row.unit_amount),
+      currency: row.currency || null,
+      recurringInterval: row.recurring_interval || null,
+      intervalCount: row.interval_count == null ? null : Number(row.interval_count),
+      quantity: row.quantity == null ? null : Number(row.quantity),
+      discountPercent: row.discount_percent == null ? null : Number(row.discount_percent),
+      mrrReliable: row.mrr_reliable === true,
     }));
+  },
+
+  getBillingReadiness: async (): Promise<BillingReadiness> => {
+    const { data, error } = await client().functions.invoke('billing-admin', { body: { action: 'readiness' } });
+    if (error) throw new Error((data as any)?.error || error.message);
+    return data as BillingReadiness;
+  },
+
+  setOutletAccess: async (outletId: string, enabled: boolean, reason: string) => {
+    const { data, error } = await (client() as any).rpc('platform_set_outlet_access', {
+      p_outlet_id: outletId, p_enabled: enabled, p_reason: reason,
+    });
+    if (error) throw error;
+    return data;
+  },
+
+  remoteAccess: async (outletId: string, action: 'enter' | 'exit' | 'validate'): Promise<RemoteAccessContext> => {
+    const { data, error } = await (client() as any).rpc('platform_remote_access', { p_outlet_id: outletId, p_action: action });
+    if (error) throw error;
+    return { outletId: data.outlet_id, outletName: data.outlet_name || data.outlet_id, accessStatus: data.access_status };
   },
 
   createCheckout: async (outletId: string, priceId?: string): Promise<string> => {

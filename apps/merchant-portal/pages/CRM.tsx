@@ -10,6 +10,7 @@ import {
   MemberRow,
   MemberToolbar,
 } from '../components/members';
+import { memberListStatusLabel } from '../components/members/memberListStatus';
 import {
   AppModal,
   Button,
@@ -26,6 +27,10 @@ type SortFilter = 'Recent' | 'New' | 'Birthday' | 'Name';
 
 interface CRMProps {
   clients: Client[];
+  clientTotalCount: number;
+  clientsHasMore?: boolean;
+  clientsLoadingMore?: boolean;
+  onLoadMoreClients?: () => Promise<void>;
   onAddClient: (
     client: Omit<Client, 'id' | 'points' | 'outletID'> & { points?: number; outletID?: string }
   ) => Promise<void | string | undefined>;
@@ -80,6 +85,7 @@ const MEMBER_FORM_SETTINGS_STORAGE_KEY = 'zenflow_memberFormSettings';
 
 const CRM: React.FC<CRMProps> = ({
   clients,
+  clientTotalCount,
   onAddClient,
   onUpdateClient,
   onUndoImport,
@@ -169,39 +175,31 @@ const CRM: React.FC<CRMProps> = ({
     }
   }, [memberFormSettings]);
 
-  // Server search when the user types; otherwise show the first page from props.
-  const [searchResults, setSearchResults] = useState<Client[] | null>(null);
+  // Authoritative server page. Search and sort always apply to the complete outlet dataset.
+  const [serverRows, setServerRows] = useState<Client[]>(clients);
+  const [matchingTotal, setMatchingTotal] = useState(clientTotalCount);
+  const [memberPage, setMemberPage] = useState(1);
+  const [memberPageLoading, setMemberPageLoading] = useState(false);
+  const [memberPageError, setMemberPageError] = useState<string | null>(null);
+  const memberPageSize = 50;
   const searchSeq = useRef(0);
   useEffect(() => {
-    const q = search.trim();
-    if (q.length < 1) {
-      setSearchResults(null);
-      return;
-    }
     const outletID = getCurrentOutletID();
     if (!outletID) return;
     const seq = ++searchSeq.current;
     const timer = window.setTimeout(() => {
-      void clientService.search(q, outletID, 40).then((rows) => {
-        if (searchSeq.current === seq) setSearchResults(rows);
+      setMemberPageLoading(true);
+      setMemberPageError(null);
+      void clientService.queryPage(outletID, { limit: memberPageSize, offset: (memberPage - 1) * memberPageSize, search, sort: sortFilter }).then((result) => {
+        if (searchSeq.current === seq) { setServerRows(result.rows); setMatchingTotal(result.total); }
       }).catch(() => {
-        if (searchSeq.current === seq) setSearchResults(null);
-      });
+        if (searchSeq.current === seq) setMemberPageError('Members could not be loaded from the server.');
+      }).finally(() => { if (searchSeq.current === seq) setMemberPageLoading(false); });
     }, 300);
     return () => window.clearTimeout(timer);
-  }, [search]);
+  }, [search, sortFilter, memberPage, clients]);
 
-  const filteredClients = useMemo(() => {
-    if (searchResults) return searchResults;
-    const q = search.trim().toLowerCase();
-    if (!q) return clients;
-    return clients.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) ||
-        (c.email && c.email.toLowerCase().includes(q)) ||
-        (c.phone && c.phone.includes(search.trim())),
-    );
-  }, [clients, search, searchResults]);
+  useEffect(() => { setMemberPage(1); }, [search, sortFilter]);
 
   // Normalize phone for duplicate check (digits only)
   const normalizePhoneForCompare = (phone: string) =>
@@ -237,22 +235,7 @@ const CRM: React.FC<CRMProps> = ({
     return map;
   }, [transactions]);
 
-  const sortedClients = useMemo(() => {
-    const list = [...filteredClients];
-    if (sortFilter === 'Recent') {
-      list.sort((a, b) => {
-        const aDate = clientLatestSale[a.id]?.date ? new Date(clientLatestSale[a.id].date).getTime() : 0;
-        const bDate = clientLatestSale[b.id]?.date ? new Date(clientLatestSale[b.id].date).getTime() : 0;
-        return bDate - aDate;
-      });
-    } else if (sortFilter === 'New') {
-      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    } else if (sortFilter === 'Name') {
-      list.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
-    }
-    // Birthday: no field - keep current order
-    return list;
-  }, [filteredClients, sortFilter, clientLatestSale]);
+  const sortedClients = serverRows;
 
   const displayPhone = (phone?: string) => {
     const value = (phone || '').trim();
@@ -270,8 +253,8 @@ const CRM: React.FC<CRMProps> = ({
 
   const activeClient = useMemo(() => {
     if (!selectedClient) return null;
-    return clients.find(c => c.id === selectedClient.id) || selectedClient;
-  }, [clients, selectedClient]);
+    return serverRows.find(c => c.id === selectedClient.id) || clients.find(c => c.id === selectedClient.id) || selectedClient;
+  }, [clients, serverRows, selectedClient]);
 
   const clientHistory = useMemo(() => {
     if (!selectedClient) return [];
@@ -487,32 +470,39 @@ const CRM: React.FC<CRMProps> = ({
     return rewards.some(r => points >= r.cost);
   };
 
-  const executeExport = () => {
+  const executeExport = async () => {
     if (isExportLocked) return;
-    if (clients.length === 0) {
+    const outletID = getCurrentOutletID();
+    if (!outletID || matchingTotal === 0) {
       alert("No clients to export.");
       setShowExportConfirm(false);
       return;
     }
-    const headers = ["Name", "Email", "Phone", "Notes", "Points", "Joined Date"];
-    const rows = clients.map(c => [
-      `"${c.name.replace(/"/g, '""')}"`,
-      `"${c.email.replace(/"/g, '""')}"`,
-      `"${c.phone.replace(/"/g, '""')}"`,
-      `"${c.notes.replace(/\n/g, ' ').replace(/"/g, '""')}"`,
-      c.points,
-      new Date(c.createdAt).toLocaleDateString()
-    ]);
-    const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `bookglow_clients_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setShowExportConfirm(false);
+    try {
+      const exportClients = await clientService.exportMatching(outletID, search, sortFilter);
+      const headers = ["Name", "Email", "Phone", "Notes", "Points", "Joined Date"];
+      const rows = exportClients.map(c => [
+        `"${c.name.replace(/"/g, '""')}"`,
+        `"${c.email.replace(/"/g, '""')}"`,
+        `"${c.phone.replace(/"/g, '""')}"`,
+        `"${c.notes.replace(/\n/g, ' ').replace(/"/g, '""')}"`,
+        c.points,
+        new Date(c.createdAt).toLocaleDateString()
+      ]);
+      const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `bookglow_clients_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setShowExportConfirm(false);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Member export failed. Please try again.');
+    }
   };
 
   // Import members from CSV (Excel-exported). Expects headers like Name, Email, Phone, Notes, Joined Date.
@@ -691,7 +681,7 @@ const CRM: React.FC<CRMProps> = ({
 
   const handleDeleteAllClients = async () => {
     if (!onDeleteAllClients || deleteAllInProgress) return;
-    const count = sortedClients.length;
+    const count = clientTotalCount;
     if (count === 0) {
       alert('There are no members to delete.');
       return;
@@ -712,7 +702,7 @@ const CRM: React.FC<CRMProps> = ({
   return (
     <div className="m-page-with-bottom-nav space-y-3 sm:space-y-5 md:space-y-6 animate-fadeIn m-body md:text-base m-member-page sm:pb-6">
       <div className="hidden sm:block">
-        <MemberPageHeader clientCount={clients.length} />
+        <MemberPageHeader clientCount={clientTotalCount} />
       </div>
       {/* Recent import toast: show last import count + Undo button */}
       {lastImportToast && (
@@ -811,6 +801,8 @@ const CRM: React.FC<CRMProps> = ({
 
       {/* Client list — natural page scroll (no nested max-height viewport) */}
       <div className="m-member-list space-y-2.5 sm:space-y-3">
+        {memberPageLoading ? <p className="py-3 text-center text-sm text-[var(--text-muted)]">Loading members…</p> : null}
+        {memberPageError ? <p className="rounded-ui-md border border-[var(--danger-border)] bg-[var(--danger-soft)] p-3 text-sm text-[var(--danger)]">{memberPageError}</p> : null}
         {sortedClients.map((client) => {
           const latest = formatLatestActivity(client.id);
           const vouchers = client.voucherCount ?? 0;
@@ -859,18 +851,35 @@ const CRM: React.FC<CRMProps> = ({
             }
           />
         )}
+        {memberPage > 1 ? (
+          <button type="button" onClick={() => setMemberPage((value) => value - 1)} disabled={memberPageLoading} className="min-h-12 w-full rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] text-sm font-bold text-[var(--brand)] hover:bg-[var(--bg-soft)] disabled:opacity-50">Previous page</button>
+        ) : null}
+        {matchingTotal > memberPageSize ? (
+          <button
+            type="button"
+            onClick={() => setMemberPage((value) => value + 1)}
+            disabled={memberPage * memberPageSize >= matchingTotal || memberPageLoading}
+            className="min-h-12 w-full rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] text-sm font-bold text-[var(--brand)] hover:bg-[var(--bg-soft)] disabled:opacity-50"
+          >
+            {memberPageLoading ? 'Loading next page…' : `Next page (${memberPage} of ${Math.ceil(matchingTotal / memberPageSize)})`}
+          </button>
+        ) : null}
       </div>
 
       {/* Compact footer: quiet total — Add FAB on mobile; Delete All in Actions (mobile) / desktop row */}
       <div className="m-member-list-footer flex items-center justify-between pt-1 pb-1 gap-3">
         <p className="text-sm text-[var(--text-muted)] tabular-nums">
-          Total {sortedClients.length.toLocaleString()}
-          {search || sortFilter !== 'Recent' ? ' shown' : ' members'}
+          {memberListStatusLabel({
+            searching: Boolean(search.trim()),
+            shownCount: search.trim() ? matchingTotal : sortedClients.length,
+            loadedCount: Math.min(memberPage * memberPageSize, matchingTotal),
+            totalCount: search.trim() ? matchingTotal : clientTotalCount,
+          })}
         </p>
         <button
           type="button"
           onClick={() => void handleDeleteAllClients()}
-          disabled={deleteAllInProgress || sortedClients.length === 0}
+          disabled={deleteAllInProgress || clientTotalCount === 0}
           className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--danger)] hover:underline disabled:opacity-50"
         >
           {deleteAllInProgress ? 'Deleting…' : 'Delete all members'}
@@ -919,13 +928,13 @@ const CRM: React.FC<CRMProps> = ({
               setShowMobileActions(false);
               void handleDeleteAllClients();
             }}
-            disabled={deleteAllInProgress || sortedClients.length === 0}
+            disabled={deleteAllInProgress || clientTotalCount === 0}
             className="w-full flex items-center gap-3 p-3.5 rounded-ui-md bg-[var(--danger-soft)] text-[var(--danger)] font-semibold text-sm transition-colors disabled:opacity-50 border border-[var(--danger-border)]"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
-            {deleteAllInProgress ? 'Deleting…' : `Delete all members (${sortedClients.length})`}
+            {deleteAllInProgress ? 'Deleting…' : `Delete all members (${clientTotalCount})`}
           </button>
         </div>
       </MemberFilterSheet>

@@ -144,8 +144,12 @@ export const resetPassword = async (email: string): Promise<void> => {
   if (error) throw new Error(error.message);
 };
 
-export const isMerchantOAuthEnabled = (provider: "google" | "facebook") =>
-  viteEnv()[`VITE_AUTH_${provider.toUpperCase()}_ENABLED`] === "true";
+export const isMerchantOAuthEnabled = (provider: "google" | "facebook") => {
+  const raw = viteEnv()[`VITE_AUTH_${provider.toUpperCase()}_ENABLED`];
+  // Google is on in production Android/web unless explicitly disabled.
+  if (provider === "google") return raw !== "false";
+  return raw === "true";
+};
 
 export async function loginWithOAuth(provider: "google" | "facebook") {
   if (!isMerchantOAuthEnabled(provider)) {

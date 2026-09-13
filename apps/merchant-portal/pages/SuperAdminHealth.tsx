@@ -5,10 +5,11 @@ import { PlatformPageHeader, PlatformSection } from '../components/admin';
 import { Button, ErrorState, LoadingSkeleton, StatusBadge } from '../components/ui';
 import { outletService } from '../services/databaseService';
 import { platformOperationsService, type PlatformMonitoringEvent } from '../services/platformOperationsService';
+import { auditService } from '../services/auditService';
 
 interface HealthCheck {
   name: string;
-  status: 'healthy' | 'degraded';
+  status: 'healthy' | 'degraded' | 'unknown';
   detail: string;
 }
 
@@ -46,11 +47,21 @@ const SuperAdminHealth: React.FC = () => {
     }
 
     try {
-      localStorage.setItem('bookglow_health_probe', new Date().toISOString());
-      localStorage.removeItem('bookglow_health_probe');
-      results.push({ name: 'Local audit storage', status: 'healthy', detail: 'Administrative audit events can be stored in this browser.' });
-    } catch {
-      results.push({ name: 'Local audit storage', status: 'degraded', detail: 'Browser storage is unavailable; local audit events may not persist.' });
+      const audit = await auditService.getPage({ pageSize: 10 });
+      results.push({ name: 'Authoritative audit store', status: 'healthy', detail: `Server query succeeded; ${audit.total} authoritative events are currently recorded.` });
+    } catch (auditError) {
+      results.push({ name: 'Authoritative audit store', status: 'degraded', detail: auditError instanceof Error ? auditError.message : 'Server audit query failed.' });
+    }
+
+    try {
+      const billing = await platformOperationsService.getBillingReadiness();
+      results.push({
+        name: 'Billing backend',
+        status: billing.state === 'readiness_verified' ? 'healthy' : billing.state === 'provider_not_configured' || billing.state === 'configured_unverified' ? 'unknown' : 'degraded',
+        detail: `Stripe: ${billing.state.replaceAll('_', ' ')}; webhook ${billing.webhook}.`,
+      });
+    } catch (billingError) {
+      results.push({ name: 'Billing backend', status: 'degraded', detail: billingError instanceof Error ? billingError.message : 'Billing readiness check failed.' });
     }
 
     try {
@@ -71,6 +82,7 @@ const SuperAdminHealth: React.FC = () => {
   useEffect(() => { runChecks(); }, []);
 
   const degraded = checks.filter((check) => check.status === 'degraded').length;
+  const unknown = checks.filter((check) => check.status === 'unknown').length;
 
   return (
     <div className="space-y-5">
@@ -85,8 +97,8 @@ const SuperAdminHealth: React.FC = () => {
       ) : (
         <PlatformSection
           title={degraded ? 'Platform degraded' : 'Platform healthy'}
-          description={degraded ? `${degraded} checks need attention.` : 'All client-visible checks passed.'}
-          action={<StatusBadge tone={degraded ? 'warning' : 'success'}>{degraded ? 'Degraded' : 'Healthy'}</StatusBadge>}
+          description={degraded ? `${degraded} checks failed.` : unknown ? `${unknown} checks are not fully verifiable.` : 'All read-only checks passed.'}
+          action={<StatusBadge tone={degraded || unknown ? 'warning' : 'success'}>{degraded ? 'Degraded' : unknown ? 'Partially verified' : 'Healthy'}</StatusBadge>}
         >
           <div className="divide-y divide-[var(--line)]">
             {checks.map((check) => (
@@ -104,7 +116,7 @@ const SuperAdminHealth: React.FC = () => {
             ))}
           </div>
           <div className="border-t border-[var(--line)] bg-[var(--bg-soft)] px-4 py-3 text-xs text-[var(--text-secondary)]">
-            Server logs, Cloud Function telemetry, uptime monitoring, and payment-provider health require dedicated monitoring integrations.
+            These read-only checks distinguish browser connectivity, database reachability, authorization, audit storage, and billing readiness. Provider uptime is not inferred from an empty event table.
           </div>
         </PlatformSection>
       )}

@@ -12,6 +12,9 @@ import { outletService } from './services/databaseService';
 import { isTabAllowed } from './utils/permissions';
 import { ErrorState, LoadingSkeleton } from './components/ui';
 import { setTelemetryRoute } from './services/queryTelemetry';
+import { remoteAccessService } from './services/remoteAccessService';
+import type { RemoteAccessContext } from './services/platformOperationsService';
+import { RemoteAccessBanner } from './components/admin/RemoteAccessBanner';
 
 // Lazy-load pages to reduce build memory (each page becomes a separate chunk)
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
@@ -37,6 +40,9 @@ const SuperAdminSubscriptions = React.lazy(() => import('./pages/SuperAdminSubsc
 const SuperAdminUsers = React.lazy(() => import('./pages/SuperAdminUsers'));
 const SuperAdminHealth = React.lazy(() => import('./pages/SuperAdminHealth'));
 const SuperAdminAudit = React.lazy(() => import('./pages/SuperAdminAudit'));
+const SuperAdminOnboarding = React.lazy(() => import('./pages/SuperAdminOnboarding'));
+const SuperAdminSupport = React.lazy(() => import('./pages/SuperAdminSupport'));
+const SuperAdminIntegrationsJobs = React.lazy(() => import('./pages/SuperAdminIntegrationsJobs'));
 
 const App: React.FC = () => {
   const { user, loading: authLoading, isAuthenticated, logout } = useAuth();
@@ -45,24 +51,48 @@ const App: React.FC = () => {
   // All hooks must be called before any conditional returns (React Rules of Hooks)
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [activeAppointmentForSale, setActiveAppointmentForSale] = useState<Appointment | null>(null);
+  const [remoteContext, setRemoteContext] = useState<RemoteAccessContext | null>(null);
+  const [remoteLoading, setRemoteLoading] = useState(true);
+  const [remoteExitBusy, setRemoteExitBusy] = useState(false);
 
-  const overrideOutletId =
-    typeof window !== 'undefined'
-      ? window.localStorage.getItem('adminOverrideOutletId') || ''
-      : '';
+  useEffect(() => {
+    let cancelled = false;
+    if (!isPlatformAdmin) { setRemoteContext(null); setRemoteLoading(false); return; }
+    setRemoteLoading(true);
+    remoteAccessService.validate()
+      .then((context) => { if (!cancelled) setRemoteContext(context); })
+      .catch(() => { if (!cancelled) setRemoteContext(null); })
+      .finally(() => { if (!cancelled) setRemoteLoading(false); });
+    return () => { cancelled = true; };
+  }, [isPlatformAdmin]);
 
   // Multi-tenant: use ONLY the outletId from the user's Firestore document (users/{uid}).
   // Super admin can optionally override to inspect a specific outlet.
   const currentOutletID = outletId ?? '';
   const effectiveOutletID =
-    isPlatformAdmin && overrideOutletId
-      ? overrideOutletId
+    isPlatformAdmin && remoteContext
+      ? remoteContext.outletId
       : currentOutletID;
+
+  const handleAppLogout = async () => {
+    remoteAccessService.clear();
+    await logout();
+  };
+
+  const exitRemoteAccess = async () => {
+    setRemoteExitBusy(true);
+    try { await remoteAccessService.exit(); }
+    finally { window.location.assign('/admin/subscribers'); }
+  };
 
   // Use Firestore for all data - replaces local state
   // Only load data if there is an effective outlet (for super admin this means when remote-viewing)
   const {
     clients,
+    clientTotalCount,
+    clientsHasMore,
+    clientsLoadingMore,
+    loadMoreClients,
     staff,
     appointments,
     transactions,
@@ -129,7 +159,9 @@ const App: React.FC = () => {
   // ProtectedRoute handles authentication and outletId checks
   return (
     <ProtectedRoute>
-      {isPlatformAdmin ? (
+      {isPlatformAdmin && remoteLoading ? (
+        <div className="min-h-screen flex items-center justify-center bg-[var(--bg-canvas)]">Validating remote access…</div>
+      ) : isPlatformAdmin && !remoteContext ? (
         <React.Suspense
           fallback={
             <div className="min-h-screen flex items-center justify-center bg-slate-950">
@@ -137,11 +169,14 @@ const App: React.FC = () => {
             </div>
           }
         >
-          <SuperAdminLayout user={user} onLogout={logout}>
+          <SuperAdminLayout user={user} onLogout={handleAppLogout}>
             <Routes>
               <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
               <Route path="/admin/dashboard" element={<SuperAdminDashboard />} />
               <Route path="/admin/subscribers" element={<SuperAdminSubscribers />} />
+              <Route path="/admin/onboarding" element={<SuperAdminOnboarding />} />
+              <Route path="/admin/support" element={<SuperAdminSupport />} />
+              <Route path="/admin/integrations-jobs" element={<SuperAdminIntegrationsJobs />} />
               <Route path="/admin/subscriptions" element={<SuperAdminSubscriptions />} />
               <Route path="/admin/users" element={<SuperAdminUsers />} />
               <Route path="/admin/health" element={<SuperAdminHealth />} />
@@ -178,6 +213,8 @@ const App: React.FC = () => {
 
           {/* Render app content when data is loaded */}
           {!dataLoading && !dataError && (
+            <>
+            {remoteContext ? <RemoteAccessBanner outletName={remoteContext.outletName} outletId={remoteContext.outletId} onExit={exitRemoteAccess} busy={remoteExitBusy} /> : null}
             <AppContent
               activeTab={activeTab}
               setActiveTab={setActiveTab}
@@ -185,8 +222,12 @@ const App: React.FC = () => {
               activeAppointmentForSale={activeAppointmentForSale}
               setActiveAppointmentForSale={setActiveAppointmentForSale}
               currentOutletID={effectiveOutletID}
-              outletName={outletName}
+              outletName={remoteContext?.outletName || outletName}
               clients={clients}
+              clientTotalCount={clientTotalCount}
+              clientsHasMore={clientsHasMore}
+              clientsLoadingMore={clientsLoadingMore}
+              loadMoreClients={loadMoreClients}
               staff={staff}
               appointments={appointments}
               transactions={transactions}
@@ -196,7 +237,7 @@ const App: React.FC = () => {
               rewards={rewards}
               serviceCategories={serviceCategories}
               user={user}
-              logout={logout}
+              logout={handleAppLogout}
               handleAddClient={handleAddClient}
               handleUpdateClient={handleUpdateClient}
               handleUpdateClientPoints={handleUpdateClientPoints}
@@ -229,6 +270,7 @@ const App: React.FC = () => {
               handleReorderServiceCategories={handleReorderServiceCategories}
               handleRenewMember={handleRenewMember}
             />
+            </>
           )}
         </>
       )}
@@ -252,6 +294,10 @@ interface AppContentProps {
   currentOutletID: string;
   outletName: string | null;
   clients: Client[];
+  clientTotalCount: number;
+  clientsHasMore: boolean;
+  clientsLoadingMore: boolean;
+  loadMoreClients: () => Promise<void>;
   staff: Staff[];
   appointments: Appointment[];
   transactions: Transaction[];
@@ -326,6 +372,10 @@ const AppContent: React.FC<AppContentProps> = ({
   currentOutletID,
   outletName,
   clients,
+  clientTotalCount,
+  clientsHasMore,
+  clientsLoadingMore,
+  loadMoreClients,
   staff,
   appointments,
   transactions,
@@ -640,7 +690,22 @@ const AppContent: React.FC<AppContentProps> = ({
       case 'pos':
         return <POS services={services} products={products} packages={packages} clients={clients} staff={staff} roleCommissions={roleCommissions} onCompleteSale={handleAddTransactionWithLogic} activeAppointmentForSale={activeAppointmentForSale} onClearActiveAppointment={() => setActiveAppointmentForSale(null)} paymentMethods={outletSettings.paymentMethods} outletSettings={outletSettings} />;
       case 'member':
-        return <CRM clients={clients} onAddClient={handleAddClient} onUpdateClient={handleUpdateClient} transactions={transactions} onUpdatePoints={handleUpdateClientPoints} onAddTransaction={handleAddTransactionWithLogic} services={services} rewards={rewards} onUpdateRewards={handleUpdateRewards} isExportLocked={isFeatureLocked('export-crm')} />;
+        return <CRM
+          clients={clients}
+          clientTotalCount={clientTotalCount}
+          clientsHasMore={clientsHasMore}
+          clientsLoadingMore={clientsLoadingMore}
+          onLoadMoreClients={loadMoreClients}
+          onAddClient={handleAddClient}
+          onUpdateClient={handleUpdateClient}
+          transactions={transactions}
+          onUpdatePoints={handleUpdateClientPoints}
+          onAddTransaction={handleAddTransactionWithLogic}
+          services={services}
+          rewards={rewards}
+          onUpdateRewards={handleUpdateRewards}
+          isExportLocked={isFeatureLocked('export-crm')}
+        />;
       case 'staff':
         return <StaffPage staff={staff} services={services} roleCommissions={roleCommissions} onUpdateRoleCommissions={handleUpdateRoleCommissions} onAddStaff={handleAddStaffWithLock} onUpdateStaff={handleUpdateStaffWithLock} onDeleteStaff={handleDeleteStaffWithLock} transactions={transactions} isLocked={isFeatureLocked('manage-staff')} />;
       case 'menu':
@@ -696,7 +761,7 @@ const AppContent: React.FC<AppContentProps> = ({
       outletId={currentOutletID}
       outletName={outletName}
       role={role}
-      memberCount={clients.length}
+      memberCount={clientTotalCount}
     >
       <div className="animate-fadeIn">
         <React.Suspense

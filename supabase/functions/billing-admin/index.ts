@@ -18,7 +18,7 @@ Deno.serve(async (request) => {
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-  if (!supabaseUrl || !anonKey || !serviceKey || !stripeKey) return json(500, { error: "Billing service is not configured" });
+  if (!supabaseUrl || !anonKey || !serviceKey) return json(503, { error: "Billing administration backend is not configured" });
 
   const authorization = request.headers.get("Authorization") || "";
   const scoped = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authorization } } });
@@ -32,11 +32,31 @@ Deno.serve(async (request) => {
 
   const body = await request.json();
   const action = String(body.action || "");
+  if (action === "readiness") {
+    const { count, error: subscriptionsError } = await admin.from("outlet_subscriptions").select("id", { count: "exact", head: true });
+    if (subscriptionsError) return json(200, { state: "subscription_data_unavailable", provider: "stripe", subscriptionDataAvailable: false, detail: subscriptionsError.message });
+    if (!stripeKey) return json(200, { state: "provider_not_configured", provider: "stripe", subscriptionDataAvailable: true, subscriptionCount: count || 0, checkoutReady: false, portalReady: false, webhook: "unverified" });
+    const defaultPriceId = Deno.env.get("STRIPE_DEFAULT_PRICE_ID") || "";
+    const webhookSecretPresent = Boolean(Deno.env.get("STRIPE_WEBHOOK_SIGNING_SECRET") || Deno.env.get("STRIPE_WEBHOOK_SECRET"));
+    const stripe = new Stripe(stripeKey);
+    try {
+      const price = defaultPriceId ? await stripe.prices.retrieve(defaultPriceId) : null;
+      const endpoints = await stripe.webhookEndpoints.list({ limit: 100 });
+      const webhookEndpoint = endpoints.data.find((item) => item.status === "enabled" && item.url.includes("/functions/v1/stripe-webhook"));
+      const priceVerified = Boolean(price?.active && price.recurring && price.unit_amount != null && price.currency);
+      const webhook = webhookSecretPresent && webhookEndpoint ? "verified" : webhookSecretPresent ? "secret_present_endpoint_unverified" : "not_configured";
+      const ready = priceVerified && webhook === "verified";
+      return json(200, { state: ready ? "readiness_verified" : "configured_unverified", provider: "stripe", subscriptionDataAvailable: true, subscriptionCount: count || 0, priceVerified, webhook, checkoutReady: priceVerified, portalReady: true, checkedAt: new Date().toISOString() });
+    } catch (error) {
+      return json(200, { state: "billing_service_error", provider: "stripe", subscriptionDataAvailable: true, subscriptionCount: count || 0, checkoutReady: false, portalReady: false, webhook: "unverified", detail: error instanceof Error ? error.message : "Stripe readiness check failed", checkedAt: new Date().toISOString() });
+    }
+  }
   const outletId = String(body.outletId || "");
   if (!outletId) return json(400, { error: "outletId is required" });
 
   const { data: outlet, error: outletError } = await admin.from("outlets").select("outlet_id,name,email").eq("outlet_id", outletId).maybeSingle();
   if (outletError || !outlet) return json(404, { error: "Outlet not found" });
+  if (!stripeKey) return json(503, { error: "Stripe is not configured" });
   const stripe = new Stripe(stripeKey);
 
   let { data: billingCustomer } = await admin.from("billing_customers").select("*").eq("outlet_id", outletId).maybeSingle();

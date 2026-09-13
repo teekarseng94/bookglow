@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { createBrowserSupabaseClient } from "@bookglow/supabase";
 import { outletService } from '../services/databaseService';
 import {
@@ -11,6 +12,8 @@ import { Outlet } from '../types';
 import { PlatformPageHeader } from '../components/admin';
 import { Button, EmptyState, ErrorState, LoadingSkeleton } from '../components/ui';
 import { customerSiteOrigin } from '../utils/customerSiteUrl';
+import { platformOperationsService } from '../services/platformOperationsService';
+import { remoteAccessService } from '../services/remoteAccessService';
 
 interface PortalUser {
   uid: string;
@@ -19,6 +22,8 @@ interface PortalUser {
   role: string | null;
   display_name: string | null;
   created_at: string | null;
+  membership_status?: string | null;
+  account_status?: string | null;
 }
 
 interface ConfirmState {
@@ -31,13 +36,14 @@ interface ConfirmState {
 }
 
 const SuperAdminSubscribers: React.FC = () => {
+  const [routeParams] = useSearchParams();
   const [outlets, setOutlets] = useState<Outlet[]>([]);
   const [users, setUsers] = useState<PortalUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   // Search, filter, sort state
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(routeParams.get('outlet') || '');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended'>('all');
   const [setupFilter, setSetupFilter] = useState<'all' | 'completed' | 'pending'>('all');
   const [sortBy, setSortBy] = useState<'name' | 'created' | 'activity'>('name');
@@ -73,9 +79,20 @@ const SuperAdminSubscribers: React.FC = () => {
       setOutlets(outletsData);
 
       const sb = createBrowserSupabaseClient(import.meta.env as any);
-      const { data: usersData, error: usersErr } = await sb.from("users").select("*");
+      const [{ data: usersData, error: usersErr }, { data: memberships, error: membershipsError }, { data: controls, error: controlsError }] = await Promise.all([
+        sb.from("users").select("*"),
+        (sb as any).from("outlet_members").select("outlet_id,user_id,role,status"),
+        (sb as any).from("platform_account_controls").select("user_id,status"),
+      ]);
       if (usersErr) throw usersErr;
-      setUsers((usersData || []) as PortalUser[]);
+      if (membershipsError) throw membershipsError;
+      if (controlsError) throw controlsError;
+      const directory = new Map((usersData || []).map((user: any) => [String(user.uid), user]));
+      const accountStatuses = new Map((controls || []).map((control: any) => [String(control.user_id), control.status]));
+      setUsers((memberships || []).map((membership: any) => {
+        const profile: any = directory.get(String(membership.user_id)) || {};
+        return { ...profile, uid: String(membership.user_id), outlet_id: membership.outlet_id, role: membership.role, membership_status: membership.status, account_status: accountStatuses.get(String(membership.user_id)) || 'active' };
+      }) as PortalUser[]);
     } catch (err: any) {
       console.error('Failed to load Outlets & Access data:', err);
       setError(err.message || 'Failed to load database records.');
@@ -99,6 +116,13 @@ const SuperAdminSubscribers: React.FC = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    const requested = routeParams.get('outlet');
+    if (!requested || !outlets.length || drawerOpen) return;
+    const match = outlets.find((outlet) => outlet.outletID === requested);
+    if (match) { setSelectedOutlet(match); setDrawerOpen(true); }
+  }, [routeParams, outlets, drawerOpen]);
 
   useEffect(() => {
     if (drawerOpen && activeTab === 'accounts') loadUnlinkedAccounts();
@@ -127,9 +151,9 @@ const SuperAdminSubscribers: React.FC = () => {
   // Calculations for Summary Cards
   const stats = {
     total: outlets.length,
-    active: outlets.filter(o => o.isActive !== false).length,
+    active: outlets.filter(o => o.accessStatus !== 'suspended').length,
     pending: outlets.filter(o => !o.bookingSlug).length,
-    suspended: outlets.filter(o => o.isActive === false).length,
+    suspended: outlets.filter(o => o.accessStatus === 'suspended').length,
   };
 
   // Sort and Filter Logic
@@ -150,7 +174,7 @@ const SuperAdminSubscribers: React.FC = () => {
       const matchesSearch = !q || outletName.includes(q) || outletId.includes(q) || ownerMatch;
 
       // 2. Status Filter
-      const isActive = o.isActive !== false;
+      const isActive = o.accessStatus !== 'suspended';
       const matchesStatus = 
         statusFilter === 'all' || 
         (statusFilter === 'active' && isActive) || 
@@ -186,7 +210,7 @@ const SuperAdminSubscribers: React.FC = () => {
 
   // Access Control Toggles
   const handleTogglePortalAccess = (outlet: Outlet) => {
-    const isActive = outlet.isActive !== false;
+    const isActive = outlet.accessStatus !== 'suspended';
     if (isActive) {
       // Suspending portal
       setConfirmModal({
@@ -196,12 +220,9 @@ const SuperAdminSubscribers: React.FC = () => {
         consequence: 'Users mapped to this outlet will be immediately blocked from signing into the merchant portal. Public customer booking pages will remain active.',
         reasonRequired: true,
         onConfirm: async (reason) => {
-          await outletService.update(outlet.outletID, { isActive: false });
-          await auditService.logEvent(outlet.outletID, 'portal suspended', 'portal access', 'Super Admin', reason);
-          loadData();
-          if (selectedOutlet?.outletID === outlet.outletID) {
-            setSelectedOutlet(prev => prev ? { ...prev, isActive: false } : null);
-          }
+          await platformOperationsService.setOutletAccess(outlet.outletID, false, reason);
+          await loadData();
+          setSelectedOutlet(prev => prev?.outletID === outlet.outletID ? { ...prev, accessStatus: 'suspended' } : prev);
         }
       });
     } else {
@@ -213,12 +234,9 @@ const SuperAdminSubscribers: React.FC = () => {
         consequence: 'Re-enable merchant workspace access. Mapped users will be able to log in normally.',
         reasonRequired: false,
         onConfirm: async (reason) => {
-          await outletService.update(outlet.outletID, { isActive: true });
-          await auditService.logEvent(outlet.outletID, 'portal enabled', 'portal access', 'Super Admin', reason || 'Access restored by super admin.');
-          loadData();
-          if (selectedOutlet?.outletID === outlet.outletID) {
-            setSelectedOutlet(prev => prev ? { ...prev, isActive: true } : null);
-          }
+          await platformOperationsService.setOutletAccess(outlet.outletID, true, reason || 'Access restored by platform administrator.');
+          await loadData();
+          setSelectedOutlet(prev => prev?.outletID === outlet.outletID ? { ...prev, accessStatus: 'active' } : prev);
         }
       });
     }
@@ -245,25 +263,20 @@ const SuperAdminSubscribers: React.FC = () => {
   };
 
   // Remote View action
-  const handleRemoteView = (outletId: string) => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('adminOverrideOutletId', outletId);
-      auditService.logEvent(outletId, 'remote-control entered', 'merchant portal', 'Super Admin');
-      window.location.href = '/dashboard';
+  const handleRemoteView = async (outletId: string) => {
+    try {
+      await remoteAccessService.enter(outletId);
+      window.location.assign('/dashboard');
+    } catch (err: any) {
+      setError(err?.message || 'Remote access could not be started.');
     }
   };
 
   // Drawer User Actions
   const handleUserRoleChange = async (user: PortalUser, newRole: string) => {
     try {
-      await accountAdminService.changeRole(user.uid, newRole);
-      await auditService.logEvent(
-        selectedOutlet!.outletID,
-        'role changed',
-        `user role for ${user.email} changed to ${newRole.toUpperCase()}`,
-        'Super Admin'
-      );
-      loadData();
+      await accountAdminService.changeRole(selectedOutlet!.outletID, user.uid, newRole);
+      await loadData();
     } catch (err: any) {
       alert(err.message);
     }
@@ -298,16 +311,26 @@ const SuperAdminSubscribers: React.FC = () => {
       consequence: 'The user will be detached from this outlet. They will no longer have access to this workspace.',
       reasonRequired: true,
       onConfirm: async (reason) => {
-        await accountAdminService.removeFromOutlet(user.uid);
-        await auditService.logEvent(
-          selectedOutlet!.outletID,
-          'account removed',
-          `user ${user.email} removed from outlet`,
-          'Super Admin',
-          reason
-        );
-        loadData();
+        await accountAdminService.removeFromOutlet(selectedOutlet!.outletID, user.uid, reason);
+        await loadData();
       }
+    });
+  };
+
+  const handleMembershipStatus = (user: PortalUser) => {
+    const active = user.membership_status !== 'active';
+    setConfirmModal({
+      type: active ? 'reactivate_account' : 'disable_account',
+      targetId: user.uid,
+      targetName: user.email || 'this account',
+      consequence: active
+        ? `Restore this account's membership in ${selectedOutlet?.name}. This does not change global sign-in status.`
+        : `Suspend only this account's membership in ${selectedOutlet?.name}. Other outlet memberships and global sign-in remain unchanged.`,
+      reasonRequired: true,
+      onConfirm: async (reason) => {
+        await accountAdminService.setMembershipStatus(selectedOutlet!.outletID, user.uid, active, reason);
+        await loadData();
+      },
     });
   };
 
@@ -316,35 +339,28 @@ const SuperAdminSubscribers: React.FC = () => {
       type: 'transfer_ownership',
       targetId: newOwner.uid,
       targetName: newOwner.email || 'new owner',
-      consequence: `This will transfer primary admin privileges for ${selectedOutlet?.name}. ${currentOwner.email} will be demoted to MANAGER, and ${newOwner.email} will be promoted to ADMIN.`,
+      consequence: `This atomically transfers ownership of ${selectedOutlet?.name}. ${currentOwner.email} will retain ADMIN access and ${newOwner.email} will become OWNER.`,
       reasonRequired: true,
       onConfirm: async (reason) => {
-        await accountAdminService.transferOwnership(selectedOutlet!.outletID, currentOwner.uid, newOwner.uid);
-        await auditService.logEvent(
-          selectedOutlet!.outletID,
-          'owner transferred',
-          `ownership transferred from ${currentOwner.email} to ${newOwner.email}`,
-          'Super Admin',
-          reason
-        );
-        loadData();
+        await accountAdminService.transferOwnership(selectedOutlet!.outletID, currentOwner.uid, newOwner.uid, reason);
+        await loadData();
       }
     });
   };
 
   const handleAuthAction = (action: 'suspend' | 'reactivate' | 'reset_password' | 'revoke_sessions' | 'invite', user?: PortalUser) => {
     const name = user ? (user.email || 'this account') : inviteEmail;
-    const execute = async () => {
+    const execute = async (reason: string) => {
       if (action === 'invite') {
         await accountAdminService.inviteAccount(inviteEmail, inviteRole, selectedOutlet!.outletID);
       } else if (action === 'suspend') {
-        await accountAdminService.suspendAccount(user!.uid);
+        await accountAdminService.suspendAccount(user!.uid, reason);
       } else if (action === 'reactivate') {
         await accountAdminService.reactivateAccount(user!.uid);
       } else if (action === 'reset_password') {
         await accountAdminService.requirePasswordReset(user!.uid);
       } else if (action === 'revoke_sessions') {
-        await accountAdminService.revokeSessions(user!.uid);
+        await accountAdminService.revokeSessions(user!.uid, reason);
       }
     };
 
@@ -352,10 +368,16 @@ const SuperAdminSubscribers: React.FC = () => {
       type: action === 'suspend' ? 'disable_account' : action === 'reactivate' ? 'reactivate_account' : action === 'revoke_sessions' ? 'revoke_sessions' : 'disable_account',
       targetId: user?.uid || 'action',
       targetName: name,
-      consequence: 'This action requires secure identity provider APIs (Supabase Auth Admin SDK).',
-      reasonRequired: false,
-      onConfirm: async () => {
-        await execute();
+      consequence: action === 'reset_password'
+        ? 'Send a password recovery email. This initiates recovery; it does not enforce a password change. Google-only accounts are not eligible.'
+        : action === 'revoke_sessions'
+          ? 'Immediately block this account from Bookglow backend data. Existing access tokens expire normally at the identity provider.'
+          : action === 'suspend'
+            ? 'Globally suspend sign-in and immediately block existing Bookglow sessions from backend data.'
+            : 'Run this secure account action for the selected identity.',
+      reasonRequired: action === 'suspend' || action === 'revoke_sessions',
+      onConfirm: async (reason) => {
+        await execute(reason);
         if (action === 'invite') {
           setInviteEmail('');
           await Promise.all([loadData(), loadUnlinkedAccounts()]);
@@ -505,7 +527,7 @@ const SuperAdminSubscribers: React.FC = () => {
           {/* Mobile view (stacked cards) */}
           <div className="md:hidden space-y-3">
             {filteredOutlets.map((o) => {
-              const isActive = o.isActive !== false;
+              const isActive = o.accessStatus !== 'suspended';
               const isSetupCompleted = !!o.bookingSlug;
               const mappedUsers = users.filter(u => u.outlet_id === o.outletID);
               const primaryAdmin = mappedUsers.find(u => u.role === 'admin' || u.role === 'platform_admin');
@@ -597,7 +619,7 @@ const SuperAdminSubscribers: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredOutlets.map((o) => {
-                  const isActive = o.isActive !== false;
+                  const isActive = o.accessStatus !== 'suspended';
                   const isSetupCompleted = !!o.bookingSlug;
                   const mappedUsers = users.filter(u => u.outlet_id === o.outletID);
                   const primaryAdmin = mappedUsers.find(u => u.role === 'admin' || u.role === 'platform_admin');
@@ -942,7 +964,7 @@ const SuperAdminSubscribers: React.FC = () => {
                         users
                           .filter(u => u.outlet_id === selectedOutlet.outletID)
                           .map((u) => {
-                            const isOwner = u.role === 'admin' || u.role === 'platform_admin';
+                            const isOwner = u.role === 'owner';
                             
                             return (
                               <div key={u.uid} className="p-3.5 space-y-2">
@@ -953,7 +975,7 @@ const SuperAdminSubscribers: React.FC = () => {
                                   </div>
                                   <div className="flex items-center gap-1.5">
                                     <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
-                                      u.role === 'admin' || u.role === 'platform_admin'
+                                      u.role === 'owner' || u.role === 'admin'
                                         ? 'bg-violet-100 text-violet-800'
                                         : u.role === 'manager'
                                         ? 'bg-blue-100 text-blue-800'
@@ -968,21 +990,25 @@ const SuperAdminSubscribers: React.FC = () => {
                                   {/* Change Role Trigger */}
                                   <select
                                     value={u.role || 'cashier'}
+                                    disabled={isOwner}
                                     onChange={(e) => handleUserRoleChange(u, e.target.value)}
                                     className="px-2 py-1 border border-slate-200 rounded bg-slate-50 text-[10px] focus:outline-none"
                                   >
+                                    {isOwner ? <option value="owner">OWNER</option> : null}
                                     <option value="admin">ADMIN</option>
                                     <option value="manager">MANAGER</option>
                                     <option value="cashier">CASHIER</option>
                                   </select>
 
+                                  {!isOwner ? <button type="button" onClick={() => handleMembershipStatus(u)} className="px-2 py-1 rounded border border-slate-200 text-slate-700 hover:bg-slate-50 text-[10px] transition-colors">{u.membership_status === 'active' ? 'Suspend this outlet' : 'Restore this outlet'}</button> : null}
+
                                   {/* Suspend triggers */}
                                   <button
                                     type="button"
-                                    onClick={() => handleAuthAction('suspend', u)}
+                                    onClick={() => handleAuthAction(u.account_status === 'suspended' ? 'reactivate' : 'suspend', u)}
                                     className="px-2 py-1 rounded border border-slate-200 hover:bg-rose-50 text-rose-700 text-[10px] transition-colors"
                                   >
-                                    Suspend
+                                    {u.account_status === 'suspended' ? 'Reactivate globally' : 'Suspend globally'}
                                   </button>
 
                                   <button
@@ -990,7 +1016,7 @@ const SuperAdminSubscribers: React.FC = () => {
                                     onClick={() => handleAuthAction('reset_password', u)}
                                     className="px-2 py-1 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 text-[10px] transition-colors"
                                   >
-                                    Password Reset
+                                    Send recovery email
                                   </button>
 
                                   <button
@@ -998,7 +1024,7 @@ const SuperAdminSubscribers: React.FC = () => {
                                     onClick={() => handleAuthAction('revoke_sessions', u)}
                                     className="px-2 py-1 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 text-[10px] transition-colors"
                                   >
-                                    Revoke Sessions
+                                    Block Bookglow sessions
                                   </button>
 
                                   {/* Demote / Transfer Ownership */}
@@ -1006,7 +1032,7 @@ const SuperAdminSubscribers: React.FC = () => {
                                     <button
                                       type="button"
                                       onClick={() => {
-                                        const currentOwner = users.find(owner => owner.outlet_id === selectedOutlet.outletID && (owner.role === 'admin' || owner.role === 'platform_admin'));
+                                        const currentOwner = users.find(owner => owner.outlet_id === selectedOutlet.outletID && owner.role === 'owner');
                                         if (currentOwner) {
                                           handleTransferOwnership(currentOwner, u);
                                         } else {
@@ -1051,12 +1077,12 @@ const SuperAdminSubscribers: React.FC = () => {
                         type="button"
                         onClick={() => handleTogglePortalAccess(selectedOutlet)}
                         className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                          selectedOutlet.isActive !== false
+                          selectedOutlet.accessStatus !== 'suspended'
                             ? 'border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100'
                             : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                         }`}
                       >
-                        {selectedOutlet.isActive !== false ? 'Suspend Portal' : 'Restore Access'}
+                        {selectedOutlet.accessStatus !== 'suspended' ? 'Suspend Portal' : 'Restore Access'}
                       </button>
                     </div>
 

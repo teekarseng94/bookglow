@@ -57,7 +57,7 @@ describe('MerchantAuthCallback', () => {
   it('routes no_workspace through shared access resolver destination', async () => {
     sessionStorage.setItem('bookglow.merchantAuthIntent', 'login');
     mocks.resolveMerchantAccess.mockResolvedValue({ state: 'no_workspace', outletId: null, role: null });
-    mocks.merchantAccessDestination.mockReturnValue('/access/no-workspace');
+    mocks.merchantAccessDestination.mockReturnValue('/onboarding');
 
     render(
       <MemoryRouter initialEntries={['/auth/callback/merchant?code=new-user']}>
@@ -67,6 +67,6 @@ describe('MerchantAuthCallback', () => {
       </MemoryRouter>,
     );
 
-    await waitFor(() => expect(window.location.replace).toHaveBeenCalledWith('/#/access/no-workspace'));
+    await waitFor(() => expect(window.location.replace).toHaveBeenCalledWith('/#/onboarding'));
   });
 });

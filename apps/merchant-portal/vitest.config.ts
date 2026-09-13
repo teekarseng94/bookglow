@@ -11,6 +11,10 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': root,
+      '@bookglow/auth-contracts': path.resolve(root, '../../packages/auth-contracts/src/index.ts'),
+      '@bookglow/database-contracts': path.resolve(root, '../../packages/database-contracts/src/index.ts'),
+      '@bookglow/shared-types': path.resolve(root, '../../packages/shared-types/src/index.ts'),
+      '@bookglow/supabase': path.resolve(root, '../../packages/supabase/src/index.ts'),
     },
   },
   test: {

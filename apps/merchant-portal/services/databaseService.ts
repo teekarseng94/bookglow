@@ -10,6 +10,7 @@ export const appointmentService = supabaseMerchant.appointmentService;
 export const serviceService = supabaseMerchant.serviceService;
 export const outletService = supabaseMerchant.outletService;
 export const clientService = supabaseMerchant.clientService;
+export const DEFAULT_LIST_PAGE_SIZE = supabaseMerchant.DEFAULT_LIST_PAGE_SIZE;
 export const transactionService = supabaseMerchant.transactionService;
 export const productService = supabaseMerchant.productService;
 export const packageService = supabaseMerchant.packageService;

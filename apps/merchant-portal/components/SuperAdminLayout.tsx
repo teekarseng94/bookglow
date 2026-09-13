@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, Building2, CreditCard, FileClock, HeartPulse, LayoutDashboard, LogOut, ShieldCheck, Users } from 'lucide-react';
+import { Activity, Building2, ClipboardCheck, CreditCard, FileClock, HeartPulse, LayoutDashboard, LifeBuoy, LogOut, Network, ShieldCheck, Users } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import type { PortalAuthUser } from '../services/authService';
 import { NetworkStatusBanner } from './ui';
@@ -13,6 +13,9 @@ interface SuperAdminLayoutProps {
 const navigation = [
   { to: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
   { to: '/admin/subscribers', label: 'Outlets & Access', icon: Building2 },
+  { to: '/admin/onboarding', label: 'Onboarding', icon: ClipboardCheck },
+  { to: '/admin/support', label: 'Support', icon: LifeBuoy },
+  { to: '/admin/integrations-jobs', label: 'Integrations & Jobs', icon: Network },
   { to: '/admin/subscriptions', label: 'Subscriptions', icon: CreditCard },
   { to: '/admin/users', label: 'Platform Users', icon: Users },
   { to: '/admin/health', label: 'System Health', icon: HeartPulse },

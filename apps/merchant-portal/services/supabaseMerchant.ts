@@ -182,6 +182,7 @@ function mapOutlet(row: Record<string, unknown>): Outlet {
     createdAt: row.created_at ? String(row.created_at) : undefined,
     updatedAt: row.updated_at ? String(row.updated_at) : undefined,
     isActive: row.is_active == null ? true : Boolean(row.is_active),
+    accessStatus: String(row.access_status || 'active'),
   } as Outlet;
 }
 
@@ -684,8 +685,11 @@ export const outletService = {
       patch.service_categories = updates.serviceCategories;
     }
     if (updates.bookingSlug !== undefined) patch.booking_slug = updates.bookingSlug;
-    const { error } = await client().from("outlets").update(patch as never).eq("outlet_id", outletID);
+    if (updates.isActive !== undefined) patch.is_active = updates.isActive;
+    if (updates.accessStatus !== undefined) patch.access_status = updates.accessStatus;
+    const { data, error } = await client().from("outlets").update(patch as never).eq("outlet_id", outletID).select("outlet_id");
     if (error) throw error;
+    if (!data?.length) throw new Error(`Outlet ${outletID} was not found or could not be updated.`);
   },
 
   getServiceCategories: async (outletID: string): Promise<string[]> => {
@@ -785,6 +789,22 @@ export const clientService = {
     );
   },
 
+  /** Exact member count for the current outlet (does not load rows). */
+  count: async (outletID: string = currentOutletID): Promise<number> => {
+    if (!hasValidOutlet(outletID)) return 0;
+    return withQueryTelemetry(
+      { queryName: "clientService.count", resource: "clients" },
+      async () => {
+        const { count, error } = await client()
+          .from("clients")
+          .select("id", { count: "exact", head: true })
+          .eq("outlet_id", outletID);
+        if (error) throw error;
+        return count ?? 0;
+      },
+    );
+  },
+
   /** First page for Members / CRM. */
   listPage: async (
     outletID: string = currentOutletID,
@@ -807,6 +827,38 @@ export const clientService = {
         return (data || []).map((r) => mapClient(r as Record<string, unknown>));
       },
     );
+  },
+
+  /** Stable, outlet-scoped server pagination and search for the Members workspace. */
+  queryPage: async (
+    outletID: string,
+    options: { limit?: number; offset?: number; search?: string; sort?: 'Recent' | 'New' | 'Birthday' | 'Name' } = {},
+  ): Promise<{ rows: Client[]; total: number }> => {
+    if (!hasValidOutlet(outletID)) return { rows: [], total: 0 };
+    const limit = Math.min(100, Math.max(10, options.limit ?? 50));
+    const offset = Math.max(0, options.offset ?? 0);
+    const safe = (options.search || '').replace(/[%_,.()]+/g, ' ').replace(/["']/g, ' ').replace(/\s+/g, ' ').trim();
+    let builder = client().from('clients').select(CLIENT_LIST_COLUMNS, { count: 'exact' }).eq('outlet_id', outletID);
+    if (safe) {
+      const digits = safe.replace(/\D/g, '');
+      builder = builder.or(digits.length >= 2 ? `name.ilike.%${safe}%,phone.ilike.%${digits}%,email.ilike.%${safe}%` : `name.ilike.%${safe}%,email.ilike.%${safe}%`);
+    }
+    if (options.sort === 'Name') builder = builder.order('name', { ascending: true }).order('id', { ascending: true });
+    else if (options.sort === 'Birthday') builder = builder.order('birthday', { ascending: true, nullsFirst: false }).order('id', { ascending: true });
+    else builder = builder.order('created_at', { ascending: false }).order('id', { ascending: false });
+    const { data, error, count } = await builder.range(offset, offset + limit - 1);
+    if (error) throw error;
+    return { rows: (data || []).map((row) => mapClient(row as Record<string, unknown>)), total: count ?? 0 };
+  },
+
+  exportMatching: async (outletID: string, search = '', sort: 'Recent' | 'New' | 'Birthday' | 'Name' = 'Recent'): Promise<Client[]> => {
+    const rows: Client[] = [];
+    const pageSize = 100;
+    for (let offset = 0; ; offset += pageSize) {
+      const page = await clientService.queryPage(outletID, { limit: pageSize, offset, search, sort });
+      rows.push(...page.rows);
+      if (rows.length >= page.total || page.rows.length < pageSize) return rows;
+    }
   },
 
   /** Server-side member search for POS / CRM typeahead. Does not log the query string. */

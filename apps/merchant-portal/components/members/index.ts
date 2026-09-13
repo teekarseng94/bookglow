@@ -12,3 +12,4 @@ export {
   MemberActivitySegmented,
   MEMBER_ACTIVITY_MAX_WIDTH_CLASS,
 } from './MemberActivityView';
+export { memberListStatusLabel } from './memberListStatus';

@@ -75,6 +75,10 @@ Deno.serve(async (request) => {
       const subscriptionOutlet = subscription.metadata?.outlet_id || outletId;
       if (!subscriptionOutlet) throw new Error("Subscription is missing outlet_id metadata");
       const firstItem = subscription.items.data[0];
+      const percentOff = subscription.discounts
+        ?.map((discount) => typeof discount === "string" ? null : discount.coupon?.percent_off)
+        .find((value) => value != null) ?? null;
+      const mrrReliable = !subscription.discounts?.length || subscription.discounts.every((discount) => typeof discount !== "string" && discount.coupon?.percent_off != null);
       await admin.from("outlet_subscriptions").upsert({
         id: subscription.id,
         outlet_id: subscriptionOutlet,
@@ -85,6 +89,13 @@ Deno.serve(async (request) => {
         current_period_start: unixDate(firstItem?.current_period_start),
         current_period_end: unixDate(firstItem?.current_period_end),
         trial_end: unixDate(subscription.trial_end),
+        unit_amount: firstItem?.price?.unit_amount ?? null,
+        currency: firstItem?.price?.currency ?? null,
+        recurring_interval: firstItem?.price?.recurring?.interval ?? null,
+        interval_count: firstItem?.price?.recurring?.interval_count ?? null,
+        quantity: firstItem?.quantity ?? 1,
+        discount_percent: percentOff,
+        mrr_reliable: mrrReliable,
         updated_at: new Date().toISOString(),
       });
     }

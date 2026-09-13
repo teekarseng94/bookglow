@@ -7,95 +7,86 @@ export interface AuditEvent {
   affectedTarget: string;
   actor: string;
   timestamp: string;
+  outcome: 'succeeded' | 'failed' | 'partial';
   reason?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
-const localEvents = (): AuditEvent[] => {
-  try {
-    return JSON.parse(localStorage.getItem('bookglow_audit_logs') || '[]');
-  } catch {
-    return [];
-  }
-};
+export interface AuditQuery {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  outletId?: string;
+  action?: string;
+  actor?: string;
+  from?: string;
+  to?: string;
+}
 
-const serverAuditEnabled = import.meta.env.MODE !== 'test';
+export interface AuditPage {
+  events: AuditEvent[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+const client = () => createBrowserSupabaseClient(import.meta.env as any);
+const mapEvent = (row: any): AuditEvent => ({
+  id: String(row.id),
+  outletId: row.outlet_id || 'platform',
+  action: row.action,
+  affectedTarget: row.affected_target,
+  actor: row.actor_email || row.actor_uid || 'System',
+  timestamp: row.occurred_at,
+  outcome: row.outcome || 'succeeded',
+  reason: row.reason || undefined,
+  metadata: row.metadata || undefined,
+});
 
 export const auditService = {
   logEvent: async (
     outletId: string,
     action: string,
     affectedTarget: string,
-    actor: string,
+    _actor: string,
     reason?: string,
-    metadata?: any,
+    metadata?: Record<string, unknown>,
   ): Promise<AuditEvent> => {
-    const event: AuditEvent = {
-      id: `audit_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
-      outletId,
-      action,
-      affectedTarget,
-      actor,
-      timestamp: new Date().toISOString(),
-      reason,
-      metadata,
+    const { data: serverId, error } = await (client() as any).rpc('append_platform_audit_event', {
+      p_outlet_id: outletId,
+      p_action: action,
+      p_affected_target: affectedTarget,
+      p_reason: reason || null,
+      p_metadata: metadata || {},
+      p_source: 'merchant-portal',
+    });
+    if (error || !serverId) throw error || new Error('The server did not persist the audit event.');
+    return {
+      id: String(serverId), outletId, action, affectedTarget, actor: 'Current platform administrator',
+      timestamp: new Date().toISOString(), outcome: 'succeeded', reason, metadata,
     };
-
-    try {
-      const logs = localEvents();
-      logs.push(event);
-      localStorage.setItem('bookglow_audit_logs', JSON.stringify(logs));
-    } catch {
-      // Server persistence below remains authoritative when browser storage is unavailable.
-    }
-
-    try {
-      if (!serverAuditEnabled) return event;
-      const supabase = createBrowserSupabaseClient(import.meta.env as any);
-      const { data: serverId, error } = await (supabase as any).rpc('append_platform_audit_event', {
-        p_outlet_id: outletId,
-        p_action: action,
-        p_affected_target: affectedTarget,
-        p_reason: reason || null,
-        p_metadata: metadata || {},
-        p_source: 'merchant-portal',
-      });
-      if (!error && serverId) event.id = String(serverId);
-    } catch {
-      // Allows rollout before the migration is deployed; the local record is retained.
-    }
-    return event;
   },
 
-  getEventsForOutlet: async (outletId: string): Promise<AuditEvent[]> => {
-    const events = await auditService.getAllEvents();
-    return events.filter((event) => event.outletId === outletId);
+  getPage: async (query: AuditQuery = {}): Promise<AuditPage> => {
+    const page = Math.max(1, query.page || 1);
+    const pageSize = Math.min(100, Math.max(10, query.pageSize || 50));
+    let request = (client() as any).from('platform_audit_events').select('*', { count: 'exact' });
+    if (query.outletId && query.outletId !== 'all') request = request.eq('outlet_id', query.outletId);
+    if (query.action) request = request.ilike('action', `%${query.action.replace(/[%_,.()]/g, ' ')}%`);
+    if (query.actor) request = request.ilike('actor_email', `%${query.actor.replace(/[%_,.()]/g, ' ')}%`);
+    if (query.from) request = request.gte('occurred_at', query.from);
+    if (query.to) request = request.lte('occurred_at', query.to);
+    const search = (query.search || '').replace(/[%_,.()]/g, ' ').trim();
+    if (search) request = request.or(`action.ilike.%${search}%,affected_target.ilike.%${search}%,reason.ilike.%${search}%`);
+    const start = (page - 1) * pageSize;
+    const { data, error, count } = await request.order('occurred_at', { ascending: false }).order('id', { ascending: false }).range(start, start + pageSize - 1);
+    if (error) throw error;
+    return { events: (data || []).map(mapEvent), total: count ?? 0, page, pageSize };
   },
 
-  getAllEvents: async (): Promise<AuditEvent[]> => {
-    try {
-      if (!serverAuditEnabled) throw new Error('Server audit disabled in tests');
-      const supabase = createBrowserSupabaseClient(import.meta.env as any);
-      const { data, error } = await (supabase as any)
-        .from('platform_audit_events')
-        .select('*')
-        .order('occurred_at', { ascending: false })
-        .limit(500);
-      if (!error && data) {
-        return data.map((row: any) => ({
-          id: row.id,
-          outletId: row.outlet_id || 'platform',
-          action: row.action,
-          affectedTarget: row.affected_target,
-          actor: row.actor_email || row.actor_uid || 'System',
-          timestamp: row.occurred_at,
-          reason: row.reason || undefined,
-          metadata: row.metadata,
-        }));
-      }
-    } catch {
-      // Fall through to rollout-safe local records.
-    }
-    return localEvents().sort((a, b) => b.timestamp.localeCompare(a.timestamp));
-  },
+  getEventsForOutlet: async (outletId: string): Promise<AuditEvent[]> =>
+    (await auditService.getPage({ outletId, pageSize: 50 })).events,
+
+  getAllEvents: async (): Promise<AuditEvent[]> =>
+    (await auditService.getPage({ pageSize: 100 })).events,
 };

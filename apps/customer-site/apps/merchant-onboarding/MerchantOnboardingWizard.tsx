@@ -5,14 +5,21 @@ import { emptyOnboardingPayload, type MerchantOnboardingPayload, type Onboarding
 import { normalizeWebsite, serializeDraft, validateStep } from './onboardingValidation';
 import OnboardingShell from './components/OnboardingShell';
 
-interface Props { email: string; }
+interface Props {
+  email: string;
+  /** HashRouter destination after setup; avoid query-string reloads that retrigger routing. */
+  completeHref?: string;
+  saveExitHref?: string;
+  onSavedExit?: () => Promise<void> | void;
+}
 const locationChoices = [
   ['physical', 'Clients come to me at a physical location'],
   ['mobile', 'I visit my clients as a mobile operator'],
   ['virtual', 'I provide virtual services online'],
 ] as const;
 
-export default function MerchantOnboardingWizard({ email }: Props) {
+export default function MerchantOnboardingWizard({ email, completeHref, saveExitHref, onSavedExit }: Props) {
+  const portalHref = completeHref ?? merchantPortalLoginUrl(email);
   const [payload, setPayload] = useState<MerchantOnboardingPayload>(emptyOnboardingPayload);
   const [step, setStep] = useState<OnboardingStepId>('account-type');
   const [loading, setLoading] = useState(true);
@@ -26,7 +33,7 @@ export default function MerchantOnboardingWizard({ email }: Props) {
 
   useEffect(() => {
     hasMerchantWorkspace().then(async (exists) => {
-      if (exists) { window.location.assign(merchantPortalLoginUrl(email)); return null; }
+      if (exists) { window.location.replace(portalHref); return null; }
       return loadMerchantDraft();
     }).then((draft) => {
       if (draft?.payload) setPayload({ ...emptyOnboardingPayload(), ...draft.payload });
@@ -45,7 +52,7 @@ export default function MerchantOnboardingWizard({ email }: Props) {
       setPayload(normalized);
       if (step === 'account-type' && normalized.accountType === 'join') {
         await acceptMerchantInvitation(normalized.invitationCode || '');
-        window.location.assign(merchantPortalLoginUrl(email));
+        window.location.assign(portalHref);
         return;
       }
       const currentSteps = activeSteps(normalized.serviceLocationType);
@@ -64,7 +71,11 @@ export default function MerchantOnboardingWizard({ email }: Props) {
 
   const saveAndExit = async () => {
     setSaving(true); setError('');
-    try { await saveMerchantDraft(step, payload); window.location.assign('/'); }
+    try {
+      await saveMerchantDraft(step, payload);
+      if (onSavedExit) { await onSavedExit(); return; }
+      window.location.assign(saveExitHref ?? '/');
+    }
     catch (cause) { setError(cause instanceof Error ? cause.message : 'Could not save your progress.'); setSaving(false); }
   };
 
@@ -129,7 +140,7 @@ export default function MerchantOnboardingWizard({ email }: Props) {
         {step === 'complete' && <div className="merchant-onboarding__complete">
           <div className="merchant-onboarding__complete-mark" aria-hidden>✦</div><h1 tabIndex={-1} ref={titleRef}>Your BookGlow workspace is ready</h1><p>Your business workspace has been created securely.</p>
           <dl><div><dt>Business</dt><dd>{payload.businessName}</dd></div><div><dt>Outlet_ID</dt><dd>{result?.outlet_id || 'Created'}</dd></div><div><dt>Booking path</dt><dd>/book/{result?.booking_slug || 'your-business'}</dd></div><div><dt>Owner email</dt><dd>{email}</dd></div></dl>
-          <button type="button" className="merchant-onboarding__continue" onClick={() => window.location.assign(merchantPortalLoginUrl(email))}>Go to dashboard <span aria-hidden>→</span></button>
+          <button type="button" className="merchant-onboarding__continue" onClick={() => window.location.assign(portalHref)}>Go to dashboard <span aria-hidden>→</span></button>
         </div>}
         {error && <div className="merchant-onboarding__error" role="alert">{error}</div>}
       </section>

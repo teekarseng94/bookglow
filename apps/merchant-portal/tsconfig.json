@@ -22,6 +22,18 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@bookglow/auth-contracts": [
+        "../../packages/auth-contracts/src/index.ts"
+      ],
+      "@bookglow/database-contracts": [
+        "../../packages/database-contracts/src/index.ts"
+      ],
+      "@bookglow/shared-types": [
+        "../../packages/shared-types/src/index.ts"
+      ],
+      "@bookglow/supabase": [
+        "../../packages/supabase/src/index.ts"
       ]
     },
     "allowImportingTsExtensions": true,
@@ -30,7 +42,10 @@
   "include": [
     "./**/*.ts",
     "./**/*.tsx",
-    "./vite-env.d.ts"
+    "./vite-env.d.ts",
+    "../customer-site/apps/merchant-onboarding/**/*.ts",
+    "../customer-site/apps/merchant-onboarding/**/*.tsx",
+    "../customer-site/services/merchantOnboardingService.ts"
   ],
   "exclude": [
     "node_modules",

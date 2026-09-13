@@ -18,6 +18,7 @@ import {
   outletService,
   setCurrentOutletID,
   MEMBERSHIP_RENEWAL_CATEGORY,
+  DEFAULT_LIST_PAGE_SIZE,
 } from '../services/databaseService';
 import { setCurrentOutletID as setPointTransactionOutletID } from '../services/pointTransactionService';
 import { pointTransactionService } from '../services/pointTransactionService';
@@ -97,6 +98,10 @@ export const useFirestoreData = (
 
   // State
   const [clients, setClients] = useState<Client[]>([]);
+  const [clientTotalCount, setClientTotalCount] = useState(0);
+  const [clientsLoadingMore, setClientsLoadingMore] = useState(false);
+  const clientsRef = useRef<Client[]>([]);
+  const loadingMoreClientsRef = useRef(false);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -116,12 +121,15 @@ export const useFirestoreData = (
   /** Ref to delete transaction (set after handleDeleteTransaction is defined) so handleDeleteAppointment can delete the linked sale from Sales History. */
   const deleteTransactionRef = useRef<((id: string) => Promise<void>) | null>(null);
 
+  clientsRef.current = clients;
+
   // When user has no outlet, do not load any data (strict multi-tenant isolation)
   useEffect(() => {
     if (!hasOutlet) {
       setLoading(false);
       setError(NO_OUTLET_ERROR);
       setClients([]);
+      setClientTotalCount(0);
       setStaff([]);
       setAppointments([]);
       setTransactions([]);
@@ -142,6 +150,7 @@ export const useFirestoreData = (
     pendingTablesRef.current = new Set();
     transactionItemsLoadedRef.current = false;
     setClients([]);
+    setClientTotalCount(0);
     setStaff([]);
     setAppointments([]);
     setTransactions([]);
@@ -178,9 +187,12 @@ export const useFirestoreData = (
           setServiceCategories(DEFAULT_SERVICE_CATEGORIES);
         }
       } else if (domain === 'clients') {
-        // First page only for list shells; CRM search uses clientService.search.
-        const clientsData = await clientService.listPage(outletID, { limit: 50, offset: 0 });
+        const [clientsData, total] = await Promise.all([
+          clientService.listPage(outletID, { limit: DEFAULT_LIST_PAGE_SIZE, offset: 0 }),
+          clientService.count(outletID),
+        ]);
         setClients(clientsData);
+        setClientTotalCount(total);
       } else if (domain === 'appointments') {
         // Default: rolling 60-day window (past 7 + next 53) instead of all history.
         const today = new Date();
@@ -478,6 +490,30 @@ export const useFirestoreData = (
       throw err;
     }
   }, [outletID]);
+
+  const loadMoreClients = useCallback(async () => {
+    if (!hasOutlet || !outletID || loadingMoreClientsRef.current) return;
+    const loaded = clientsRef.current.length;
+    if (loaded >= clientTotalCount) return;
+    loadingMoreClientsRef.current = true;
+    setClientsLoadingMore(true);
+    try {
+      const next = await clientService.listPage(outletID, {
+        limit: DEFAULT_LIST_PAGE_SIZE,
+        offset: loaded,
+      });
+      setClients((current) => {
+        const seen = new Set(current.map((row) => row.id));
+        return [...current, ...next.filter((row) => !seen.has(row.id))];
+      });
+    } catch (err: any) {
+      console.error('Error loading more members:', err);
+      setError(err?.message || 'Failed to load more members');
+    } finally {
+      loadingMoreClientsRef.current = false;
+      setClientsLoadingMore(false);
+    }
+  }, [clientTotalCount, hasOutlet, outletID]);
 
   /** Update member credit (top-up or deduction) and log to credit_history. amount: positive = topup, negative = deduction. */
   const handleUpdateClientCredit = useCallback(
@@ -1457,6 +1493,9 @@ export const useFirestoreData = (
   return {
     // Data
     clients,
+    clientTotalCount,
+    clientsHasMore: clients.length < clientTotalCount,
+    clientsLoadingMore,
     staff,
     appointments,
     transactions,
@@ -1470,6 +1509,7 @@ export const useFirestoreData = (
 
     // Operations
     loadData,
+    loadMoreClients,
     handleAddClient,
     handleUpdateClient,
     handleRenewMember,

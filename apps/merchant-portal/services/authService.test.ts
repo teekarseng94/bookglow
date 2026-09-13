@@ -16,4 +16,9 @@ describe('merchant OAuth service', () => {
     await expect(loginWithOAuth('google')).rejects.toThrow('currently unavailable');
     expect(signInWithOAuth).not.toHaveBeenCalled();
   });
+  it('offers Google when the flag is unset, matching production Android', async () => {
+    vi.stubEnv('VITE_AUTH_GOOGLE_ENABLED', '');
+    const { isMerchantOAuthEnabled } = await import('./authService');
+    expect(isMerchantOAuthEnabled('google')).toBe(true);
+  });
 });

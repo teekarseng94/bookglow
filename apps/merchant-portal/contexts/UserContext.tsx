@@ -82,44 +82,25 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = ({
         return;
       }
 
-      if (access.state === "no_workspace") {
-        setUserData({ uid: user.uid, email: user.email, outletId: null, role: null, displayName: user.displayName });
-        setOnboardingRequired(false);
-        return;
-      }
       if (access.state === "membership_suspended") throw new Error("Your merchant account is suspended.");
       if (access.state === "outlet_suspended") throw new Error("This merchant workspace has been suspended.");
+
+      const rpcOutletId = access.outletId?.trim() || "";
+      if (access.state === "no_workspace" || !rpcOutletId) {
+        setUserData({ uid: user.uid, email: user.email, outletId: null, role: null, displayName: user.displayName });
+        setOnboardingRequired(true);
+        return;
+      }
+
       const profile = await fetchPortalUserProfile(user.uid);
-      if (!profile) {
-        setUserData({
-          uid: user.uid,
-          email: user.email,
-          outletId: null,
-          role: null,
-          displayName: user.displayName || null,
-        });
-        setOnboardingRequired(true);
-        return;
-      }
-      const outletId = profile.outletId?.trim() || "";
-      if (!outletId && profile.role !== "platform_admin") {
-        setUserData({
-          uid: profile.uid,
-          email: profile.email || user.email,
-          outletId: null,
-          role: null,
-          displayName: profile.displayName || user.displayName || null,
-        });
-        setOnboardingRequired(true);
-        return;
-      }
+      const outletId = rpcOutletId || profile?.outletId?.trim() || "";
       if (outletId) {
         const outlet = await outletService.getById(outletId);
-        if (outlet && outlet.isActive === false) {
+        if (outlet?.accessStatus === "suspended") {
           throw new Error("This merchant workspace has been suspended. Please contact platform support.");
         }
       }
-      const rawRole = (access.role || profile.role || "cashier").toLowerCase();
+      const rawRole = (access.role || profile?.role || "cashier").toLowerCase();
       const role: UserRole =
         rawRole === "owner" || rawRole === "admin" || rawRole === "platform_admin"
           ? "admin"
@@ -127,12 +108,12 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = ({
           ? "manager"
           : "cashier";
       setUserData({
-        uid: profile.uid,
-        email: profile.email || user.email,
+        uid: profile?.uid || user.uid,
+        email: profile?.email || user.email,
         outletId: outletId || null,
         role,
-        outletName: profile.outletName || undefined,
-        displayName: profile.displayName || user.displayName || null,
+        outletName: profile?.outletName || undefined,
+        displayName: profile?.displayName || user.displayName || null,
       });
     } catch (err: any) {
       console.error("❌ Error fetching user data:", err);

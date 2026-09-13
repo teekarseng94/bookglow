@@ -3,7 +3,6 @@ import { createBrowserSupabaseClient } from '@bookglow/supabase';
 import { PlatformMetricCard, PlatformPageHeader, PlatformSection } from '../components/admin';
 import { EmptyState, ErrorState, LoadingSkeleton, StatusBadge } from '../components/ui';
 import { accountAdminService } from '../services/accountAdminService';
-import { auditService } from '../services/auditService';
 import { outletService } from '../services/databaseService';
 import type { Outlet } from '../types';
 
@@ -56,10 +55,10 @@ const SuperAdminUsers: React.FC = () => {
 
   const updateRole = async (user: PlatformUser, nextRole: string) => {
     if (!window.confirm(`Change ${user.email || 'this user'} to ${nextRole}?`)) return;
+    if (!user.outlet_id) { setError('Assign this account to an outlet before changing its outlet role.'); return; }
     setSavingUid(user.uid);
     try {
-      await accountAdminService.changeRole(user.uid, nextRole);
-      await auditService.logEvent(user.outlet_id || 'platform', 'role changed', user.email || user.uid, 'Super Admin', `Role changed to ${nextRole}`);
+      await accountAdminService.changeRole(user.outlet_id, user.uid, nextRole, `Role changed to ${nextRole}`);
       await load();
     } finally {
       setSavingUid(null);

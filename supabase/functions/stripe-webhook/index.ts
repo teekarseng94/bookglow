@@ -4,7 +4,6 @@ import Stripe from "npm:stripe@^22";
 
 const stripeKey = Deno.env.get("STRIPE_SECRET_KEY") || "";
 const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SIGNING_SECRET") || "";
-const stripe = new Stripe(stripeKey);
 const cryptoProvider = Stripe.createSubtleCryptoProvider();
 
 const respond = (status: number, body: unknown) =>
@@ -18,6 +17,7 @@ Deno.serve(async (request) => {
   if (request.method !== "POST") return respond(405, { error: "Method not allowed" });
   const signature = request.headers.get("stripe-signature");
   if (!signature || !stripeKey || !webhookSecret) return respond(500, { error: "Stripe webhook is not configured" });
+  const stripe = new Stripe(stripeKey);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");

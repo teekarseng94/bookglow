@@ -5,6 +5,8 @@ import { describe, expect, it } from 'vitest';
 
 const sql = readFileSync(resolve(process.cwd(), '../../migration/supabase/migrations/20260913165153_superadmin_step1_reliability.sql'), 'utf8');
 const step2Sql = readFileSync(resolve(process.cwd(), '../../migration/supabase/migrations/20260913185856_superadmin_step2_operations.sql'), 'utf8');
+const monitoringSql = readFileSync(resolve(process.cwd(), '../../migration/supabase/migrations/20260914104830_monitoring_read_sanitization.sql'), 'utf8');
+const functionGrantSql = readFileSync(resolve(process.cwd(), '../../migration/supabase/migrations/20260914110322_edge_function_service_role_grants.sql'), 'utf8');
 
 describe('superadmin Step 1 migration contract', () => {
   it('suspends portal access without changing public booking publication', () => {
@@ -53,5 +55,35 @@ describe('superadmin Step 2 migration contract', () => {
     expect(step2Sql).toContain("'cancelled_at only; historical rows without a cancellation timestamp are excluded'");
     expect(step2Sql).toContain("'Provider acceptance is tracked; confirmed delivery is not instrumented'");
     expect(step2Sql).toContain("'retries_enabled',false");
+  });
+});
+
+describe('monitoring read sanitization contract', () => {
+  it('reuses platform_sanitize_error for messages and sanitizes metadata keys and nested values', () => {
+    expect(monitoringSql).toContain('CREATE OR REPLACE FUNCTION public.platform_sanitize_jsonb(p_value jsonb)');
+    expect(monitoringSql).toContain('public.platform_sanitize_error(p_value #>> \'{}\')');
+    expect(monitoringSql).toContain('public.platform_sanitize_error(e.message) AS message');
+    expect(monitoringSql).toContain('public.platform_sanitize_jsonb(e.metadata) AS metadata');
+    expect(monitoringSql).toContain('access_token|refresh_token|client_secret|authorization|api[_-]?key|token|password|secret|signing_secret');
+  });
+
+  it('blocks authenticated table reads and exposes monitoring only through the platform-admin RPC', () => {
+    expect(monitoringSql).toContain('REVOKE SELECT ON public.platform_monitoring_events FROM anon, authenticated');
+    expect(monitoringSql).toContain('REVOKE ALL ON FUNCTION public.platform_monitoring_events_page(integer, integer) FROM PUBLIC, anon');
+    expect(monitoringSql).toContain('GRANT EXECUTE ON FUNCTION public.platform_monitoring_events_page(integer, integer) TO authenticated');
+    expect(monitoringSql).toContain('IF NOT public.is_platform_admin()');
+  });
+});
+
+describe('edge function service_role grants', () => {
+  it('grants service_role DML on tables used by billing, account, invite, marketing, and webhook functions', () => {
+    expect(functionGrantSql).toContain('GRANT ALL ON TABLE');
+    expect(functionGrantSql).toContain('public.users');
+    expect(functionGrantSql).toContain('public.platform_admins');
+    expect(functionGrantSql).toContain('public.outlet_subscriptions');
+    expect(functionGrantSql).toContain('public.billing_events');
+    expect(functionGrantSql).toContain('public.marketing_campaigns');
+    expect(functionGrantSql).toContain('public.outlet_invitations');
+    expect(functionGrantSql).toContain('TO service_role;');
   });
 });

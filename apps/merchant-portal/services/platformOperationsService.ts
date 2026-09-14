@@ -105,9 +105,10 @@ export const platformOperationsService = {
   },
 
   listMonitoringEvents: async (): Promise<PlatformMonitoringEvent[]> => {
-    const { data, error } = await (client() as any).from('platform_monitoring_events').select('*').order('occurred_at', { ascending: false }).limit(200);
+    const { data, error } = await (client() as any).rpc('platform_monitoring_events_page', { p_limit: 200, p_offset: 0 });
     if (error) throw error;
-    return (data || []).map((row: any) => ({
+    const rows = Array.isArray(data) ? data : data?.rows || [];
+    return rows.map((row: any) => ({
       id: row.id,
       service: row.service,
       severity: row.severity,

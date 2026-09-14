@@ -47,3 +47,24 @@ additional_redirect_urls = [
 
 [storage]
 enabled = true
+
+[functions.chatbot-webhook]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.billing-admin]
+verify_jwt = true
+
+[functions.account-admin]
+verify_jwt = true
+
+[functions.invite-outlet-member]
+verify_jwt = true
+
+[functions.marketing-dispatch]
+verify_jwt = true
+
+[functions.google-business]
+verify_jwt = false

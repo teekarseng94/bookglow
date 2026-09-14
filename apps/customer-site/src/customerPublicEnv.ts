@@ -22,10 +22,10 @@ export function customerBrowserEnv(): Record<string, string | undefined> {
     VITE_AUTH_FACEBOOK_ENABLED: read('VITE_AUTH_FACEBOOK_ENABLED', 'false'),
     VITE_DATA_PROVIDER: read('VITE_DATA_PROVIDER', 'supabase'),
     VITE_AUTH_PROVIDER: read('VITE_AUTH_PROVIDER', 'supabase'),
-    VITE_CUSTOMER_SITE_URL: read('VITE_CUSTOMER_SITE_URL', 'https://bookglow.vercel.app'),
+    VITE_CUSTOMER_SITE_URL: read('VITE_CUSTOMER_SITE_URL', 'https://www.baliwellnes.com'),
     VITE_CUSTOMER_AUTH_CALLBACK_URL: read(
       'VITE_CUSTOMER_AUTH_CALLBACK_URL',
-      'https://bookglow.vercel.app/auth/callback/customer',
+      'https://www.baliwellnes.com/auth/callback/customer',
     ),
     VITE_MERCHANT_PORTAL_URL: read(
       'VITE_MERCHANT_PORTAL_URL',

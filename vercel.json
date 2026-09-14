@@ -45,8 +45,8 @@
       "VITE_AUTH_FACEBOOK_ENABLED": "false",
       "VITE_DATA_PROVIDER": "supabase",
       "VITE_AUTH_PROVIDER": "supabase",
-      "VITE_CUSTOMER_SITE_URL": "https://bookglow.vercel.app",
-      "VITE_CUSTOMER_AUTH_CALLBACK_URL": "https://bookglow.vercel.app/auth/callback/customer",
+      "VITE_CUSTOMER_SITE_URL": "https://www.baliwellnes.com",
+      "VITE_CUSTOMER_AUTH_CALLBACK_URL": "https://www.baliwellnes.com/auth/callback/customer",
       "VITE_MERCHANT_PORTAL_URL": "https://bookglow-merchant-kar-sengs-projects.vercel.app",
       "VITE_MERCHANT_AUTH_CALLBACK_URL": "https://bookglow-merchant-kar-sengs-projects.vercel.app/auth/callback/merchant"
     }
@@ -58,8 +58,8 @@
     "VITE_AUTH_FACEBOOK_ENABLED": "false",
     "VITE_DATA_PROVIDER": "supabase",
     "VITE_AUTH_PROVIDER": "supabase",
-    "VITE_CUSTOMER_SITE_URL": "https://bookglow.vercel.app",
-    "VITE_CUSTOMER_AUTH_CALLBACK_URL": "https://bookglow.vercel.app/auth/callback/customer",
+    "VITE_CUSTOMER_SITE_URL": "https://www.baliwellnes.com",
+    "VITE_CUSTOMER_AUTH_CALLBACK_URL": "https://www.baliwellnes.com/auth/callback/customer",
     "VITE_MERCHANT_PORTAL_URL": "https://bookglow-merchant-kar-sengs-projects.vercel.app",
     "VITE_MERCHANT_AUTH_CALLBACK_URL": "https://bookglow-merchant-kar-sengs-projects.vercel.app/auth/callback/merchant"
   }

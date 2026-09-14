@@ -25,6 +25,13 @@ describe('superadmin Step 1 migration contract', () => {
     expect(sql).toContain('FROM public.platform_admins WHERE user_id=p_user_id');
     expect(sql).toContain("IF v_member.role='owner'");
   });
+
+  it('limits merchant access helpers to authenticated callers', () => {
+    expect(sql).toContain('REVOKE ALL ON FUNCTION public.is_outlet_member(text), public.has_outlet_role(text,text[]) FROM PUBLIC, anon');
+    expect(sql).toContain('GRANT EXECUTE ON FUNCTION public.is_outlet_member(text), public.has_outlet_role(text,text[]) TO authenticated');
+    expect(sql).toContain('REVOKE ALL ON FUNCTION public.resolve_merchant_access() FROM PUBLIC, anon');
+    expect(sql).toContain('GRANT EXECUTE ON FUNCTION public.resolve_merchant_access() TO authenticated');
+  });
 });
 
 describe('superadmin Step 2 migration contract', () => {

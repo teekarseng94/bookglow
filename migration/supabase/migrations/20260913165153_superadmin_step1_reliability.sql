@@ -69,6 +69,8 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$
     SELECT 1 FROM public.outlet_members WHERE outlet_id=p_outlet_id AND user_id=auth.uid() AND status='active' AND role=ANY(p_roles)
   )
 $$;
+REVOKE ALL ON FUNCTION public.is_outlet_member(text), public.has_outlet_role(text,text[]) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.is_outlet_member(text), public.has_outlet_role(text,text[]) TO authenticated;
 
 -- Service-role Edge Functions use this explicit-user helper. Keep the global
 -- account block in the authorization decision even when auth.uid() is absent.
@@ -116,6 +118,8 @@ BEGIN
     'outlet_id',m.outlet_id,'role',m.role,'onboarding_status',m.onboarding_status,'access_status',m.access_status
   );
 END $$;
+REVOKE ALL ON FUNCTION public.resolve_merchant_access() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.resolve_merchant_access() TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.platform_set_outlet_access(
   p_outlet_id text, p_enabled boolean, p_reason text

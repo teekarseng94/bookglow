@@ -167,7 +167,7 @@ BEGIN
     INSERT INTO public.platform_support_case_events(case_id,event_type,actor_uid,actor_email,before_value,after_value)
     VALUES(p_case_id,'assignment_changed',auth.uid(),v_email,jsonb_build_object('assigned_to',v_case.assigned_to),jsonb_build_object('assigned_to',p_assigned_to));
   ELSIF p_action='set_status' THEN
-    IF p_status NOT IN ('open','in_progress','waiting_on_merchant') OR v_case.status='resolved' THEN RAISE EXCEPTION 'Invalid status transition'; END IF;
+    IF p_status IS NULL OR p_status NOT IN ('open','in_progress','waiting_on_merchant') OR v_case.status='resolved' THEN RAISE EXCEPTION 'Invalid status transition'; END IF;
     UPDATE public.platform_support_cases SET status=p_status,updated_at=now() WHERE id=p_case_id;
     INSERT INTO public.platform_support_case_events(case_id,event_type,actor_uid,actor_email,before_value,after_value)
     VALUES(p_case_id,'status_changed',auth.uid(),v_email,jsonb_build_object('status',v_case.status),jsonb_build_object('status',p_status));
@@ -221,10 +221,10 @@ CREATE OR REPLACE FUNCTION public.platform_support_cases_page(
 DECLARE v_rows jsonb; v_total bigint;
 BEGIN
  IF NOT public.is_platform_admin() THEN RAISE EXCEPTION 'Platform administrator access required'; END IF;
- SELECT count(*) INTO v_total FROM public.platform_support_cases c WHERE
+ SELECT count(*) INTO v_total FROM public.platform_support_cases c JOIN public.outlets o ON o.outlet_id=c.outlet_id WHERE
   (p_status IS NULL OR c.status=p_status) AND (p_priority IS NULL OR c.priority=p_priority) AND
   (p_category IS NULL OR c.category=p_category) AND (p_outlet_id IS NULL OR c.outlet_id=p_outlet_id) AND
-  (nullif(trim(coalesce(p_search,'')),'') IS NULL OR c.subject ILIKE '%'||trim(p_search)||'%' OR c.id::text ILIKE '%'||trim(p_search)||'%');
+  (nullif(trim(coalesce(p_search,'')),'') IS NULL OR c.subject ILIKE '%'||trim(p_search)||'%' OR c.id::text ILIKE '%'||trim(p_search)||'%' OR o.name ILIKE '%'||trim(p_search)||'%');
  SELECT coalesce(jsonb_agg(to_jsonb(x)),'[]'::jsonb) INTO v_rows FROM (
   SELECT c.id,c.outlet_id,o.name outlet_name,c.category,c.priority,c.subject,c.status,c.assigned_to,
    coalesce(p.full_name,p.email) assigned_name,c.resolution_summary,c.created_at,c.updated_at,c.resolved_at
@@ -232,7 +232,7 @@ BEGIN
   LEFT JOIN public.profiles p ON p.id=c.assigned_to WHERE
    (p_status IS NULL OR c.status=p_status) AND (p_priority IS NULL OR c.priority=p_priority) AND
    (p_category IS NULL OR c.category=p_category) AND (p_outlet_id IS NULL OR c.outlet_id=p_outlet_id) AND
-   (nullif(trim(coalesce(p_search,'')),'') IS NULL OR c.subject ILIKE '%'||trim(p_search)||'%' OR c.id::text ILIKE '%'||trim(p_search)||'%')
+   (nullif(trim(coalesce(p_search,'')),'') IS NULL OR c.subject ILIKE '%'||trim(p_search)||'%' OR c.id::text ILIKE '%'||trim(p_search)||'%' OR o.name ILIKE '%'||trim(p_search)||'%')
   ORDER BY CASE c.priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'normal' THEN 2 ELSE 3 END,c.updated_at DESC,c.id
   LIMIT least(greatest(p_limit,1),100) OFFSET greatest(p_offset,0)
  ) x;
@@ -270,7 +270,7 @@ BEGIN
    (o.owner_user_id IS NOT NULL OR EXISTS(SELECT 1 FROM public.outlet_members m WHERE m.outlet_id=o.outlet_id AND m.role='owner' AND m.status='active')) owner_assigned,
    (length(trim(coalesce(o.name,'')))>=2 AND coalesce(nullif(trim(o.email),''),nullif(trim(o.phone),''),nullif(trim(o.phone_number),'')) IS NOT NULL
     AND (coalesce(o.settings->>'serviceLocationType','')<>'physical' OR coalesce(nullif(trim(o.address_display),''),nullif(trim(o.address->>'addressDisplay'),'')) IS NOT NULL)) business_details,
-   EXISTS(SELECT 1 FROM jsonb_each(coalesce(o.business_hours,'{}'::jsonb)) h WHERE coalesce((h.value->>'isOpen')::boolean,true) AND h.value->>'open' IS NOT NULL AND h.value->>'close' IS NOT NULL AND h.value->>'open'<>h.value->>'close') operating_hours,
+    EXISTS(SELECT 1 FROM jsonb_each(CASE WHEN jsonb_typeof(o.business_hours)='object' THEN o.business_hours ELSE '{}'::jsonb END) h WHERE lower(coalesce(h.value->>'isOpen','true'))='true' AND h.value->>'open' IS NOT NULL AND h.value->>'close' IS NOT NULL AND h.value->>'open'<>h.value->>'close') operating_hours,
    EXISTS(SELECT 1 FROM public.services s WHERE s.outlet_id=o.outlet_id AND coalesce(s.is_visible,true) AND coalesce(s.duration,0)>0) bookable_services,
    EXISTS(SELECT 1 FROM public.staff st WHERE st.outlet_id=o.outlet_id) staff_configured,
    (nullif(trim(o.booking_slug),'') IS NOT NULL AND coalesce(o.is_active,true)) booking_path,
@@ -288,7 +288,7 @@ BEGIN
   SELECT o.outlet_id,o.name,o.timezone,o.onboarding_status,o.access_status,o.updated_at,
    (o.owner_user_id IS NOT NULL OR EXISTS(SELECT 1 FROM public.outlet_members m WHERE m.outlet_id=o.outlet_id AND m.role='owner' AND m.status='active')) owner_assigned,
    (length(trim(coalesce(o.name,'')))>=2 AND coalesce(nullif(trim(o.email),''),nullif(trim(o.phone),''),nullif(trim(o.phone_number),'')) IS NOT NULL AND (coalesce(o.settings->>'serviceLocationType','')<>'physical' OR coalesce(nullif(trim(o.address_display),''),nullif(trim(o.address->>'addressDisplay'),'')) IS NOT NULL)) business_details,
-   EXISTS(SELECT 1 FROM jsonb_each(coalesce(o.business_hours,'{}'::jsonb)) h WHERE coalesce((h.value->>'isOpen')::boolean,true) AND h.value->>'open' IS NOT NULL AND h.value->>'close' IS NOT NULL AND h.value->>'open'<>h.value->>'close') operating_hours,
+    EXISTS(SELECT 1 FROM jsonb_each(CASE WHEN jsonb_typeof(o.business_hours)='object' THEN o.business_hours ELSE '{}'::jsonb END) h WHERE lower(coalesce(h.value->>'isOpen','true'))='true' AND h.value->>'open' IS NOT NULL AND h.value->>'close' IS NOT NULL AND h.value->>'open'<>h.value->>'close') operating_hours,
    EXISTS(SELECT 1 FROM public.services s WHERE s.outlet_id=o.outlet_id AND coalesce(s.is_visible,true) AND coalesce(s.duration,0)>0) bookable_services,
    EXISTS(SELECT 1 FROM public.staff st WHERE st.outlet_id=o.outlet_id) staff_configured,
    (nullif(trim(o.booking_slug),'') IS NOT NULL AND coalesce(o.is_active,true)) booking_path,
@@ -332,12 +332,26 @@ BEGIN
    UNION ALL
    SELECT e.outlet_id,o.name,'monitoring',e.severity,public.platform_sanitize_error(e.message),e.occurred_at,'/admin/integrations-jobs?tab=jobs' FROM public.platform_monitoring_events e JOIN outlet_bounds o ON o.outlet_id=e.outlet_id WHERE e.severity IN ('error','critical')
    UNION ALL
-   SELECT op.outlet_id,o.name,'operation',CASE WHEN op.state='failed' THEN 'error' ELSE 'warning' END,op.action||' '||op.state,coalesce(op.completed_at,op.started_at),'/admin/integrations-jobs?tab=jobs' FROM public.platform_admin_operations op JOIN outlet_bounds o ON o.outlet_id=op.outlet_id WHERE op.state IN ('failed','partial')
+    SELECT op.outlet_id,o.name,'operation',CASE WHEN op.state='failed' THEN 'error' ELSE 'warning' END,op.action||' '||op.state,coalesce(op.completed_at,op.started_at),'/admin/integrations-jobs?tab=jobs' FROM public.platform_admin_operations op JOIN outlet_bounds o ON o.outlet_id=op.outlet_id WHERE op.state IN ('failed','partial')
+    UNION ALL
+    SELECT o.outlet_id,o.name,'onboarding','warning','Onboarding requirements are incomplete',o.updated_at,'/admin/onboarding?stage=pending&outlet='||o.outlet_id
+    FROM outlet_bounds o WHERE NOT (
+     (o.owner_user_id IS NOT NULL OR EXISTS(SELECT 1 FROM public.outlet_members m WHERE m.outlet_id=o.outlet_id AND m.role='owner' AND m.status='active'))
+     AND length(trim(coalesce(o.name,'')))>=2
+     AND coalesce(nullif(trim(o.email),''),nullif(trim(o.phone),''),nullif(trim(o.phone_number),'')) IS NOT NULL
+     AND (coalesce(o.settings->>'serviceLocationType','')<>'physical' OR coalesce(nullif(trim(o.address_display),''),nullif(trim(o.address->>'addressDisplay'),'')) IS NOT NULL)
+     AND EXISTS(SELECT 1 FROM jsonb_each(CASE WHEN jsonb_typeof(o.business_hours)='object' THEN o.business_hours ELSE '{}'::jsonb END) h WHERE lower(coalesce(h.value->>'isOpen','true'))='true' AND h.value->>'open' IS NOT NULL AND h.value->>'close' IS NOT NULL AND h.value->>'open'<>h.value->>'close')
+     AND EXISTS(SELECT 1 FROM public.services s WHERE s.outlet_id=o.outlet_id AND coalesce(s.is_visible,true) AND coalesce(s.duration,0)>0)
+     AND nullif(trim(o.booking_slug),'') IS NOT NULL AND coalesce(o.is_active,true)
+    )
   ) u ORDER BY occurred_at DESC LIMIT 25
  ), onboarding_attention AS (
   SELECT count(*) n FROM outlet_bounds o WHERE NOT (
    (o.owner_user_id IS NOT NULL OR EXISTS(SELECT 1 FROM public.outlet_members m WHERE m.outlet_id=o.outlet_id AND m.role='owner' AND m.status='active'))
-   AND length(trim(coalesce(o.name,'')))>=2
+    AND length(trim(coalesce(o.name,'')))>=2
+    AND coalesce(nullif(trim(o.email),''),nullif(trim(o.phone),''),nullif(trim(o.phone_number),'')) IS NOT NULL
+    AND (coalesce(o.settings->>'serviceLocationType','')<>'physical' OR coalesce(nullif(trim(o.address_display),''),nullif(trim(o.address->>'addressDisplay'),'')) IS NOT NULL)
+    AND EXISTS(SELECT 1 FROM jsonb_each(CASE WHEN jsonb_typeof(o.business_hours)='object' THEN o.business_hours ELSE '{}'::jsonb END) h WHERE lower(coalesce(h.value->>'isOpen','true'))='true' AND h.value->>'open' IS NOT NULL AND h.value->>'close' IS NOT NULL AND h.value->>'open'<>h.value->>'close')
    AND EXISTS(SELECT 1 FROM public.services s WHERE s.outlet_id=o.outlet_id AND coalesce(s.is_visible,true) AND coalesce(s.duration,0)>0)
    AND nullif(trim(o.booking_slug),'') IS NOT NULL AND coalesce(o.is_active,true)
   )
@@ -349,15 +363,16 @@ CREATE OR REPLACE FUNCTION public.platform_activity_page(p_kind text,p_start_dat
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public AS $$
 DECLARE v_rows jsonb; v_total bigint;
 BEGIN
- IF NOT public.is_platform_admin() THEN RAISE EXCEPTION 'Platform administrator access required'; END IF;
- IF p_kind NOT IN ('bookings_created','appointments_scheduled','appointments_completed','appointments_cancelled','failed_operations','failed_messages','unresolved_support') THEN RAISE EXCEPTION 'Unsupported activity kind'; END IF;
+  IF NOT public.is_platform_admin() THEN RAISE EXCEPTION 'Platform administrator access required'; END IF;
+  IF p_start_date IS NULL OR p_end_date IS NULL OR p_end_date<p_start_date OR p_end_date-p_start_date>366 THEN RAISE EXCEPTION 'Choose a valid range of at most 367 days'; END IF;
+  IF p_kind NOT IN ('bookings_created','appointments_scheduled','appointments_completed','appointments_cancelled','failed_operations','failed_messages','unresolved_support') THEN RAISE EXCEPTION 'Unsupported activity kind'; END IF;
  WITH bounds AS (SELECT o.outlet_id,o.name,CASE WHEN EXISTS(SELECT 1 FROM pg_timezone_names z WHERE z.name=o.timezone) THEN o.timezone ELSE 'UTC' END tz,p_start_date::timestamp AT TIME ZONE (CASE WHEN EXISTS(SELECT 1 FROM pg_timezone_names z WHERE z.name=o.timezone) THEN o.timezone ELSE 'UTC' END) utc_start,(p_end_date+1)::timestamp AT TIME ZONE (CASE WHEN EXISTS(SELECT 1 FROM pg_timezone_names z WHERE z.name=o.timezone) THEN o.timezone ELSE 'UTC' END) utc_end FROM public.outlets o WHERE p_outlet_id IS NULL OR o.outlet_id=p_outlet_id), activity AS (
   SELECT a.id,b.outlet_id,b.name outlet_name,a.status state,a.created_at occurred_at,a.date||' '||a.time scheduled_for,a.source,NULL::text detail FROM public.appointments a JOIN bounds b ON b.outlet_id=a.outlet_id WHERE p_kind='bookings_created' AND a.created_at>=b.utc_start AND a.created_at<b.utc_end
   UNION ALL SELECT a.id,b.outlet_id,b.name,a.status,a.created_at,a.date||' '||a.time,a.source,NULL FROM public.appointments a JOIN bounds b ON b.outlet_id=a.outlet_id WHERE p_kind='appointments_scheduled' AND a.date~'^\d{4}-\d{2}-\d{2}$' AND a.date::date BETWEEN p_start_date AND p_end_date
   UNION ALL SELECT a.id,b.outlet_id,b.name,a.status,a.completed_at,a.date||' '||a.time,a.source,NULL FROM public.appointments a JOIN bounds b ON b.outlet_id=a.outlet_id WHERE p_kind='appointments_completed' AND a.completed_at>=b.utc_start AND a.completed_at<b.utc_end
   UNION ALL SELECT a.id,b.outlet_id,b.name,a.status,a.cancelled_at,a.date||' '||a.time,a.source,NULL FROM public.appointments a JOIN bounds b ON b.outlet_id=a.outlet_id WHERE p_kind='appointments_cancelled' AND a.cancelled_at>=b.utc_start AND a.cancelled_at<b.utc_end
-  UNION ALL SELECT op.id::text,coalesce(op.outlet_id,''),coalesce(b.name,'Platform'),op.state,coalesce(op.completed_at,op.started_at),NULL,op.action,public.platform_sanitize_error(op.result->>'error') FROM public.platform_admin_operations op LEFT JOIN bounds b ON b.outlet_id=op.outlet_id WHERE p_kind='failed_operations' AND op.state IN ('failed','partial') AND (p_outlet_id IS NULL OR op.outlet_id=p_outlet_id)
-  UNION ALL SELECT d.id,d.outlet_id,b.name,d.status,d.updated_at,NULL,d.channel,public.platform_sanitize_error(d.last_error) FROM public.marketing_campaign_deliveries d JOIN bounds b ON b.outlet_id=d.outlet_id WHERE p_kind='failed_messages' AND d.status='failed'
+  UNION ALL SELECT op.id::text,coalesce(op.outlet_id,''),coalesce(b.name,'Platform'),op.state,coalesce(op.completed_at,op.started_at),NULL,op.action,public.platform_sanitize_error(op.result->>'error') FROM public.platform_admin_operations op LEFT JOIN bounds b ON b.outlet_id=op.outlet_id WHERE p_kind='failed_operations' AND op.state IN ('failed','partial') AND (p_outlet_id IS NULL OR op.outlet_id=p_outlet_id) AND op.started_at>=coalesce(b.utc_start,p_start_date::timestamp AT TIME ZONE 'UTC') AND op.started_at<coalesce(b.utc_end,(p_end_date+1)::timestamp AT TIME ZONE 'UTC')
+  UNION ALL SELECT d.id,d.outlet_id,b.name,d.status,d.updated_at,NULL,d.channel,public.platform_sanitize_error(d.last_error) FROM public.marketing_campaign_deliveries d JOIN bounds b ON b.outlet_id=d.outlet_id WHERE p_kind='failed_messages' AND d.status='failed' AND d.updated_at>=b.utc_start AND d.updated_at<b.utc_end
   UNION ALL SELECT c.id::text,c.outlet_id,b.name,c.status,c.updated_at,NULL,c.category,c.subject FROM public.platform_support_cases c JOIN bounds b ON b.outlet_id=c.outlet_id WHERE p_kind='unresolved_support' AND c.status<>'resolved'
  ) SELECT count(*) INTO v_total FROM activity;
  WITH bounds AS (SELECT o.outlet_id,o.name,CASE WHEN EXISTS(SELECT 1 FROM pg_timezone_names z WHERE z.name=o.timezone) THEN o.timezone ELSE 'UTC' END tz,p_start_date::timestamp AT TIME ZONE (CASE WHEN EXISTS(SELECT 1 FROM pg_timezone_names z WHERE z.name=o.timezone) THEN o.timezone ELSE 'UTC' END) utc_start,(p_end_date+1)::timestamp AT TIME ZONE (CASE WHEN EXISTS(SELECT 1 FROM pg_timezone_names z WHERE z.name=o.timezone) THEN o.timezone ELSE 'UTC' END) utc_end FROM public.outlets o WHERE p_outlet_id IS NULL OR o.outlet_id=p_outlet_id), activity AS (
@@ -365,8 +380,8 @@ BEGIN
   UNION ALL SELECT a.id,b.outlet_id,b.name,a.status,a.created_at,a.date||' '||a.time,a.source,NULL FROM public.appointments a JOIN bounds b ON b.outlet_id=a.outlet_id WHERE p_kind='appointments_scheduled' AND a.date~'^\d{4}-\d{2}-\d{2}$' AND a.date::date BETWEEN p_start_date AND p_end_date
   UNION ALL SELECT a.id,b.outlet_id,b.name,a.status,a.completed_at,a.date||' '||a.time,a.source,NULL FROM public.appointments a JOIN bounds b ON b.outlet_id=a.outlet_id WHERE p_kind='appointments_completed' AND a.completed_at>=b.utc_start AND a.completed_at<b.utc_end
   UNION ALL SELECT a.id,b.outlet_id,b.name,a.status,a.cancelled_at,a.date||' '||a.time,a.source,NULL FROM public.appointments a JOIN bounds b ON b.outlet_id=a.outlet_id WHERE p_kind='appointments_cancelled' AND a.cancelled_at>=b.utc_start AND a.cancelled_at<b.utc_end
-  UNION ALL SELECT op.id::text,coalesce(op.outlet_id,''),coalesce(b.name,'Platform'),op.state,coalesce(op.completed_at,op.started_at),NULL,op.action,public.platform_sanitize_error(op.result->>'error') FROM public.platform_admin_operations op LEFT JOIN bounds b ON b.outlet_id=op.outlet_id WHERE p_kind='failed_operations' AND op.state IN ('failed','partial') AND (p_outlet_id IS NULL OR op.outlet_id=p_outlet_id)
-  UNION ALL SELECT d.id,d.outlet_id,b.name,d.status,d.updated_at,NULL,d.channel,public.platform_sanitize_error(d.last_error) FROM public.marketing_campaign_deliveries d JOIN bounds b ON b.outlet_id=d.outlet_id WHERE p_kind='failed_messages' AND d.status='failed'
+  UNION ALL SELECT op.id::text,coalesce(op.outlet_id,''),coalesce(b.name,'Platform'),op.state,coalesce(op.completed_at,op.started_at),NULL,op.action,public.platform_sanitize_error(op.result->>'error') FROM public.platform_admin_operations op LEFT JOIN bounds b ON b.outlet_id=op.outlet_id WHERE p_kind='failed_operations' AND op.state IN ('failed','partial') AND (p_outlet_id IS NULL OR op.outlet_id=p_outlet_id) AND op.started_at>=coalesce(b.utc_start,p_start_date::timestamp AT TIME ZONE 'UTC') AND op.started_at<coalesce(b.utc_end,(p_end_date+1)::timestamp AT TIME ZONE 'UTC')
+  UNION ALL SELECT d.id,d.outlet_id,b.name,d.status,d.updated_at,NULL,d.channel,public.platform_sanitize_error(d.last_error) FROM public.marketing_campaign_deliveries d JOIN bounds b ON b.outlet_id=d.outlet_id WHERE p_kind='failed_messages' AND d.status='failed' AND d.updated_at>=b.utc_start AND d.updated_at<b.utc_end
   UNION ALL SELECT c.id::text,c.outlet_id,b.name,c.status,c.updated_at,NULL,c.category,c.subject FROM public.platform_support_cases c JOIN bounds b ON b.outlet_id=c.outlet_id WHERE p_kind='unresolved_support' AND c.status<>'resolved'
  ) SELECT coalesce(jsonb_agg(to_jsonb(x)),'[]'::jsonb) INTO v_rows FROM (SELECT * FROM activity ORDER BY occurred_at DESC NULLS LAST,id LIMIT least(greatest(p_limit,1),100) OFFSET greatest(p_offset,0)) x;
  RETURN jsonb_build_object('rows',v_rows,'total',v_total);
@@ -381,14 +396,14 @@ BEGIN
   SELECT g.outlet_id,o.name outlet_name,'google_business' integration_type,CASE WHEN g.status='connected' AND g.last_synced_at IS NOT NULL THEN 'verified' WHEN g.status='connected' THEN 'connected_unverified' ELSE g.status END state,g.last_synced_at last_verified_success,g.last_error_at latest_error_at,public.platform_sanitize_error(g.last_error_message) latest_error,'Google sync evidence' detail FROM public.google_business_connections g JOIN public.outlets o ON o.outlet_id=g.outlet_id
   UNION ALL SELECT a.outlet_id,o.name,'chatbot_api','configured_unverified',NULL,NULL,NULL,'Saved API/webhook configuration is not a health check' FROM public.api_integrations a JOIN public.outlets o ON o.outlet_id=a.outlet_id WHERE a.api_key_hash IS NOT NULL OR a.webhook_url IS NOT NULL
   UNION ALL SELECT m.outlet_id,o.name,'marketing_'||m.channel,CASE WHEN m.status='sent' THEN 'provider_accepted' ELSE m.status END,NULL,CASE WHEN m.status='failed' THEN m.updated_at END,public.platform_sanitize_error(m.last_error),'Provider acceptance is tracked; confirmed delivery is not instrumented' FROM latest_marketing m JOIN public.outlets o ON o.outlet_id=m.outlet_id
-  UNION ALL SELECT o.outlet_id,o.name,'reminders',CASE WHEN coalesce((o.settings->>'reminderEnabled')::boolean,false) THEN 'simulated' ELSE 'disabled' END,NULL,NULL,NULL,'Reminder actions are simulated; no provider delivery evidence exists' FROM public.outlets o
+  UNION ALL SELECT o.outlet_id,o.name,'reminders',CASE WHEN lower(coalesce(o.settings->>'reminderEnabled','false'))='true' THEN 'simulated' ELSE 'disabled' END,NULL,NULL,NULL,'Reminder actions are simulated; no provider delivery evidence exists' FROM public.outlets o
  ), filtered AS (SELECT * FROM integrations i WHERE (p_outlet_id IS NULL OR i.outlet_id=p_outlet_id) AND (p_type IS NULL OR i.integration_type=p_type) AND (p_state IS NULL OR i.state=p_state))
  SELECT count(*) INTO v_total FROM filtered;
  WITH latest_marketing AS (SELECT DISTINCT ON(outlet_id,channel) outlet_id,channel,status,sent_at,last_error,updated_at FROM public.marketing_campaign_deliveries ORDER BY outlet_id,channel,updated_at DESC), integrations AS (
   SELECT g.outlet_id,o.name outlet_name,'google_business' integration_type,CASE WHEN g.status='connected' AND g.last_synced_at IS NOT NULL THEN 'verified' WHEN g.status='connected' THEN 'connected_unverified' ELSE g.status END state,g.last_synced_at last_verified_success,g.last_error_at latest_error_at,public.platform_sanitize_error(g.last_error_message) latest_error,'Google sync evidence' detail FROM public.google_business_connections g JOIN public.outlets o ON o.outlet_id=g.outlet_id
   UNION ALL SELECT a.outlet_id,o.name,'chatbot_api','configured_unverified',NULL,NULL,NULL,'Saved API/webhook configuration is not a health check' FROM public.api_integrations a JOIN public.outlets o ON o.outlet_id=a.outlet_id WHERE a.api_key_hash IS NOT NULL OR a.webhook_url IS NOT NULL
   UNION ALL SELECT m.outlet_id,o.name,'marketing_'||m.channel,CASE WHEN m.status='sent' THEN 'provider_accepted' ELSE m.status END,NULL,CASE WHEN m.status='failed' THEN m.updated_at END,public.platform_sanitize_error(m.last_error),'Provider acceptance is tracked; confirmed delivery is not instrumented' FROM latest_marketing m JOIN public.outlets o ON o.outlet_id=m.outlet_id
-  UNION ALL SELECT o.outlet_id,o.name,'reminders',CASE WHEN coalesce((o.settings->>'reminderEnabled')::boolean,false) THEN 'simulated' ELSE 'disabled' END,NULL,NULL,NULL,'Reminder actions are simulated; no provider delivery evidence exists' FROM public.outlets o
+  UNION ALL SELECT o.outlet_id,o.name,'reminders',CASE WHEN lower(coalesce(o.settings->>'reminderEnabled','false'))='true' THEN 'simulated' ELSE 'disabled' END,NULL,NULL,NULL,'Reminder actions are simulated; no provider delivery evidence exists' FROM public.outlets o
  ), filtered AS (SELECT * FROM integrations i WHERE (p_outlet_id IS NULL OR i.outlet_id=p_outlet_id) AND (p_type IS NULL OR i.integration_type=p_type) AND (p_state IS NULL OR i.state=p_state))
  SELECT coalesce(jsonb_agg(to_jsonb(x)),'[]'::jsonb) INTO v_rows FROM (SELECT * FROM filtered ORDER BY coalesce(latest_error_at,last_verified_success) DESC NULLS LAST,outlet_name,integration_type LIMIT least(greatest(p_limit,1),100) OFFSET greatest(p_offset,0)) x;
  RETURN jsonb_build_object('rows',v_rows,'total',v_total);

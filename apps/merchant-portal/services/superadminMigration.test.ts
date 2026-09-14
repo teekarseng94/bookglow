@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const sql = readFileSync(resolve(process.cwd(), '../../migration/supabase/migrations/20260913165153_superadmin_step1_reliability.sql'), 'utf8');
+const step2Sql = readFileSync(resolve(process.cwd(), '../../migration/supabase/migrations/20260913185856_superadmin_step2_operations.sql'), 'utf8');
 
 describe('superadmin Step 1 migration contract', () => {
   it('suspends portal access without changing public booking publication', () => {
@@ -23,5 +24,27 @@ describe('superadmin Step 1 migration contract', () => {
     expect(sql).toContain('IF p_user_id=auth.uid()');
     expect(sql).toContain('FROM public.platform_admins WHERE user_id=p_user_id');
     expect(sql).toContain("IF v_member.role='owner'");
+  });
+});
+
+describe('superadmin Step 2 migration contract', () => {
+  it('records real appointment lifecycle timestamps without inventing historical cancellation evidence', () => {
+    expect(step2Sql).toContain('ADD COLUMN IF NOT EXISTS cancelled_at timestamptz');
+    expect(step2Sql).toContain("lower(coalesce(NEW.status,''))='cancelled'");
+    expect(step2Sql).not.toMatch(/UPDATE public\.appointments[\s\S]{0,200}cancelled_at/);
+  });
+
+  it('keeps support writes behind platform-admin RPCs with immutable history', () => {
+    expect(step2Sql).toContain('REVOKE ALL ON public.platform_support_cases,public.platform_support_case_references,public.platform_support_case_events FROM anon,authenticated');
+    expect(step2Sql).toContain('IF NOT public.is_platform_admin()');
+    expect(step2Sql).toContain("RAISE EXCEPTION 'Support history is append-only'");
+    expect(step2Sql).toContain('platform_reference_belongs_to_outlet');
+  });
+
+  it('uses server-side outlet-local ranges and labels evidence limitations honestly', () => {
+    expect(step2Sql).toContain('FROM pg_timezone_names');
+    expect(step2Sql).toContain("'cancelled_at only; historical rows without a cancellation timestamp are excluded'");
+    expect(step2Sql).toContain("'Provider acceptance is tracked; confirmed delivery is not instrumented'");
+    expect(step2Sql).toContain("'retries_enabled',false");
   });
 });

@@ -63,7 +63,8 @@ export async function acceptMerchantInvitation(token: string) {
 }
 
 export function merchantPortalLoginUrl(email?: string): string {
-  const base = (import.meta.env as unknown as Record<string, string | undefined>).VITE_MERCHANT_PORTAL_URL || 'http://localhost:5173';
+  const base = (import.meta.env as unknown as Record<string, string | undefined>).VITE_MERCHANT_PORTAL_URL?.trim();
+  if (!base) throw new Error('Missing VITE_MERCHANT_PORTAL_URL.');
   const url = new URL('/login', base);
   url.searchParams.set('onboarding', 'complete');
   if (email) url.searchParams.set('email', email);

@@ -59,7 +59,7 @@ export async function openExternalUrl(url: string): Promise<void> {
   window.location.assign(url);
 }
 
-function nativeCallbackHash(url: string): string | null {
+export function nativeCallbackRoute(url: string): string | null {
   if (!url.startsWith(`${NATIVE_APP_ID}:`)) return null;
   try {
     const parsed = new URL(url);
@@ -67,7 +67,8 @@ function nativeCallbackHash(url: string): string | null {
     const path = `/${parsed.host}${parsed.pathname}`.replace(/\/{2,}/g, '/').replace(/\/$/, '') || '/auth/callback/merchant';
     const search = parsed.search || '';
     if (!path.includes('/auth/callback/merchant')) return null;
-    return `/#${path}${search}`;
+    // The production app boots through appShell.tsx and BrowserRouter.
+    return `${path}${search}`;
   } catch {
     return null;
   }
@@ -81,6 +82,27 @@ export async function initAndroidShell(): Promise<void> {
     import('@capacitor/splash-screen'),
     import('@capacitor/status-bar'),
   ]);
+
+  const handleNativeCallback = (url: string) => {
+    const route = nativeCallbackRoute(url);
+    if (!route) return;
+
+    // Never log the callback URL: it contains the one-time OAuth code.
+    console.info('[BookGlow Auth] Native OAuth callback received.');
+    void import('@capacitor/browser').then(({ Browser }) => Browser.close()).catch(() => undefined);
+    window.location.replace(route);
+  };
+
+  // appUrlOpen covers a callback while the WebView process is alive. getLaunchUrl
+  // is also required because Android can recreate the app while Google OAuth is
+  // open in the system browser (the common Play-distributed cold-start path).
+  await App.addListener('appUrlOpen', ({ url }) => handleNativeCallback(url));
+  try {
+    const launchUrl = await App.getLaunchUrl();
+    if (launchUrl?.url) handleNativeCallback(launchUrl.url);
+  } catch (error) {
+    console.error('[BookGlow Auth] Unable to inspect the Android launch URL.', error);
+  }
 
   try {
     await StatusBar.setOverlaysWebView({ overlay: false });
@@ -96,14 +118,6 @@ export async function initAndroidShell(): Promise<void> {
       return;
     }
     void App.exitApp();
-  });
-
-  await App.addListener('appUrlOpen', ({ url }) => {
-    const hash = nativeCallbackHash(url);
-    if (hash) {
-      void import('@capacitor/browser').then(({ Browser }) => Browser.close()).catch(() => undefined);
-      window.location.replace(hash);
-    }
   });
 
   document.addEventListener(

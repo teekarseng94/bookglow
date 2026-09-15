@@ -80,7 +80,7 @@ const Login: React.FC = () => {
     setError(''); setGoogleLoading(true);
     try { await loginWithOAuth('google'); }
     catch (cause) {
-      if (import.meta.env.DEV) console.error('Merchant Google OAuth start failed', cause);
+      console.error('[BookGlow Auth] Merchant Google OAuth start failed.', cause);
       setError(cause instanceof Error ? cause.message : "We couldn't sign you in with Google. Please try again.");
       setGoogleLoading(false);
     }

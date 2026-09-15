@@ -10,7 +10,7 @@ const auth = vi.hoisted(() => ({
 }));
 
 const access = vi.hoisted(() => ({
-  resolveMerchantAccess: vi.fn(async () => ({ state: 'no_workspace', outletId: null })),
+  resolveMerchantAccess: vi.fn(async (): Promise<{ state: string; outletId: string | null; registrationPending?: boolean }> => ({ state: 'no_workspace', outletId: null })),
 }));
 
 vi.mock('../hooks/useAuth', () => ({

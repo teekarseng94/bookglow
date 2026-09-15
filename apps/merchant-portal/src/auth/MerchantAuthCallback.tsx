@@ -26,6 +26,7 @@ export default function MerchantAuthCallback() {
     try {
       const oauthError = params.get("error") || params.get("error_code");
       if (oauthError) {
+        console.error('[BookGlow Auth] OAuth provider returned an error.', { code: oauthError });
         const cancelled = /cancel|access_denied/i.test(`${oauthError} ${params.get("error_description") || ""}`);
         window.location.replace(`/#/login?oauth_error=${cancelled ? "cancelled" : "callback"}`);
         return;
@@ -52,7 +53,7 @@ export default function MerchantAuthCallback() {
       // Existing merchants → dashboard/POS. New Google users with no outlet → /onboarding.
       window.location.replace(merchantBrowserDestination(merchantAccessDestination(access)));
     } catch (cause) {
-      if (import.meta.env.DEV) console.error("Merchant callback failed", cause);
+      console.error('[BookGlow Auth] Merchant OAuth callback failed.', cause);
       sessionStorage.removeItem(MERCHANT_AUTH_INTENT_KEY);
       setError(invitation
         ? "We couldn't accept this invitation. Sign in with the invited email or ask an admin to send a new invite."

@@ -20,7 +20,10 @@ export const useAuth = () => {
   useEffect(() => {
     const currentUser = getCurrentUser();
     setUser(currentUser);
-    setLoading(false);
+    // A missing cached user is not proof that the persisted Supabase session is
+    // absent. Keep route guards pending until onAuthStateChange receives the
+    // result of the shared getSession() priming request.
+    if (currentUser) setLoading(false);
 
     const unsubscribe = onAuthStateChange((authUser) => {
       console.log("Auth state changed:", authUser?.email || "logged out");

@@ -1,10 +1,23 @@
 import { createBrowserSupabaseClient } from "@bookglow/supabase";
 import type { MerchantAccessContext } from "@bookglow/auth-contracts";
-import { hasCapability, MERCHANT_RETURN_PATH_KEY, validatedMerchantReturnPath } from "@bookglow/auth-contracts";
+import { hasCapability, MERCHANT_RETURN_PATH_KEY, needsMerchantRegistration, validatedMerchantReturnPath } from "@bookglow/auth-contracts";
 
 const env = () => import.meta.env as unknown as Record<string, string | undefined>;
 
-export async function resolveMerchantAccess(): Promise<MerchantAccessContext> {
+function parseAccess(data: unknown): MerchantAccessContext {
+  const value = (typeof data === "string" ? JSON.parse(data) : data) as Record<string, unknown> | null;
+  const flag = value?.registration_pending;
+  return {
+    state: (value?.state as MerchantAccessContext["state"]) || "no_workspace",
+    outletId: typeof value?.outlet_id === "string" ? value.outlet_id : null,
+    role: (value?.role as MerchantAccessContext["role"]) || null,
+    onboardingStatus: typeof value?.onboarding_status === "string" ? value.onboarding_status : null,
+    accessStatus: typeof value?.access_status === "string" ? value.access_status : null,
+    registrationPending: flag === true || flag === "true",
+  };
+}
+
+async function fetchMerchantAccess(): Promise<MerchantAccessContext> {
   const sb = createBrowserSupabaseClient(env());
   const { data, error } = await sb.rpc("resolve_merchant_access" as never);
   if (error) {
@@ -12,8 +25,29 @@ export async function resolveMerchantAccess(): Promise<MerchantAccessContext> {
     if (!missingRpc) throw error;
     return resolveLegacyMerchantAccess(sb as any);
   }
-  const value = data as unknown as Record<string, string | null>;
-  return { state: value.state as MerchantAccessContext["state"], outletId: value.outlet_id, role: value.role as MerchantAccessContext["role"], onboardingStatus: value.onboarding_status, accessStatus: value.access_status };
+  return parseAccess(data);
+}
+
+export async function ensureMerchantWorkspace(): Promise<void> {
+  const sb = createBrowserSupabaseClient(env());
+  const { error } = await sb.rpc("ensure_merchant_workspace" as never);
+  if (error) {
+    const missingRpc = error.code === "PGRST202" || /could not find the function.*ensure_merchant_workspace/i.test(error.message);
+    if (!missingRpc) throw error;
+  }
+}
+
+export async function resolveMerchantAccess(): Promise<MerchantAccessContext> {
+  let access = await fetchMerchantAccess();
+  if (access.state === "no_workspace") {
+    try {
+      await ensureMerchantWorkspace();
+      access = await fetchMerchantAccess();
+    } catch {
+      // Keep no_workspace so login still resumes onboarding instead of blocking the owner.
+    }
+  }
+  return access;
 }
 
 async function resolveLegacyMerchantAccess(sb: any): Promise<MerchantAccessContext> {
@@ -34,7 +68,7 @@ async function resolveLegacyMerchantAccess(sb: any): Promise<MerchantAccessConte
     .maybeSingle();
   if (profileError) throw profileError;
   if (!profile?.outlet_id) {
-    return { state: "no_workspace", outletId: null, role: null, onboardingStatus: null, accessStatus: null };
+    return { state: "no_workspace", outletId: null, role: null, onboardingStatus: null, accessStatus: null, registrationPending: true };
   }
 
   const { data: outlet, error: outletError } = await sb
@@ -65,16 +99,16 @@ function legacyRole(value: unknown): MerchantAccessContext["role"] {
 
 export function merchantAccessDestination(access: MerchantAccessContext, requestedPath?: string | null): string {
   if (access.state === "platform_admin") return "/admin/dashboard";
-  if (access.state === "active" || (access.state === "onboarding" && access.outletId)) {
+  if (access.state === "membership_suspended") return "/access/account-suspended";
+  if (access.state === "outlet_suspended") return "/access/workspace-suspended";
+  if (needsMerchantRegistration(access)) return "/onboarding";
+  if (access.state === "active" || access.state === "onboarding") {
     const saved = validatedMerchantReturnPath(requestedPath ?? sessionStorage.getItem(MERCHANT_RETURN_PATH_KEY));
     sessionStorage.removeItem(MERCHANT_RETURN_PATH_KEY);
     if (saved && returnPathAllowed(saved, access.role)) return saved;
     return access.role === "cashier" ? "/pos" : "/dashboard";
   }
-  if (access.state === "onboarding" || access.state === "no_workspace") return "/onboarding";
-  if (access.state === "membership_suspended") return "/access/account-suspended";
-  if (access.state === "outlet_suspended") return "/access/workspace-suspended";
-  return "/access/no-workspace";
+  return "/onboarding";
 }
 
 /** Convert an internal destination into this portal's HashRouter URL. */

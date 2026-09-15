@@ -28,7 +28,7 @@ export async function registerMerchantWithEmail(email: string, password: string)
   const { data, error } = await client().auth.signUp({
     email: normalized,
     password,
-    options: { emailRedirectTo: `${window.location.origin}/signup` },
+    options: { emailRedirectTo: `${window.location.origin}/signup`, data: { account_intent: 'merchant' } },
   });
   if (error) throw error;
   return { user: data.user, session: data.session, confirmationRequired: !data.session };

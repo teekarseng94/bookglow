@@ -26,7 +26,7 @@ const AuthenticatedHome: React.FC = () => {
   React.useEffect(() => {
     void resolveMerchantAccess()
       .then((access) => setDestination(merchantAccessDestination(access)))
-      .catch(() => setDestination('/dashboard'));
+      .catch(() => setDestination('/onboarding'));
   }, []);
 
   if (!destination) return <RouteSpinner />;

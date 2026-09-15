@@ -1752,6 +1752,7 @@ export type Database = {
         }
         Returns: Json
       }
+      ensure_merchant_workspace: { Args: never; Returns: Json }
       void_sale_and_remove_linked_appointments: {
         Args: { p_transaction_id: string; p_reason: string }
         Returns: Json

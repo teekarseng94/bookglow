@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { acceptMerchantInvitation, completeMerchantOnboarding, hasMerchantWorkspace, loadMerchantDraft, merchantPortalLoginUrl, saveMerchantDraft } from '../../services/merchantOnboardingService';
+import { acceptMerchantInvitation, completeMerchantOnboarding, ensureMerchantWorkspace, hasMerchantWorkspace, loadMerchantDraft, merchantPortalLoginUrl, saveMerchantDraft } from '../../services/merchantOnboardingService';
 import { activeSteps, BUSINESS_CATEGORIES, PREVIOUS_SOFTWARE, TEAM_SIZES } from './onboardingSteps';
 import { emptyOnboardingPayload, type MerchantOnboardingPayload, type OnboardingStepId } from './onboardingTypes';
 import { normalizeWebsite, serializeDraft, validateStep } from './onboardingValidation';
@@ -32,10 +32,12 @@ export default function MerchantOnboardingWizard({ email, completeHref, saveExit
   const update = (patch: Partial<MerchantOnboardingPayload>) => setPayload((current) => ({ ...current, ...patch }));
 
   useEffect(() => {
-    hasMerchantWorkspace().then(async (exists) => {
-      if (exists) { window.location.replace(portalHref); return null; }
-      return loadMerchantDraft();
-    }).then((draft) => {
+    ensureMerchantWorkspace()
+      .then(() => hasMerchantWorkspace())
+      .then(async (exists) => {
+        if (exists) { window.location.replace(portalHref); return null; }
+        return loadMerchantDraft();
+      }).then((draft) => {
       if (draft?.payload) setPayload({ ...emptyOnboardingPayload(), ...draft.payload });
       if (draft?.currentStep) setStep(draft.currentStep);
     }).catch((cause) => setError(cause instanceof Error ? cause.message : 'Could not load your setup progress.')).finally(() => setLoading(false));

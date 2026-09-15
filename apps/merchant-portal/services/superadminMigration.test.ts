@@ -8,6 +8,7 @@ const step2Sql = readFileSync(resolve(process.cwd(), '../../migration/supabase/m
 const monitoringSql = readFileSync(resolve(process.cwd(), '../../migration/supabase/migrations/20260914104830_monitoring_read_sanitization.sql'), 'utf8');
 const functionGrantSql = readFileSync(resolve(process.cwd(), '../../migration/supabase/migrations/20260914110322_edge_function_service_role_grants.sql'), 'utf8');
 const hitpaySql = readFileSync(resolve(process.cwd(), '../../migration/supabase/migrations/20260915140000_hitpay_platform_billing.sql'), 'utf8');
+const deleteOutletSql = readFileSync(resolve(process.cwd(), '../../migration/supabase/migrations/20260915170000_platform_delete_outlet.sql'), 'utf8');
 
 describe('superadmin Step 1 migration contract', () => {
   it('suspends portal access without changing public booking publication', () => {
@@ -96,5 +97,19 @@ describe('HitPay platform billing migration contract', () => {
     expect(hitpaySql).toContain("CHECK (provider IN ('hitpay', 'stripe'))");
     expect(hitpaySql).toContain("'billing_'||b.event_type");
     expect(hitpaySql).not.toContain('stripe_webhook_');
+  });
+});
+
+describe('platform outlet deletion contract', () => {
+  it('requires platform-admin confirmation and preserves append-only history', () => {
+    expect(deleteOutletSql).toContain('CREATE OR REPLACE FUNCTION public.platform_delete_outlet(');
+    expect(deleteOutletSql).toContain('IF NOT public.is_platform_admin()');
+    expect(deleteOutletSql).toContain('Type the outlet name to confirm deletion');
+    expect(deleteOutletSql).toContain('DELETE FROM public.outlets WHERE outlet_id = p_outlet_id');
+    expect(deleteOutletSql).toContain('SET outlet_id = NULL');
+    expect(deleteOutletSql).toContain('DELETE FROM public.merchant_onboarding_drafts');
+    expect(deleteOutletSql).toContain('ON DELETE SET NULL');
+    expect(deleteOutletSql).not.toContain('DELETE FROM public.platform_audit_events');
+    expect(deleteOutletSql).not.toContain('DELETE FROM public.billing_events');
   });
 });

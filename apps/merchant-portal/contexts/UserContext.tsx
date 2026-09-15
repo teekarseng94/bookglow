@@ -86,8 +86,22 @@ export const UserContextProvider: React.FC<UserContextProviderProps> = ({
       if (access.state === "outlet_suspended") throw new Error("This merchant workspace has been suspended.");
 
       const rpcOutletId = access.outletId?.trim() || "";
-      if (access.state === "no_workspace" || !rpcOutletId) {
-        setUserData({ uid: user.uid, email: user.email, outletId: null, role: null, displayName: user.displayName });
+      const needsSetup = access.registrationPending || access.state === "no_workspace" || !rpcOutletId;
+      if (needsSetup) {
+        const rawRole = (access.role || "owner").toLowerCase();
+        const role: UserRole =
+          rawRole === "owner" || rawRole === "admin" || rawRole === "platform_admin"
+            ? "admin"
+            : rawRole === "manager"
+            ? "manager"
+            : "cashier";
+        setUserData({
+          uid: user.uid,
+          email: user.email,
+          outletId: rpcOutletId || null,
+          role,
+          displayName: user.displayName,
+        });
         setOnboardingRequired(true);
         return;
       }

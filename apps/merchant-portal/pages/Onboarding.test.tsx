@@ -87,4 +87,25 @@ describe('merchant onboarding page', () => {
     await waitFor(() => expect(screen.getByText('Merchant dashboard')).toBeTruthy());
     expect(screen.queryByText(/Account setup/)).toBeNull();
   });
+
+  it('resumes setup when a new account already has a pending outlet', async () => {
+    auth.loading = false;
+    auth.isAuthenticated = true;
+    auth.user = { email: 'new@example.com' };
+    access.resolveMerchantAccess.mockResolvedValue({
+      state: 'onboarding',
+      outletId: 'outlet-pending',
+      registrationPending: true,
+    });
+    render(
+      <MemoryRouter initialEntries={['/onboarding']}>
+        <Routes>
+          <Route path="/onboarding" element={<MerchantOnboardingPage />} />
+          <Route path="/dashboard" element={<div>Merchant dashboard</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText('Account setup for new@example.com')).toBeTruthy();
+    expect(screen.queryByText('Merchant dashboard')).toBeNull();
+  });
 });

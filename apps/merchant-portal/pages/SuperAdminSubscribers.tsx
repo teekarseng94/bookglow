@@ -27,12 +27,13 @@ interface PortalUser {
 }
 
 interface ConfirmState {
-  type: 'suspend_portal' | 'restore_portal' | 'disable_account' | 'reactivate_account' | 'remove_account' | 'transfer_ownership' | 'revoke_sessions' | 'archive_outlet';
+  type: 'suspend_portal' | 'restore_portal' | 'disable_account' | 'reactivate_account' | 'remove_account' | 'transfer_ownership' | 'revoke_sessions' | 'delete_outlet';
   targetId: string;
   targetName: string;
   consequence: string;
   reasonRequired: boolean;
-  onConfirm: (reason: string) => Promise<void>;
+  confirmNameRequired?: boolean;
+  onConfirm: (reason: string, confirmName?: string) => Promise<void>;
 }
 
 const SuperAdminSubscribers: React.FC = () => {
@@ -57,6 +58,7 @@ const SuperAdminSubscribers: React.FC = () => {
   // Confirmation Flow State
   const [confirmModal, setConfirmModal] = useState<ConfirmState | null>(null);
   const [confirmReason, setConfirmReason] = useState('');
+  const [confirmTypedName, setConfirmTypedName] = useState('');
   const [confirmError, setConfirmError] = useState<string | null>(null);
   const [actionBusy, setActionBusy] = useState(false);
 
@@ -207,6 +209,31 @@ const SuperAdminSubscribers: React.FC = () => {
       }
       return 0;
     });
+
+  const closeConfirmModal = () => {
+    setConfirmModal(null);
+    setConfirmReason('');
+    setConfirmTypedName('');
+    setConfirmError(null);
+  };
+
+  const handleDeleteOutlet = (outlet: Outlet) => {
+    const outletName = outlet.name || outlet.settings?.shopName || outlet.outletID;
+    setConfirmModal({
+      type: 'delete_outlet',
+      targetId: outlet.outletID,
+      targetName: outletName,
+      consequence: `This permanently deletes ${outletName} and its BookGlow data (bookings, clients, staff, catalog, billing records). The merchant email can sign in again and create a new outlet. Public booking for this workspace stops. Platform audit history is kept.`,
+      reasonRequired: true,
+      confirmNameRequired: true,
+      onConfirm: async (reason, confirmName) => {
+        await platformOperationsService.deleteOutlet(outlet.outletID, reason, confirmName || '');
+        setDrawerOpen(false);
+        setSelectedOutlet(null);
+        await loadData();
+      },
+    });
+  };
 
   // Access Control Toggles
   const handleTogglePortalAccess = (outlet: Outlet) => {
@@ -393,13 +420,16 @@ const SuperAdminSubscribers: React.FC = () => {
       setConfirmError('A reason is required to execute this operational action.');
       return;
     }
+    if (confirmModal.confirmNameRequired && !confirmTypedName.trim()) {
+      setConfirmError('Type the outlet name to confirm deletion.');
+      return;
+    }
 
     setActionBusy(true);
     setConfirmError(null);
     try {
-      await confirmModal.onConfirm(confirmReason);
-      setConfirmModal(null);
-      setConfirmReason('');
+      await confirmModal.onConfirm(confirmReason, confirmTypedName);
+      closeConfirmModal();
     } catch (err: any) {
       setConfirmError(err.message || 'Operation failed.');
     } finally {
@@ -596,6 +626,16 @@ const SuperAdminSubscribers: React.FC = () => {
                     >
                       {isActive ? 'Suspend' : 'Activate'}
                     </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteOutlet(o);
+                      }}
+                      className="flex-1 py-1.5 rounded-lg text-xs font-semibold transition-colors text-center border border-rose-300 text-rose-800 hover:bg-rose-50"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
               );
@@ -683,6 +723,13 @@ const SuperAdminSubscribers: React.FC = () => {
                             }`}
                           >
                             {isActive ? 'Suspend' : 'Activate'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteOutlet(o)}
+                            className="px-2.5 py-1 rounded font-semibold text-[10px] border border-rose-300 text-rose-800 hover:bg-rose-50 transition-colors"
+                          >
+                            Delete
                           </button>
                         </div>
                       </td>
@@ -1141,6 +1188,20 @@ const SuperAdminSubscribers: React.FC = () => {
                       Enter Remote Workspace View
                     </button>
                   </div>
+
+                  <div className="border border-rose-200 bg-rose-50/70 p-4 rounded-xl space-y-3">
+                    <h4 className="font-semibold text-rose-900 text-xs">Delete workspace</h4>
+                    <p className="text-[11px] text-rose-800 leading-relaxed">
+                      Permanently remove this outlet and its BookGlow data. The owner email can sign in afterwards and create a new outlet from onboarding.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteOutlet(selectedOutlet)}
+                      className="px-4 py-2 bg-rose-700 text-white font-semibold hover:bg-rose-800 rounded-lg transition-colors shadow-sm"
+                    >
+                      Delete outlet
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -1178,7 +1239,7 @@ const SuperAdminSubscribers: React.FC = () => {
       {/* Confirmation reason dialog / modal */}
       {confirmModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => !actionBusy && setConfirmModal(null)} />
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => !actionBusy && closeConfirmModal()} />
           
           <form 
             onSubmit={handleConfirmSubmit}
@@ -1197,6 +1258,24 @@ const SuperAdminSubscribers: React.FC = () => {
               <p className="font-semibold">Consequence / Impact Warning:</p>
               <p className="mt-1">{confirmModal.consequence}</p>
             </div>
+
+            {confirmModal.confirmNameRequired && (
+              <div className="space-y-1.5">
+                <label htmlFor="confirm-outlet-name" className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                  Type {confirmModal.targetName} to confirm *
+                </label>
+                <input
+                  id="confirm-outlet-name"
+                  type="text"
+                  required
+                  autoComplete="off"
+                  placeholder={confirmModal.targetName}
+                  value={confirmTypedName}
+                  onChange={(e) => setConfirmTypedName(e.target.value)}
+                  className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-rose-500 focus:border-rose-500"
+                />
+              </div>
+            )}
 
             {confirmModal.reasonRequired && (
               <div className="space-y-1.5">
@@ -1225,11 +1304,7 @@ const SuperAdminSubscribers: React.FC = () => {
               <button
                 type="button"
                 disabled={actionBusy}
-                onClick={() => {
-                  setConfirmModal(null);
-                  setConfirmReason('');
-                  setConfirmError(null);
-                }}
+                onClick={closeConfirmModal}
                 className="px-3.5 py-1.5 border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-semibold text-slate-700 transition-colors"
               >
                 Cancel
@@ -1237,12 +1312,11 @@ const SuperAdminSubscribers: React.FC = () => {
               <button
                 type="submit"
                 disabled={actionBusy}
-                className="px-3.5 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm flex items-center gap-1.5"
+                className={`px-3.5 py-1.5 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm flex items-center gap-1.5 ${
+                  confirmModal.type === 'delete_outlet' ? 'bg-rose-700 hover:bg-rose-800' : 'bg-violet-600 hover:bg-violet-700'
+                }`}
               >
-                {actionBusy && (
-                  <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                )}
-                Confirm Action
+                {actionBusy ? 'Working…' : confirmModal.type === 'delete_outlet' ? 'Delete outlet' : 'Confirm Action'}
               </button>
             </div>
           </form>

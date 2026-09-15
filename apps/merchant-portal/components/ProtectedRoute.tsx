@@ -41,25 +41,22 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (onboardingRequired && !outletId && !isPlatformAdmin) {
-    return <Navigate to="/onboarding" replace />;
-  }
-
-  // If user has no outletId, show unauthorized message (except for true owner super-admin)
-  if (!outletId && !isPlatformAdmin) {
+  if (error && /suspend/i.test(error)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--bg-canvas)] p-4">
         <div className="max-w-md w-full bg-[var(--bg-surface)] rounded-ui-md shadow-ui-md p-6 border border-[var(--line)]">
-          <ErrorState
-            title="Permission denied"
-            message={error || 'Your account is not assigned to an outlet. Contact your administrator for access.'}
-          />
+          <ErrorState title="Access unavailable" message={error} />
           <Button className="mt-4 w-full" onClick={() => window.location.reload()}>
             Reload page
           </Button>
         </div>
       </div>
     );
+  }
+
+  // New or unfinished merchant accounts resume setup instead of a dead-end permission screen.
+  if (!isPlatformAdmin && (onboardingRequired || !outletId)) {
+    return <Navigate to="/onboarding" replace />;
   }
 
   // User is authenticated and has outletId - render protected content

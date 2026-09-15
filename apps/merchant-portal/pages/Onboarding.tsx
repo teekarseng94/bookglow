@@ -18,7 +18,9 @@ export default function MerchantOnboardingPage() {
     let cancelled = false;
     void resolveMerchantAccess()
       .then((access) => {
-        if (!cancelled) setGate(access.outletId ? 'app' : 'wizard');
+        if (cancelled) return;
+        const needsWizard = access.state === 'no_workspace' || access.registrationPending || !access.outletId;
+        setGate(needsWizard ? 'wizard' : 'app');
       })
       .catch(() => {
         if (!cancelled) setGate('wizard');

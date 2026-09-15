@@ -103,6 +103,21 @@ export const platformOperationsService = {
     if ((data as any)?.error) throw new Error((data as any).error);
   },
 
+  deleteOutlet: async (outletId: string, reason: string, confirmName: string) => {
+    try {
+      await platformOperationsService.cancelSubscription(outletId);
+    } catch {
+      // No active HitPay subscription, or HitPay already cancelled it.
+    }
+    const { data, error } = await (client() as any).rpc('platform_delete_outlet', {
+      p_outlet_id: outletId,
+      p_reason: reason,
+      p_confirm_name: confirmName,
+    });
+    if (error) throw error;
+    return data;
+  },
+
   listMonitoringEvents: async (): Promise<PlatformMonitoringEvent[]> => {
     const { data, error } = await (client() as any).rpc('platform_monitoring_events_page', { p_limit: 200, p_offset: 0 });
     if (error) throw error;

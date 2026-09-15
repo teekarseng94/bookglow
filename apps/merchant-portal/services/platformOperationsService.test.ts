@@ -65,4 +65,18 @@ describe('platformOperationsService monitoring reads', () => {
       body: { action: 'cancel_subscription', outletId: 'outlet-1' },
     });
   });
+
+  it('deletes an outlet after cancelling HitPay billing', async () => {
+    invoke.mockResolvedValue({ data: { success: true, status: 'canceled' }, error: null });
+    rpc.mockResolvedValue({ data: { deleted: true, outlet_id: 'outlet-1' }, error: null });
+    await platformOperationsService.deleteOutlet('outlet-1', 'Merchant asked to start over', 'Txchickenwings');
+    expect(invoke).toHaveBeenCalledWith('billing-admin', {
+      body: { action: 'cancel_subscription', outletId: 'outlet-1' },
+    });
+    expect(rpc).toHaveBeenCalledWith('platform_delete_outlet', {
+      p_outlet_id: 'outlet-1',
+      p_reason: 'Merchant asked to start over',
+      p_confirm_name: 'Txchickenwings',
+    });
+  });
 });

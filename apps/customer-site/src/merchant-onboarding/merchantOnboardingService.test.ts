@@ -18,6 +18,8 @@ it('reuses the provisioning request after success and isolates another account',
 it('recognizes existing workspaces and fails closed on lookup errors', async () => {
   mocks.rpc.mockResolvedValue({ data: { outlet_id: 'outlet-one' }, error: null });
   expect(await hasMerchantWorkspace()).toBe(true);
+  mocks.rpc.mockResolvedValue({ data: { outlet_id: 'outlet-one', registration_pending: true }, error: null });
+  expect(await hasMerchantWorkspace()).toBe(false);
   mocks.rpc.mockResolvedValue({ data: { state: 'no_workspace', outlet_id: null }, error: null });
   expect(await hasMerchantWorkspace()).toBe(false);
   mocks.rpc.mockResolvedValue({ error: new Error('Unavailable') });

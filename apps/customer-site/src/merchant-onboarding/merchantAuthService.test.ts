@@ -62,7 +62,7 @@ describe('merchant email authentication', () => {
     expect(mocks.signUp).toHaveBeenCalledWith({
       email: 'merchant@example.com',
       password: 'password123',
-      options: { emailRedirectTo: `${window.location.origin}/signup` },
+      options: { emailRedirectTo: `${window.location.origin}/signup`, data: { account_intent: 'merchant' } },
     });
   });
 

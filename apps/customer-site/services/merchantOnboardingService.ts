@@ -7,7 +7,16 @@ const client = () => createBrowserSupabaseClient(import.meta.env as unknown as R
 export async function hasMerchantWorkspace(): Promise<boolean> {
   const { data, error } = await client().rpc('resolve_merchant_access' as never);
   if (error) throw error;
-  return Boolean((data as unknown as { outlet_id?: string } | null)?.outlet_id);
+  const value = data as unknown as { outlet_id?: string | null; registration_pending?: boolean | string } | null;
+  if (value?.registration_pending === true || value?.registration_pending === 'true') return false;
+  return Boolean(value?.outlet_id);
+}
+
+export async function ensureMerchantWorkspace(): Promise<void> {
+  const { error } = await client().rpc('ensure_merchant_workspace' as never);
+  if (!error) return;
+  const missingRpc = error.code === 'PGRST202' || /could not find the function.*ensure_merchant_workspace/i.test(error.message);
+  if (!missingRpc) throw error;
 }
 
 export async function loadMerchantDraft(): Promise<OnboardingDraft | null> {

@@ -66,4 +66,13 @@ export interface MerchantAccessContext {
   role: MerchantRole | null;
   onboardingStatus: string | null;
   accessStatus: string | null;
+  /** True until the owner finishes the signup questionnaire (or has no workspace yet). */
+  registrationPending?: boolean;
+}
+
+export function needsMerchantRegistration(access: MerchantAccessContext): boolean {
+  if (access.state === "platform_admin" || access.state === "membership_suspended" || access.state === "outlet_suspended") {
+    return false;
+  }
+  return access.state === "no_workspace" || Boolean(access.registrationPending) || !access.outletId;
 }

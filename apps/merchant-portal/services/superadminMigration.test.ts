@@ -7,6 +7,7 @@ const sql = readFileSync(resolve(process.cwd(), '../../migration/supabase/migrat
 const step2Sql = readFileSync(resolve(process.cwd(), '../../migration/supabase/migrations/20260913185856_superadmin_step2_operations.sql'), 'utf8');
 const monitoringSql = readFileSync(resolve(process.cwd(), '../../migration/supabase/migrations/20260914104830_monitoring_read_sanitization.sql'), 'utf8');
 const functionGrantSql = readFileSync(resolve(process.cwd(), '../../migration/supabase/migrations/20260914110322_edge_function_service_role_grants.sql'), 'utf8');
+const hitpaySql = readFileSync(resolve(process.cwd(), '../../migration/supabase/migrations/20260915140000_hitpay_platform_billing.sql'), 'utf8');
 
 describe('superadmin Step 1 migration contract', () => {
   it('suspends portal access without changing public booking publication', () => {
@@ -85,5 +86,15 @@ describe('edge function service_role grants', () => {
     expect(functionGrantSql).toContain('public.marketing_campaigns');
     expect(functionGrantSql).toContain('public.outlet_invitations');
     expect(functionGrantSql).toContain('TO service_role;');
+  });
+});
+
+describe('HitPay platform billing migration contract', () => {
+  it('makes Stripe identifiers optional and adds HitPay subscription columns', () => {
+    expect(hitpaySql).toContain('ALTER COLUMN stripe_customer_id DROP NOT NULL');
+    expect(hitpaySql).toContain('ADD COLUMN IF NOT EXISTS hitpay_recurring_id text');
+    expect(hitpaySql).toContain("CHECK (provider IN ('hitpay', 'stripe'))");
+    expect(hitpaySql).toContain("'billing_'||b.event_type");
+    expect(hitpaySql).not.toContain('stripe_webhook_');
   });
 });

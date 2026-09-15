@@ -290,8 +290,6 @@ const ValueCards: React.FC = () => (
 );
 
 const FeaturesAndPricing: React.FC<{ onExplorePricing: () => void }> = ({ onExplorePricing }) => {
-  const [isAnnual, setIsAnnual] = useState(true);
-
   return (
     <section id="features" className="pb-16 sm:pb-24 scroll-mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 grid lg:grid-cols-[1.15fr_0.85fr] gap-12 lg:gap-14 items-start">
@@ -326,35 +324,9 @@ const FeaturesAndPricing: React.FC<{ onExplorePricing: () => void }> = ({ onExpl
         {/* Pricing preview */}
         <div id="pricing" className="scroll-mt-24 rounded-2xl border border-slate-100 bg-white p-5 sm:p-7 shadow-[0_18px_48px_rgba(39,25,42,0.06)]">
           <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">Simple, transparent pricing.</h2>
-          <p className="text-slate-500 mb-6">Start free. Upgrade when you&apos;re ready.</p>
+          <p className="text-slate-500 mb-6">Start free. Upgrade to Pro for RM20 / month.</p>
 
-          <div className="flex flex-wrap items-center gap-3 mb-6">
-            <div className="inline-flex items-center rounded-full bg-slate-100 p-1">
-              <button
-                type="button"
-                onClick={() => setIsAnnual(false)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors ${
-                  !isAnnual ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'
-                }`}
-              >
-                Monthly
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsAnnual(true)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-colors ${
-                  isAnnual ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'
-                }`}
-              >
-                Annual
-              </button>
-            </div>
-            <span className="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold px-2.5 py-1">
-              Save up to 20%
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3">
             {PRICING_PLANS.map((plan) => (
               <div
                 key={plan.name}
@@ -379,9 +351,7 @@ const FeaturesAndPricing: React.FC<{ onExplorePricing: () => void }> = ({ onExpl
                       <span className="text-sm font-bold text-slate-400 mr-0.5">RM</span>
                       {plan.price}
                     </p>
-                    <p className="text-[10px] text-slate-400 font-medium">
-                      /month{isAnnual && plan.price > 0 ? ' billed annually' : ''}
-                    </p>
+                    <p className="text-[10px] text-slate-400 font-medium">/month</p>
                   </div>
                 </div>
               </div>
@@ -450,7 +420,10 @@ const Footer: React.FC = () => {
             Cookie Settings
           </a>
         </div>
-        <div className="text-sm text-slate-400">© {new Date().getFullYear()} Bookglow Inc. All rights reserved.</div>
+        <div className="text-sm text-slate-400 text-center md:text-right">
+          <div>© {new Date().getFullYear()} Bookglow Inc. All rights reserved.</div>
+          <div className="mt-1">Powered by Catla Solution.</div>
+        </div>
       </div>
     </footer>
   );

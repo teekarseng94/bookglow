@@ -36,8 +36,8 @@ Root `vercel.json` now ships the customer build-time public env block (`VITE_SUP
 | `VITE_AUTH_GOOGLE_ENABLED` | `true` after completing provider setup below |
 | `VITE_AUTH_FACEBOOK_ENABLED` | `false` unless Facebook is separately configured |
 | `VITE_MERCHANT_PORTAL_URL` | Merchant Vercel production origin, with no trailing slash (for example `https://bookglow-merchant.vercel.app`). Never a Firebase Hosting `web.app` URL. |
-| `VITE_CUSTOMER_SITE_URL` | `https://bookglow.vercel.app` for merchant booking-link generation |
-| `VITE_CUSTOMER_AUTH_CALLBACK_URL` | `https://bookglow.vercel.app/auth/callback/customer` for existing customer booking OAuth |
+| `VITE_CUSTOMER_SITE_URL` | `https://bookglow.my` for merchant booking-link generation |
+| `VITE_CUSTOMER_AUTH_CALLBACK_URL` | `https://bookglow.my/auth/callback/customer` for existing customer booking OAuth |
 | `VITE_DATA_PROVIDER` | `supabase` |
 | `VITE_AUTH_PROVIDER` | `supabase` |
 
@@ -52,10 +52,10 @@ Merchant Google and email confirmation always return to `${window.location.origi
 The public Auth settings endpoint was rechecked on 2026-09-12: **Google is still disabled; email is enabled**. Enabling Google requires Google Cloud credentials in the Bookglow Supabase dashboard (project `uecphpjymbgtttrizhgy`).
 
 1. In Google Cloud / Google Auth Platform, configure consent branding/audience, with `openid`, email and profile scopes. Add test users if the app remains in testing.
-2. Create a Web application OAuth client. Add `https://bookglow.vercel.app` (and local origins you use) under authorized JavaScript origins.
+2. Create a Web application OAuth client. Add `https://bookglow.my` (and local origins you use) under authorized JavaScript origins.
 3. Register `https://uecphpjymbgtttrizhgy.supabase.co/auth/v1/callback` as the Google authorized redirect URI. If Supabase uses a custom auth domain, copy the exact callback shown in its Google provider page instead.
 4. In this Supabase project's Authentication → Sign In / Providers → Google, enter the Google client ID and client secret and enable Google. Do not put either secret into Vercel frontend variables.
-5. In Authentication → URL Configuration, set Site URL to `https://bookglow.vercel.app`. Allow `https://bookglow.vercel.app/signup` and `https://bookglow.vercel.app/auth/callback/customer`. Add the merchant HTTPS callback and **Android deep link** `com.bookglow.merchant://auth/callback/merchant` (required; otherwise Google login falls back to the marketing homepage). Preserve any existing merchant callback allowlist entries.
+5. In Authentication → URL Configuration, set Site URL to `https://bookglow.my`. Allow `https://bookglow.my/signup` and `https://bookglow.my/auth/callback/customer`. Add the merchant HTTPS callback and **Android deep link** `com.bookglow.merchant://auth/callback/merchant` (required; otherwise Google login falls back to the marketing homepage). Preserve any existing merchant callback allowlist entries.
 
 6. Retain development redirects `http://localhost:3000/signup`, `http://localhost:5174/signup`, and `http://localhost:5174/auth/callback/customer`; add other exact localhost callback origins only when used. Avoid broadly allowing untrusted preview domains.
 7. Redeploy the customer app so `vercel.json` env and the signup Google button ship together. Complete a real Google consent flow. Verify `/signup` restores the session, new merchants enter onboarding, drafts resume, and returning workspace members reach merchant login. Test cancellation, refresh, email confirmation and resume setup with dedicated test accounts.

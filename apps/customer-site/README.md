@@ -15,7 +15,7 @@ Customer booking and marketing site for Bookglow.
 
 ## Deploy (Booking site)
 
-Production customer hosting is Vercel: `https://bookglow.vercel.app`.
+Production customer hosting is Vercel: `https://bookglow.my`.
 
 Firebase Hosting is legacy frontend only. Firebase Functions remain on Firebase:
 

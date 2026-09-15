@@ -58,7 +58,7 @@ const SuperAdminHealth: React.FC = () => {
       results.push({
         name: 'Billing backend',
         status: billing.state === 'readiness_verified' ? 'healthy' : billing.state === 'provider_not_configured' || billing.state === 'configured_unverified' ? 'unknown' : 'degraded',
-        detail: `Stripe: ${billing.state.replaceAll('_', ' ')}; webhook ${billing.webhook}.`,
+        detail: `HitPay: ${billing.state.replaceAll('_', ' ')}; webhook ${billing.webhook}.`,
       });
     } catch (billingError) {
       results.push({ name: 'Billing backend', status: 'degraded', detail: billingError instanceof Error ? billingError.message : 'Billing readiness check failed.' });

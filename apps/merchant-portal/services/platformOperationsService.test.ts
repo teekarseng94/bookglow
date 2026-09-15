@@ -48,4 +48,21 @@ describe('platformOperationsService monitoring reads', () => {
     }]);
     expect(events[0].message).not.toMatch(/whsec_|sk_live_|Bearer\s+[A-Za-z0-9._~+/-]/i);
   });
+
+  it('starts HitPay checkout without a browser Stripe price id', async () => {
+    invoke.mockResolvedValue({ data: { url: 'https://securecheckout.hit-pay.com/example' }, error: null });
+    const url = await platformOperationsService.createCheckout('outlet-1');
+    expect(invoke).toHaveBeenCalledWith('billing-admin', {
+      body: expect.objectContaining({ action: 'create_checkout', outletId: 'outlet-1' }),
+    });
+    expect(url).toContain('hit-pay.com');
+  });
+
+  it('cancels a HitPay subscription through billing-admin', async () => {
+    invoke.mockResolvedValue({ data: { success: true, status: 'canceled' }, error: null });
+    await platformOperationsService.cancelSubscription('outlet-1');
+    expect(invoke).toHaveBeenCalledWith('billing-admin', {
+      body: { action: 'cancel_subscription', outletId: 'outlet-1' },
+    });
+  });
 });

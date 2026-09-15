@@ -4,7 +4,7 @@ Single source of truth for all active routes after migration.
 
 ## Domains
 
-- Booking + marketing site: `https://bookglow.vercel.app`
+- Booking + marketing site: `https://bookglow.my`
 - Merchant dashboard site: Vercel project `bookglow-merchant` (not Firebase Hosting)
 
 ## A) Booking Site Routes (`zenspa Frontend/index.tsx`)

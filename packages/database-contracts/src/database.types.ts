@@ -169,22 +169,28 @@ export type Database = {
         Row: {
           created_at: string
           email: string | null
+          hitpay_customer_id: string | null
           outlet_id: string
-          stripe_customer_id: string
+          provider: string
+          stripe_customer_id: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           email?: string | null
+          hitpay_customer_id?: string | null
           outlet_id: string
-          stripe_customer_id: string
+          provider?: string
+          stripe_customer_id?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           email?: string | null
+          hitpay_customer_id?: string | null
           outlet_id?: string
-          stripe_customer_id?: string
+          provider?: string
+          stripe_customer_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -204,6 +210,7 @@ export type Database = {
           livemode: boolean
           outlet_id: string | null
           payload: Json
+          provider: string
           received_at: string
           stripe_created_at: string | null
         }
@@ -213,6 +220,7 @@ export type Database = {
           livemode?: boolean
           outlet_id?: string | null
           payload: Json
+          provider?: string
           received_at?: string
           stripe_created_at?: string | null
         }
@@ -222,6 +230,7 @@ export type Database = {
           livemode?: boolean
           outlet_id?: string | null
           payload?: Json
+          provider?: string
           received_at?: string
           stripe_created_at?: string | null
         }
@@ -874,12 +883,22 @@ export type Database = {
           created_at: string
           current_period_end: string | null
           current_period_start: string | null
+          currency: string | null
+          discount_percent: number | null
+          hitpay_plan_id: string | null
+          hitpay_recurring_id: string | null
           id: string
+          interval_count: number | null
+          mrr_reliable: boolean | null
           outlet_id: string
+          provider: string
+          quantity: number | null
+          recurring_interval: string | null
           status: string
-          stripe_customer_id: string
+          stripe_customer_id: string | null
           stripe_price_id: string | null
           trial_end: string | null
+          unit_amount: number | null
           updated_at: string
         }
         Insert: {
@@ -887,12 +906,22 @@ export type Database = {
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
+          currency?: string | null
+          discount_percent?: number | null
+          hitpay_plan_id?: string | null
+          hitpay_recurring_id?: string | null
           id: string
+          interval_count?: number | null
+          mrr_reliable?: boolean | null
           outlet_id: string
+          provider?: string
+          quantity?: number | null
+          recurring_interval?: string | null
           status: string
-          stripe_customer_id: string
+          stripe_customer_id?: string | null
           stripe_price_id?: string | null
           trial_end?: string | null
+          unit_amount?: number | null
           updated_at?: string
         }
         Update: {
@@ -900,12 +929,22 @@ export type Database = {
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
+          currency?: string | null
+          discount_percent?: number | null
+          hitpay_plan_id?: string | null
+          hitpay_recurring_id?: string | null
           id?: string
+          interval_count?: number | null
+          mrr_reliable?: boolean | null
           outlet_id?: string
+          provider?: string
+          quantity?: number | null
+          recurring_interval?: string | null
           status?: string
-          stripe_customer_id?: string
+          stripe_customer_id?: string | null
           stripe_price_id?: string | null
           trial_end?: string | null
+          unit_amount?: number | null
           updated_at?: string
         }
         Relationships: [

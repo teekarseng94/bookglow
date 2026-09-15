@@ -29,8 +29,7 @@ export const PLANS: PricingPlan[] = [
     name: 'Start Pro',
     headline: 'Get Pro',
     description: 'Unlimited users',
-    price: 79,
-    monthlyPrice: 99,
+    price: 20,
     priceSuffix: '/month',
     featured: true,
     ctaLabel: 'Start Pro',
@@ -102,14 +101,8 @@ export const LANDING_PRICING_PLANS = [
   },
   {
     name: 'Pro',
-    price: 79,
+    price: 20,
     blurb: 'Everything you need to grow.',
     popular: true,
-  },
-  {
-    name: 'Premium',
-    price: 159,
-    blurb: 'Advanced tools for scaling.',
-    popular: false,
   },
 ];

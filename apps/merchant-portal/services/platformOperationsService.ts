@@ -19,7 +19,7 @@ export interface PlatformSubscription {
 
 export interface BillingReadiness {
   state: 'subscription_data_unavailable' | 'provider_not_configured' | 'configured_unverified' | 'readiness_verified' | 'billing_service_error';
-  provider: 'stripe';
+  provider: 'hitpay' | 'stripe';
   subscriptionDataAvailable: boolean;
   subscriptionCount?: number;
   priceVerified?: boolean;
@@ -52,7 +52,7 @@ export const platformOperationsService = {
     return (data || []).map((row: any) => ({
       id: row.id,
       outletId: row.outlet_id,
-      priceId: row.stripe_price_id,
+      priceId: row.hitpay_plan_id || row.stripe_price_id,
       status: row.status,
       cancelAtPeriodEnd: Boolean(row.cancel_at_period_end),
       currentPeriodEnd: row.current_period_end,
@@ -86,22 +86,21 @@ export const platformOperationsService = {
     return { outletId: data.outlet_id, outletName: data.outlet_name || data.outlet_id, accessStatus: data.access_status };
   },
 
-  createCheckout: async (outletId: string, priceId?: string): Promise<string> => {
+  createCheckout: async (outletId: string): Promise<string> => {
     const { data, error } = await client().functions.invoke('billing-admin', {
-      body: { action: 'create_checkout', outletId, priceId, appUrl: merchantPublicOrigin() },
+      body: { action: 'create_checkout', outletId, appUrl: merchantPublicOrigin() },
     });
-    if (error) throw error;
-    if (!data?.url) throw new Error('Stripe Checkout URL was not returned.');
+    if (error) throw new Error((data as any)?.error || error.message);
+    if (!data?.url) throw new Error((data as any)?.error || 'HitPay checkout URL was not returned.');
     return data.url;
   },
 
-  createBillingPortal: async (outletId: string): Promise<string> => {
+  cancelSubscription: async (outletId: string): Promise<void> => {
     const { data, error } = await client().functions.invoke('billing-admin', {
-      body: { action: 'create_portal', outletId, appUrl: merchantPublicOrigin() },
+      body: { action: 'cancel_subscription', outletId },
     });
-    if (error) throw error;
-    if (!data?.url) throw new Error('Stripe billing portal URL was not returned.');
-    return data.url;
+    if (error) throw new Error((data as any)?.error || error.message);
+    if ((data as any)?.error) throw new Error((data as any).error);
   },
 
   listMonitoringEvents: async (): Promise<PlatformMonitoringEvent[]> => {

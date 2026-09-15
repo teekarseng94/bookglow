@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import PricingCard from './PricingCard';
 import PricingSocialProof from './PricingSocialProof';
 import { PLANS } from './pricingData';
@@ -13,8 +13,6 @@ import { ProductPreviewPanel } from '../ProductPreviewPanel';
  * Below the hero: "All essentials included" section (preserved from original).
  */
 const PricingHero: React.FC = () => {
-  const [isAnnual, setIsAnnual] = useState(true);
-
   const proPlan = PLANS.find((p) => p.id === 'pro')!;
   const freePlan = PLANS.find((p) => p.id === 'free')!;
 
@@ -27,14 +25,10 @@ const PricingHero: React.FC = () => {
           <PricingSocialProof />
 
           {/* Column 2 — Pro plan */}
-          <PricingCard
-            plan={proPlan}
-            isAnnual={isAnnual}
-            onToggleBilling={() => setIsAnnual((prev) => !prev)}
-          />
+          <PricingCard plan={proPlan} isAnnual={false} />
 
           {/* Column 3 — Free plan */}
-          <PricingCard plan={freePlan} isAnnual={isAnnual} />
+          <PricingCard plan={freePlan} isAnnual={false} />
         </div>
       </section>
 

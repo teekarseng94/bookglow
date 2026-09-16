@@ -1,4 +1,5 @@
 import React from 'react';
+import { BOOKGLOW_PRIVACY_EMAIL } from '../../src/legal/legalContact';
 import { PRICING_TESTIMONIAL } from './pricingData';
 
 /**
@@ -48,7 +49,7 @@ const PricingSocialProof: React.FC = () => {
         <p className="pricing-social-proof__enterprise-text">
           Need a plan for a growing team or multiple outlets?
         </p>
-        <a href="mailto:hello@bookglow.com" className="pricing-social-proof__enterprise-link">
+        <a href={`mailto:${BOOKGLOW_PRIVACY_EMAIL}`} className="pricing-social-proof__enterprise-link">
           Contact us →
         </a>
       </div>

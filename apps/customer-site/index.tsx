@@ -5,6 +5,8 @@ import App from './App';
 import BookingAuth from './apps/booking/BookingAuth';
 import BookingPage from './apps/booking/BookingPage';
 import SignUp from './apps/booking/SignUp';
+import AccountDeletionPage from './apps/legal/AccountDeletionPage';
+import PrivacyPolicyPage from './apps/legal/PrivacyPolicyPage';
 import CustomerAuthCallback from './src/auth/CustomerAuthCallback';
 import { customerPublicEnv } from './src/customerPublicEnv';
 import './src/styles/global.css';
@@ -74,6 +76,8 @@ ReactDOM.createRoot(rootElement).render(
         <Route path="/auth/callback/customer" element={<CustomerAuthCallback />} />
         <Route path="/book/:bookingPath" element={<BookingPage />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/privacy" element={<PrivacyPolicyPage />} />
+        <Route path="/account-deletion" element={<AccountDeletionPage />} />
         <Route path="/login" element={<MerchantRedirect />} />
         <Route path="/loginbackend" element={<Navigate to="/login" replace />} />
         <Route path="/admin/*" element={<Navigate to="/login" replace />} />

@@ -8,7 +8,8 @@ export type SettingsSectionId =
   | 'notifications'
   | 'receipt-payment'
   | 'access-permissions'
-  | 'advanced';
+  | 'advanced'
+  | 'legal';
 
 export const SETTINGS_NAV_ITEMS: { id: SettingsSectionId; label: string }[] = [
   { id: 'business-profile', label: 'Business profile' },
@@ -18,6 +19,7 @@ export const SETTINGS_NAV_ITEMS: { id: SettingsSectionId; label: string }[] = [
   { id: 'receipt-payment', label: 'Receipt & payment' },
   { id: 'access-permissions', label: 'Access & permissions' },
   { id: 'advanced', label: 'Advanced settings' },
+  { id: 'legal', label: 'About & legal' },
 ];
 
 export interface SettingsNavigationProps {

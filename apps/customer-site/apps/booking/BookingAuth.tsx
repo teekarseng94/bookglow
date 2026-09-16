@@ -157,7 +157,10 @@ export default function BookingAuth() {
               </div>
               {mode === "register" && <>
                 <div className="bookglow-auth-field"><label htmlFor="booking-confirm-password">Confirm password</label><input id="booking-confirm-password" type="password" value={confirmation} onChange={(e) => setConfirmation(e.target.value)} minLength={6} required /></div>
-                <label><input type="checkbox" checked={acceptedTerms} onChange={(e) => setAcceptedTerms(e.target.checked)} /> I agree to the terms and privacy notice.</label>
+                <label>
+                  <input type="checkbox" checked={acceptedTerms} onChange={(e) => setAcceptedTerms(e.target.checked)} />
+                  {' '}I agree to the terms and <a href="/privacy" target="_blank" rel="noopener noreferrer">privacy notice</a>.
+                </label>
               </>}
               <div className="bookglow-auth-field">
                 <label htmlFor="booking-password">Password</label>

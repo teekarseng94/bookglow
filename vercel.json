@@ -17,6 +17,10 @@
       "dest": "/index.html"
     },
     {
+      "src": "/(?:privacy|account-deletion)/?",
+      "dest": "/index.html"
+    },
+    {
       "src": "/(?:auth/callback/customer|login|loginbackend|admin(?:/.*)?)/?",
       "dest": "/index.html"
     },

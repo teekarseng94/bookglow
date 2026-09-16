@@ -13,6 +13,7 @@ import type { UserRole } from '../contexts/UserContext';
 import type { PortalAuthUser } from '../services/authService';
 import { isTabAllowed } from '../utils/permissions';
 import { NetworkStatusBanner } from './ui';
+import { publicPrivacyPolicyUrl } from '../src/legal/publicLegalUrls';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -438,6 +439,19 @@ const Layout: React.FC<LayoutProps> = ({
 
       <div className="bookglow-profile-menu__divider" aria-hidden />
 
+      <a
+        href={publicPrivacyPolicyUrl()}
+        target="_blank"
+        rel="noopener noreferrer"
+        role="menuitem"
+        className="bookglow-profile-menu__item"
+        onClick={closeDesktopProfileMenu}
+      >
+        Privacy Policy
+      </a>
+
+      <div className="bookglow-profile-menu__divider" aria-hidden />
+
       {/* Sign out */}
       {onLogout && (
         <button
@@ -486,6 +500,19 @@ const Layout: React.FC<LayoutProps> = ({
           </button>
         </>
       )}
+
+      <div className="bookglow-profile-menu__divider" aria-hidden />
+
+      <a
+        href={publicPrivacyPolicyUrl()}
+        target="_blank"
+        rel="noopener noreferrer"
+        role="menuitem"
+        className="bookglow-profile-menu__item"
+        onClick={() => setShowMobileProfileMenu(false)}
+      >
+        Privacy Policy
+      </a>
 
       <div className="bookglow-profile-menu__divider" aria-hidden />
 

@@ -117,6 +117,7 @@ export default function SignUp() {
               {!resumeMode && <div className="bookglow-auth-field"><label htmlFor="signup-confirm-password">Confirm password</label><input id="signup-confirm-password" type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} autoComplete="new-password" minLength={8} required /></div>}
               <button type="submit" disabled={loading || googleLoading} className="bookglow-auth-primary">{loading ? (resumeMode ? 'Signing in…' : 'Creating account…') : (resumeMode ? 'Resume setup' : 'Create account')}</button>
             </form>
+            <p className="bookglow-auth-signin">By creating an account you agree to our <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</p>
           </>}
           {resumeMode && <button type="button" className="bookglow-auth-secondary" onClick={() => { setResumeMode(false); setPassword(''); setConfirmPassword(''); setError(''); }}>Create a different account</button>}
           <p className="bookglow-auth-signin">Already have an account? <a href={`${merchantPortalUrl}/login`}>Merchant login</a></p>

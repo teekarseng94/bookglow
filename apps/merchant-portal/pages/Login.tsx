@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { MERCHANT_RETURN_PATH_KEY, validatedMerchantReturnPath } from '@bookglow/auth-contracts';
 import { login, loginWithOAuth, isMerchantOAuthEnabled, resetPassword, LoginCredentials } from '../services/authService';
 import { merchantAccessDestination, merchantBrowserDestination, resolveMerchantAccess } from '../src/auth/accessResolver';
+import { publicPrivacyPolicyUrl } from '../src/legal/publicLegalUrls';
 
 const GoogleIcon = () => (
   <svg className="bookglow-login__google-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -108,6 +109,7 @@ const Login: React.FC = () => {
             <button type="submit" disabled={loading || googleLoading} className="bookglow-login__submit">{loading ? 'Signing in…' : 'Sign in'}</button>
           </form>
           <p className="bookglow-login__support">Don't have a Bookglow business account? <a href={`${customerSiteUrl}/signup`}>Create your business</a></p>
+          <p className="bookglow-login__support"><a href={publicPrivacyPolicyUrl()} target="_blank" rel="noopener noreferrer">Privacy Policy</a></p>
         </div>
       </section>
     </main>

@@ -17,6 +17,7 @@ import {
 import { TeamAccess } from '../components/settings/TeamAccess';
 
 import { customerSiteOrigin } from '../utils/customerSiteUrl';
+import { publicAccountDeletionUrl, publicPrivacyPolicyUrl } from '../src/legal/publicLegalUrls';
 
 const CUSTOMER_SITE_URL = customerSiteOrigin();
 const BOOKING_BASE_URL = CUSTOMER_SITE_URL ? `${CUSTOMER_SITE_URL}/book` : '';
@@ -915,6 +916,38 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           />
           <p className="m-settings-hint">
             Leave blank to disable PIN checking and use confirmation checkbox only.
+          </p>
+        </div>
+      </SettingsSection>
+
+      <SettingsSection
+        id="settings-legal"
+        iconWrap="bg-[var(--brand-soft)] text-[var(--brand)]"
+        title="About & legal"
+        description="Privacy Policy and account deletion for this BookGlow Merchant workspace."
+        icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6M7 4h7l5 5v11a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z" /></svg>}
+      >
+        <div className="space-y-3 max-w-md">
+          <a
+            href={publicPrivacyPolicyUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="m-settings-btn px-4 py-3 border border-[var(--line)] bg-[var(--bg-surface)] w-full text-left inline-flex items-center justify-between min-h-11"
+          >
+            Privacy Policy
+            <span aria-hidden className="text-[var(--text-muted)]">↗</span>
+          </a>
+          <a
+            href={publicAccountDeletionUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="m-settings-btn px-4 py-3 border border-[var(--line)] bg-[var(--bg-surface)] w-full text-left inline-flex items-center justify-between min-h-11"
+          >
+            Request account deletion
+            <span aria-hidden className="text-[var(--text-muted)]">↗</span>
+          </a>
+          <p className="m-settings-hint">
+            These pages open on the public BookGlow website and do not require signing in.
           </p>
         </div>
       </SettingsSection>

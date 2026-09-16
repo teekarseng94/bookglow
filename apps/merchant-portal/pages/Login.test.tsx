@@ -46,4 +46,9 @@ describe('merchant Login', () => {
     render(<MemoryRouter initialEntries={['/login?oauth_error=cancelled']}><Login /></MemoryRouter>);
     expect(await screen.findByRole('alert')).toHaveTextContent('Google sign-in was cancelled.');
   });
+
+  it('links the public Privacy Policy', () => {
+    render(<MemoryRouter initialEntries={['/login']}><Login /></MemoryRouter>);
+    expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', expect.stringMatching(/\/privacy$/));
+  });
 });

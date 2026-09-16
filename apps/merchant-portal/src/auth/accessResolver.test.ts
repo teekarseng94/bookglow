@@ -28,5 +28,5 @@ describe('merchant access destination', () => {
     expect(merchantAccessDestination(active('owner'), 'https://evil.example')).toBe('/dashboard');
     expect(merchantAccessDestination(active('owner'), '/book/salon')).toBe('/dashboard');
   });
-  it('formats destinations for the existing HashRouter', () => expect(merchantBrowserDestination('/access/no-workspace')).toBe('/#/access/no-workspace'));
+  it('formats destinations for BrowserRouter in the production app', () => expect(merchantBrowserDestination('/access/no-workspace')).toBe('/access/no-workspace'));
 });

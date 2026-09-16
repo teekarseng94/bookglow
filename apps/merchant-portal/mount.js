@@ -25,8 +25,8 @@ export function mount() {
     import('react-dom/client'),
     import('./appShell')
   ]).then(function (arr) {
-    var React = arr[0].default;
-    var ReactDOM = arr[1].default;
+    var React = arr[0].default || arr[0];
+    var ReactDOM = arr[1].default || arr[1];
     var AppShell = arr[2].default;
     if (rootElement._reactRoot) return;
     var root = ReactDOM.createRoot(rootElement);

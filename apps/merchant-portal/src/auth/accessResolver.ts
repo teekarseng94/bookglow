@@ -111,8 +111,15 @@ export function merchantAccessDestination(access: MerchantAccessContext, request
   return "/onboarding";
 }
 
-/** Convert an internal destination into this portal's HashRouter URL. */
-export const merchantBrowserDestination = (destination: string) => `/#${destination}`;
+/** Convert an internal destination into this portal's live router URL. */
+export function merchantBrowserDestination(destination: string): string {
+  const path = destination.startsWith("/") ? destination : `/${destination}`;
+  const usingHashRouter =
+    typeof window !== "undefined" &&
+    window.location.pathname === "/" &&
+    window.location.hash.startsWith("#/");
+  return usingHashRouter ? `/#${path}` : path;
+}
 
 function returnPathAllowed(path: string, role: MerchantAccessContext["role"]): boolean {
   if (path.startsWith("/pos")) return hasCapability(role, "pos.use");

@@ -74,6 +74,10 @@ function ensureSharedAuthSubscription() {
           })
         : null,
     );
+  }).catch((error) => {
+    console.error("[BookGlow Auth] Unable to restore the merchant session.", error);
+    sessionPrimed = true;
+    notifyListeners(null);
   });
 
   const { data } = sb.auth.onAuthStateChange((_event, session) => {

@@ -1,4 +1,6 @@
 import { Capacitor } from '@capacitor/core';
+import { createBrowserSupabaseClient } from '@bookglow/supabase';
+import { persistNativeOAuthCallback, createNativeAuthStorage, runNativeAuthLock } from '../auth/nativeAuthStorage';
 
 export const NATIVE_APP_ID = 'com.bookglow.merchant';
 export const NATIVE_MERCHANT_OAUTH_REDIRECT = `${NATIVE_APP_ID}://auth/callback/merchant`;
@@ -65,41 +67,64 @@ export function nativeCallbackRoute(url: string): string | null {
     const parsed = new URL(url);
     // com.bookglow.merchant://auth/callback/merchant?code=… → host=auth, path=/callback/merchant
     const path = `/${parsed.host}${parsed.pathname}`.replace(/\/{2,}/g, '/').replace(/\/$/, '') || '/auth/callback/merchant';
-    const search = parsed.search || '';
-    if (!path.includes('/auth/callback/merchant')) return null;
-    // The production app boots through appShell.tsx and BrowserRouter.
-    return `${path}${search}`;
+    if (!path.includes('/auth/callback/merchant') && !url.includes('callback/merchant')) return null;
+    // Keep PKCE params in the hash. A https://localhost query string is often stripped on reload.
+    const params = parsed.searchParams.toString();
+    return params ? `/auth/callback/merchant#?${params}` : '/auth/callback/merchant';
   } catch {
-    return null;
+    return url.includes('callback/merchant') ? '/auth/callback/merchant' : null;
   }
 }
 
-export async function initAndroidShell(): Promise<void> {
-  if (!isNativeApp()) return;
+function installNativeAuthClient() {
+  try {
+    createBrowserSupabaseClient(viteEnv(), {
+      auth: {
+        storage: createNativeAuthStorage(),
+        detectSessionInUrl: false,
+        flowType: 'pkce',
+        lock: runNativeAuthLock,
+      },
+    });
+  } catch (error) {
+    console.error('[BookGlow Auth] Unable to install native auth storage.', error);
+  }
+}
 
-  const [{ App }, { SplashScreen }, { StatusBar, Style }] = await Promise.all([
+async function setupNativeChrome(): Promise<void> {
+  try {
+    const { SplashScreen } = await import('@capacitor/splash-screen');
+    await SplashScreen.hide();
+  } catch {
+    /* Splash plugin may already auto-hide. */
+  }
+
+  const [{ App }, { StatusBar, Style }] = await Promise.all([
     import('@capacitor/app'),
-    import('@capacitor/splash-screen'),
     import('@capacitor/status-bar'),
   ]);
 
-  const handleNativeCallback = (url: string) => {
+  let handledCallback = '';
+  const handleNativeCallback = async (url: string) => {
     const route = nativeCallbackRoute(url);
-    if (!route) return;
+    if (!route || handledCallback === url) return;
+    handledCallback = url;
 
     // Never log the callback URL: it contains the one-time OAuth code.
     console.info('[BookGlow Auth] Native OAuth callback received.');
-    void import('@capacitor/browser').then(({ Browser }) => Browser.close()).catch(() => undefined);
+    await persistNativeOAuthCallback(url);
+    await import('@capacitor/browser').then(({ Browser }) => Browser.close()).catch(() => undefined);
+    if (window.location.pathname + window.location.hash === route) return;
     window.location.replace(route);
   };
 
   // appUrlOpen covers a callback while the WebView process is alive. getLaunchUrl
   // is also required because Android can recreate the app while Google OAuth is
   // open in the system browser (the common Play-distributed cold-start path).
-  await App.addListener('appUrlOpen', ({ url }) => handleNativeCallback(url));
+  await App.addListener('appUrlOpen', ({ url }) => { void handleNativeCallback(url); });
   try {
     const launchUrl = await App.getLaunchUrl();
-    if (launchUrl?.url) handleNativeCallback(launchUrl.url);
+    if (launchUrl?.url) await handleNativeCallback(launchUrl.url);
   } catch (error) {
     console.error('[BookGlow Auth] Unable to inspect the Android launch URL.', error);
   }
@@ -140,10 +165,27 @@ export async function initAndroidShell(): Promise<void> {
     },
     true,
   );
+}
 
-  try {
-    await SplashScreen.hide();
-  } catch {
-    /* Splash plugin may already auto-hide. */
-  }
+export function prepareNativeAuth() {
+  if (!isNativeApp()) return;
+  installNativeAuthClient();
+}
+
+export async function initAndroidShell(): Promise<void> {
+  if (!isNativeApp()) return;
+  installNativeAuthClient();
+  await new Promise<void>((resolve) => {
+    const timer = window.setTimeout(resolve, 1500);
+    void setupNativeChrome()
+      .then(() => {
+        window.clearTimeout(timer);
+        resolve();
+      })
+      .catch((error) => {
+        window.clearTimeout(timer);
+        console.error('[BookGlow Auth] Native chrome setup failed.', error);
+        resolve();
+      });
+  });
 }

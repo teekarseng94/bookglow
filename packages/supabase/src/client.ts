@@ -44,12 +44,27 @@ export function readBrowserSupabaseEnv(
 
 let browserClient: BookglowSupabaseClient | null = null;
 
+export type BrowserAuthStorage = {
+  getItem: (key: string) => string | Promise<string | null>;
+  setItem: (key: string, value: string) => void | Promise<void>;
+  removeItem: (key: string) => void | Promise<void>;
+};
+
+export type BrowserSupabaseAuthOptions = {
+  storage?: BrowserAuthStorage;
+  detectSessionInUrl?: boolean;
+  flowType?: "pkce" | "implicit";
+  lock?: (name: string, acquireTimeout: number, fn: () => Promise<unknown>) => Promise<unknown>;
+};
+
 /**
  * Singleton typed browser client for Vite apps.
  * Pass `import.meta.env` (or a plain env map) from the app entry.
+ * The first caller wins: Android must install native auth storage before mount.
  */
 export function createBrowserSupabaseClient(
-  env: Record<string, string | undefined>
+  env: Record<string, string | undefined>,
+  options?: { auth?: BrowserSupabaseAuthOptions }
 ): BookglowSupabaseClient {
   if (browserClient) return browserClient;
   const { url, publishableKey } = readBrowserSupabaseEnv(env);
@@ -57,7 +72,10 @@ export function createBrowserSupabaseClient(
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: true,
+      detectSessionInUrl: options?.auth?.detectSessionInUrl ?? true,
+      flowType: options?.auth?.flowType ?? "pkce",
+      ...(options?.auth?.storage ? { storage: options.auth.storage } : {}),
+      ...(options?.auth?.lock ? { lock: options.auth.lock } : {}),
     },
   });
   return browserClient;

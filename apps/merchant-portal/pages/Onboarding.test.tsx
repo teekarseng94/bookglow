@@ -23,6 +23,7 @@ vi.mock('../hooks/useAuth', () => ({
 
 vi.mock('../src/auth/accessResolver', () => ({
   resolveMerchantAccess: () => access.resolveMerchantAccess(),
+  merchantBrowserDestination: (path: string) => path,
 }));
 
 vi.mock('../../customer-site/apps/merchant-onboarding/MerchantOnboardingWizard', () => ({

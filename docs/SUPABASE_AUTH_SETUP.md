@@ -35,10 +35,10 @@ In Authentication → URL Configuration:
 
 1. App starts OAuth with `redirectTo=com.bookglow.merchant://auth/callback/merchant` and opens Capacitor Browser.
 2. After Google consent, Supabase must redirect to that native scheme (allowlisted above).
-3. `appUrlOpen` converts it to `/#/auth/callback/merchant?code=…`.
+3. `appUrlOpen` persists the deep link, then opens `/auth/callback/merchant#?code=…` (hash params survive the Capacitor `https://localhost` reload).
 4. `MerchantAuthCallback` exchanges the code, runs `resolveMerchantAccess`:
    - existing merchant → dashboard/POS
-   - no workspace → `/access/no-workspace` → existing “Create your business” → customer `/signup` (`create_merchant_workspace`)
+   - new or incomplete registration → `/onboarding`
 5. Do **not** treat marketing `/` as a merchant post-login destination.
 
 Set application variables per environment:

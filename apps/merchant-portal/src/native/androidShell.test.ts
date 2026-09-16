@@ -12,6 +12,22 @@ vi.mock('@capacitor/core', () => ({
   Capacitor: { isNativePlatform: () => true },
 }));
 
+vi.mock('@bookglow/supabase', () => ({
+  createBrowserSupabaseClient: vi.fn(),
+}));
+
+vi.mock('../auth/nativeAuthStorage', () => ({
+  persistNativeOAuthCallback: vi.fn(async () => undefined),
+  hydrateNativeAuthStorage: vi.fn(async () => undefined),
+  createNativeAuthStorage: () => ({
+    getItem: () => null,
+    setItem: async () => undefined,
+    removeItem: async () => undefined,
+  }),
+  runNativeAuthLock: async (_name: string, _timeout: number, fn: () => Promise<unknown>) => fn(),
+}));
+
+
 vi.mock('@capacitor/app', () => ({ App: nativeApp }));
 vi.mock('@capacitor/browser', () => ({ Browser: { close: vi.fn(), open: vi.fn() } }));
 vi.mock('@capacitor/splash-screen', () => ({ SplashScreen: { hide: vi.fn() } }));
@@ -29,7 +45,9 @@ describe('androidShell native OAuth callback mapping', () => {
     const entry = await readFile(path.resolve(process.cwd(), 'entry.js'), 'utf8');
 
     expect(entry).toContain("import('./src/native/androidShell')");
-    expect(entry).toContain('shell.initAndroidShell()');
+    expect(entry).toContain('shell.prepareNativeAuth()');
+    expect(entry).toContain('m.mount()');
+    expect(entry.indexOf("import('./main')")).toBeLessThan(entry.indexOf('shell.initAndroidShell()'));
   });
 
   it('maps the Capacitor deep link onto the BrowserRouter merchant callback', async () => {
@@ -37,7 +55,7 @@ describe('androidShell native OAuth callback mapping', () => {
     expect(NATIVE_MERCHANT_OAUTH_REDIRECT).toBe('com.bookglow.merchant://auth/callback/merchant');
 
     const url = `${NATIVE_MERCHANT_OAUTH_REDIRECT}?code=test-code&state=xyz`;
-    expect(nativeCallbackRoute(url)).toBe('/auth/callback/merchant?code=test-code&state=xyz');
+    expect(nativeCallbackRoute(url)).toBe('/auth/callback/merchant#?code=test-code&state=xyz');
   });
 
   it('checks the Android cold-start launch URL after registering the listener', async () => {

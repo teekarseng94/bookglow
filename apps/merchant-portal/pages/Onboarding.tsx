@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import MerchantOnboardingWizard from '../../customer-site/apps/merchant-onboarding/MerchantOnboardingWizard';
 import { useAuth } from '../hooks/useAuth';
 import { logout } from '../services/authService';
-import { resolveMerchantAccess } from '../src/auth/accessResolver';
+import { merchantBrowserDestination, resolveMerchantAccess } from '../src/auth/accessResolver';
 
 export default function MerchantOnboardingPage() {
   const { user, loading, isAuthenticated } = useAuth();
@@ -49,10 +49,10 @@ export default function MerchantOnboardingPage() {
   return (
     <MerchantOnboardingWizard
       email={user.email}
-      completeHref="/#/dashboard"
+      completeHref={merchantBrowserDestination('/dashboard')}
       onSavedExit={async () => {
         await logout();
-        window.location.replace('/#/login');
+        window.location.replace(merchantBrowserDestination('/login'));
       }}
     />
   );

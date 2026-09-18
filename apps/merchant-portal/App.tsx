@@ -43,6 +43,7 @@ const SuperAdminAudit = React.lazy(() => import('./pages/SuperAdminAudit'));
 const SuperAdminOnboarding = React.lazy(() => import('./pages/SuperAdminOnboarding'));
 const SuperAdminSupport = React.lazy(() => import('./pages/SuperAdminSupport'));
 const SuperAdminIntegrationsJobs = React.lazy(() => import('./pages/SuperAdminIntegrationsJobs'));
+const SuperAdminAccountDeletions = React.lazy(() => import('./pages/SuperAdminAccountDeletions'));
 
 const App: React.FC = () => {
   const { user, loading: authLoading, isAuthenticated, logout } = useAuth();
@@ -176,6 +177,7 @@ const App: React.FC = () => {
               <Route path="/admin/subscribers" element={<SuperAdminSubscribers />} />
               <Route path="/admin/onboarding" element={<SuperAdminOnboarding />} />
               <Route path="/admin/support" element={<SuperAdminSupport />} />
+              <Route path="/admin/account-deletions" element={<SuperAdminAccountDeletions />} />
               <Route path="/admin/integrations-jobs" element={<SuperAdminIntegrationsJobs />} />
               <Route path="/admin/subscriptions" element={<SuperAdminSubscriptions />} />
               <Route path="/admin/users" element={<SuperAdminUsers />} />

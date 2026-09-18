@@ -187,6 +187,39 @@ export const getCurrentUser = (): PortalAuthUser | null => {
 /**
  * Subscribe to auth state. Multiple React trees share one Supabase auth listener.
  */
+/** Verify the signed-in merchant before a destructive account-deletion request. */
+export async function verifyMerchantAccountForDeletion(input: {
+  confirmationEmail: string;
+  password?: string;
+}): Promise<void> {
+  const sb = createBrowserSupabaseClient(viteEnv());
+  const { data, error } = await sb.auth.getUser();
+  if (error || !data.user?.email) {
+    throw new Error("Your session could not be verified. Please sign in again.");
+  }
+
+  const sessionEmail = data.user.email.trim().toLowerCase();
+  const typedEmail = input.confirmationEmail.trim().toLowerCase();
+  if (sessionEmail !== typedEmail) {
+    throw new Error("The email you entered does not match your signed-in BookGlow account.");
+  }
+
+  const identities = data.user.identities ?? [];
+  const hasEmailIdentity = identities.some((identity) => identity.provider === "email");
+  if (hasEmailIdentity) {
+    if (!input.password?.trim()) {
+      throw new Error("Enter your current password to continue.");
+    }
+    const { error: passwordError } = await sb.auth.signInWithPassword({
+      email: sessionEmail,
+      password: input.password,
+    });
+    if (passwordError) {
+      throw new Error("Password verification failed. Check your password and try again.");
+    }
+  }
+}
+
 export const onAuthStateChange = (callback: AuthListener): (() => void) => {
   ensureSharedAuthSubscription();
   sharedListeners.add(callback);

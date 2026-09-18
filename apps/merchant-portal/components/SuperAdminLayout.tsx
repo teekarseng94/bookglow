@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, Building2, ClipboardCheck, CreditCard, FileClock, HeartPulse, LayoutDashboard, LifeBuoy, LogOut, Network, ShieldCheck, Users } from 'lucide-react';
+import { Activity, Building2, ClipboardCheck, CreditCard, FileClock, HeartPulse, LayoutDashboard, LifeBuoy, LogOut, Network, ShieldCheck, Trash2, Users } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import type { PortalAuthUser } from '../services/authService';
 import { NetworkStatusBanner } from './ui';
@@ -17,6 +17,7 @@ const navigation = [
   { to: '/admin/subscribers', label: 'Outlets & Access', icon: Building2 },
   { to: '/admin/onboarding', label: 'Onboarding', icon: ClipboardCheck },
   { to: '/admin/support', label: 'Support', icon: LifeBuoy },
+  { to: '/admin/account-deletions', label: 'Account deletions', icon: Trash2 },
   { to: '/admin/integrations-jobs', label: 'Integrations & Jobs', icon: Network },
   { to: '/admin/subscriptions', label: 'Subscriptions', icon: CreditCard },
   { to: '/admin/users', label: 'Platform Users', icon: Users },

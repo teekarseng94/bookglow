@@ -253,16 +253,41 @@ export const PrivacyPolicyPage: React.FC = () => {
         <p>
           Users may request deletion of their BookGlow account and associated personal information.
         </p>
+        <p>Requests can be submitted in either of these ways:</p>
+        <ul>
+          <li>
+            In the BookGlow Merchant app or web portal under Settings → About &amp; legal → Delete
+            account
+          </li>
+          <li>
+            On the public account deletion page at{' '}
+            <a href={BOOKGLOW_ACCOUNT_DELETION_PATH}>{BOOKGLOW_ACCOUNT_DELETION_URL}</a>
+          </li>
+        </ul>
         <p>
-          BookGlow provides an accessible method for submitting account-deletion requests at{' '}
-          <a href={BOOKGLOW_ACCOUNT_DELETION_PATH}>{BOOKGLOW_ACCOUNT_DELETION_URL}</a>
-          . The BookGlow Merchant application also includes a link to that request page in Settings.
+          Submitting a request starts a review. It does not immediately delete the account.
+        </p>
+        <h3>Data that may be deleted</h3>
+        <ul>
+          <li>Authentication account and profile information for the requesting user</li>
+          <li>Merchant account settings and personal preferences linked to that user</li>
+          <li>Uploaded account media and personal account metadata where eligible for removal</li>
+        </ul>
+        <h3>Data that may be retained or anonymized</h3>
+        <ul>
+          <li>Transaction, billing, subscription, and accounting records where retention is legally required</li>
+          <li>Security, fraud-prevention, and audit logs</li>
+          <li>Shared outlet business records that must remain available to other authorized users</li>
+          <li>Merchant-controlled customer or member records that must be handled with the relevant business</li>
+        </ul>
+        <p>
+          Where an account is eligible for deletion, associated personal information will be deleted or
+          anonymized unless retention is required for legal, regulatory, fraud-prevention, security,
+          accounting, or legitimate business-record requirements.
         </p>
         <p>
-          Submitting a request starts a review. Where an account is eligible for deletion, associated
-          personal information will be deleted or anonymized unless retention is required for legal,
-          regulatory, fraud-prevention, security, accounting, or legitimate business-record
-          requirements.
+          For privacy or account-deletion questions, contact{' '}
+          <a href={`mailto:${BOOKGLOW_PRIVACY_EMAIL}`}>{BOOKGLOW_PRIVACY_EMAIL}</a>.
         </p>
 
         <h2>10. Merchant-Controlled Customer Data</h2>

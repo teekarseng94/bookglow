@@ -23,6 +23,8 @@ describe('public privacy policy', () => {
     expect(text).toContain(BOOKGLOW_PRIVACY_EMAIL);
     expect(text).toContain(BOOKGLOW_LEGAL_ENTITY);
     expect(text).toContain(BOOKGLOW_ACCOUNT_DELETION_URL);
+    expect(text).toContain('Delete account');
+    expect(text).toContain('Data that may be deleted');
     expect(document.title).toContain('Privacy Policy');
   });
 

@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '../../components/Button';
 import { LegalLayout } from './LegalLayout';
+import { submitPublicAccountDeletionRequest } from '../../services/accountDeletionService';
 import {
   BOOKGLOW_ACCOUNT_DELETION_PATH,
   BOOKGLOW_PRIVACY_EMAIL,
@@ -12,21 +13,31 @@ export const AccountDeletionPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [businessName, setBusinessName] = useState('');
   const [details, setDetails] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [requestId, setRequestId] = useState('');
 
-  const mailtoHref = useMemo(() => {
-    const subject = 'BookGlow account deletion request';
-    const body = [
-      'I am requesting deletion of my BookGlow account and associated personal information.',
-      '',
-      `Name: ${name.trim() || '(not provided)'}`,
-      `Account email: ${email.trim() || '(not provided)'}`,
-      `Business / outlet name: ${businessName.trim() || '(not provided)'}`,
-      '',
-      'Additional details:',
-      details.trim() || '(none)',
-    ].join('\n');
-    return `mailto:${BOOKGLOW_PRIVACY_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  }, [businessName, details, email, name]);
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const id = await submitPublicAccountDeletionRequest({
+        email,
+        requesterName: name,
+        businessName,
+        reason: details,
+      });
+      setRequestId(id);
+      setSubmitted(true);
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : 'Could not submit your deletion request.';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <LegalLayout
@@ -37,68 +48,92 @@ export const AccountDeletionPage: React.FC = () => {
       <article className="bookglow-legal-article">
         <h1>Account deletion request</h1>
         <p>
-          Use this page to request deletion of a BookGlow account and associated personal
-          information. Submitting a request starts a review. It does not immediately delete the
-          account.
+          BookGlow allows merchants to request deletion of their BookGlow business account and associated
+          account data. Use this page to submit a deletion request without installing the BookGlow Merchant app.
         </p>
         <p>
-          Where an account is eligible for deletion, associated personal information will be deleted
-          or anonymized unless retention is required for legal, regulatory, fraud-prevention,
-          security, accounting, or legitimate business-record requirements. Merchant-controlled
-          customer records may also need to be handled with the relevant merchant.
-        </p>
-        <p className="bookglow-legal-note">
-          Requests are sent to {BOOKGLOW_PRIVACY_EMAIL}. You can also email that address directly
-          with the subject “BookGlow account deletion request”.
+          Submitting a request starts a review. It does not immediately delete the account.
         </p>
 
-        <form
-          className="bookglow-legal-form"
-          onSubmit={(event) => {
-            event.preventDefault();
-            window.location.href = mailtoHref;
-          }}
-        >
-          <label>
-            Your name
-            <input
-              type="text"
-              name="name"
-              autoComplete="name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-            />
-          </label>
-          <label>
-            Account email
-            <input
-              type="email"
-              name="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-            />
-          </label>
-          <label>
-            Business or outlet name (optional)
-            <input
-              type="text"
-              name="business"
-              value={businessName}
-              onChange={(event) => setBusinessName(event.target.value)}
-            />
-          </label>
-          <label>
-            Additional details (optional)
-            <textarea
-              name="details"
-              value={details}
-              onChange={(event) => setDetails(event.target.value)}
-            />
-          </label>
-          <Button type="submit">Send deletion request</Button>
-        </form>
+        <h2>What may be deleted</h2>
+        <ul>
+          <li>Your BookGlow authentication account and profile information</li>
+          <li>Merchant account settings linked to your user</li>
+          <li>Personal account metadata associated with your BookGlow login</li>
+        </ul>
+
+        <h2>What may be retained</h2>
+        <ul>
+          <li>Transaction, billing, and accounting records where retention is legally required</li>
+          <li>Security, fraud-prevention, and audit logs</li>
+          <li>Merchant-controlled customer or member records that must be handled with the relevant business</li>
+          <li>Shared business records required by other authorized outlet users</li>
+        </ul>
+
+        <p className="bookglow-legal-note">
+          You can also contact {BOOKGLOW_PRIVACY_EMAIL} with the subject &ldquo;BookGlow account deletion request&rdquo;.
+        </p>
+
+        {submitted ? (
+          <div className="bookglow-legal-note">
+            <p>
+              Your account deletion request has been submitted for review.
+              {requestId ? ` Reference: ${requestId}.` : ''}
+            </p>
+            <p className="mt-2">
+              BookGlow will contact you at the email address you provided if more information is needed.
+            </p>
+          </div>
+        ) : (
+          <form className="bookglow-legal-form" onSubmit={submit}>
+            <label>
+              Your name
+              <input
+                type="text"
+                name="name"
+                autoComplete="name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+              />
+            </label>
+            <label>
+              Account email
+              <input
+                type="email"
+                name="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </label>
+            <label>
+              Business or outlet name (optional)
+              <input
+                type="text"
+                name="business"
+                value={businessName}
+                onChange={(event) => setBusinessName(event.target.value)}
+              />
+            </label>
+            <label>
+              Additional details (optional)
+              <textarea
+                name="details"
+                value={details}
+                onChange={(event) => setDetails(event.target.value)}
+              />
+            </label>
+            {error ? (
+              <p className="text-sm text-[var(--danger)]" role="alert">
+                {error}
+              </p>
+            ) : null}
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Submitting…' : 'Submit deletion request'}
+            </Button>
+          </form>
+        )}
 
         <p>
           Privacy Policy:{' '}

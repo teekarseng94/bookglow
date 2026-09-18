@@ -15,6 +15,7 @@ import {
   type SettingsSectionId,
 } from '../components/settings';
 import { TeamAccess } from '../components/settings/TeamAccess';
+import { DeleteAccountSection } from '../components/settings/DeleteAccountSection';
 
 import { customerSiteOrigin } from '../utils/customerSiteUrl';
 import { publicAccountDeletionUrl, publicPrivacyPolicyUrl } from '../src/legal/publicLegalUrls';
@@ -949,6 +950,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           <p className="m-settings-hint">
             These pages open on the public BookGlow website and do not require signing in.
           </p>
+          <DeleteAccountSection />
         </div>
       </SettingsSection>
         </div>

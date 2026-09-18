@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Ban, Clipboard, ExternalLink, MoreVertical, Plus, RefreshCw, RotateCcw, ShieldCheck,
+  Ban, Clipboard, ExternalLink, MoreVertical, Plus, RefreshCw, RotateCcw, ShieldCheck, Trash2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { accountAdminService, type UnlinkedAuthAccount, type WorkspaceAccountRole } from '../../services/accountAdminService';
@@ -350,7 +350,6 @@ const OutletInspector: React.FC<OutletInspectorProps> = ({
                 <button type="button" onClick={() => void copyOutletId()} className="flex w-full items-center gap-2 rounded-ui-sm px-3 py-2 text-left text-xs hover:bg-[var(--bg-soft)]"><Clipboard className="h-3.5 w-3.5" />Copy outlet ID</button>
                 <button type="button" disabled={!summary.bookingSlug || !customerSiteOrigin()} onClick={() => void openBookingPage()} className="flex w-full items-center gap-2 rounded-ui-sm px-3 py-2 text-left text-xs hover:bg-[var(--bg-soft)] disabled:opacity-50"><ExternalLink className="h-3.5 w-3.5" />Open booking page</button>
                 <button type="button" onClick={createCase} className="flex w-full items-center gap-2 rounded-ui-sm px-3 py-2 text-left text-xs hover:bg-[var(--bg-soft)]"><Plus className="h-3.5 w-3.5" />Create support case</button>
-                <button type="button" onClick={deleteOutlet} className="flex w-full items-center gap-2 rounded-ui-sm px-3 py-2 text-left text-xs text-[var(--danger)] hover:bg-[var(--danger-soft)]"><Ban className="h-3.5 w-3.5" />Delete outlet</button>
               </div>
             </details>
           </div>
@@ -375,6 +374,7 @@ const OutletInspector: React.FC<OutletInspectorProps> = ({
                 <StatusBadge tone={toneForState(summary?.portalStatus)}>{summary?.portalStatus === 'suspended' ? 'Portal suspended' : `Portal ${summary?.portalStatus}`}</StatusBadge>
                 <StatusBadge tone={toneForState(summary?.onboardingStatus)}>{summary?.onboardingStatus === 'complete' ? 'Onboarding complete' : `Onboarding ${summary?.onboardingStatus}`}</StatusBadge>
                 <Button size="sm" variant={summary?.portalStatus === 'suspended' ? 'secondary' : 'danger'} onClick={portalAction}>{summary?.portalStatus === 'suspended' ? <RotateCcw className="h-3.5 w-3.5" /> : <Ban className="h-3.5 w-3.5" />}{summary?.portalStatus === 'suspended' ? 'Restore access' : 'Suspend access'}</Button>
+                <Button size="sm" variant="danger" onClick={deleteOutlet}><Trash2 className="h-3.5 w-3.5" />Delete outlet</Button>
               </div>
               <dl className="grid gap-3 rounded-ui-md border border-[var(--line)] p-4 sm:grid-cols-2">
                 {[

@@ -68,5 +68,11 @@ describe('OutletInspector', () => {
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it('shows a summary Delete outlet control next to Suspend access', async () => {
+    renderInspector();
+    expect(await screen.findByRole('button', { name: 'Delete outlet' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Suspend access' })).toBeInTheDocument();
+  });
 });
 

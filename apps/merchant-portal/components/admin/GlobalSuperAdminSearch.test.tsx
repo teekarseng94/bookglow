@@ -78,6 +78,28 @@ describe('GlobalSuperAdminSearch', () => {
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
 
+  it('discards the previous response as soon as the query changes, before the next debounce', async () => {
+    let resolveOld!: (rows: typeof outlet[]) => void;
+    search.mockImplementationOnce(() => new Promise((resolve) => { resolveOld = resolve; }));
+    setup();
+    fireEvent.focus(desktopInput());
+    fireEvent.change(desktopInput(), { target: { value: 'old' } });
+    await advanceSearch();
+    fireEvent.change(desktopInput(), { target: { value: 'new' } });
+    await act(async () => { resolveOld([outlet]); await Promise.resolve(); });
+    expect(screen.queryByRole('option')).not.toBeInTheDocument();
+  });
+
+  it('navigates in displayed group order even when the server returns a different order', async () => {
+    search.mockResolvedValue([user, outlet]);
+    setup();
+    fireEvent.focus(desktopInput());
+    fireEvent.change(desktopInput(), { target: { value: 'ba' } });
+    await advanceSearch();
+    fireEvent.keyDown(desktopInput(), { key: 'Enter' });
+    expect(openOutletInspector).toHaveBeenCalledWith('outlet-1', 'summary');
+  });
+
   it('routes support and operation results with selected record filters', async () => {
     search.mockResolvedValueOnce([{ type: 'support_case', id: 'case-1042', title: 'Case case-1042', matchedText: 'case-1042', outletId: 'outlet-1', outletName: 'Bali Wellness', status: 'open', timestamp: null }]);
     const view = setup();

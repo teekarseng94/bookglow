@@ -59,7 +59,9 @@
 - `apps/merchant-portal/services/auditService.ts`
 - `apps/merchant-portal/services/superadminMigration.test.ts`
 
-`apps/merchant-portal/App.tsx`, the Step 1/Step 2 migrations and services, shared auth/database packages, and existing remote-access routing were reviewed but were not changed unless listed above.
+Verification additions: `migration/validate/superadmin-phase1-local.mjs`, `apps/merchant-portal/playwright.local-phase1.config.mjs`, `apps/merchant-portal/test/visual/superadmin-phase1.local.spec.mjs`, and `apps/merchant-portal/services/sharedSupabaseClient.test.ts`. The shared typing repair is in `packages/supabase/src/client.ts`; the customer change is test cleanup only in `apps/customer-site/src/legal/privacyPolicy.test.tsx`.
+
+`apps/merchant-portal/App.tsx`, Step 1/Step 2 migrations and services, generated database schema types, and existing remote-access authorization were not changed.
 
 ## 3. Search entity types and authoritative sources
 
@@ -69,9 +71,9 @@ All large-data search runs in `platform_global_search`; the browser never downlo
 | --- | --- | --- | --- |
 | Outlet name / ID | `public.outlets` | Name contains; ID contains/prefix ranked | Shared inspector, Summary |
 | Merchant email / user name | `public.outlet_members`, `public.users`, `public.outlets`, `public.platform_account_controls` | Email/name contains; exact/prefix email ranked | Shared inspector, Accounts |
-| Booking reference | `public.appointments` | Reference prefix | Existing Schedule detail after validated remote access |
-| Sale/transaction reference | `public.transactions` | Reference prefix | Existing Transactions detail after validated remote access |
-| Support case number | `public.platform_support_cases` | Case UUID prefix | Support workspace with selected case |
+| Booking identifier | `public.appointments` | Identifier prefix | Existing Schedule detail after validated remote access |
+| Sale/transaction identifier | `public.transactions` | Identifier prefix | Existing Transactions detail after validated remote access |
+| Support case identifier | `public.platform_support_cases` | Case UUID prefix | Support workspace with selected case |
 | Operation/correlation ID | `public.platform_admin_operations`, `public.platform_monitoring_events` | Operation UUID or correlation prefix | Integrations & Jobs with record/date/outlet filters |
 | Audit ID / operation ID | `public.platform_audit_events` | Audit UUID or operation UUID prefix | Audit page with exact event/outlet filter |
 
@@ -116,146 +118,174 @@ The selected outlet and tab live in router query state, not local storage. Openi
 - Integration evidence continues to use the existing sanitized Step 2 read model. Provider payloads and credentials are not exposed.
 - Privileged decisions are not stored in `localStorage`. URL outlet IDs are navigation state only and never authorization evidence.
 
-## 6. Responsive and accessibility checks
+## 6. Hardening completed on 18 September 2026
 
-The isolated Playwright harness checked the search/results panel and open inspector at:
+- **Shared Supabase typing:** replaced the hand-written `Promise<unknown>` lock signature with the SDK's generic `LockFunc`. A lock must return the same `R` supplied by its callback. The incompatible lock also caused cascading `createClient<Database>` schema/nullability diagnostics. Using the SDK contract resolves all of them without casts, schema regeneration, dependency changes, or runtime changes. Persistence, PKCE, URL detection and native storage behavior are unchanged. A new compile-checked regression test covers number/string results and rejected callbacks.
+- **Search:** invalidates an old request immediately when the query changes (including the debounce interval); keyboard order matches rendered entity-group order; mobile search uses the shared focus trap and a persistent restoration target. Operation deep links use the same local calendar day as the Jobs date inputs.
+- **Inspector:** a zero-minimum grid column prevents 320px content/header overflow; long titles and identifiers wrap; narrow headers retain visible actions. Confirmation dialogs prevent the underlying inspector from closing while a privileged action is pending.
+- **Legacy outlet URLs:** consume the old `outlet` parameter into canonical inspector parameters once, preventing a closed inspector from reopening on refresh.
+- **Sale deep links:** do not mount the mobile detail sheet on desktop. Previously its hidden panel left a visible backdrop which intercepted the remote-access exit button.
+- **Validation-only customer repair:** the full customer suite exposed three accumulated Privacy Policy links, although the file passed in isolation. Added explicit Testing Library cleanup after each privacy-policy test. No customer product code was changed.
 
-- 320 × 568
-- 390 × 844
-- 768 × 1024
-- 1440 × 1000
+The initial implementation and some early repairs were included by the intervening existing commit `374ea36`. That commit was preserved, not amended. This follow-up contains only verification/hardening changes and this report.
 
-At each viewport, `document.documentElement.scrollWidth <= clientWidth` passed before and after opening the inspector. Mobile uses a compact Search button and a bounded expansion panel; the inspector becomes a full-width, full-height sheet. Desktop uses a right-side drawer. Inspector tabs scroll inside their own strip without causing page-level overflow.
+## 7. Verified against the isolated database
 
-The shared `AppDrawer`/`AppModal` interaction layer provides focus trapping, focus restoration, Escape close, labelled dialogs, and busy-state close protection. Search supports focus, Arrow Up/Down, Enter, Escape, labelled controls, loading status, empty/no-result/error states, and keyboard-selected results.
+### Target and safety
 
-## 7. Tests executed and exact results
+Docker Desktop reported a **Linux** engine. All database work used `supabase_db_bookglow-local`, API `http://127.0.0.1:55431`, database `127.0.0.1:55432`, Studio `http://127.0.0.1:55433`.
 
-### Tested locally
+Before applying migrations, existing auth identities were checked: all seven used `example.test`. Existing outlets were the local authorization fixtures and the existing Phase 4 test-script fixture; client/appointment records were local fixtures. No production data was found. No reset, volume deletion, remote SQL editor, or linked-project migration command was used.
 
-1. Focused Phase 1 unit/component/static migration tests:
+The repeatable verifier additionally rejects any API/DB endpoint other than the expected loopback ports and refuses databases containing non-test-domain identities. It creates randomly namespaced local fixtures and four separately authenticated identities: platform administrator, merchant owner, manager, and customer. Test credentials remain in process memory; they are not committed. Fixtures are deliberately retained only in the disposable local database for diagnosis.
 
-   ```text
-   npx vitest run components/admin/GlobalSuperAdminSearch.test.tsx components/admin/OutletInspectorContext.test.tsx components/admin/OutletInspector.test.tsx services/superAdminPhase1Service.test.ts services/superadminMigration.test.ts
-   Test Files  5 passed (5)
-   Tests       32 passed (32)
-   ```
+### Migration execution and recorded history
 
-   Coverage includes debounce, loading/empty/error/grouped search results, keyboard behavior, result routing, validated remote-access ordering, result redaction, platform-admin SQL contracts, shared inspector entry points, outlet/tab URL state, close/back behavior, scoped loading, stale-response prevention, Escape close, and the remote-access banner contract.
+Commands run from the repository root:
 
-2. Full merchant portal Vitest suite:
-
-   ```text
-   npm test
-   Test Files  46 passed (46)
-   Tests       169 passed (169)
-   ```
-
-3. Isolated Playwright Phase 1 browser tests:
-
-   ```text
-   npx playwright test test/visual/superadmin-phase1.spec.ts --project=desktop
-   3 passed
-   ```
-
-   This comprises one no-op auth setup (the existing local state file was present) plus two isolated Phase 1 tests. The harness replaces backend methods with local deterministic data and does not contact or mutate production.
-
-### Requires isolated database verification
-
-- Applying the new migration to an isolated Supabase database.
-- Executing both new RPCs as a platform administrator and as a non-admin to verify positive and denied paths against migrated data.
-- Verifying query plans and representative result quality/latency with production-like, non-production data volumes.
-- Verifying booking, sale, support, operation, and audit deep links with realistic isolated records.
-- Exercising Step 1/Step 2 privileged mutations end to end against isolated Edge Functions and database policies. Local tests verify contracts/mocks; they do not prove deployed infrastructure behavior.
-
-## 8. Build and typecheck results
-
-### Production build
-
-```text
-npm run build
-2549 modules transformed
-Build succeeded in 28.93s
+```powershell
+docker info --format '{{.OSType}}'
+& node_modules/@supabase/cli-windows-x64/bin/supabase.exe migration up --help
+& node_modules/@supabase/cli-windows-x64/bin/supabase.exe migration up --local --workdir migration
+docker exec supabase_db_bookglow-local psql -U postgres -d postgres -c "select version,name from supabase_migrations.schema_migrations where version >= '20260913165153' order by version;"
 ```
 
-### Typecheck
+Step 1 and Step 2 were already genuinely recorded. The CLI applied all four pending migrations in chronological order, without manually marking anything applied.
 
-```text
+| Version | Migration | Result |
+| --- | --- | --- |
+| 20260913165153 | superadmin_step1_reliability | Already applied; history verified |
+| 20260913185856 | superadmin_step2_operations | Already applied; history verified |
+| 20260914104830 | monitoring_read_sanitization | Already applied; history verified |
+| 20260914110322 | edge_function_service_role_grants | Already applied; history verified |
+| 20260915140000 | hitpay_platform_billing | Applied successfully |
+| 20260915170000 | platform_delete_outlet | Applied successfully |
+| 20260915180000 | merchant_auto_workspace_onboarding | Applied successfully |
+| 20260918010000 | superadmin_phase1_search_inspector | Applied successfully |
+
+### Actual authorization results
+
+```powershell
+node migration/validate/superadmin-phase1-local.mjs
+# PASS: 98 real local database authorization assertions
+```
+
+These are real password-authenticated REST/RPC requests, not mocked migration contracts. Service-role access is confined to creating local test identities; the tested authorization requests use each identity's own session.
+
+Verified:
+
+- Admin search/inspector success, exact entity/outlet associations, outlet-scoped accounts and authoritative subscription data.
+- Search field allow-list and omission of private support descriptions, provider identifiers and private operation/audit metadata.
+- Owner, manager, customer and anonymous rejection for search, inspector, support reads/mutations, overview/onboarding/integration/job administration, outlet suspension and remote access.
+- Private account-control, operation, audit, support/history and billing-event table reads denied/empty for unauthorized identities.
+- Search minimum length, escaped LIKE metacharacters, lower per-group limit and upper clamp.
+- Six search indexes exist and are valid/ready. A diagnostic EXPLAIN with sequential scans disabled demonstrates that the booking-prefix predicate can use its index. This is **index eligibility**, not a production-scale performance benchmark.
+- Admin outlet suspension persists and is observed by the owner's existing session; the fixture is restored afterward.
+- Missing-outlet remote selection and cross-outlet support references are rejected.
+- Unauthorized audit updates cannot alter the persisted audit record.
+
+This suite is Phase 1 authorization regression coverage, not a claim that every pre-existing Step 1/2 Edge Function mutation has been re-certified.
+
+## 8. Verified through authenticated UI
+
+```powershell
+cd apps/merchant-portal
+node node_modules/@playwright/test/cli.js test --config playwright.local-phase1.config.mjs
+# 7 passed (1.2m)
+```
+
+The dedicated configuration uses port 5187, a fresh browser context and a disposable platform-admin login through the real login form. It never reuses `test/.auth/merchant.json`. Vite receives only the local URL and local anon key. Browser requests to non-loopback hosts are blocked. The backend is not replaced with harness data.
+
+| Viewport | Authenticated result |
+| --- | --- |
+| 320 × 568 | Passed: mobile search and full-height inspector |
+| 390 × 844 | Passed: mobile search and full-height inspector |
+| 768 × 1024 | Passed: responsive search and right-side inspector |
+| 1440 × 1000 | Passed: desktop search and right-side drawer |
+
+Verified on real local responses:
+
+- Header search, outlet/account grouping, outlet selection and user-to-Accounts navigation.
+- All seven inspector tabs, page/dialog overflow checks, refresh and selected URL state.
+- Support case selection, exact operation/date/outlet selection and audit event navigation.
+- Outlet switching, browser back, empty evidence and missing-outlet errors.
+- Booking and sale identifiers route to the correct merchant screens after validated remote access; sale detail shows the exact transaction ID.
+- Correct remote banner and working exit with session selection cleared.
+- Escape, focus containment/restoration, mobile search error recovery, loading state and a real suspension confirmation that cannot close while busy.
+- Legacy outlet URLs stay closed after closing/reloading the inspector.
+
+Loading/busy tests delay and then continue actual local requests. The error test aborts a local search request; it does not fabricate a successful backend response. The suspension affects only the new local fixture and is restored.
+
+Screenshots were captured in ignored `apps/merchant-portal/test-results/` directories. Mobile search/inspector and tablet/desktop inspector screenshots were visually inspected. No page-level or inspector horizontal overflow was detected. Long metadata may use deliberate ellipsis; tab strips scroll internally rather than overflowing the page.
+
+## 9. Static/harness-only verification
+
+The existing deterministic harness and its three checked-in images remain supplemental. Its previously reported run comprised two harness tests plus a no-op auth setup; it was **not** an authenticated database test. It was not used as evidence for the authenticated results above.
+
+The focused unit suite covers debounce/stale responses, keyboard ordering, mapping redaction, URL state, stale inspector responses and SQL migration contracts. Such tests supplement, not replace, the real local database and UI runs.
+
+## 10. Final validation results
+
+Runtime: **Node 22.23.2**, matching the repository's Node 22 declaration. The available Node 22 executable directory was prepended to PATH so npm subprocesses also used Node 22:
+
+```powershell
+$env:PATH='D:\npm-cache\_npx\52027bd8fc0022aa\node_modules\node\bin;'+$env:PATH
+node --version
 npm run typecheck
-Exit code: 1
-```
-
-No Phase 1 file reports a TypeScript error. The command remains blocked by two shared-package errors in `packages/supabase/src/client.ts`:
-
-- line 71: Supabase client schema generic is not assignable to `BookglowSupabaseClient`
-- line 72: auth lock returns `Promise<unknown>` instead of generic `Promise<R>`
-
-These errors existed before the Phase 1 changes and were not altered because changing shared client typing is outside this phase. The successful Vite production build does not replace the failed standalone typecheck; both outcomes are reported separately.
-
-### Repository checks
-
-```text
+npm --prefix apps/merchant-portal test -- --reporter=dot
+npm --prefix apps/customer-site test -- --reporter=dot
+npm --prefix apps/merchant-portal test -- components/admin/GlobalSuperAdminSearch.test.tsx components/admin/OutletInspector.test.tsx components/admin/OutletInspectorContext.test.tsx services/superAdminPhase1Service.test.ts services/superadminMigration.test.ts services/sharedSupabaseClient.test.ts --reporter=dot
+npm run build
 git diff --check
-Exit code: 0
-
 git status --short
-Only the Phase 1 files listed in this report are modified or untracked.
 ```
 
-Git emitted Windows line-ending and inaccessible global-ignore warnings, but no whitespace error was reported.
+| Check | Final result |
+| --- | --- |
+| All four shared-package typechecks | Passed |
+| Merchant typecheck | Passed |
+| Customer typecheck | Passed |
+| Full merchant tests | 47 files, 172 tests passed |
+| Full customer tests | 10 files, 71 tests passed |
+| Focused Phase 1/shared-client tests | 6 files, 35 tests passed (subset of merchant total) |
+| Real local DB verifier | 98 assertions passed |
+| Authenticated local Playwright | 7 tests passed |
+| Merchant production build | Passed, 15.99s |
+| Customer production build | Passed, 3.93s |
+| Whitespace check | Passed |
 
-## 9. Visual artifacts
+The earlier customer-suite failure and test-only import/locator mistakes were corrected and rerun; the table reports final results. Existing lockfiles and dependency versions were not changed.
 
-- `apps/merchant-portal/test/visual/artifacts/superadmin-phase1-search-mobile-390x844.png`
-- `apps/merchant-portal/test/visual/artifacts/superadmin-phase1-inspector-mobile-390x844.png`
-- `apps/merchant-portal/test/visual/artifacts/superadmin-phase1-inspector-desktop-1440x1000.png`
+Non-blocking warnings: aged Browserslist data, customer bundle over Vite's 500 kB advisory threshold, Windows line endings, and output directories outside the app root not automatically emptied. No broad dependency upgrade or destructive output cleanup was performed. Release packaging should build in a clean checkout/output directory.
 
-The artifacts use isolated deterministic data and contain no production or customer records.
+## 11. Readiness, limits and remaining production prerequisites
 
-## 10. Known limitations
+**Phase 1 local acceptance: passed.** The typing, isolated migration, authorization and authenticated responsive-UI blockers are resolved. This is ready for staging/release review, not a claim that production infrastructure was verified or permission to deploy.
 
-- The migration has been statically tested but not applied to an isolated database in this worktree.
-- Search result quality and index performance have not been measured with production-scale data.
-- Booking and sale “reference” currently means the authoritative appointment/transaction ID because no separate canonical reference-number column exists in the inspected schema.
-- Support case “number” currently means the authoritative support case UUID.
-- MRR stays unavailable unless the latest subscription row explicitly marks recurring metadata as reliable.
-- Integration delivery and scheduler states retain the evidence limitations documented by Step 2; the inspector does not infer success where durable evidence is absent.
-- Browser visual verification uses a deterministic harness. It verifies responsive component behavior but is not a logged-in end-to-end test against a migrated database.
-- The standalone typecheck is blocked by the two shared Supabase client typing errors listed above.
+Remaining prerequisites:
 
-## 11. Required migration and Edge Functions
+1. Verify the existing `account-admin` and `billing-admin` functions and their environment in the explicitly approved staging/deployment target. They were not served end-to-end in this local run. Billing provider readiness correctly remains unavailable when that endpoint is unavailable; database subscription data is still shown.
+2. Exercise existing account invitation/recovery/global-account/ownership actions in isolated staging with safe mail/provider configuration before production sign-off. No real mail or billing action was performed here.
+3. Validate search quality/latency with representative non-production volumes. Index existence/eligibility is not proof of production-scale performance.
+4. Confirm the deployed frontend's public Supabase URL/anon key and customer-site origin. No deployment-platform secret/configuration state was inspected or changed in this Phase 1 run.
 
-### Migration required
+Booking/sale references are authoritative record identifiers, and support cases use UUID identifiers. There is no newly invented human-readable numbering system and no schema change to add one. MRR, integrations and scheduler state retain the existing evidence-quality limitations; unavailable information is not represented as success.
 
-`migration/supabase/migrations/20260918010000_superadmin_phase1_search_inspector.sql`
+The temporary approval-service usage-limit interruption was cleared when work resumed. It is not a remaining Docker or database blocker.
 
-It adds:
+## 12. Ordered deployment checklist (not executed)
 
-- `pg_trgm` if not already installed
-- search indexes for outlet/user text and reference/correlation prefixes
-- `public.platform_global_search(text, integer)`
-- `public.platform_outlet_inspector(text)`
-- explicit function privilege grants/revocations
-
-### Edge Functions
-
-No new Edge Function is required. Existing remote-access/platform RPCs plus the existing `account-admin` and `billing-admin` functions are reused.
-
-## 12. Deployment prerequisites
-
-1. Resolve or explicitly accept the shared Supabase client typecheck blocker.
-2. Apply the Phase 1 migration to an isolated environment and complete the database verification listed above.
-3. Confirm `pg_trgm` can be installed in the target Supabase project.
-4. Confirm the existing Step 1/Step 2 migrations, `account-admin`, and `billing-admin` functions are deployed and configured.
-5. Confirm platform administrators are present in the existing authoritative admin model.
-6. Confirm customer-site origin configuration before enabling the inspector’s public booking link.
-7. Run a logged-in staging smoke test for all search destinations, inspector tabs, remote-access banner persistence, and privileged confirmations.
-8. Apply the migration before deploying the frontend that calls the new RPCs.
+1. Complete the staging prerequisites above, review the intended commit, and confirm the approved target and a backup/recovery plan. Do not reuse these local fixture credentials or copy production secrets into tests.
+2. Compare the target's genuine migration history. Apply all pending repository migrations chronologically through `20260918010000_superadmin_phase1_search_inspector.sql`, including Step 1/2 and intervening dependencies where absent. Confirm `pg_trgm` availability and function grants, then rerun authorization checks against isolated staging before production approval.
+3. No new Phase 1 Edge Function is introduced. Ensure the existing `account-admin` and `billing-admin` deployments match repository code; deploy those only if missing/outdated. Keep service credentials server-side. Their server environment uses `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`; billing additionally reads the existing HitPay configuration (`HITPAY_API_KEY`, `HITPAY_WEBHOOK_SALT`, `HITPAY_PLAN_ID`, optional provider/plan settings and `DASHBOARD_APP_URL`). These names are not a claim that production values were checked.
+4. Verify merchant frontend `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` (or legacy anon alias), and `VITE_CUSTOMER_SITE_URL` in the deployment platform. An `.env.production` file is not inherently required. Never put a service-role/provider secret in a Vite variable.
+5. Build with Node 22 in a clean release checkout and deploy the merchant frontend **after** its database prerequisites. No customer product change requires deployment for this follow-up; the customer production build was a regression check.
+6. With explicit deployment authorization, smoke-test admin search/inspector/deep links and remote exit in the approved target. Preserve a frontend rollback path; do not remove audit history to roll back UI code.
 
 ## 13. Final confirmations
 
-- Phases 2–8 were not started.
-- Production was not queried for verification, mutated, migrated, deployed, or otherwise changed.
-- No code was pushed and no external messages were sent.
-- No live billing action was executed.
-- All screenshots and automated browser data were generated locally from isolated fixtures.
+- Phase 2–8 were not started.
+- Production was not used for verification, mutated, migrated, deployed, or queried through the SQL editor.
+- No push, external message, live billing action, new signing key or Android release work was performed.
+- No environment file, secret, keystore, production record, generated log or new screenshot artifact belongs in the follow-up commit.
+- Existing work and the intervening commit were preserved.

@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
 import { PrivacyPolicyPage } from '../../apps/legal/PrivacyPolicyPage';
 import { Footer } from '../../components/landing/Footer';
 import {
@@ -11,6 +11,10 @@ import {
 } from '../legal/legalContact';
 
 describe('public privacy policy', () => {
+  // The single-fork suite can reuse Testing Library after another file has
+  // registered its auto-cleanup. Keep this file's DOM lifecycle explicit.
+  afterEach(cleanup);
+
   it('publishes the required policy without login', () => {
     render(<PrivacyPolicyPage />);
     expect(screen.getByRole('heading', { name: 'Privacy Policy' })).toBeTruthy();

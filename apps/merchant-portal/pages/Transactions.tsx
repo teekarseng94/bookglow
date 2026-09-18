@@ -112,6 +112,18 @@ const Transactions: React.FC<TransactionsProps> = ({
   const [editingTxn, setEditingTxn] = useState<Transaction | null>(null);
   const [deletingTxn, setDeletingTxn] = useState<Transaction | null>(null);
   const [detailTxn, setDetailTxn] = useState<Transaction | null>(null);
+  const [isMobileViewport, setIsMobileViewport] = useState(() =>
+    typeof window !== 'undefined' && Boolean(window.matchMedia?.('(max-width: 767px)').matches),
+  );
+
+  useEffect(() => {
+    const media = window.matchMedia?.('(max-width: 767px)');
+    if (!media) return;
+    const update = () => setIsMobileViewport(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showSortSheet, setShowSortSheet] = useState(false); // mobile sort/filter bottom sheet
 
@@ -494,7 +506,7 @@ const Transactions: React.FC<TransactionsProps> = ({
         const d = new Date(detailTxn.date);
         return (
           <ReportDetailSheet
-            open={Boolean(detailTxn)}
+            open={Boolean(detailTxn) && isMobileViewport}
             onClose={() => setDetailTxn(null)}
             amountLabel={`${meta.sign}${formatRM(detailTxn.amount)}`}
             amountClassName={meta.amount}

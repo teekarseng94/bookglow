@@ -8,8 +8,8 @@ import { outletService } from '../services/databaseService';
 import type { Outlet } from '../types';
 
 const SuperAdminSubscribers: React.FC = () => {
-  const [params] = useSearchParams();
-  const { openOutletInspector, selectedOutletId } = useOutletInspector();
+  const [params, setParams] = useSearchParams();
+  const { openOutletInspector } = useOutletInspector();
   const [outlets, setOutlets] = useState<Outlet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,8 +27,13 @@ const SuperAdminSubscribers: React.FC = () => {
   useEffect(() => { void load(); }, []);
   useEffect(() => {
     const legacyOutletId = params.get('outlet');
-    if (legacyOutletId && selectedOutletId !== legacyOutletId) openOutletInspector(legacyOutletId, 'summary');
-  }, [params, selectedOutletId]);
+    if (!legacyOutletId) return;
+    const next = new URLSearchParams(params);
+    next.delete('outlet');
+    next.set('inspectOutlet', legacyOutletId);
+    if (!next.has('inspectTab')) next.set('inspectTab', 'summary');
+    setParams(next, { replace: true });
+  }, [params, setParams]);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLocaleLowerCase();

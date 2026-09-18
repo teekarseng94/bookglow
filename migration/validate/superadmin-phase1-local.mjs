@@ -57,7 +57,7 @@ export async function makeFixture() {
       ('${manager.id}','${manager.email}','Phase1 Manager ${suffix}','${outlet}','manager')
       on conflict(uid) do update set outlet_id=excluded.outlet_id,role=excluded.role,display_name=excluded.display_name;
     insert into public.appointments(id,outlet_id,date,time,status) values ('${prefix}_booking','${outlet}','2026-09-18','10:00','scheduled');
-    insert into public.transactions(id,outlet_id,type,status,amount) values ('${prefix}_sale','${outlet}','sale','completed',25);
+    insert into public.transactions(id,outlet_id,type,status,amount) values ('${prefix}_sale','${outlet}','SALE','completed',25);
     insert into public.platform_support_cases(id,outlet_id,category,priority,subject,description,created_by)
       values ('${caseId}','${outlet}','other','normal','Phase1 isolated case','private-fixture-description','${admin.id}');
     insert into public.platform_admin_operations(id,action,target_id,outlet_id,actor_uid,state,result)
@@ -115,6 +115,9 @@ export async function verifyDatabase(f) {
   const short = await f.rpc('admin','platform_global_search',{p_query:'a'});
   check(short.data.results.length===0,'Minimum search length');
   check(sql("select count(*) from pg_indexes where schemaname='public' and indexname in ('idx_outlets_name_trgm','idx_users_email_trgm','idx_users_display_name_trgm','idx_appointments_reference_prefix','idx_transactions_reference_prefix','idx_monitoring_correlation_prefix');")==='6','Six search indexes exist');
+  check(sql("select count(*) from pg_index i join pg_class c on c.oid=i.indexrelid where i.indisvalid and i.indisready and c.relname in ('idx_outlets_name_trgm','idx_users_email_trgm','idx_users_display_name_trgm','idx_appointments_reference_prefix','idx_transactions_reference_prefix','idx_monitoring_correlation_prefix');")==='6','All six indexes are valid and ready');
+  const prefixPlan = sql(`begin; set local enable_seqscan=off; explain (format json) select id from public.appointments where lower(id) like '${f.prefix}_booking%'; rollback;`);
+  check(prefixPlan.includes('idx_appointments_reference_prefix'),'Booking prefix predicate can use its index (not a scale benchmark)');
   const suspended = await f.rpc('admin','platform_set_outlet_access',{p_outlet_id:f.outlet,p_enabled:false,p_reason:'Local verification only'});
   check(suspended.status===200,'Admin outlet suspension');
   check((await f.rpc('owner','resolve_merchant_access')).data.state==='outlet_suspended','Existing session observes outlet suspension');

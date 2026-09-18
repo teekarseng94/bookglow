@@ -9,6 +9,8 @@ const monitoringSql = readFileSync(resolve(process.cwd(), '../../migration/supab
 const functionGrantSql = readFileSync(resolve(process.cwd(), '../../migration/supabase/migrations/20260914110322_edge_function_service_role_grants.sql'), 'utf8');
 const hitpaySql = readFileSync(resolve(process.cwd(), '../../migration/supabase/migrations/20260915140000_hitpay_platform_billing.sql'), 'utf8');
 const deleteOutletSql = readFileSync(resolve(process.cwd(), '../../migration/supabase/migrations/20260915170000_platform_delete_outlet.sql'), 'utf8');
+const phase1Sql = readFileSync(resolve(process.cwd(), '../../migration/supabase/migrations/20260918010000_superadmin_phase1_search_inspector.sql'), 'utf8');
+const appSource = readFileSync(resolve(process.cwd(), 'App.tsx'), 'utf8');
 
 describe('superadmin Step 1 migration contract', () => {
   it('suspends portal access without changing public booking publication', () => {
@@ -111,5 +113,28 @@ describe('platform outlet deletion contract', () => {
     expect(deleteOutletSql).toContain('ON DELETE SET NULL');
     expect(deleteOutletSql).not.toContain('DELETE FROM public.platform_audit_events');
     expect(deleteOutletSql).not.toContain('DELETE FROM public.billing_events');
+  });
+});
+
+describe('superadmin UX/UI Phase 1 migration contract', () => {
+  it('keeps global search server-side, platform-admin only, grouped, and bounded', () => {
+    expect(phase1Sql).toContain('CREATE OR REPLACE FUNCTION public.platform_global_search');
+    expect(phase1Sql).toContain('IF NOT public.is_platform_admin()');
+    expect(phase1Sql).toContain('PARTITION BY entity_type');
+    expect(phase1Sql).toContain('group_position <= v_limit');
+    expect(phase1Sql).toContain('REVOKE ALL ON FUNCTION public.platform_global_search(text, integer) FROM PUBLIC, anon');
+    expect(phase1Sql).not.toMatch(/INSERT INTO public\.(platform_audit_events|platform_monitoring_events)[\s\S]*p_query/);
+  });
+
+  it('returns allow-listed inspector fields without provider payloads or payment credentials', () => {
+    expect(phase1Sql).toContain('CREATE OR REPLACE FUNCTION public.platform_outlet_inspector');
+    expect(phase1Sql).toContain("'business_hours_status'");
+    expect(phase1Sql).toContain("'recent_activity'");
+    expect(phase1Sql).not.toMatch(/card_number|provider_payload|access_token|refresh_token|client_secret/i);
+  });
+
+  it('preserves the remote-access banner while a validated remote workspace is active', () => {
+    expect(appSource).toContain("remoteAccessService.validate()");
+    expect(appSource).toContain('remoteContext ? <RemoteAccessBanner');
   });
 });

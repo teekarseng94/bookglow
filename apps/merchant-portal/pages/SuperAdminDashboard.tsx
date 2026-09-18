@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Building2, CalendarCheck, CalendarPlus, CheckCircle2, CircleX, MessageSquareWarning, RefreshCw, Wrench } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { PlatformMetricCard, PlatformPageHeader, PlatformSection } from '../components/admin';
+import { useOutletInspector } from '../components/admin/OutletInspectorContext';
 import { Button, EmptyState, ErrorState, LoadingSkeleton, StatusBadge, fieldControlClassName } from '../components/ui';
 import { outletService } from '../services/databaseService';
 import { platformStep2Service, type OperationsOverview, type OverviewMetricKey, type PlatformActivity } from '../services/platformStep2Service';
@@ -14,6 +15,7 @@ const drillLabels: Record<OverviewMetricKey, string> = {
 
 const SuperAdminDashboard: React.FC = () => {
   const [params, setParams] = useSearchParams();
+  const { openOutletInspector } = useOutletInspector();
   const [startDate, setStartDate] = useState(params.get('from') || localDate());
   const [endDate, setEndDate] = useState(params.get('to') || localDate());
   const [outletId, setOutletId] = useState(params.get('outlet') || '');
@@ -62,10 +64,11 @@ const SuperAdminDashboard: React.FC = () => {
 
   return <div className="space-y-5">
     <PlatformPageHeader title="Platform operations" description="Evidence-backed operational activity. Merchant sales and Bookglow subscription revenue are reported elsewhere." action={<Button variant="secondary" onClick={() => void load()} disabled={loading}><RefreshCw className="h-4 w-4" /> Refresh</Button>} />
-    <div className="grid gap-3 rounded-ui-lg border border-[var(--line)] bg-[var(--bg-surface)] p-4 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_2fr_auto]">
+    <div className="grid gap-3 rounded-ui-lg border border-[var(--line)] bg-[var(--bg-surface)] p-4 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_2fr_auto_auto]">
       <label className="text-xs font-bold text-[var(--text-secondary)]">From<input className={`${fieldControlClassName} mt-1`} type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} /></label>
       <label className="text-xs font-bold text-[var(--text-secondary)]">To<input className={`${fieldControlClassName} mt-1`} type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} /></label>
       <label className="text-xs font-bold text-[var(--text-secondary)]">Outlet<select className={`${fieldControlClassName} mt-1`} value={outletId} onChange={(e) => setOutletId(e.target.value)}><option value="">All outlets</option>{outlets.map((o) => <option key={o.outletID} value={o.outletID}>{o.name || o.outletID}</option>)}</select></label>
+      <Button className="self-end" variant="secondary" disabled={!outletId} onClick={() => outletId && openOutletInspector(outletId, 'summary')}>Inspect outlet</Button>
       <Button className="self-end" onClick={() => void load()} disabled={loading || !startDate || !endDate}>Apply</Button>
     </div>
     {loading ? <div className="rounded-ui-lg border border-[var(--line)] bg-[var(--bg-surface)] p-5"><LoadingSkeleton rows={8} /></div> : error && !overview ? <ErrorState message={error} onRetry={load} /> : overview ? <>

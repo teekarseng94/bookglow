@@ -1,5 +1,6 @@
 
 import React, { useState, useMemo, useEffect, useRef, useLayoutEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Appointment, Staff, Client, Service, RoleCommission, OutletSettings } from '../types';
 import { appointmentMatchesStaffColumn, buildScheduleStaffColumns, UNASSIGNED_STAFF_ID } from './scheduleLayout';
 import { Icons } from '../constants';
@@ -117,6 +118,8 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
   onStartPOSSale,
   onMarkReminderSent,
 }) => {
+  const [routeParams] = useSearchParams();
+  const selectedRecordId = routeParams.get('record');
   const [viewMode, setViewMode] = useState<ViewMode>('day');
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [selectedStaffId, setSelectedStaffId] = useState<string>(staff[0]?.id || '');
@@ -146,6 +149,20 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
   const [now, setNow] = useState(() => new Date());
   const agendaContainerRef = useRef<HTMLDivElement | null>(null);
   const todayIso = new Date().toISOString().split('T')[0];
+
+  useEffect(() => {
+    if (!selectedRecordId) return;
+    const selected = appointments.find((appointment) => appointment.id === selectedRecordId);
+    if (!selected) return;
+    setSelectedDate(selected.date);
+    setVisibleDate(selected.date);
+    setSelectedAppointment(selected);
+    setDesktopDetailTab('details');
+    if (typeof window !== 'undefined' && window.matchMedia?.('(max-width: 767px)').matches) {
+      setDetailTab('details');
+      setMobileDetailOpen(true);
+    }
+  }, [appointments, selectedRecordId]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 60_000);

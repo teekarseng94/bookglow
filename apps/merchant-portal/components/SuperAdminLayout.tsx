@@ -3,6 +3,8 @@ import { Activity, Building2, ClipboardCheck, CreditCard, FileClock, HeartPulse,
 import { NavLink } from 'react-router-dom';
 import type { PortalAuthUser } from '../services/authService';
 import { NetworkStatusBanner } from './ui';
+import GlobalSuperAdminSearch from './admin/GlobalSuperAdminSearch';
+import { OutletInspectorProvider } from './admin/OutletInspectorContext';
 
 interface SuperAdminLayoutProps {
   user: PortalAuthUser | null;
@@ -23,7 +25,8 @@ const navigation = [
 ];
 
 const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ user, onLogout, children }) => (
-  <div className="min-h-screen bg-[var(--bg-canvas)] text-[var(--text-primary)]">
+  <OutletInspectorProvider>
+  <div className="min-h-screen overflow-x-hidden bg-[var(--bg-canvas)] text-[var(--text-primary)]">
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-white/10 bg-[#171322] text-white lg:flex">
       <div className="border-b border-white/10 px-5 py-5">
         <div className="flex items-center gap-3">
@@ -73,16 +76,23 @@ const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ user, onLogout, chi
       </div>
     </aside>
 
-    <div className="lg:pl-64">
-      <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--bg-surface)_92%,transparent)] backdrop-blur lg:hidden">
-        <div className="flex items-center justify-between px-4 py-3">
-          <div>
+    <div className="min-w-0 lg:pl-64">
+      <header className="sticky top-0 z-20 border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--bg-surface)_92%,transparent)] backdrop-blur">
+        <div className="flex min-w-0 items-center justify-between gap-3 px-3 py-3 sm:px-6 lg:px-8">
+          <div className="min-w-0 lg:hidden">
             <p className="text-sm font-bold">Bookglow Control</p>
             <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">Platform administrator</p>
           </div>
-          <Activity className="h-5 w-5 text-[var(--brand)]" aria-hidden />
+          <div className="hidden min-w-0 lg:block">
+            <p className="text-sm font-bold">Platform administration</p>
+            <p className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">Search authoritative Bookglow records</p>
+          </div>
+          <div className="ml-auto flex min-w-0 items-center gap-2">
+            <GlobalSuperAdminSearch />
+            <Activity className="hidden h-5 w-5 shrink-0 text-[var(--brand)] sm:block" aria-hidden />
+          </div>
         </div>
-        <nav className="flex gap-1 overflow-x-auto px-3 pb-3" aria-label="Platform navigation">
+        <nav className="flex max-w-full gap-1 overflow-x-auto px-3 pb-3 lg:hidden" aria-label="Platform navigation">
           {navigation.map(({ to, label }) => (
             <NavLink
               key={to}
@@ -107,6 +117,7 @@ const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ user, onLogout, chi
       </main>
     </div>
   </div>
+  </OutletInspectorProvider>
 );
 
 export default SuperAdminLayout;

@@ -21,6 +21,7 @@ export interface AuditQuery {
   actor?: string;
   from?: string;
   to?: string;
+  eventId?: string;
 }
 
 export interface AuditPage {
@@ -71,6 +72,7 @@ export const auditService = {
     const page = Math.max(1, query.page || 1);
     const pageSize = Math.min(100, Math.max(10, query.pageSize || 50));
     let request = (client() as any).from('platform_audit_events').select('*', { count: 'exact' });
+    if (query.eventId) request = request.eq('id', query.eventId);
     if (query.outletId && query.outletId !== 'all') request = request.eq('outlet_id', query.outletId);
     if (query.action) request = request.ilike('action', `%${query.action.replace(/[%_,.()]/g, ' ')}%`);
     if (query.actor) request = request.ilike('actor_email', `%${query.actor.replace(/[%_,.()]/g, ' ')}%`);

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Check, Circle, ExternalLink, RefreshCw, ShieldCheck } from 'lucide-react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { PlatformPageHeader, PlatformSection } from '../components/admin';
+import { useOutletInspector } from '../components/admin/OutletInspectorContext';
 import { Button, EmptyState, ErrorState, LoadingSkeleton, StatusBadge, fieldControlClassName } from '../components/ui';
 import { platformStep2Service, type OnboardingReadiness } from '../services/platformStep2Service';
 import { remoteAccessService } from '../services/remoteAccessService';
@@ -12,8 +13,9 @@ const checks: Array<[keyof OnboardingReadiness, string, string]> = [
 
 const SuperAdminOnboarding: React.FC = () => {
   const [params] = useSearchParams();
+  const { openOutletInspector } = useOutletInspector();
   const [stage, setStage] = useState(params.get('stage') || 'all');
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(params.get('outlet') || '');
   const [rows, setRows] = useState<OnboardingReadiness[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -40,7 +42,7 @@ const SuperAdminOnboarding: React.FC = () => {
     {error ? <ErrorState message={error} onRetry={() => load(page)} /> : null}
     <PlatformSection title="Readiness tracker" description={`${total.toLocaleString()} matching outlets. Staff is informational because the current booking model supports unassigned appointments.`}>
       {loading ? <LoadingSkeleton rows={8} className="p-4" /> : !rows.length ? <EmptyState className="m-4" title="No outlets match" description="Try another stage or search term." /> : <div className="divide-y divide-[var(--line)]">{rows.map((row) => <article key={row.outlet_id} className="space-y-3 p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 className="truncate text-sm font-bold">{row.name || row.outlet_id}</h3><StatusBadge tone={row.stage === 'activated' ? 'success' : row.stage === 'ready' ? 'brand' : 'warning'}>{row.stage}</StatusBadge><StatusBadge tone={row.onboarding_status === 'complete' ? 'success' : 'neutral'}>Merchant {row.onboarding_status === 'complete' ? 'activated' : 'not activated'}</StatusBadge></div><p className="mt-1 font-mono text-[11px] text-[var(--text-muted)]">{row.outlet_id} · {row.timezone || 'Timezone missing'}</p></div><div className="flex flex-wrap gap-2"><Link to={`/admin/subscribers?outlet=${encodeURIComponent(row.outlet_id)}`} className="inline-flex min-h-10 items-center gap-1 rounded-ui-sm border border-[var(--line)] px-3 text-xs font-semibold text-[var(--brand)]"><ExternalLink className="h-3.5 w-3.5" /> Inspector</Link><Button size="sm" variant="secondary" disabled={remoteBusy===row.outlet_id} onClick={() => void enter(row.outlet_id)}><ShieldCheck className="h-4 w-4" />{remoteBusy===row.outlet_id ? 'Opening…' : 'Remote access'}</Button></div></div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><h3 className="truncate text-sm font-bold">{row.name || row.outlet_id}</h3><StatusBadge tone={row.stage === 'activated' ? 'success' : row.stage === 'ready' ? 'brand' : 'warning'}>{row.stage}</StatusBadge><StatusBadge tone={row.onboarding_status === 'complete' ? 'success' : 'neutral'}>Merchant {row.onboarding_status === 'complete' ? 'activated' : 'not activated'}</StatusBadge></div><p className="mt-1 font-mono text-[11px] text-[var(--text-muted)]">{row.outlet_id} · {row.timezone || 'Timezone missing'}</p></div><div className="flex flex-wrap gap-2"><Button size="sm" variant="secondary" onClick={() => openOutletInspector(row.outlet_id, 'onboarding')}><ExternalLink className="h-3.5 w-3.5" />Inspector</Button><Button size="sm" variant="secondary" disabled={remoteBusy===row.outlet_id} onClick={() => void enter(row.outlet_id)}><ShieldCheck className="h-4 w-4" />{remoteBusy===row.outlet_id ? 'Opening…' : 'Remote access'}</Button></div></div>
         <div className="grid gap-2 min-[480px]:grid-cols-2 lg:grid-cols-3">{checks.map(([key,label,detail]) => { const ok=Boolean(row[key]); return <div key={String(key)} className={`rounded-ui-md border p-3 ${ok ? 'border-[var(--success)]/25 bg-[var(--success-soft)]' : 'border-[var(--warning)]/25 bg-[var(--warning-soft)]'}`}><p className="flex items-center gap-2 text-xs font-bold">{ok ? <Check className="h-4 w-4 text-[var(--success)]" /> : <Circle className="h-4 w-4 text-[var(--warning)]" />}{label}</p><p className="mt-1 text-[11px] text-[var(--text-secondary)]">{detail}</p></div>; })}</div>
         <p className="text-xs text-[var(--text-muted)]">Staff configured: {row.staff_configured ? 'Yes' : 'No'} · Configuration: {row.configuration_ready ? 'ready' : 'missing requirements'} · Updated {new Date(row.updated_at).toLocaleString()}</p>
       </article>)}</div>}

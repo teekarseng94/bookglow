@@ -1,6 +1,6 @@
 
-import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CalendarDays, Info, Search, SlidersHorizontal } from 'lucide-react';
 import { Transaction, TransactionType, Client } from '../types';
 import { Icons } from '../constants';
@@ -99,6 +99,8 @@ const Transactions: React.FC<TransactionsProps> = ({
   isDeleteLocked 
 }) => {
   const navigate = useNavigate();
+  const [routeParams] = useSearchParams();
+  const selectedRecordId = routeParams.get('record');
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<FilterKey>('ALL');
   const [sortField, setSortField] = useState<SortField>('date');
@@ -112,6 +114,12 @@ const Transactions: React.FC<TransactionsProps> = ({
   const [detailTxn, setDetailTxn] = useState<Transaction | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showSortSheet, setShowSortSheet] = useState(false); // mobile sort/filter bottom sheet
+
+  useEffect(() => {
+    if (!selectedRecordId) return;
+    const selected = transactions.find((transaction) => transaction.id === selectedRecordId);
+    if (selected) setDetailTxn(selected);
+  }, [selectedRecordId, transactions]);
 
   const historyFilters: TransactionHistoryFilters = { search, type: filterType, sortField, sortOrder, datePeriod, customStart, customEnd };
   const sortedAndFilteredTransactions = useMemo(

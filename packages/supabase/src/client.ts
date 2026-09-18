@@ -1,4 +1,4 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient, type LockFunc, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@bookglow/database-contracts";
 
 export type BookglowSupabaseClient = SupabaseClient<Database>;
@@ -54,7 +54,7 @@ export type BrowserSupabaseAuthOptions = {
   storage?: BrowserAuthStorage;
   detectSessionInUrl?: boolean;
   flowType?: "pkce" | "implicit";
-  lock?: (name: string, acquireTimeout: number, fn: () => Promise<unknown>) => Promise<unknown>;
+  lock?: LockFunc;
 };
 
 /**

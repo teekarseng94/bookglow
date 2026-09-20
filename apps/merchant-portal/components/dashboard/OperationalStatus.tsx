@@ -26,21 +26,25 @@ export const OperationalStatus: React.FC<OperationalStatusProps> = ({
   className,
 }) => (
   <section className={cx('space-y-3', className)}>
-    <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-2">
-      <Calendar className="w-4 h-4" />
+    <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+      <Calendar className="h-4 w-4" aria-hidden />
       {title}
-    </h3>
+    </h2>
     {actions && actions.length > 0 ? (
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {actions.map((action) => (
           <button
             key={action.id}
             type="button"
             onClick={action.onClick}
-            className="flex flex-col items-center gap-1.5 py-3 px-2 bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] hover:border-[var(--brand)] hover:bg-[var(--brand-soft)] active:scale-95 transition-all min-h-[72px]"
+            className="flex min-h-[4.5rem] flex-col items-center justify-center gap-1.5 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] px-2 py-3 hover:border-[var(--brand)] hover:bg-[var(--brand-soft)] focus-visible:shadow-ui-focus-strong"
           >
-            {action.icon ? <span className="text-xl">{action.icon}</span> : null}
-            <span className="m-caption font-semibold text-[var(--text-secondary)] leading-tight text-center">
+            {action.icon ? (
+              <span className="grid h-10 w-10 place-items-center rounded-ui-sm bg-[var(--brand-soft)] text-[var(--brand)]">
+                {action.icon}
+              </span>
+            ) : null}
+            <span className="text-center text-xs font-semibold leading-tight text-[var(--text-secondary)]">
               {action.label}
             </span>
           </button>

@@ -553,8 +553,8 @@ textarea.m-settings-control {
   }
 
   .bookglow-mobile-nav-item__label {
-    font-size: var(--mobile-text-nav);
-    font-weight: var(--mobile-font-regular);
+    font-size: 12px;
+    font-weight: var(--mobile-font-semibold);
     line-height: var(--mobile-leading-caption);
   }
 
@@ -2311,12 +2311,22 @@ textarea.m-settings-control {
   /* ——— Phase 4: Staff / Dashboard / Sales + Reports ——— */
 
   /* Compact Today dashboard. Presentation only; desktop remains unchanged. */
+  .dashboard-mobile-header-actions {
+    min-width: 0;
+  }
+
   .dashboard-mobile-header-actions > :first-child {
     margin-right: auto;
+    min-width: 0;
   }
 
   .dashboard-mobile-header-actions > :last-child {
     flex: 0 0 auto;
+  }
+
+  .dashboard-mobile-header-actions .m-btn {
+    min-height: var(--mobile-min-touch-target);
+    height: auto;
   }
 
   .dashboard-today .dashboard-primary,
@@ -2328,37 +2338,34 @@ textarea.m-settings-control {
     gap: 10px;
   }
 
-  .dashboard-today .dashboard-kpis > div {
-    min-height: 98px;
+  .dashboard-today .dashboard-kpi-card {
+    min-height: 96px;
+    height: 100%;
     padding: 12px;
-    gap: 4px;
+    gap: 6px;
   }
 
-  .dashboard-today .dashboard-kpis svg.w-12 {
-    display: none;
-  }
-
-  .dashboard-today .dashboard-kpis p.text-base {
-    font-size: 17px;
-    white-space: nowrap;
+  .dashboard-today .dashboard-kpi-value {
+    font-size: clamp(0.95rem, 4.2vw, 1.125rem);
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .dashboard-today .dashboard-kpis .m-caption {
-    font-size: 11px !important;
+    font-size: 12px !important;
+    line-height: 1.35;
   }
 
   .dashboard-today > section.lg\:hidden {
     gap: 8px;
   }
 
-  .dashboard-today > section.lg\:hidden > h3 {
+  .dashboard-today > section.lg\:hidden > h2 {
     margin-bottom: 0;
   }
 
   .dashboard-today > section.lg\:hidden button {
-    min-height: 64px;
-    padding-top: 9px;
-    padding-bottom: 9px;
+    min-height: 72px;
   }
 
   .dashboard-today .dashboard-primary section {

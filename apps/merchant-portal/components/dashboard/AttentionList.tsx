@@ -46,7 +46,7 @@ export const AttentionList: React.FC<AttentionListProps> = ({
   className,
 }) => (
   <section className={cx('space-y-3', className)}>
-    <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">{title}</h3>
+    <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">{title}</h2>
     <div className="bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs p-4 space-y-2">
       {items.length === 0 ? (
         <p className="text-sm text-[var(--text-secondary)] text-center py-4">{emptyMessage}</p>
@@ -54,18 +54,18 @@ export const AttentionList: React.FC<AttentionListProps> = ({
         items.map((item) => (
           <div
             key={item.id}
-            className={cx('flex items-center justify-between gap-3 rounded-ui-md border px-3 py-2.5', toneClass[item.tone || 'neutral'])}
+            className={cx('flex flex-wrap items-center justify-between gap-2 rounded-ui-md border px-3 py-2.5 sm:flex-nowrap sm:gap-3', toneClass[item.tone || 'neutral'])}
           >
             <div className="flex items-center gap-3 min-w-0">
               {item.icon ? (
-                <span className={cx('w-8 h-8 rounded-full flex items-center justify-center shrink-0', iconWrapClass[item.tone || 'neutral'])}>
+                <span className={cx('flex h-8 w-8 shrink-0 items-center justify-center rounded-full', iconWrapClass[item.tone || 'neutral'])}>
                   {item.icon}
                 </span>
               ) : null}
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{item.title}</p>
+                <p className="line-clamp-2 text-sm font-semibold text-[var(--text-primary)]" title={item.title}>{item.title}</p>
                 {item.description ? (
-                  <p className="text-xs text-[var(--text-secondary)] mt-0.5 truncate">{item.description}</p>
+                  <p className="mt-0.5 line-clamp-2 text-xs text-[var(--text-secondary)]" title={item.description}>{item.description}</p>
                 ) : null}
               </div>
             </div>
@@ -73,7 +73,7 @@ export const AttentionList: React.FC<AttentionListProps> = ({
               <button
                 type="button"
                 onClick={item.onAction}
-                className="shrink-0 px-3 py-1.5 rounded-ui-sm bg-[var(--bg-surface)] border border-[var(--line-strong)] text-[var(--text-primary)] text-xs font-bold hover:bg-[var(--bg-soft)] active:scale-95 transition-all"
+                className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-ui-sm border border-[var(--line-strong)] bg-[var(--bg-surface)] px-3 text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-soft)] focus-visible:shadow-ui-focus-strong"
               >
                 {item.actionLabel}
               </button>
@@ -86,7 +86,7 @@ export const AttentionList: React.FC<AttentionListProps> = ({
       <button
         type="button"
         onClick={onFooterAction}
-        className="w-full py-2 rounded-ui-sm bg-[var(--bg-soft)] border border-[var(--line)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-selection)] transition-colors"
+        className="flex min-h-11 w-full items-center justify-center rounded-ui-sm border border-[var(--line)] bg-[var(--bg-soft)] py-2 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-selection)] focus-visible:shadow-ui-focus-strong"
       >
         {footerLabel}
       </button>

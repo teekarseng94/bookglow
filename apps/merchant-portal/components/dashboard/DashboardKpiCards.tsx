@@ -1,5 +1,4 @@
 import React from 'react';
-import { Info } from 'lucide-react';
 import { cx } from '../ui/cx';
 
 export interface DashboardKpiCard {
@@ -18,7 +17,7 @@ export interface DashboardKpiCardsProps {
   className?: string;
 }
 
-const Sparkline: React.FC<{ points: number[]; strokeClassName: string }> = ({ points, strokeClassName }) => {
+const Sparkline: React.FC<{ points: number[] }> = ({ points }) => {
   if (points.length < 2) return null;
   const max = Math.max(...points, 0);
   const min = Math.min(...points, 0);
@@ -30,8 +29,13 @@ const Sparkline: React.FC<{ points: number[]; strokeClassName: string }> = ({ po
     .map((p, i) => `${i === 0 ? 'M' : 'L'} ${(i * step).toFixed(1)} ${(height - ((p - min) / range) * height).toFixed(1)}`)
     .join(' ');
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="w-12 h-6 sm:w-16 sm:h-7 shrink-0" aria-hidden>
-      <path d={path} fill="none" className={strokeClassName} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    <svg
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="none"
+      className="dashboard-kpi-sparkline h-6 w-14 shrink-0 sm:h-7 sm:w-16"
+      aria-hidden
+    >
+      <path d={path} fill="none" className="stroke-[var(--brand)]" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 };
@@ -39,50 +43,50 @@ const Sparkline: React.FC<{ points: number[]; strokeClassName: string }> = ({ po
 export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({ cards, className }) => (
   <div
     className={cx(
-      'grid grid-cols-2 gap-2.5 sm:gap-3',
-      'lg:grid-cols-4',
+      'grid grid-cols-2 items-stretch gap-3 lg:grid-cols-4',
       className,
     )}
+    role="region"
     aria-label="Business performance"
   >
-    {cards.map((card) => (
-      <div
-        key={card.id}
-        className={cx(
-          'min-w-0',
-          'm-card bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs',
-          'p-3 sm:p-4 flex flex-col gap-1 sm:gap-1.5',
-        )}
-      >
-        <div className="flex items-center gap-1.5">
-          <span className="m-caption font-semibold text-[var(--text-muted)]">{card.label}</span>
-          <Info className="w-3.5 h-3.5 text-[var(--text-muted)]/70 shrink-0" aria-hidden />
-        </div>
-        <div className="flex items-end justify-between gap-2 min-w-0">
-          <p
-            className={cx(
-              'text-base sm:text-xl font-bold tabular-nums leading-tight break-words min-w-0',
-              card.valueToneClass || 'text-[var(--text-primary)]',
-            )}
-          >
-            {card.value}
+    {cards.map((card) => {
+      const labelId = `kpi-${card.id}-label`;
+      return (
+        <article
+          key={card.id}
+          aria-labelledby={labelId}
+          className={cx(
+            'dashboard-kpi-card m-card flex h-full min-w-0 flex-col gap-1.5 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] p-3 shadow-ui-xs sm:p-4',
+          )}
+        >
+          <p id={labelId} className="m-caption font-semibold text-[var(--text-secondary)]">
+            {card.label}
           </p>
-          {card.sparkline ? (
-            <Sparkline
-              points={card.sparkline}
-              strokeClassName={
-                card.valueToneClass ? card.valueToneClass.replace('text-', 'stroke-') : 'stroke-[var(--brand)]'
-              }
-            />
+          <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-2">
+            <p
+              className={cx(
+                'dashboard-kpi-value min-w-0 text-[clamp(0.95rem,3.6vw,1.25rem)] font-bold tabular-nums leading-tight [overflow-wrap:anywhere]',
+                card.valueToneClass || 'text-[var(--text-primary)]',
+              )}
+              title={card.value}
+            >
+              {card.value}
+            </p>
+            {card.sparkline ? <Sparkline points={card.sparkline} /> : null}
+          </div>
+          {card.secondary ? (
+            <p
+              className={cx(
+                'm-caption leading-snug text-[var(--text-secondary)] [overflow-wrap:anywhere]',
+                card.secondaryToneClass,
+              )}
+            >
+              {card.secondary}
+            </p>
           ) : null}
-        </div>
-        {card.secondary ? (
-          <p className={cx('m-caption leading-snug', card.secondaryToneClass || 'text-[var(--text-muted)]')}>
-            {card.secondary}
-          </p>
-        ) : null}
-      </div>
-    ))}
+        </article>
+      );
+    })}
   </div>
 );
 

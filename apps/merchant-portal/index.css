@@ -509,13 +509,13 @@
 
   .bookglow-nav-link {
     display: flex;
-    min-height: 2.4rem;
+    min-height: 2.75rem;
     align-items: center;
     gap: 0.55rem;
     padding: 0.45rem 0.55rem;
     border: 1px solid transparent;
     border-radius: 0.75rem;
-    color: #6f6873;
+    color: var(--text-secondary);
     font-size: 0.8125rem;
     font-weight: 600;
     transition: 160ms ease;
@@ -534,10 +534,18 @@
   }
 
   .bookglow-nav-link--active {
-    border-color: #ddd2fb;
+    border-color: var(--brand-border);
     color: var(--brand-deep);
     background: var(--brand-soft);
     box-shadow: inset 3px 0 0 var(--brand);
+  }
+
+  .bookglow-nav-link:focus-visible {
+    box-shadow: var(--focus-ring-strong);
+  }
+
+  .bookglow-nav-link--active:focus-visible {
+    box-shadow: inset 3px 0 0 var(--brand), var(--focus-ring-strong);
   }
 
   .bookglow-sidebar--collapsed .bookglow-nav-link--active {
@@ -736,6 +744,8 @@
     overscroll-behavior: contain;
     padding-top: calc(3.75rem + var(--safe-top));
     padding-bottom: calc(4.75rem + var(--safe-bottom));
+    scroll-padding-top: calc(3.75rem + var(--safe-top));
+    scroll-padding-bottom: calc(4.75rem + var(--safe-bottom));
     background:
       radial-gradient(circle at 92% -4%, rgba(118, 86, 214, 0.07), transparent 28rem),
       var(--bg-canvas);
@@ -824,9 +834,9 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     text-align: center;
-    font-size: 0.62rem;
-    font-weight: 700;
-    line-height: 0.85rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1rem;
   }
 
   .bookglow-more-backdrop {
@@ -1066,6 +1076,8 @@
   .bookglow-main-scroll {
     padding-top: 0;
     padding-bottom: 0;
+    scroll-padding-top: 0;
+    scroll-padding-bottom: 0;
   }
 
   .bookglow-content-frame {

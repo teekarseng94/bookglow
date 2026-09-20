@@ -40,7 +40,7 @@ export const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
       title={title}
       count={rows.length}
       actions={onViewSchedule ? (
-        <button type="button" onClick={onViewSchedule} className="text-xs font-semibold text-[var(--brand)] hover:underline shrink-0">
+        <button type="button" onClick={onViewSchedule} className="inline-flex min-h-11 items-center text-xs font-semibold text-[var(--brand)] hover:underline shrink-0 focus-visible:shadow-ui-focus-strong">
           View full schedule
         </button>
       ) : undefined}
@@ -60,41 +60,49 @@ export const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
         />
       ) : (
         <div className="divide-y divide-[var(--line)]">
-          {rows.map((row, index) => (
+          {rows.map((row) => (
             <div
               key={row.id}
               className={cx(
-                'm-appointment-row border-0 rounded-none px-3 sm:px-4 py-3 grid grid-cols-[4.5rem_minmax(0,1fr)_auto] sm:flex sm:items-center gap-x-2 gap-y-1 sm:gap-3',
-                index >= 4 && 'hidden sm:flex',
+                'm-appointment-row grid grid-cols-[auto_minmax(0,1fr)_auto] gap-x-2 gap-y-1 rounded-none border-0 px-3 py-3 sm:flex sm:items-center sm:gap-3 sm:px-4',
               )}
             >
-              <div className="w-auto sm:w-20 shrink-0">
-                <p className="m-appointment-row-title text-sm font-bold text-[var(--text-primary)] tabular-nums">{row.timeLabel}</p>
+              <div className="w-auto shrink-0 sm:w-24">
+                <p className="m-appointment-row-title text-sm font-bold tabular-nums text-[var(--text-primary)]">{row.timeLabel}</p>
                 {row.timeRangeLabel ? (
-                  <p className="text-xs text-[var(--text-muted)] tabular-nums truncate">{row.timeRangeLabel}</p>
+                  <p className="text-xs tabular-nums text-[var(--text-secondary)]">{row.timeRangeLabel}</p>
                 ) : null}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="m-appointment-row-title text-sm font-semibold text-[var(--text-primary)] truncate">{row.title}</p>
-                {row.metaLabel ? <p className="m-appointment-row-meta text-xs text-[var(--text-muted)] truncate">{row.metaLabel}</p> : null}
+              <div className="min-w-0 flex-1">
+                <p className="m-appointment-row-title line-clamp-2 text-sm font-semibold text-[var(--text-primary)]" title={row.title}>
+                  {row.title}
+                </p>
+                {row.metaLabel ? (
+                  <p className="m-appointment-row-meta line-clamp-2 text-xs text-[var(--text-secondary)]" title={row.metaLabel}>
+                    {row.metaLabel}
+                  </p>
+                ) : null}
               </div>
-              <div className="col-start-2 flex items-center gap-2 min-w-0 sm:max-w-[140px]">
-                <div className="w-7 h-7 rounded-full bg-[var(--brand-soft)] text-[var(--brand-deep)] flex items-center justify-center text-xs font-bold shrink-0">
+              <div className="col-start-2 flex min-w-0 items-center gap-2 sm:max-w-[10rem]">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--brand-soft)] text-xs font-bold text-[var(--brand-deep)]">
                   {row.customerName.charAt(0).toUpperCase()}
                 </div>
-                <p className="text-sm text-[var(--text-secondary)] truncate">{row.customerName}</p>
+                <p className="truncate text-sm text-[var(--text-secondary)]" title={row.customerName}>{row.customerName}</p>
               </div>
               {row.statusLabel ? (
-                <StatusBadge className={cx('col-start-3 row-start-1 shrink-0 max-w-[5.5rem] truncate', row.statusClassName)}>
+                <StatusBadge
+                  className={cx('col-start-3 row-start-1 max-w-[7rem] shrink-0 whitespace-nowrap', row.statusClassName)}
+                  label={row.statusLabel}
+                >
                   {row.statusLabel}
                 </StatusBadge>
               ) : null}
               {onRowAction ? (
                 <IconButton
                   onClick={() => onRowAction(row.id)}
-                  label={`Actions for ${row.title}`}
-                  size="sm"
-                  className="col-start-3 row-start-2 justify-self-end text-[var(--text-muted)] shrink-0"
+                  label={`Open ${row.title} on the schedule`}
+                  size="md"
+                  className="col-start-3 row-start-2 shrink-0 justify-self-end text-[var(--text-secondary)]"
                 >
                   <MoreVertical className="w-4 h-4" />
                 </IconButton>

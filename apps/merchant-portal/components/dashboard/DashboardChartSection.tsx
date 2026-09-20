@@ -44,15 +44,15 @@ export const DashboardChartSection: React.FC<DashboardChartSectionProps> = ({
     )}
   >
     <div className="flex justify-between items-center mb-1">
-      <div className="flex items-center gap-2">
-        <BarChart3 className="w-5 h-5 text-[var(--brand)]" />
-        <span className="text-xs font-semibold uppercase text-[var(--text-muted)]">{title}</span>
+      <div className="flex min-w-0 items-center gap-2">
+        <BarChart3 className="h-5 w-5 shrink-0 text-[var(--brand)]" aria-hidden />
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">{title}</h2>
       </div>
       {txnCountLabel ? (
         <span className="text-xs font-semibold text-[var(--text-muted)] tabular-nums">{txnCountLabel}</span>
       ) : null}
     </div>
-    <p className="m-dash-hero-value text-xl tracking-tight text-[var(--text-primary)] tabular-nums">
+    <p className="m-dash-hero-value text-xl font-bold tracking-tight tabular-nums text-[var(--text-primary)] [overflow-wrap:anywhere]" title={totalLabel}>
       {totalLabel}
     </p>
     <p className="m-dash-metric-label sm:text-xs mt-0.5">
@@ -65,7 +65,7 @@ export const DashboardChartSection: React.FC<DashboardChartSectionProps> = ({
       </div>
     ) : (
       <>
-        <div className="mt-4 flex items-end justify-between gap-1.5 sm:gap-2 h-32 sm:h-40">
+        <div className="mt-4 flex h-28 items-end justify-between gap-1.5 sm:h-36 sm:gap-2" role="img" aria-label={`${title} sales by day`}>
           {bars.map((d) => (
             <div key={d.day} className="flex-1 min-w-0 h-full flex flex-col items-center gap-1.5">
               <div className="w-full flex-1 flex items-end">

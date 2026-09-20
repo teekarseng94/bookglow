@@ -51,8 +51,8 @@ export const SalesSnapshot: React.FC<SalesSnapshotProps> = ({
   const hasChartData = chartData.some((p) => p.value > 0);
   return (
     <section className={cx('space-y-3', className)}>
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">{title}</h3>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">{title}</h2>
         <label className="sr-only" htmlFor="sales-snapshot-period">
           Period
         </label>
@@ -60,7 +60,7 @@ export const SalesSnapshot: React.FC<SalesSnapshotProps> = ({
           id="sales-snapshot-period"
           value={selectedPeriod}
           onChange={(e) => onPeriodChange(e.target.value)}
-          className="h-8 px-2 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)] text-xs font-semibold text-[var(--text-secondary)]"
+          className="h-11 min-h-11 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)] px-2 text-xs font-semibold text-[var(--text-secondary)] focus-visible:shadow-ui-focus-strong"
         >
           {periodOptions.map((opt) => (
             <option key={opt.id} value={opt.id}>
@@ -72,7 +72,7 @@ export const SalesSnapshot: React.FC<SalesSnapshotProps> = ({
 
       <div className="bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs p-4 space-y-4">
         <div>
-          <p className="text-xl font-bold text-[var(--text-primary)] tabular-nums leading-tight">{totalLabel}</p>
+          <p className="text-[clamp(1.05rem,4vw,1.35rem)] font-bold tabular-nums leading-tight text-[var(--text-primary)] [overflow-wrap:anywhere]" title={totalLabel}>{totalLabel}</p>
           {trendLabel ? (
             <p className={cx('text-xs font-semibold mt-0.5', trendPositive ? 'text-[var(--success)]' : 'text-[var(--danger)]')}>
               {trendLabel}
@@ -80,7 +80,7 @@ export const SalesSnapshot: React.FC<SalesSnapshotProps> = ({
           ) : null}
         </div>
 
-        <div className="h-16">
+        <div className="h-16" role="img" aria-label={hasChartData ? `Sales trend for ${periodOptions.find((o) => o.id === selectedPeriod)?.label || 'the selected period'}` : 'No sales data for this period yet.'}>
           {hasChartData ? (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData} margin={{ top: 2, right: 0, bottom: 0, left: 0 }}>
@@ -105,9 +105,9 @@ export const SalesSnapshot: React.FC<SalesSnapshotProps> = ({
             <div key={cat.id} className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
                 {cat.icon}
-                <span className="text-sm text-[var(--text-secondary)] truncate">{cat.label}</span>
+              <span className="min-w-0 text-sm text-[var(--text-secondary)]">{cat.label}</span>
               </div>
-              <span className="text-sm font-bold text-[var(--text-primary)] tabular-nums shrink-0">{cat.valueLabel}</span>
+              <span className="shrink-0 text-sm font-bold tabular-nums text-[var(--text-primary)] [overflow-wrap:anywhere]">{cat.valueLabel}</span>
             </div>
           ))}
           {categories.length === 0 && <DashboardEmptyState title="No sales recorded yet." compact />}
@@ -117,7 +117,7 @@ export const SalesSnapshot: React.FC<SalesSnapshotProps> = ({
           <button
             type="button"
             onClick={onViewHistory}
-            className="w-full py-2 rounded-ui-sm bg-[var(--bg-soft)] border border-[var(--line)] text-sm font-semibold text-[var(--text-secondary)] hover:bg-[var(--bg-selection)] transition-colors"
+            className="min-h-11 w-full rounded-ui-sm border border-[var(--line)] bg-[var(--bg-soft)] py-2 text-sm font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--bg-selection)] focus-visible:shadow-ui-focus-strong"
           >
             View sales history
           </button>

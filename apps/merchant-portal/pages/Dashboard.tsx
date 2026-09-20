@@ -17,6 +17,8 @@ import {
   CreditCard,
   Download,
   Plus,
+  Users,
+  Wallet,
 } from 'lucide-react';
 import { Transaction, TransactionType, Client, Appointment, Service, Product, OutletSettings } from '../types';
 import { useUserContext } from '../contexts/UserContext';
@@ -61,8 +63,9 @@ function formatLocalDate(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-function formatCompactTime(hhmm: string): string {
-  return hhmm.includes(':') ? hhmm.replace(':', '') : hhmm;
+function formatDisplayTime(hhmm: string): string {
+  const compact = hhmm.includes(':') ? hhmm : `${hhmm.slice(0, 2)}:${hhmm.slice(2)}`;
+  return compact.slice(0, 5);
 }
 
 // App-wide currency is Malaysian Ringgit (RM), matching receipts / reports / POS.
@@ -720,24 +723,24 @@ const Dashboard: React.FC<DashboardProps> = ({
   const marginPct = dashboardData.stats.revenue > 0 ? (dashboardData.stats.profit / dashboardData.stats.revenue) * 100 : null;
 
   return (
-    <div className="dashboard-today space-y-3 lg:space-y-5 animate-fadeIn pb-6">
+    <div className="dashboard-today space-y-3 pb-6 animate-fadeIn lg:space-y-4">
       {/* 1. Greeting + top actions */}
       <TodayHeader
         className="dashboard-today-header"
-        title={<>{greeting} <span aria-hidden>👋</span></>}
+        title={greeting}
         titleClassName="text-app-page sm:text-app-page-lg"
         actions={
           <>
-            <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-ui-sm bg-[var(--bg-surface)] border border-[var(--line)] text-sm font-semibold text-[var(--text-secondary)]">
-              <Calendar className="w-4 h-4" />
+            <span className="inline-flex min-h-11 items-center gap-1.5 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)] px-3 py-2 text-sm font-semibold text-[var(--text-secondary)]">
+              <Calendar className="h-4 w-4 shrink-0" aria-hidden />
               <span className="sm:hidden">{compactDateLabel}</span>
               <span className="hidden sm:inline">{dateLabel}</span>
             </span>
             <Button type="button" className="hidden lg:inline-flex" variant="secondary" size="sm" onClick={() => navigate('/sales-reports')}>
-              <Download className="w-4 h-4" /> Export
+              <Download className="h-4 w-4" aria-hidden /> Export
             </Button>
-            <Button type="button" variant="primary" size="sm" onClick={() => navigate('/schedule')}>
-              <Plus className="w-4 h-4" /> New Booking
+            <Button type="button" variant="primary" size="md" onClick={() => navigate('/schedule')}>
+              <Plus className="h-4 w-4" aria-hidden /> New Booking
             </Button>
           </>
         }
@@ -747,10 +750,10 @@ const Dashboard: React.FC<DashboardProps> = ({
         className="lg:hidden"
         title="Quick actions"
         actions={[
-          { id: 'pos', label: 'New Sale', icon: '💳', onClick: () => navigate('/pos') },
-          { id: 'booking', label: 'Booking', icon: '📅', onClick: () => navigate('/schedule') },
-          { id: 'member', label: 'Member', icon: '👤', onClick: () => navigate('/member') },
-          { id: 'expense', label: 'Expense', icon: '📊', onClick: () => navigate('/finance') },
+          { id: 'pos', label: 'New Sale', icon: <CreditCard className="h-5 w-5" aria-hidden />, onClick: () => navigate('/pos') },
+          { id: 'booking', label: 'Booking', icon: <Calendar className="h-5 w-5" aria-hidden />, onClick: () => navigate('/schedule') },
+          { id: 'member', label: 'Member', icon: <Users className="h-5 w-5" aria-hidden />, onClick: () => navigate('/member') },
+          { id: 'expense', label: 'Expense', icon: <Wallet className="h-5 w-5" aria-hidden />, onClick: () => navigate('/finance') },
         ]}
       />
 
@@ -794,15 +797,15 @@ const Dashboard: React.FC<DashboardProps> = ({
       />
 
       {/* 3. Main row: Today's Appointments | Needs Attention | Sales Snapshot */}
-      <div className="dashboard-primary grid grid-cols-1 lg:grid-cols-[1.5fr_1.1fr_1fr] gap-5 lg:gap-8 items-start">
+      <div className="dashboard-primary grid grid-cols-1 items-start gap-3 xl:grid-cols-[1.5fr_1.1fr_1fr] xl:gap-5">
         <UpcomingAppointments
           rows={todayApps.map((app) => {
             const clientName = clients.find((c) => c.id === app.clientId)?.name || 'Guest';
             const serviceName = services.find((s) => s.id === app.serviceId)?.name || '—';
             return {
               id: app.id,
-              timeLabel: formatCompactTime(app.time),
-              timeRangeLabel: app.endTime ? `${formatCompactTime(app.time)} – ${formatCompactTime(app.endTime)}` : undefined,
+              timeLabel: formatDisplayTime(app.time),
+              timeRangeLabel: app.endTime ? `${formatDisplayTime(app.time)} – ${formatDisplayTime(app.endTime)}` : undefined,
               title: serviceName,
               metaLabel: `${services.find((s) => s.id === app.serviceId)?.duration ?? '—'} mins · ${outletSettings.shopName || 'Outlet'}`,
               customerName: clientName,
@@ -811,8 +814,8 @@ const Dashboard: React.FC<DashboardProps> = ({
                 app.status === 'completed'
                   ? 'bg-[var(--success-soft)] text-[var(--success)]'
                   : app.status === 'scheduled'
-                    ? 'bg-[var(--brand-soft)] text-[var(--brand)]'
-                    : 'bg-[var(--bg-soft)] text-[var(--text-muted)]',
+                    ? 'bg-[var(--brand-soft)] text-[var(--brand-deep)]'
+                    : 'bg-[var(--bg-soft)] text-[var(--text-secondary)]',
             };
           })}
           onAddBooking={() => navigate('/schedule')}
@@ -850,9 +853,8 @@ const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       {/* 4. Bottom row: Customer Activity | Booking link promo */}
-      <div className="dashboard-secondary grid grid-cols-1 lg:grid-cols-[1.85fr_1fr] gap-5 lg:gap-8 items-start">
+      <div className="dashboard-secondary grid grid-cols-1 items-start gap-3 lg:grid-cols-[1.85fr_1fr] lg:gap-5">
         <CustomerActivity
-          className="hidden lg:block"
           metrics={[
             {
               id: 'new-clients',
@@ -872,26 +874,26 @@ const Dashboard: React.FC<DashboardProps> = ({
         <BookingLinkCard outletId={outletID} />
       </div>
 
-      <div className="dashboard-detail grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-        <div className="lg:col-span-2 space-y-6 lg:space-y-8">
+      <div className="dashboard-detail grid grid-cols-1 items-start gap-4 lg:grid-cols-3 lg:gap-5">
+        <div className="space-y-4 lg:col-span-2 lg:space-y-5">
           {/* 6. Staff / operational status */}
           <OperationalStatus
             className="hidden lg:block"
             title="Operational status"
             actions={[
-              { id: 'pos', label: 'New Sale', icon: '💳', onClick: () => navigate('/pos') },
-              { id: 'booking', label: 'Booking', icon: '📅', onClick: () => navigate('/schedule') },
-              { id: 'member', label: 'Member', icon: '👤', onClick: () => navigate('/member') },
-              { id: 'expense', label: 'Expense', icon: '📊', onClick: () => navigate('/finance') },
+              { id: 'pos', label: 'New Sale', icon: <CreditCard className="h-5 w-5" aria-hidden />, onClick: () => navigate('/pos') },
+              { id: 'booking', label: 'Booking', icon: <Calendar className="h-5 w-5" aria-hidden />, onClick: () => navigate('/schedule') },
+              { id: 'member', label: 'Member', icon: <Users className="h-5 w-5" aria-hidden />, onClick: () => navigate('/member') },
+              { id: 'expense', label: 'Expense', icon: <Wallet className="h-5 w-5" aria-hidden />, onClick: () => navigate('/finance') },
             ]}
             calendarHeader={
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-bold tracking-tight flex items-center gap-2 text-[var(--text-primary)]">
-                  <Calendar className="w-5 h-5 text-[var(--brand)]" />
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h3 className="flex items-center gap-2 text-base font-bold tracking-tight text-[var(--text-primary)]">
+                  <Calendar className="h-5 w-5 text-[var(--brand)]" aria-hidden />
                   Quick Calendar
                 </h3>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-[var(--text-secondary)]">
+                  <span className="text-sm font-semibold text-[var(--text-secondary)]">
                     {new Date(`${quickDateStr}T00:00:00`).toLocaleDateString(undefined, {
                       weekday: 'short',
                       year: 'numeric',
@@ -899,24 +901,24 @@ const Dashboard: React.FC<DashboardProps> = ({
                       day: '2-digit',
                     })}
                   </span>
-                  <div className="flex gap-1">
+                  <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={() => changeQuickDay(-1)}
-                      className="p-2 hover:bg-[var(--bg-soft)] rounded-ui-sm text-[var(--text-muted)]"
+                      className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-ui-sm text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] focus-visible:shadow-ui-focus-strong"
                       aria-label="Previous day"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                       </svg>
                     </button>
                     <button
                       type="button"
                       onClick={() => changeQuickDay(1)}
-                      className="p-2 hover:bg-[var(--bg-soft)] rounded-ui-sm text-[var(--text-muted)]"
+                      className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-ui-sm text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] focus-visible:shadow-ui-focus-strong"
                       aria-label="Next day"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
@@ -925,16 +927,16 @@ const Dashboard: React.FC<DashboardProps> = ({
               </div>
             }
           >
-            <div className="border border-[var(--line)] rounded-ui-md overflow-hidden">
+            <div className="overflow-hidden rounded-ui-md border border-[var(--line)]">
               <div className="max-h-[420px] overflow-y-auto">
                 {quickSlots.map((slot) => {
                   const appsInSlot = quickAppointments.filter((a) => isAppointmentInSlot(a, slot));
                   return (
                     <div key={slot} className="flex border-b border-[var(--line)]">
-                      <div className="w-20 shrink-0 p-3 text-center m-dash-metric-label bg-[var(--bg-surface)] border-r border-[var(--line)]">
-                        {formatCompactTime(slot)}
+                      <div className="m-dash-metric-label w-20 shrink-0 border-r border-[var(--line)] bg-[var(--bg-surface)] p-3 text-center">
+                        {formatDisplayTime(slot)}
                       </div>
-                      <div className="flex-1 p-2 min-h-[44px] bg-[var(--bg-surface)]">
+                      <div className="min-h-11 min-w-0 flex-1 bg-[var(--bg-surface)] p-2">
                         {appsInSlot.length === 0 ? (
                           <div className="h-full" />
                         ) : (
@@ -945,10 +947,10 @@ const Dashboard: React.FC<DashboardProps> = ({
                               return (
                                 <div
                                   key={app.id}
-                                  className="px-2 py-1 rounded-ui-sm bg-[var(--brand-soft)] border border-[var(--brand)]/20 m-caption text-[var(--brand-deep)] font-semibold truncate max-w-[260px]"
-                                  title={`${formatCompactTime(app.time)} ${clientName} · ${serviceName}`}
+                                  className="m-caption max-w-[260px] truncate rounded-ui-sm border border-[var(--brand-border)] bg-[var(--brand-soft)] px-2 py-1 font-semibold text-[var(--brand-deep)]"
+                                  title={`${formatDisplayTime(app.time)} ${clientName} · ${serviceName}`}
                                 >
-                                  {formatCompactTime(app.time)} {clientName.split(' ')[0]} · {serviceName}
+                                  {formatDisplayTime(app.time)} {clientName.split(' ')[0]} · {serviceName}
                                 </div>
                               );
                             })}
@@ -964,7 +966,6 @@ const Dashboard: React.FC<DashboardProps> = ({
 
           {/* 7. Secondary charts and trends */}
           <DashboardChartSection
-            className="hidden lg:block"
             totalLabel={formatRM(dashboardData.totalSalesThisWeek)}
             txnCountLabel={`${dashboardData.weekTxnCount} txn${dashboardData.weekTxnCount !== 1 ? 's' : ''}`}
             empty={weekEmpty}
@@ -981,12 +982,12 @@ const Dashboard: React.FC<DashboardProps> = ({
             })}
             statsStrip={
               !weekEmpty ? (
-                <div className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-[var(--line)]">
+                <div className="mt-4 grid grid-cols-1 gap-2 border-t border-[var(--line)] pt-4 sm:grid-cols-3">
                   <div className="min-w-0">
                     <p className="m-dash-metric-label">
                       Transactions
                     </p>
-                    <p className="text-sm font-bold text-[var(--text-primary)] tabular-nums">
+                    <p className="text-sm font-bold tabular-nums text-[var(--text-primary)]">
                       {dashboardData.weekTxnCount}
                     </p>
                   </div>
@@ -994,7 +995,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                     <p className="m-dash-metric-label">
                       Avg sale
                     </p>
-                    <p className="text-sm font-bold text-[var(--text-primary)] tabular-nums truncate">
+                    <p className="text-sm font-bold tabular-nums text-[var(--text-primary)] [overflow-wrap:anywhere]" title={formatRM(dashboardData.weekAvgSale)}>
                       {formatRM(dashboardData.weekAvgSale)}
                     </p>
                   </div>
@@ -1003,7 +1004,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                       Top item
                     </p>
                     <p
-                      className="text-sm font-bold text-[var(--text-primary)] truncate"
+                      className="truncate text-sm font-bold text-[var(--text-primary)]"
                       title={dashboardData.weekTopItem ?? undefined}
                     >
                       {dashboardData.weekTopItem ?? '—'}
@@ -1014,15 +1015,17 @@ const Dashboard: React.FC<DashboardProps> = ({
             }
           />
 
-          <div className="hidden lg:block bg-[var(--bg-surface)] p-6 rounded-ui-lg border border-[var(--line)] shadow-ui-xs">
-            <h3 className="text-xl font-bold tracking-tight text-[var(--text-primary)] mb-4">Top Selling</h3>
-            <div className="flex gap-1 p-1 bg-[var(--bg-soft)] rounded-ui-md mb-4">
+          <div className="hidden rounded-ui-lg border border-[var(--line)] bg-[var(--bg-surface)] p-6 shadow-ui-xs lg:block">
+            <h2 className="mb-4 text-lg font-bold tracking-tight text-[var(--text-primary)]">Top Selling</h2>
+            <div className="mb-4 flex gap-1 rounded-ui-md bg-[var(--bg-soft)] p-1" role="tablist" aria-label="Top selling category">
               {(['service', 'product', 'package', 'discount'] as const).map((tab) => (
                 <button
                   key={tab}
                   type="button"
+                  role="tab"
+                  aria-selected={topSellingTab === tab}
                   onClick={() => setTopSellingTab(tab)}
-                  className={`flex-1 py-2 rounded-ui-sm text-sm font-medium capitalize transition-colors ${
+                  className={`min-h-11 flex-1 rounded-ui-sm py-2 text-sm font-semibold capitalize transition-colors focus-visible:shadow-ui-focus-strong ${
                     topSellingTab === tab
                       ? 'bg-[var(--brand)] text-white shadow-ui-xs'
                       : 'text-[var(--text-secondary)] hover:bg-[var(--bg-selection)]'
@@ -1036,36 +1039,38 @@ const Dashboard: React.FC<DashboardProps> = ({
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-[var(--line)]">
-                    <th className="text-left py-3 px-2 text-xs font-bold uppercase text-[var(--brand)]">SKU</th>
-                    <th className="text-right py-3 px-2 text-xs font-bold uppercase text-[var(--brand)]">
+                    <th className="px-2 py-3 text-left text-xs font-semibold uppercase text-[var(--text-secondary)]">SKU</th>
+                    <th className="px-2 py-3 text-right text-xs font-semibold uppercase text-[var(--text-secondary)]">
                       Quantity
                     </th>
-                    <th className="text-right py-3 px-2 text-xs font-bold uppercase text-[var(--brand)]">
+                    <th className="px-2 py-3 text-right text-xs font-semibold uppercase text-[var(--text-secondary)]">
                       Amount
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {topSellingByType.map((row, idx) => {
+                  {topSellingByType.map((row) => {
                     const Icon = getIconForType(row.type);
                     return (
                       <tr
-                        key={`${row.type}-${row.name}-${idx}`}
+                        key={`${row.type}-${row.name}`}
                         className="border-b border-[var(--line)] hover:bg-[var(--bg-soft)]"
                       >
-                        <td className="py-3 px-2 flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-ui-sm bg-[var(--bg-soft)] flex items-center justify-center">
-                            <Icon className="w-4 h-4 text-[var(--text-secondary)]" />
+                        <td className="px-2 py-3">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-ui-sm bg-[var(--bg-soft)]">
+                              <Icon className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden />
+                            </div>
+                            <span className="truncate text-sm font-medium text-[var(--text-primary)]" title={row.name}>
+                              {row.name}
+                            </span>
                           </div>
-                          <span className="text-sm font-medium text-[var(--text-primary)] truncate max-w-[180px]">
-                            {row.name}
-                          </span>
                         </td>
-                        <td className="py-3 px-2 text-right text-sm text-[var(--text-secondary)] tabular-nums">
+                        <td className="px-2 py-3 text-right text-sm tabular-nums text-[var(--text-secondary)]">
                           {row.quantity}
                         </td>
-                        <td className="py-3 px-2 text-right text-sm font-bold text-[var(--brand)] tabular-nums">
-                          {row.amount.toFixed(2)}
+                        <td className="px-2 py-3 text-right text-sm font-bold tabular-nums text-[var(--brand-deep)]">
+                          {formatRM(row.amount)}
                         </td>
                       </tr>
                     );
@@ -1080,13 +1085,13 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {/* 5. Top customers (by spend this month) + payment */}
-        <div className="hidden lg:block space-y-6 lg:space-y-8">
+        <div className="hidden space-y-5 lg:block">
           <section className="space-y-3">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Top Customers</h3>
-              <span className="text-sm font-bold text-[var(--brand)] tabular-nums">{dashboardData.visitorTotalCount}</span>
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">Top Customers</h2>
+              <span className="text-sm font-bold tabular-nums text-[var(--brand-deep)]">{dashboardData.visitorTotalCount}</span>
             </div>
-            <div className="bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs p-4">
+            <div className="rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] p-4 shadow-ui-xs">
               {dashboardData.visitors.length === 0 ? (
                 <DashboardEmptyState title="No visitors this month." compact />
               ) : (
@@ -1094,19 +1099,19 @@ const Dashboard: React.FC<DashboardProps> = ({
                   {dashboardData.visitors.map((v) => (
                     <div
                       key={v.clientId}
-                      className="flex items-center justify-between py-2 px-3 rounded-ui-sm bg-[var(--bg-soft)] border border-[var(--line)]"
+                      className="flex items-center justify-between gap-2 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-soft)] px-3 py-2"
                     >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-8 h-8 rounded-full bg-[var(--brand-soft)] text-[var(--brand-deep)] flex items-center justify-center text-xs font-bold shrink-0">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[var(--brand-soft)] text-xs font-bold text-[var(--brand-deep)]">
                           {v.name.charAt(0)}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-[var(--text-primary)] truncate">{v.name}</p>
-                          <p className="m-caption text-[var(--text-muted)]">{v.tier}</p>
+                          <p className="truncate text-sm font-medium text-[var(--text-primary)]" title={v.name}>{v.name}</p>
+                          <p className="m-caption text-[var(--text-secondary)]">{v.tier}</p>
                         </div>
                       </div>
-                      <span className="text-sm font-bold text-[var(--brand)] tabular-nums shrink-0 ml-2">
-                        {v.spent.toFixed(2)}
+                      <span className="ml-2 min-w-0 text-right text-sm font-bold tabular-nums text-[var(--brand-deep)] [overflow-wrap:anywhere]">
+                        {formatRM(v.spent)}
                       </span>
                     </div>
                   ))}
@@ -1115,20 +1120,20 @@ const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </section>
 
-          <div className="bg-[var(--bg-surface)] p-6 rounded-ui-lg border border-[var(--line)] shadow-ui-xs">
-            <h3 className="text-xl font-bold tracking-tight text-[var(--text-primary)] mb-4">Payment</h3>
+          <div className="rounded-ui-lg border border-[var(--line)] bg-[var(--bg-surface)] p-6 shadow-ui-xs">
+            <h2 className="mb-4 text-lg font-bold tracking-tight text-[var(--text-primary)]">Payment</h2>
             <div className="space-y-2">
               {dashboardData.paymentBreakdown.map((p) => (
                 <div
                   key={p.method}
-                  className="flex items-center justify-between py-2 px-3 rounded-ui-sm bg-[var(--bg-soft)] border border-[var(--line)]"
+                  className="flex items-center justify-between gap-2 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-soft)] px-3 py-2"
                 >
-                  <div className="flex items-center gap-2">
-                    <Star className="w-4 h-4 text-[var(--warning)] fill-[var(--warning)]" />
-                    <span className="text-sm font-medium text-[var(--text-secondary)]">{p.method}</span>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Star className="h-4 w-4 shrink-0 fill-[var(--warning)] text-[var(--warning)]" aria-hidden />
+                    <span className="truncate text-sm font-medium text-[var(--text-secondary)]">{p.method}</span>
                   </div>
-                  <span className="text-sm font-bold text-[var(--text-primary)] tabular-nums">
-                    {p.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  <span className="min-w-0 text-right text-sm font-bold tabular-nums text-[var(--text-primary)] [overflow-wrap:anywhere]">
+                    {formatRM(p.amount)}
                   </span>
                 </div>
               ))}

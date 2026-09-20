@@ -18,9 +18,14 @@ export const TodayHeader: React.FC<TodayHeaderProps> = ({
   className,
 }) => (
   <div className={cx(className)}>
-    <div className="dashboard-mobile-topbar lg:hidden flex items-center justify-between gap-3" aria-label="Today overview">
-      {dateLabel ? <p className="m-page-header-description min-w-0 text-[var(--text-secondary)]">{dateLabel}</p> : null}
-      {actions ? <div className="dashboard-mobile-header-actions flex min-w-0 flex-1 items-center gap-2">{actions}</div> : null}
+    <div className="dashboard-mobile-topbar lg:hidden space-y-2" aria-label="Today overview">
+      <h1 className={cx('min-w-0 font-bold tracking-tight text-[var(--text-primary)] [overflow-wrap:anywhere]', titleClassName || 'ui-page-title')}>
+        {title}
+      </h1>
+      <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
+        {dateLabel ? <p className="m-page-header-description min-w-0 flex-1 text-[var(--text-secondary)]">{dateLabel}</p> : null}
+        {actions ? <div className="dashboard-mobile-header-actions flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2">{actions}</div> : null}
+      </div>
     </div>
     <div className="hidden lg:flex items-end justify-between gap-4 pb-2 border-b border-[var(--line)]">
       <div>

@@ -33,7 +33,7 @@ export default defineConfig({
     },
     {
       name: 'desktop',
-      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/],
+      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/, /dashboard-layout\.spec\.ts/],
       dependencies: ['auth-setup'],
       use: {
         ...devices['Desktop Edge'],
@@ -44,7 +44,7 @@ export default defineConfig({
     },
     {
       name: 'mobile',
-      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/],
+      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/, /dashboard-layout\.spec\.ts/],
       dependencies: ['auth-setup'],
       use: {
         ...devices['iPhone 13'],
@@ -56,7 +56,7 @@ export default defineConfig({
     },
     {
       name: 'mobile-360',
-      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/],
+      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/, /dashboard-layout\.spec\.ts/],
       dependencies: ['auth-setup'],
       use: {
         ...devices['iPhone 13'],
@@ -68,7 +68,7 @@ export default defineConfig({
     },
     {
       name: 'mobile-430',
-      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/],
+      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/, /dashboard-layout\.spec\.ts/],
       dependencies: ['auth-setup'],
       use: {
         ...devices['iPhone 13'],
@@ -80,13 +80,22 @@ export default defineConfig({
     },
     {
       name: 'tablet-768',
-      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/],
+      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/, /dashboard-layout\.spec\.ts/],
       dependencies: ['auth-setup'],
       use: {
         ...devices['Desktop Edge'],
         channel: 'msedge',
         storageState: authState,
         viewport: { width: 768, height: 1024 },
+      },
+    },
+    {
+      name: 'layout-harness',
+      testMatch: /dashboard-layout\.spec\.ts/,
+      use: {
+        ...devices['Desktop Edge'],
+        channel: 'msedge',
+        viewport: { width: 1440, height: 1000 },
       },
     },
     {

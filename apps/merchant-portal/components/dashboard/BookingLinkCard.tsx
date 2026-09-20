@@ -54,19 +54,19 @@ export const BookingLinkCard: React.FC<BookingLinkCardProps> = ({ outletId, clas
   return (
     <div
       className={cx(
-        'rounded-ui-lg border border-[var(--brand-border)] p-5 flex items-center justify-between gap-4',
+        'flex flex-col items-start justify-between gap-4 rounded-ui-lg border border-[var(--brand-border)] p-4 sm:flex-row sm:items-center sm:p-5',
         'bg-gradient-to-br from-[var(--brand-soft)] to-[var(--bg-surface)]',
         className,
       )}
     >
       <div className="min-w-0">
-        <p className="text-sm font-bold text-[var(--text-primary)]">Keep your schedule full</p>
-        <p className="text-xs text-[var(--text-secondary)] mt-1">Share your booking link to attract new clients.</p>
+        <p className="text-sm font-bold text-[var(--text-primary)] [overflow-wrap:anywhere]">Keep your schedule full</p>
+        <p className="mt-1 text-xs text-[var(--text-secondary)] [overflow-wrap:anywhere]">Share your booking link to attract new clients.</p>
         <button
           type="button"
           onClick={handleShare}
           disabled={!bookingUrl}
-          className="mt-3 inline-flex items-center gap-1.5 px-3 py-2 rounded-ui-sm bg-[var(--brand)] text-white text-xs font-bold hover:opacity-90 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          className="mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-ui-sm bg-[var(--brand)] px-3 py-2 text-xs font-semibold text-white hover:bg-[var(--brand-hover)] focus-visible:shadow-ui-focus-strong disabled:cursor-not-allowed disabled:opacity-40"
         >
           {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
           {copied ? 'Link copied' : 'Share Booking Link'}

@@ -35,7 +35,7 @@ createRoot(document.getElementById('root')!).render(
       outletName="SOHOKAKI WELLNESS CENTER"
       role="admin"
     >
-      <div className="dashboard-today space-y-3 pb-6 lg:space-y-4">
+      <div className="dashboard-today space-y-2 pb-6 lg:space-y-4">
         <TodayHeader
           className="dashboard-today-header"
           title="Good afternoon, Mei"
@@ -78,7 +78,7 @@ createRoot(document.getElementById('root')!).render(
               timeRangeLabel: '14:30 – 15:30',
               title: 'Aromatherapy massage with hot stone add-on',
               metaLabel: '60 mins · SOHOKAKI WELLNESS CENTER',
-              customerName: 'Aisha Rahman',
+              customerName: 'Aisha Rahman binti Abdullah',
               statusLabel: 'scheduled',
             }]}
           />

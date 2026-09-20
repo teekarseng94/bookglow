@@ -34,6 +34,8 @@ import {
   DashboardChartSection,
   DashboardEmptyState,
   DashboardKpiCards,
+  ExpandableText,
+  MoneyAmount,
   OperationalStatus,
   SalesSnapshot,
   TodayHeader,
@@ -723,7 +725,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const marginPct = dashboardData.stats.revenue > 0 ? (dashboardData.stats.profit / dashboardData.stats.revenue) * 100 : null;
 
   return (
-    <div className="dashboard-today space-y-3 pb-6 animate-fadeIn lg:space-y-4">
+    <div className="dashboard-today space-y-2 pb-6 animate-fadeIn lg:space-y-4">
       {/* 1. Greeting + top actions */}
       <TodayHeader
         className="dashboard-today-header"
@@ -945,13 +947,12 @@ const Dashboard: React.FC<DashboardProps> = ({
                               const clientName = clients.find((c) => c.id === app.clientId)?.name || 'Guest';
                               const serviceName = services.find((s) => s.id === app.serviceId)?.name || '—';
                               return (
-                                <div
+                                <ExpandableText
                                   key={app.id}
-                                  className="m-caption max-w-[260px] truncate rounded-ui-sm border border-[var(--brand-border)] bg-[var(--brand-soft)] px-2 py-1 font-semibold text-[var(--brand-deep)]"
-                                  title={`${formatDisplayTime(app.time)} ${clientName} · ${serviceName}`}
-                                >
-                                  {formatDisplayTime(app.time)} {clientName.split(' ')[0]} · {serviceName}
-                                </div>
+                                  text={`${formatDisplayTime(app.time)} ${clientName} · ${serviceName}`}
+                                  lines={1}
+                                  className="m-caption max-w-[260px] rounded-ui-sm border border-[var(--brand-border)] bg-[var(--brand-soft)] px-2 py-1 font-semibold text-[var(--brand-deep)]"
+                                />
                               );
                             })}
                           </div>
@@ -995,19 +996,16 @@ const Dashboard: React.FC<DashboardProps> = ({
                     <p className="m-dash-metric-label">
                       Avg sale
                     </p>
-                    <p className="text-sm font-bold tabular-nums text-[var(--text-primary)] [overflow-wrap:anywhere]" title={formatRM(dashboardData.weekAvgSale)}>
-                      {formatRM(dashboardData.weekAvgSale)}
+                    <p className="text-sm font-bold text-[var(--text-primary)]">
+                      <MoneyAmount value={formatRM(dashboardData.weekAvgSale)} />
                     </p>
                   </div>
                   <div className="min-w-0">
                     <p className="m-dash-metric-label">
                       Top item
                     </p>
-                    <p
-                      className="truncate text-sm font-bold text-[var(--text-primary)]"
-                      title={dashboardData.weekTopItem ?? undefined}
-                    >
-                      {dashboardData.weekTopItem ?? '—'}
+                    <p className="text-sm font-bold text-[var(--text-primary)]">
+                      <ExpandableText text={dashboardData.weekTopItem ?? '—'} lines={1} className="font-bold" />
                     </p>
                   </div>
                 </div>
@@ -1061,16 +1059,18 @@ const Dashboard: React.FC<DashboardProps> = ({
                             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-ui-sm bg-[var(--bg-soft)]">
                               <Icon className="h-4 w-4 text-[var(--text-secondary)]" aria-hidden />
                             </div>
-                            <span className="truncate text-sm font-medium text-[var(--text-primary)]" title={row.name}>
-                              {row.name}
-                            </span>
+                            <ExpandableText
+                              text={row.name}
+                              lines={1}
+                              className="text-sm font-medium text-[var(--text-primary)]"
+                            />
                           </div>
                         </td>
                         <td className="px-2 py-3 text-right text-sm tabular-nums text-[var(--text-secondary)]">
                           {row.quantity}
                         </td>
-                        <td className="px-2 py-3 text-right text-sm font-bold tabular-nums text-[var(--brand-deep)]">
-                          {formatRM(row.amount)}
+                        <td className="px-2 py-3 text-right text-sm font-bold text-[var(--brand-deep)]">
+                          <MoneyAmount value={formatRM(row.amount)} className="text-[var(--brand-deep)]" />
                         </td>
                       </tr>
                     );
@@ -1106,12 +1106,18 @@ const Dashboard: React.FC<DashboardProps> = ({
                           {v.name.charAt(0)}
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-[var(--text-primary)]" title={v.name}>{v.name}</p>
+                          <p>
+                            <ExpandableText
+                              text={v.name}
+                              lines={1}
+                              className="text-sm font-medium text-[var(--text-primary)]"
+                            />
+                          </p>
                           <p className="m-caption text-[var(--text-secondary)]">{v.tier}</p>
                         </div>
                       </div>
-                      <span className="ml-2 min-w-0 text-right text-sm font-bold tabular-nums text-[var(--brand-deep)] [overflow-wrap:anywhere]">
-                        {formatRM(v.spent)}
+                      <span className="ml-2 min-w-0 text-right">
+                        <MoneyAmount value={formatRM(v.spent)} className="text-sm font-bold text-[var(--brand-deep)]" />
                       </span>
                     </div>
                   ))}
@@ -1132,8 +1138,8 @@ const Dashboard: React.FC<DashboardProps> = ({
                     <Star className="h-4 w-4 shrink-0 fill-[var(--warning)] text-[var(--warning)]" aria-hidden />
                     <span className="truncate text-sm font-medium text-[var(--text-secondary)]">{p.method}</span>
                   </div>
-                  <span className="min-w-0 text-right text-sm font-bold tabular-nums text-[var(--text-primary)] [overflow-wrap:anywhere]">
-                    {formatRM(p.amount)}
+                  <span className="min-w-0 text-right">
+                    <MoneyAmount value={formatRM(p.amount)} className="text-sm font-bold text-[var(--text-primary)]" />
                   </span>
                 </div>
               ))}

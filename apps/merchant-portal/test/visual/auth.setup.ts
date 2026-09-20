@@ -22,10 +22,24 @@ setup('authenticate merchant account', async ({ page }) => {
   }
 
   await page.goto('/login');
-  await page.getByLabel('Email address').fill(email);
-  await page.getByLabel('Password').fill(password);
+  await page.locator('#email').fill(email);
+  await page.locator('#password').fill(password);
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page).not.toHaveURL(/\/login(?:\?|$)/, { timeout: 30_000 });
+
+  const dashboard = page.getByRole('region', { name: 'Business performance' });
+  const onboarding = page.getByRole('heading', { name: /professional account/i });
+  await Promise.race([
+    dashboard.waitFor({ state: 'visible', timeout: 45_000 }),
+    onboarding.waitFor({ state: 'visible', timeout: 45_000 }),
+    page.waitForURL(/\/onboarding/, { timeout: 45_000 }),
+  ]).catch(() => undefined);
+
+  if ((await onboarding.count()) > 0 || /\/onboarding/.test(page.url())) {
+    throw new Error(
+      'VISUAL_EMAIL signed in but has no completed merchant outlet. Use a dedicated test workspace with public.users.outlet_id and outlets.onboarding_status=complete. See VISUAL_TESTING.md.',
+    );
+  }
 
   mkdirSync(path.dirname(authState), { recursive: true });
   await page.context().storageState({ path: authState });

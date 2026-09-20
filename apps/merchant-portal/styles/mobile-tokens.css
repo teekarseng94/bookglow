@@ -2339,10 +2339,10 @@ textarea.m-settings-control {
   }
 
   .dashboard-today .dashboard-kpi-card {
-    min-height: 96px;
+    min-height: 84px;
     height: 100%;
-    padding: 12px;
-    gap: 6px;
+    padding: 10px 12px;
+    gap: 4px;
   }
 
   .dashboard-today .dashboard-kpi-value {
@@ -2351,13 +2351,21 @@ textarea.m-settings-control {
     overflow-wrap: anywhere;
   }
 
+  .dashboard-money {
+    overflow-wrap: anywhere;
+  }
+
+  .dashboard-money__tail {
+    white-space: nowrap;
+  }
+
   .dashboard-today .dashboard-kpis .m-caption {
     font-size: 12px !important;
     line-height: 1.35;
   }
 
   .dashboard-today > section.lg\:hidden {
-    gap: 8px;
+    gap: 6px;
   }
 
   .dashboard-today > section.lg\:hidden > h2 {
@@ -2365,7 +2373,7 @@ textarea.m-settings-control {
   }
 
   .dashboard-today > section.lg\:hidden button {
-    min-height: 72px;
+    min-height: 56px;
   }
 
   .dashboard-today .dashboard-primary section {

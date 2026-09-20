@@ -2,6 +2,7 @@ import React from 'react';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { cx } from '../ui/cx';
 import { DashboardEmptyState } from './DashboardEmptyState';
+import { MoneyAmount } from './MoneyAmount';
 
 export interface SalesSnapshotCategory {
   id: string;
@@ -50,7 +51,7 @@ export const SalesSnapshot: React.FC<SalesSnapshotProps> = ({
 }) => {
   const hasChartData = chartData.some((p) => p.value > 0);
   return (
-    <section className={cx('space-y-3', className)}>
+    <section className={cx('space-y-2 sm:space-y-3', className)}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">{title}</h2>
         <label className="sr-only" htmlFor="sales-snapshot-period">
@@ -72,7 +73,10 @@ export const SalesSnapshot: React.FC<SalesSnapshotProps> = ({
 
       <div className="bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs p-4 space-y-4">
         <div>
-          <p className="text-[clamp(1.05rem,4vw,1.35rem)] font-bold tabular-nums leading-tight text-[var(--text-primary)] [overflow-wrap:anywhere]" title={totalLabel}>{totalLabel}</p>
+          <MoneyAmount
+            value={totalLabel}
+            className="text-[clamp(1.05rem,4vw,1.35rem)] font-bold leading-tight text-[var(--text-primary)]"
+          />
           {trendLabel ? (
             <p className={cx('text-xs font-semibold mt-0.5', trendPositive ? 'text-[var(--success)]' : 'text-[var(--danger)]')}>
               {trendLabel}
@@ -107,7 +111,7 @@ export const SalesSnapshot: React.FC<SalesSnapshotProps> = ({
                 {cat.icon}
               <span className="min-w-0 text-sm text-[var(--text-secondary)]">{cat.label}</span>
               </div>
-              <span className="shrink-0 text-sm font-bold tabular-nums text-[var(--text-primary)] [overflow-wrap:anywhere]">{cat.valueLabel}</span>
+              <MoneyAmount value={cat.valueLabel} className="text-right text-sm font-bold text-[var(--text-primary)]" />
             </div>
           ))}
           {categories.length === 0 && <DashboardEmptyState title="No sales recorded yet." compact />}

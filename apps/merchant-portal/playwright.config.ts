@@ -56,7 +56,7 @@ export default defineConfig({
     },
     {
       name: 'mobile-360',
-      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/, /dashboard-layout\.spec\.ts/],
+      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/, /dashboard-layout\.spec\.ts/, /dashboard-authenticated\.spec\.ts/],
       dependencies: ['auth-setup'],
       use: {
         ...devices['iPhone 13'],
@@ -68,7 +68,7 @@ export default defineConfig({
     },
     {
       name: 'mobile-430',
-      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/, /dashboard-layout\.spec\.ts/],
+      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/, /dashboard-layout\.spec\.ts/, /dashboard-authenticated\.spec\.ts/],
       dependencies: ['auth-setup'],
       use: {
         ...devices['iPhone 13'],
@@ -80,7 +80,7 @@ export default defineConfig({
     },
     {
       name: 'tablet-768',
-      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/, /dashboard-layout\.spec\.ts/],
+      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/, /dashboard-layout\.spec\.ts/, /dashboard-authenticated\.spec\.ts/],
       dependencies: ['auth-setup'],
       use: {
         ...devices['Desktop Edge'],

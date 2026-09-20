@@ -1,5 +1,6 @@
 import React from 'react';
 import { cx } from '../ui/cx';
+import { MoneyAmount } from './MoneyAmount';
 
 export interface DashboardKpiCard {
   id: string;
@@ -63,15 +64,13 @@ export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({ cards, cla
             {card.label}
           </p>
           <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-2">
-            <p
+            <MoneyAmount
+              value={card.value}
               className={cx(
-                'dashboard-kpi-value min-w-0 text-[clamp(0.95rem,3.6vw,1.25rem)] font-bold tabular-nums leading-tight [overflow-wrap:anywhere]',
+                'dashboard-kpi-value text-[clamp(0.95rem,3.6vw,1.25rem)] font-bold leading-tight',
                 card.valueToneClass || 'text-[var(--text-primary)]',
               )}
-              title={card.value}
-            >
-              {card.value}
-            </p>
+            />
             {card.sparkline ? <Sparkline points={card.sparkline} /> : null}
           </div>
           {card.secondary ? (

@@ -20,8 +20,10 @@ Primary appointments / attention / sales sit in **one column below 1280px** so m
 
 ## Presentation
 
-- KPI values use `overflow-wrap: anywhere` and must not `nowrap`
+- KPI values wrap at thousand groups; the last digits and `.xx` stay on one nowrap span
 - Appointment times keep `HH:MM`
 - Status chips stay one line with an accessible label
+- Truncated names expand on click, tap, and keyboard (`aria-expanded`)
 - Charts expose a text `aria-label`; today is marked by colour **and** bold day label
 - Primary actions and attention buttons are at least 44px
+- Mobile quick-action tiles stay ≥56px; greeting and section gaps tighten below `lg` without hiding metrics

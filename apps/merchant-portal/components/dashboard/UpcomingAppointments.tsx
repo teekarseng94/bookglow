@@ -6,6 +6,7 @@ import { SectionHeader } from '../ui/SectionHeader';
 import { StatusBadge } from '../ui/StatusBadge';
 import { cx } from '../ui/cx';
 import { DashboardEmptyState } from './DashboardEmptyState';
+import { ExpandableText } from './ExpandableText';
 
 export interface UpcomingAppointmentRow {
   id: string;
@@ -35,7 +36,7 @@ export const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
   onRowAction,
   className,
 }) => (
-  <section className={cx('space-y-3', className)}>
+  <section className={cx('space-y-2 sm:space-y-3', className)}>
     <SectionHeader
       title={title}
       count={rows.length}
@@ -64,7 +65,7 @@ export const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
             <div
               key={row.id}
               className={cx(
-                'm-appointment-row grid grid-cols-[auto_minmax(0,1fr)_auto] gap-x-2 gap-y-1 rounded-none border-0 px-3 py-3 sm:flex sm:items-center sm:gap-3 sm:px-4',
+                'm-appointment-row grid grid-cols-[auto_minmax(0,1fr)_auto] gap-x-2 gap-y-1 rounded-none border-0 px-3 py-2.5 sm:flex sm:items-center sm:gap-3 sm:px-4 sm:py-3',
               )}
             >
               <div className="w-auto shrink-0 sm:w-24">
@@ -74,20 +75,26 @@ export const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
                 ) : null}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="m-appointment-row-title line-clamp-2 text-sm font-semibold text-[var(--text-primary)]" title={row.title}>
-                  {row.title}
-                </p>
+                <ExpandableText
+                  text={row.title}
+                  className="m-appointment-row-title text-sm font-semibold text-[var(--text-primary)]"
+                />
                 {row.metaLabel ? (
-                  <p className="m-appointment-row-meta line-clamp-2 text-xs text-[var(--text-secondary)]" title={row.metaLabel}>
-                    {row.metaLabel}
-                  </p>
+                  <ExpandableText
+                    text={row.metaLabel}
+                    className="m-appointment-row-meta text-xs text-[var(--text-secondary)]"
+                  />
                 ) : null}
               </div>
               <div className="col-start-2 flex min-w-0 items-center gap-2 sm:max-w-[10rem]">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--brand-soft)] text-xs font-bold text-[var(--brand-deep)]">
                   {row.customerName.charAt(0).toUpperCase()}
                 </div>
-                <p className="truncate text-sm text-[var(--text-secondary)]" title={row.customerName}>{row.customerName}</p>
+                <ExpandableText
+                  text={row.customerName}
+                  lines={1}
+                  className="text-sm text-[var(--text-secondary)]"
+                />
               </div>
               {row.statusLabel ? (
                 <StatusBadge

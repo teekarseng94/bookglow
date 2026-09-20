@@ -2,6 +2,7 @@ import React from 'react';
 import { BarChart3 } from 'lucide-react';
 import { cx } from '../ui/cx';
 import { DashboardEmptyState } from './DashboardEmptyState';
+import { MoneyAmount } from './MoneyAmount';
 
 export interface DashboardChartBar {
   day: string;
@@ -52,8 +53,11 @@ export const DashboardChartSection: React.FC<DashboardChartSectionProps> = ({
         <span className="text-xs font-semibold text-[var(--text-muted)] tabular-nums">{txnCountLabel}</span>
       ) : null}
     </div>
-    <p className="m-dash-hero-value text-xl font-bold tracking-tight tabular-nums text-[var(--text-primary)] [overflow-wrap:anywhere]" title={totalLabel}>
-      {totalLabel}
+    <p className="m-dash-hero-value mt-0.5">
+      <MoneyAmount
+        value={totalLabel}
+        className="text-xl font-bold tracking-tight text-[var(--text-primary)]"
+      />
     </p>
     <p className="m-dash-metric-label sm:text-xs mt-0.5">
       {subtitle}

@@ -1468,6 +1468,14 @@
 .merchant-onboarding__complete dd { margin: 0; overflow-wrap: anywhere; font-weight: 700; }
 .merchant-onboarding__loading { min-height: 100dvh; display: grid; place-items: center; color: var(--text-muted); }
 
+.dashboard-money {
+  overflow-wrap: anywhere;
+}
+
+.dashboard-money__tail {
+  white-space: nowrap;
+}
+
 @media (min-width: 768px) {
   .merchant-onboarding { padding: 2rem; background: var(--bg-page); }
   .merchant-onboarding__progress { position: absolute; width: min(calc(100% - 4rem), 46rem); top: 2rem; left: 50%; translate: -50% 0; }

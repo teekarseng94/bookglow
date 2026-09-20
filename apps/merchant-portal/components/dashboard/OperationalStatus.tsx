@@ -25,7 +25,7 @@ export const OperationalStatus: React.FC<OperationalStatusProps> = ({
   children,
   className,
 }) => (
-  <section className={cx('space-y-3', className)}>
+  <section className={cx('space-y-2 sm:space-y-3', className)}>
     <h2 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
       <Calendar className="h-4 w-4" aria-hidden />
       {title}
@@ -37,10 +37,10 @@ export const OperationalStatus: React.FC<OperationalStatusProps> = ({
             key={action.id}
             type="button"
             onClick={action.onClick}
-            className="flex min-h-[4.5rem] flex-col items-center justify-center gap-1.5 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] px-2 py-3 hover:border-[var(--brand)] hover:bg-[var(--brand-soft)] focus-visible:shadow-ui-focus-strong"
+            className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] px-2 py-2 hover:border-[var(--brand)] hover:bg-[var(--brand-soft)] focus-visible:shadow-ui-focus-strong sm:min-h-[4.5rem] sm:gap-1.5 sm:py-3"
           >
             {action.icon ? (
-              <span className="grid h-10 w-10 place-items-center rounded-ui-sm bg-[var(--brand-soft)] text-[var(--brand)]">
+              <span className="grid h-8 w-8 place-items-center rounded-ui-sm bg-[var(--brand-soft)] text-[var(--brand)] sm:h-10 sm:w-10">
                 {action.icon}
               </span>
             ) : null}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { cx } from '../ui/cx';
+import { ExpandableText } from './ExpandableText';
 
 export interface AttentionItem {
   id: string;
@@ -45,7 +46,7 @@ export const AttentionList: React.FC<AttentionListProps> = ({
   onFooterAction,
   className,
 }) => (
-  <section className={cx('space-y-3', className)}>
+  <section className={cx('space-y-2 sm:space-y-3', className)}>
     <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">{title}</h2>
     <div className="bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs p-4 space-y-2">
       {items.length === 0 ? (
@@ -63,9 +64,9 @@ export const AttentionList: React.FC<AttentionListProps> = ({
                 </span>
               ) : null}
               <div className="min-w-0">
-                <p className="line-clamp-2 text-sm font-semibold text-[var(--text-primary)]" title={item.title}>{item.title}</p>
+                <ExpandableText text={item.title} className="text-sm font-semibold text-[var(--text-primary)]" />
                 {item.description ? (
-                  <p className="mt-0.5 line-clamp-2 text-xs text-[var(--text-secondary)]" title={item.description}>{item.description}</p>
+                  <ExpandableText text={item.description} className="mt-0.5 text-xs text-[var(--text-secondary)]" />
                 ) : null}
               </div>
             </div>

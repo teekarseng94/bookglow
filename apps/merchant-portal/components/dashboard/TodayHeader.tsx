@@ -18,7 +18,7 @@ export const TodayHeader: React.FC<TodayHeaderProps> = ({
   className,
 }) => (
   <div className={cx(className)}>
-    <div className="dashboard-mobile-topbar lg:hidden space-y-2" aria-label="Today overview">
+    <div className="dashboard-mobile-topbar lg:hidden space-y-1.5" aria-label="Today overview">
       <h1 className={cx('min-w-0 font-bold tracking-tight text-[var(--text-primary)] [overflow-wrap:anywhere]', titleClassName || 'ui-page-title')}>
         {title}
       </h1>

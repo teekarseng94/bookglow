@@ -41,6 +41,8 @@ test('Dashboard layout stays within the viewport at required widths', async ({ p
     expect(geometry.kpiVisible).toBe(true);
     expect(geometry.kpiOverflows, `KPI clipped at ${viewport.width}px`).toBe(false);
     await expect(page.getByText('RM 1,234,567.89').first()).toBeVisible();
+    await expect(page.locator('.dashboard-money__tail').first()).toHaveText('567.89');
+    await expect(page.locator('.dashboard-money__tail').first()).toHaveCSS('white-space', 'nowrap');
 
     if (viewport.width >= 1280) {
       const primaryColumns = await page.evaluate(() => {
@@ -79,4 +81,29 @@ test('Dashboard mobile shell keeps actions above Android insets', async ({ page 
 
   expect(geometry.headerTop).toBeGreaterThanOrEqual(28);
   expect(geometry.navBottom).toBeLessThanOrEqual(geometry.viewportHeight - 24);
+});
+
+test('Dashboard stays within the viewport at an enlarged root font size', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await openDashboard(page);
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '24px';
+  });
+  await page.getByRole('button', { name: /Aisha Rahman binti Abdullah/ }).click();
+
+  const geometry = await page.evaluate(() => {
+    const kpi = document.querySelector<HTMLElement>('.dashboard-kpi-value');
+    const nav = document.querySelector<HTMLElement>('.bookglow-mobile-nav');
+    return {
+      scrollWidth: document.documentElement.scrollWidth,
+      clientWidth: document.documentElement.clientWidth,
+      kpiOverflows: kpi ? kpi.scrollWidth > kpi.clientWidth + 1 : true,
+      navOverflows: nav ? nav.scrollWidth > nav.clientWidth + 1 : true,
+    };
+  });
+
+  expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.clientWidth);
+  expect(geometry.kpiOverflows).toBe(false);
+  expect(geometry.navOverflows).toBe(false);
+  await expect(page.getByRole('button', { name: 'Aisha Rahman binti Abdullah' })).toBeVisible();
 });

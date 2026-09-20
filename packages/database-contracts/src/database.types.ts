@@ -1848,6 +1848,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      merchant_account_deletion_request_status: { Args: never; Returns: Json }
       merchant_dashboard_aggregates: {
         Args: {
           p_outlet_id: string
@@ -1873,6 +1874,24 @@ export type Database = {
         Returns: Json
       }
       parse_time_to_minutes: { Args: { time_str: string }; Returns: number }
+      platform_account_deletion_requests_page: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_search?: string | null
+          p_source?: string | null
+          p_status?: string | null
+        }
+        Returns: Json
+      }
+      platform_update_account_deletion_request: {
+        Args: {
+          p_processing_notes?: string | null
+          p_request_id: string
+          p_status: string
+        }
+        Returns: undefined
+      }
       public_voucher_confirm_redemption: {
         Args: { p_voucher_id: string }
         Returns: undefined
@@ -1884,6 +1903,19 @@ export type Database = {
         Returns: undefined
       }
       slugify_booking_name: { Args: { value: string }; Returns: string }
+      submit_merchant_account_deletion_request: {
+        Args: { p_reason?: string | null; p_source?: string }
+        Returns: string
+      }
+      submit_public_account_deletion_request: {
+        Args: {
+          p_business_name?: string | null
+          p_email: string
+          p_reason?: string | null
+          p_requester_name?: string | null
+        }
+        Returns: string
+      }
       submit_public_review: {
         Args: {
           p_author?: string

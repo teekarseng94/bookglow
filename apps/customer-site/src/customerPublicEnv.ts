@@ -27,10 +27,7 @@ export function customerBrowserEnv(): Record<string, string | undefined> {
       'VITE_CUSTOMER_AUTH_CALLBACK_URL',
       'https://bookglow.my/auth/callback/customer',
     ),
-    VITE_MERCHANT_PORTAL_URL: read(
-      'VITE_MERCHANT_PORTAL_URL',
-      'https://bookglow-merchant-kar-sengs-projects.vercel.app',
-    ),
+    VITE_MERCHANT_PORTAL_URL: read('VITE_MERCHANT_PORTAL_URL', 'https://bookglow.my'),
   };
 }
 

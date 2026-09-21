@@ -1,0 +1,54 @@
+{
+  "$schema": "https://openapi.vercel.sh/microfrontends.json",
+  "applications": {
+    "bookglow": {
+      "packageName": "bookglow",
+      "development": {
+        "local": 5174,
+        "fallback": "bookglow.my"
+      }
+    },
+    "bookglow-merchant": {
+      "packageName": "zenflow-spa-manager",
+      "assetPrefix": "merchant-assets",
+      "development": {
+        "local": 5173,
+        "fallback": "bookglow-merchant.vercel.app"
+      },
+      "routing": [
+        {
+          "group": "merchant-app",
+          "paths": [
+            "/login",
+            "/loginbackend",
+            "/onboarding",
+            "/auth/callback/merchant",
+            "/dashboard",
+            "/pos",
+            "/schedule",
+            "/appointments",
+            "/finance",
+            "/settings/:path*",
+            "/staff",
+            "/member",
+            "/menu",
+            "/marketing",
+            "/services",
+            "/crm",
+            "/sales-reports",
+            "/transactions",
+            "/report",
+            "/reports",
+            "/integrations/:path*",
+            "/member-details/:path*",
+            "/access/:path*",
+            "/admin/:path*",
+            "/buy-voucher/:path*",
+            "/redeem/:path*",
+            "/merchant-assets/:path*"
+          ]
+        }
+      ]
+    }
+  }
+}

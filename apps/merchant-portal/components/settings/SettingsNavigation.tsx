@@ -1,4 +1,5 @@
 import React from 'react';
+import { OverlayTabs } from '../ui/OverlayTabs';
 import { cx } from '../ui/cx';
 
 export type SettingsSectionId =
@@ -33,36 +34,45 @@ export const SettingsNavigation: React.FC<SettingsNavigationProps> = ({
   onSelect,
   className,
 }) => (
-  <nav
-    className={cx(
-      'hidden lg:block w-56 shrink-0 sticky top-4 self-start',
-      className,
-    )}
-    aria-label="Settings sections"
-  >
-    <p className="px-1 mb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-      On this page
-    </p>
-    <ul className="space-y-0.5 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] p-1.5">
-      {SETTINGS_NAV_ITEMS.map((item) => (
-        <li key={item.id}>
-          <button
-            type="button"
-            onClick={() => onSelect(item.id)}
-            aria-current={activeId === item.id ? 'true' : undefined}
-            className={cx(
-              'w-full text-left px-3 py-2 rounded-ui-sm text-sm transition-colors',
-              activeId === item.id
-                ? 'bg-[var(--brand-soft)] text-[var(--brand-deep)] font-semibold'
-                : 'text-[var(--text-secondary)] font-medium hover:bg-[var(--bg-soft)] hover:text-[var(--text-primary)]',
-            )}
-          >
-            {item.label}
-          </button>
-        </li>
-      ))}
-    </ul>
-  </nav>
+  <>
+    <OverlayTabs
+      ariaLabel="Settings sections"
+      value={activeId}
+      onChange={onSelect}
+      items={SETTINGS_NAV_ITEMS}
+      className={cx('lg:hidden w-full min-w-0', className)}
+    />
+    <nav
+      className={cx(
+        'hidden lg:block w-56 shrink-0 sticky top-4 self-start',
+        className,
+      )}
+      aria-label="Settings sections"
+    >
+      <p className="px-1 mb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+        On this page
+      </p>
+      <ul className="space-y-0.5 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] p-1.5">
+        {SETTINGS_NAV_ITEMS.map((item) => (
+          <li key={item.id}>
+            <button
+              type="button"
+              onClick={() => onSelect(item.id)}
+              aria-current={activeId === item.id ? 'true' : undefined}
+              className={cx(
+                'w-full min-h-11 text-left px-3 py-2 rounded-ui-sm text-sm transition-colors',
+                activeId === item.id
+                  ? 'bg-[var(--brand-soft)] text-[var(--brand-deep)] font-semibold'
+                  : 'text-[var(--text-secondary)] font-medium hover:bg-[var(--bg-soft)] hover:text-[var(--text-primary)]',
+              )}
+            >
+              {item.label}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  </>
 );
 
 export default SettingsNavigation;

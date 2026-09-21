@@ -36,7 +36,13 @@ export type { AppModalProps, AppModalSize } from './AppModal';
 export { AppSheet } from './AppSheet';
 export type { AppSheetProps } from './AppSheet';
 export { AppDrawer } from './AppDrawer';
-export type { AppDrawerProps } from './AppDrawer';
+export type { AppDrawerProps, AppDrawerSize } from './AppDrawer';
+export { OverlayTabs } from './OverlayTabs';
+export type { OverlayTabsProps, OverlayTabItem } from './OverlayTabs';
+export { FormGrid } from './FormGrid';
+export type { FormGridProps } from './FormGrid';
+export { ScrollTable } from './ScrollTable';
+export type { ScrollTableProps } from './ScrollTable';
 export { ModalHeader, ModalBody, ModalFooter, ModalFooterActions } from './ModalParts';
 export type {
   ModalHeaderProps,

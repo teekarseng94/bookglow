@@ -4,6 +4,8 @@ import { cx } from './cx';
 import { ModalBody, ModalFooter, ModalHeader } from './ModalParts';
 import { useDialogInteraction } from './useDialogInteraction';
 
+export type AppDrawerSize = 'sm' | 'md' | 'lg' | 'xl' | 'editor';
+
 export interface AppDrawerProps {
   open: boolean;
   onClose: () => void;
@@ -14,14 +16,25 @@ export interface AppDrawerProps {
   headerActions?: React.ReactNode;
   /** Fullscreen (mobile detail) or right rail. */
   variant?: 'fullscreen' | 'right';
+  /** Right-rail width. `editor` is full-screen on phones and near-full on tablets. */
+  size?: AppDrawerSize;
   zIndexClass?: string;
   className?: string;
   closeOnBackdrop?: boolean;
   busy?: boolean;
 }
 
+const sizeClass: Record<AppDrawerSize, string> = {
+  sm: 'm-drawer--sm',
+  md: 'm-drawer--md',
+  lg: 'm-drawer--lg',
+  xl: 'm-drawer--xl',
+  editor: 'm-drawer--editor',
+};
+
 /**
  * Full-height drawer for mobile detail panels or desktop side rails.
+ * Width follows `--drawer-size-*` tokens and the panel's own container, not a fixed 420px rail.
  */
 export const AppDrawer: React.FC<AppDrawerProps> = ({
   open,
@@ -32,6 +45,7 @@ export const AppDrawer: React.FC<AppDrawerProps> = ({
   footer,
   headerActions,
   variant = 'fullscreen',
+  size = 'md',
   zIndexClass = 'z-[80]',
   className,
   closeOnBackdrop = true,
@@ -43,11 +57,6 @@ export const AppDrawer: React.FC<AppDrawerProps> = ({
   useDialogInteraction({ open, busy, onClose, panelRef });
 
   if (!open || typeof document === 'undefined') return null;
-
-  const panelClass =
-    variant === 'right'
-      ? 'fixed inset-y-0 lg:top-[4.5rem] right-0 w-full max-w-lg border-l'
-      : 'fixed inset-0 w-full';
 
   return createPortal(
     <div className={cx('fixed inset-0', zIndexClass)} role="presentation">
@@ -70,10 +79,11 @@ export const AppDrawer: React.FC<AppDrawerProps> = ({
         aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
         className={cx(
-          'grid overflow-hidden bg-[var(--bg-surface)]',
+          'm-drawer grid overflow-hidden bg-[var(--bg-surface)]',
           footer ? 'grid-rows-[auto_minmax(0,1fr)_auto]' : 'grid-rows-[auto_minmax(0,1fr)]',
           'border-[var(--line)] shadow-ui-lg',
-          panelClass,
+          variant === 'right' ? 'm-drawer--right' : 'm-drawer--fullscreen',
+          variant === 'right' && sizeClass[size],
           className,
         )}
       >

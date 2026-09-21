@@ -49,6 +49,7 @@ const RootRoutes: React.FC = () => {
       <Route path="/redeem/:unique_id" element={<RedeemVoucher />} />
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={isAuthenticated ? <AuthenticatedHome /> : <Login />} />
+      <Route path="/loginbackend" element={<Navigate to="/login" replace />} />
       <Route path="/onboarding" element={<MerchantOnboardingPage />} />
       <Route path="/auth/callback/merchant" element={<MerchantAuthCallback />} />
       <Route path="/access/no-workspace" element={<AccessStatePage noWorkspace title="No merchant workspace found" message="No Bookglow business workspace is connected to this account." />} />

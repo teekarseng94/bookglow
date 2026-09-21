@@ -338,7 +338,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
     <div className="m-page-with-bottom-nav animate-fadeIn sm:pb-20">
       <SettingsPageHeader />
 
-      <div className="mt-4 lg:mt-6 flex gap-6 items-start">
+      <div className="mt-4 lg:mt-6 flex flex-col lg:flex-row gap-6 items-start">
         <SettingsNavigation activeId={activeSection} onSelect={scrollToSection} />
 
         <div className="min-w-0 flex-1 max-w-3xl space-y-5 sm:space-y-6">

@@ -23,7 +23,7 @@ export const FilterToolbar: React.FC<FilterToolbarProps> = ({
 }) => (
   <div
     className={cx(
-      'm-filter-toolbar flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center lg:justify-between',
+      'm-filter-toolbar flex flex-col gap-3 compact:flex-row compact:flex-wrap compact:items-center compact:justify-between',
       active && 'm-filter-toolbar--active',
       className,
     )}

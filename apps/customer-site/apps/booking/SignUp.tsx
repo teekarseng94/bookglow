@@ -6,9 +6,7 @@ import {
   getMerchantSession, isMerchantProviderEnabled, merchantAuthError, merchantOAuthReturnError,
   registerMerchantWithEmail, registerMerchantWithProvider, signInMerchantForOnboarding,
 } from '../../services/merchantAuthService';
-import { customerPublicEnv } from '../../src/customerPublicEnv';
-
-const merchantPortalUrl = customerPublicEnv.VITE_MERCHANT_PORTAL_URL;
+import { merchantLoginHref } from '../../src/merchantPortalUrl';
 
 const GoogleIcon = () => (
   <svg className="bookglow-auth-google-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -80,7 +78,7 @@ export default function SignUp() {
 
   return (
     <div className="bookglow-auth-page bookglow-auth-page--merchant-signup">
-      <header className="bookglow-auth-header"><a href="/" className="bookglow-auth-logo" aria-label="BookGlow home"><Logo /></a><div className="bookglow-auth-header__actions"><a href={`${merchantPortalUrl}/login`} className="bookglow-auth-header__login">Merchant login</a></div></header>
+      <header className="bookglow-auth-header"><a href="/" className="bookglow-auth-logo" aria-label="BookGlow home"><Logo /></a><div className="bookglow-auth-header__actions"><a href={merchantLoginHref()} className="bookglow-auth-header__login">Merchant login</a></div></header>
       <main className="bookglow-auth-main bookglow-auth-main--signup">
         <section className="bookglow-auth-intro"><span className="bookglow-auth-eyebrow">BookGlow for merchants</span><h1>Build the workspace your business deserves.</h1><p>Set up online booking, your team calendar and customer operations in one guided flow.</p><div className="bookglow-auth-product-preview" aria-hidden="true"><div className="bookglow-auth-product-preview__top"><span>Your new workspace</span><strong>Ready in a few steps</strong></div><div className="bookglow-auth-product-preview__metrics"><span><b>One</b><small>Secure account</small></span><span><b>One</b><small>Business profile</small></span><span><b>24/7</b><small>Booking page</small></span></div></div></section>
         <section className="bookglow-auth-card">
@@ -120,7 +118,7 @@ export default function SignUp() {
             <p className="bookglow-auth-signin">By creating an account you agree to our <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</p>
           </>}
           {resumeMode && <button type="button" className="bookglow-auth-secondary" onClick={() => { setResumeMode(false); setPassword(''); setConfirmPassword(''); setError(''); }}>Create a different account</button>}
-          <p className="bookglow-auth-signin">Already have an account? <a href={`${merchantPortalUrl}/login`}>Merchant login</a></p>
+          <p className="bookglow-auth-signin">Already have an account? <a href={merchantLoginHref()}>Merchant login</a></p>
         </section>
       </main>
     </div>

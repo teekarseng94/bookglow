@@ -5,7 +5,7 @@ Single source of truth for all active routes after migration.
 ## Domains
 
 - Booking + marketing site: `https://bookglow.my`
-- Merchant dashboard site: Vercel project `bookglow-merchant` (not Firebase Hosting)
+- Merchant portal (same domain, proxied): `https://bookglow.my/login`, `/dashboard`, `/pos`, …
 
 ## A) Booking Site Routes (`zenspa Frontend/index.tsx`)
 
@@ -14,16 +14,16 @@ Single source of truth for all active routes after migration.
 | `/book/:outletId` | Public | Customer booking page (`BookingPage`). |
 | `/book/:outletId/auth` | Public | Customer register/login page (`BookingAuth`). |
 | `/signup` | Public | Signup page (`SignUp`). |
-| `/login` | Redirect | Redirects to merchant login URL on dashboard site. |
-| `/loginbackend` | Redirect | Redirects to `/login` (legacy compatibility). |
-| `/admin/*` | Redirect | Redirects to `/login` (legacy compatibility). |
+| `/login` | Merchant (same domain) | Merchant login SPA (`bookglow-merchant` via reverse proxy). |
+| `/loginbackend` | Alias | `/login`. |
+| `/admin/*` | Merchant (same domain) | Platform admin. |
 | `*` | Public | Marketing/landing app (`App`). |
 
 ### Legacy hash compatibility on booking site
 
 - `/#/login` -> `/login`
 - `/#/loginbackend` -> `/login`
-- `/#/dashboard` -> `/login`
+- `/#/dashboard` -> `/dashboard`
 
 ## B) Merchant Dashboard Site Routes (`zenspa backend/RootRoutes.tsx` + `zenspa backend/App.tsx`)
 

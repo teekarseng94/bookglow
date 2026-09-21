@@ -97,6 +97,9 @@ Canonical dialog: `AppModal` (sticky header, scroll body, sticky footer).
 | md | 32rem |
 | lg | 42rem |
 | xl | 56rem |
+| editor (drawer) | full-screen <600px; near-full tablet; 42rem desktop |
+
+`AppDrawer` sizes: `sm` 24rem, `md` 32rem, `lg` 40rem, `xl` 48rem, `editor` (token `--drawer-size-editor`). Use `OverlayTabs` + `FormGrid` inside editors. See `pages/responsive.md`.
 
 Rules:
 

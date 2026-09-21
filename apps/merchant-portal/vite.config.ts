@@ -11,6 +11,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     root,
+    base: process.env.VERCEL ? '/merchant-assets/' : '/',
     server: {
       port: 5173,
       host: true,

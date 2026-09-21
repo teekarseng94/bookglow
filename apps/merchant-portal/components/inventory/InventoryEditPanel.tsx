@@ -17,10 +17,8 @@ export interface InventoryEditPanelProps {
 }
 
 /**
- * Consistent edit chrome with sticky Cancel + Save Changes.
- * Right-side drawer on desktop (starts below the app header); full width below 640px so mobile
- * gets the same effect as a full-screen editor without a separate mobile-only component.
- * Closing calls onClose only — parent owns discard/save rules (no silent save).
+ * Catalog editor chrome. Uses the shared editor drawer: full-screen on phones,
+ * near-full-width on tablets, and a wide right rail on desktop.
  */
 export const InventoryEditPanel: React.FC<InventoryEditPanelProps> = ({
   open,
@@ -38,8 +36,9 @@ export const InventoryEditPanel: React.FC<InventoryEditPanelProps> = ({
     onClose={onClose}
     title={title}
     variant="right"
+    size="editor"
     zIndexClass="z-[90]"
-    className={cx('max-w-full sm:max-w-[420px]', className)}
+    className={cx(className)}
     footer={
       <InventorySaveBar
         formId={formId}

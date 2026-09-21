@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import App from './App';
 import BookingAuth from './apps/booking/BookingAuth';
 import BookingPage from './apps/booking/BookingPage';
@@ -8,18 +8,8 @@ import SignUp from './apps/booking/SignUp';
 import AccountDeletionPage from './apps/legal/AccountDeletionPage';
 import PrivacyPolicyPage from './apps/legal/PrivacyPolicyPage';
 import CustomerAuthCallback from './src/auth/CustomerAuthCallback';
-import { customerPublicEnv } from './src/customerPublicEnv';
+import { merchantLoginHref, merchantLoginIsCrossOrigin } from './src/merchantPortalUrl';
 import './src/styles/global.css';
-
-const merchantPortalOrigin =
-  customerPublicEnv.VITE_MERCHANT_PORTAL_URL
-    .trim()
-    .replace(/\/+$/, '');
-
-const MERCHANT_LOGIN_URL =
-  merchantPortalOrigin
-    ? `${merchantPortalOrigin}/login`
-    : null;
 
 // Backward compatibility for legacy hash URLs.
 if (typeof window !== 'undefined' && window.location.hash) {
@@ -27,27 +17,30 @@ if (typeof window !== 'undefined' && window.location.hash) {
   const legacyRouteMap: Record<string, string> = {
     '/login': '/login',
     '/loginbackend': '/login',
-    '/dashboard': '/login',
+    '/dashboard': '/dashboard',
   };
   const mappedPath = legacyRouteMap[hashPath];
   if (mappedPath) {
-    window.history.replaceState(null, '', mappedPath + window.location.search);
+    window.location.replace(mappedPath + window.location.search);
   }
 }
 
-const MerchantRedirect: React.FC = () => {
-  useEffect(() => {
-    if (MERCHANT_LOGIN_URL) {
-      window.location.replace(MERCHANT_LOGIN_URL);
-    }
-  }, []);
+/** Local split-port only. Production /login is proxied to the merchant app on bookglow.my. */
+const MerchantLoginBridge: React.FC = () => {
+  const href = merchantLoginHref();
+  const crossOrigin = merchantLoginIsCrossOrigin();
 
-  if (!MERCHANT_LOGIN_URL) {
+  useEffect(() => {
+    if (crossOrigin) window.location.replace(href);
+  }, [crossOrigin, href]);
+
+  if (!crossOrigin) {
     return (
       <div className="bookglow-state-screen">
-        <div className="bookglow-state-card" role="alert">
-          <p>Merchant login is not configured.</p>
-          <p>Set VITE_MERCHANT_PORTAL_URL to the merchant portal origin and rebuild the customer site.</p>
+        <div className="bookglow-state-card" role="status">
+          <p>
+            Merchant login lives at <a href="/login">/login</a> on this domain.
+          </p>
         </div>
       </div>
     );
@@ -57,7 +50,7 @@ const MerchantRedirect: React.FC = () => {
     <div className="bookglow-state-screen">
       <div className="bookglow-state-card" role="status">
         <span className="bookglow-spinner" aria-hidden />
-        <p>Redirecting to merchant login…</p>
+        <p>Opening merchant login…</p>
       </div>
     </div>
   );
@@ -78,11 +71,10 @@ ReactDOM.createRoot(rootElement).render(
         <Route path="/signup" element={<SignUp />} />
         <Route path="/privacy" element={<PrivacyPolicyPage />} />
         <Route path="/account-deletion" element={<AccountDeletionPage />} />
-        <Route path="/login" element={<MerchantRedirect />} />
-        <Route path="/loginbackend" element={<Navigate to="/login" replace />} />
-        <Route path="/admin/*" element={<Navigate to="/login" replace />} />
+        <Route path="/login" element={<MerchantLoginBridge />} />
+        <Route path="/loginbackend" element={<MerchantLoginBridge />} />
         <Route path="*" element={<App />} />
       </Routes>
     </BrowserRouter>
-  </React.StrictMode>
+  </React.StrictMode>,
 );

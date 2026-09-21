@@ -82,8 +82,6 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({ onNavigate, curren
         <div className="hidden md:flex items-center gap-5 shrink-0">
           <a
             href="/login"
-            target="_blank"
-            rel="noopener noreferrer"
             className="font-medium text-sm text-slate-700 hover:text-slate-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 rounded-sm"
           >
             Login
@@ -99,8 +97,6 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({ onNavigate, curren
         <div className="flex md:hidden items-center gap-2 shrink-0">
           <a
             href="/login"
-            target="_blank"
-            rel="noopener noreferrer"
             className="font-medium text-sm text-slate-700 px-2 py-2"
           >
             Log in
@@ -161,8 +157,6 @@ export const LandingNavbar: React.FC<LandingNavbarProps> = ({ onNavigate, curren
             <div className="mt-auto pt-8 flex flex-col gap-3">
               <a
                 href="/login"
-                target="_blank"
-                rel="noopener noreferrer"
                 className="text-center px-4 py-3 rounded-lg border border-slate-200 bg-slate-50 text-slate-800 font-medium hover:bg-slate-100 transition-colors min-h-[44px] flex items-center justify-center"
               >
                 Log in

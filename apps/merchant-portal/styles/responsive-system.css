@@ -1,0 +1,200 @@
+/* Global merchant responsive primitives. Tokens live on :root in index.css.
+   Components adapt to their container, not only the viewport. */
+
+.m-modal-panel {
+  container-type: inline-size;
+  container-name: overlay;
+}
+
+.m-drawer {
+  container-type: inline-size;
+  container-name: drawer;
+  min-width: 0;
+}
+
+.m-drawer--right {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-end: 0;
+  width: 100%;
+  max-width: var(--drawer-max-width, var(--drawer-size-md));
+  border-inline-start: 1px solid var(--line);
+}
+
+.m-drawer--fullscreen {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+}
+
+.m-drawer--sm { --drawer-max-width: var(--drawer-size-sm); }
+.m-drawer--md { --drawer-max-width: var(--drawer-size-md); }
+.m-drawer--lg { --drawer-max-width: var(--drawer-size-lg); }
+.m-drawer--xl { --drawer-max-width: var(--drawer-size-xl); }
+.m-drawer--editor { --drawer-max-width: var(--drawer-size-editor); }
+
+@media (max-width: 599.98px) {
+  .m-drawer--right.m-drawer--editor {
+    inset: 0;
+    width: 100%;
+    max-width: none;
+    border-inline-start: 0;
+  }
+}
+
+@media (min-width: 1024px) {
+  .m-drawer--right {
+    top: var(--drawer-chrome-top);
+  }
+}
+
+.m-overlay-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-1);
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.m-overlay-tabs--underline {
+  border-bottom: 1px solid var(--line);
+}
+
+.m-overlay-tabs--segmented {
+  padding: var(--space-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg-soft);
+}
+
+.m-overlay-tabs [role='tab'] {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--touch-min);
+  padding: 0 var(--space-3);
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.m-overlay-tabs--underline [role='tab'] {
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.m-overlay-tabs--underline [role='tab'][aria-selected='true'] {
+  color: var(--brand);
+  border-bottom-color: var(--brand);
+}
+
+.m-overlay-tabs--segmented [role='tab'] {
+  border-radius: var(--radius-xs);
+}
+
+.m-overlay-tabs--segmented [role='tab'][aria-selected='true'] {
+  background: var(--bg-surface);
+  color: var(--brand);
+  box-shadow: var(--shadow-xs);
+}
+
+.m-overlay-tabs [role='tab']:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-strong);
+}
+
+@container drawer (min-width: 36rem) {
+  .m-overlay-tabs--underline [role='tab'] {
+    flex: 1 1 0;
+  }
+}
+
+.m-form-grid {
+  display: grid;
+  gap: var(--form-gap);
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+}
+
+.m-form-grid > * {
+  min-width: 0;
+}
+
+@container drawer (min-width: 28rem) {
+  .m-form-grid--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container overlay (min-width: 28rem) {
+  .m-form-grid--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container page (min-width: 36rem) {
+  .m-form-grid--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.m-table-scroll {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.m-table-scroll table {
+  width: 100%;
+  min-width: 40rem;
+  border-collapse: collapse;
+}
+
+.m-table-scroll th,
+.m-table-scroll td {
+  padding: var(--table-cell-y) var(--table-cell-x);
+}
+
+.m-icon-grid {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@container drawer (min-width: 22rem) {
+  .m-icon-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@container drawer (min-width: 32rem) {
+  .m-icon-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.m-page-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--section-gap);
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .m-page-stack {
+    gap: var(--space-6);
+  }
+}

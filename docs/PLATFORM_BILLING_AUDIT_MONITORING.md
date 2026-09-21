@@ -37,7 +37,7 @@ the browser or commit it.
 npx supabase secrets set HITPAY_API_KEY=your_key --project-ref YOUR_PROJECT_REF
 npx supabase secrets set HITPAY_WEBHOOK_SALT=your_salt --project-ref YOUR_PROJECT_REF
 npx supabase secrets set HITPAY_API_BASE=https://api.hit-pay.com --project-ref YOUR_PROJECT_REF
-npx supabase secrets set DASHBOARD_APP_URL=https://bookglow-merchant.vercel.app --project-ref YOUR_PROJECT_REF
+npx supabase secrets set DASHBOARD_APP_URL=https://bookglow.my --project-ref YOUR_PROJECT_REF
 ```
 
 Optional, if you created a HitPay subscription plan in the dashboard:

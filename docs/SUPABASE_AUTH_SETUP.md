@@ -21,8 +21,9 @@ In Authentication → URL Configuration:
   If this URI is missing, Supabase falls back to Site URL and Cap Browser opens the
   public marketing homepage after Google auth.
 - Add merchant HTTPS callback:
-  `https://bookglow-merchant-kar-sengs-projects.vercel.app/auth/callback/merchant`
-  (or your current merchant Vercel origin + `/auth/callback/merchant`).
+  `https://bookglow.my/auth/callback/merchant`
+  Keep `https://bookglow-merchant-kar-sengs-projects.vercel.app/auth/callback/merchant`
+  (and `https://bookglow-merchant.vercel.app/auth/callback/merchant`) until old sessions expire.
 - Add `https://bookglow.my/signup`.
 - Add `https://bookglow.my/auth/callback/customer`.
 - Keep `https://bookglow-83fb3.web.app/auth/callback/customer` only if that legacy Firebase host is still receiving traffic.

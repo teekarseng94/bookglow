@@ -1,4 +1,5 @@
 @import './styles/mobile-tokens.css';
+@import './styles/responsive-system.css';
 
 @tailwind base;
 @tailwind components;
@@ -119,10 +120,35 @@
   --bp-md: 768px;
   --bp-lg: 1024px;
   --bp-xl: 1280px;
+  --bp-phone-max: 599px;
+  --bp-tablet: 600px;
+  --bp-tablet-max: 899px;
+  --bp-compact: 900px;
+  --bp-compact-max: 1199px;
+  --bp-desktop: 1200px;
 
   /* Layout */
   --content-max: 1180px;
   --decision-max: 720px;
+  --page-pad-x: var(--space-4);
+  --page-pad-y: var(--space-4);
+  --section-gap: var(--space-4);
+  --card-pad: var(--space-4);
+  --form-gap: var(--space-3);
+  --toolbar-gap: var(--space-2);
+  --drawer-pad-x: var(--space-4);
+  --modal-pad-x: var(--space-4);
+  --table-cell-x: var(--space-4);
+  --table-cell-y: var(--space-3);
+  --touch-min: 44px;
+  --touch-gap: var(--space-2);
+  --sidebar-width: 15rem;
+  --drawer-chrome-top: 0px;
+  --drawer-size-sm: 24rem;
+  --drawer-size-md: 32rem;
+  --drawer-size-lg: 40rem;
+  --drawer-size-xl: 48rem;
+  --drawer-size-editor: 100%;
 
   /* Semantic aliases for shared UI primitives */
   --color-surface-page: var(--bg-paper);
@@ -756,11 +782,13 @@
   }
 
   .bookglow-content-frame {
+    container-type: inline-size;
+    container-name: page;
     width: 100%;
     max-width: none;
     min-width: 0;
     margin: 0;
-    padding: 1rem;
+    padding: var(--page-pad-y) var(--page-pad-x);
   }
 
   .bookglow-content-frame--schedule {
@@ -1066,13 +1094,35 @@
   font-size: 12px;
 }
 
+@media (min-width: 600px) {
+  :root {
+    --page-pad-x: var(--space-5);
+    --page-pad-y: var(--space-5);
+    --drawer-size-editor: min(42rem, calc(100vw - var(--space-8)));
+  }
+}
+
+@media (min-width: 900px) {
+  :root {
+    --page-pad-x: var(--space-6);
+    --drawer-size-editor: min(40rem, 92vw);
+  }
+}
+
 @media (min-width: 640px) {
   .bookglow-content-frame {
-    padding: 1.25rem;
+    padding: var(--page-pad-y) var(--page-pad-x);
   }
 }
 
 @media (min-width: 1024px) {
+  :root {
+    --page-pad-x: var(--space-8);
+    --page-pad-y: 1.75rem;
+    --drawer-chrome-top: 4.5rem;
+    --drawer-size-editor: 42rem;
+  }
+
   .bookglow-main-scroll {
     padding-top: 0;
     padding-bottom: 0;
@@ -1081,11 +1131,11 @@
   }
 
   .bookglow-content-frame {
-    padding: 1.75rem 2rem 2.5rem;
+    padding: var(--page-pad-y) var(--page-pad-x) var(--space-10);
   }
 
   .bookglow-content-frame--schedule {
-    padding: 1.5rem 2rem 2rem;
+    padding: var(--space-6) var(--space-8) var(--space-8);
   }
 }
 

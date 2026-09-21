@@ -24,7 +24,7 @@ export function merchantPublicOrigin(): string {
   } catch {
     /* fall through */
   }
-  return 'https://bookglow-merchant-kar-sengs-projects.vercel.app';
+  return 'https://bookglow.my';
 }
 
 /**

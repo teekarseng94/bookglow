@@ -172,12 +172,16 @@ Focus rules:
 
 | Name | Width | Use |
 |------|-------|-----|
-| base | < 640px | Phone, Android WebView |
-| `sm` | 640px | Large phone / small tablet |
-| `md` | 768px | Tablet; merchant desktop shell starts hiding mobile nav |
-| `lg` | 1024px | Desktop sidebar |
+| Phone | < 600px | Full-screen editor drawers, Android WebView |
+| `sm` | 640px | Large phone / small tablet utilities |
+| `tab` | 600px | Tablet portrait token (new) |
+| `md` | 768px | Tablet; existing table/card switches |
+| `compact` | 900px | Tablet landscape / compact desktop utilities |
+| `lg` | 1024px | Desktop sidebar (runtime shell) |
 | `posd` | 1200px | POS catalogue rail (existing) |
 | `xl` | 1280px | Wide dashboards |
+
+Merchant overlays must use `--drawer-size-*` and container queries. Do not size edit forms with viewport `md` while the panel is a 420px rail. Details: `pages/responsive.md` and `docs/BOOKGLOW_GLOBAL_RESPONSIVE_SYSTEM.md`.
 
 Content widths: `--content-max: 1180px` (marketing/booking), `--decision-max: 720px` (forms). Merchant workspace is full-bleed inside the shell.
 
@@ -223,7 +227,8 @@ Canonical implementations live in `apps/merchant-portal/components/ui/`. Specs a
 | Button / IconButton | `components/ui/Button.tsx` |
 | Field / SelectField | `components/ui/Field.tsx` |
 | Dialog | `AppModal` + `useDialogInteraction` |
-| Sheet / drawer | `AppSheet`, `AppDrawer` |
+| Sheet / drawer | `AppSheet`, `AppDrawer` (`size`) |
+| Overlay tabs / forms / tables | `OverlayTabs`, `FormGrid`, `ScrollTable` |
 | Feedback | `Alert`, `StatusBadge`, `EmptyState`, `ErrorState`, `LoadingSkeleton`, `SaveStatus` |
 | Page chrome | `PageHeader`, `SectionHeader`, `FilterToolbar`, `StickyActionBar` |
 | Toast | Existing `Toast.tsx` — restyle to status tokens later |

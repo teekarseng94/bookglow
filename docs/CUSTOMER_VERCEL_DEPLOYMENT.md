@@ -22,11 +22,11 @@ Apply to the customer Vercel project, using the repository-root `vercel.json`:
 
 Remove conflicting dashboard command overrides. Root `engines.node` and `.nvmrc` select Node 22. Verification used 22.18.0, compatible with the locked Vite/plugin/React Router versions. The Node 24/superstatic warning is separate from the missing-plugin failure. Dependencies were not upgraded.
 
-Filesystem routing runs first. Customer routes (`/`, `/signup`, `/login`, `/loginbackend`, `/admin/*`, `/book/:bookingPath`, `/book/:bookingPath/auth`, `/auth/callback/customer`) serve `index.html`. Additional SPA fallbacks cover merchant routes when this file is used by `bookglow-merchant`. Real JS/CSS/images retain their content types; missing `/assets/*` paths return 404 instead of HTML. Configuration reference: https://vercel.com/docs/project-configuration
+Filesystem routing runs first. Customer routes (`/`, `/signup`, `/privacy`, `/auth/callback/customer`, `/book/:bookingPath`, `/book/:bookingPath/auth`) serve `index.html`. On `bookglow.my`, merchant paths (`/login`, `/dashboard`, `/pos`, `/admin`, …) are reverse-proxied to `bookglow-merchant`. The proxy is host-gated so the merchant project (same root `vercel.json`) still serves its own SPA and rewrites `/merchant-assets/*` locally. Real JS/CSS/images retain their content types; missing `/assets/*` paths return 404 instead of HTML. Configuration reference: https://vercel.com/docs/project-configuration
 
 ## Vercel environment values
 
-Root `vercel.json` now ships the customer build-time public env block (`VITE_SUPABASE_URL`, publishable key, `VITE_AUTH_GOOGLE_ENABLED=true`, providers, customer site URL, and customer callback). Set `VITE_MERCHANT_PORTAL_URL` to the merchant Vercel origin after that project exists, then redeploy the customer app. Dashboard env values still win when set for the same key.
+Root `vercel.json` now ships the customer build-time public env block (`VITE_SUPABASE_URL`, publishable key, `VITE_AUTH_GOOGLE_ENABLED=true`, providers, customer site URL, customer callback, and `VITE_MERCHANT_PORTAL_URL=https://bookglow.my`). Dashboard env values still win when set for the same key — production dashboard env must not still point at `*.vercel.app`.
 
 | Variable | Value |
 | --- | --- |
@@ -35,7 +35,7 @@ Root `vercel.json` now ships the customer build-time public env block (`VITE_SUP
 | `VITE_SUPABASE_ANON_KEY` | Optional legacy alternative only if no publishable key is supplied |
 | `VITE_AUTH_GOOGLE_ENABLED` | `true` after completing provider setup below |
 | `VITE_AUTH_FACEBOOK_ENABLED` | `false` unless Facebook is separately configured |
-| `VITE_MERCHANT_PORTAL_URL` | Merchant Vercel production origin, with no trailing slash (for example `https://bookglow-merchant.vercel.app`). Never a Firebase Hosting `web.app` URL. |
+| `VITE_MERCHANT_PORTAL_URL` | `https://bookglow.my` (same origin as the public site). Never a Firebase Hosting `web.app` URL. |
 | `VITE_CUSTOMER_SITE_URL` | `https://bookglow.my` for merchant booking-link generation |
 | `VITE_CUSTOMER_AUTH_CALLBACK_URL` | `https://bookglow.my/auth/callback/customer` for existing customer booking OAuth |
 | `VITE_DATA_PROVIDER` | `supabase` |
@@ -55,7 +55,7 @@ The public Auth settings endpoint was rechecked on 2026-09-12: **Google is still
 2. Create a Web application OAuth client. Add `https://bookglow.my` (and local origins you use) under authorized JavaScript origins.
 3. Register `https://uecphpjymbgtttrizhgy.supabase.co/auth/v1/callback` as the Google authorized redirect URI. If Supabase uses a custom auth domain, copy the exact callback shown in its Google provider page instead.
 4. In this Supabase project's Authentication → Sign In / Providers → Google, enter the Google client ID and client secret and enable Google. Do not put either secret into Vercel frontend variables.
-5. In Authentication → URL Configuration, set Site URL to `https://bookglow.my`. Allow `https://bookglow.my/signup` and `https://bookglow.my/auth/callback/customer`. Add the merchant HTTPS callback and **Android deep link** `com.bookglow.merchant://auth/callback/merchant` (required; otherwise Google login falls back to the marketing homepage). Preserve any existing merchant callback allowlist entries.
+5. In Authentication → URL Configuration, set Site URL to `https://bookglow.my`. Allow `https://bookglow.my/signup` and `https://bookglow.my/auth/callback/customer`. Add `https://bookglow.my/auth/callback/merchant` and **Android deep link** `com.bookglow.merchant://auth/callback/merchant` (required; otherwise Google login falls back to the marketing homepage). Preserve any existing merchant callback allowlist entries.
 
 6. Retain development redirects `http://localhost:3000/signup`, `http://localhost:5174/signup`, and `http://localhost:5174/auth/callback/customer`; add other exact localhost callback origins only when used. Avoid broadly allowing untrusted preview domains.
 7. Redeploy the customer app so `vercel.json` env and the signup Google button ship together. Complete a real Google consent flow. Verify `/signup` restores the session, new merchants enter onboarding, drafts resume, and returning workspace members reach merchant login. Test cancellation, refresh, email confirmation and resume setup with dedicated test accounts.

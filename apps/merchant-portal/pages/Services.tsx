@@ -25,6 +25,9 @@ import {
   ModalFooterActions,
   ConfirmationDialog,
   StatusBadge,
+  OverlayTabs,
+  FormGrid,
+  ScrollTable,
   type StatusTone,
 } from '../components/ui';
 import {
@@ -1221,7 +1224,7 @@ const Services: React.FC<ServicesProps> = ({
       </button>
 
       <div className="hidden md:block bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs overflow-hidden">
-        <div className="overflow-x-auto">
+        <ScrollTable label="Catalog items">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-[var(--bg-soft)] border-b border-[var(--line)] m-settings-label text-[var(--text-muted)] uppercase tracking-widest">
@@ -1351,7 +1354,7 @@ const Services: React.FC<ServicesProps> = ({
               )}
             </tbody>
           </table>
-        </div>
+        </ScrollTable>
 
         {/* Pagination — client-side only, over already-loaded records. Services keep the full
             drag-reorderable list (see catalogPage effect above) since paginating it would require
@@ -1447,24 +1450,13 @@ const Services: React.FC<ServicesProps> = ({
                   keep their existing single-scroll layout below: their smaller field sets don't gain
                   anything from tab-splitting, and forcing empty tabs onto them isn't the goal here. */}
               {formData.type === 'service' && (
-                <div role="tablist" aria-label="Edit sections" className="flex items-center gap-1 -mt-2 mb-4 border-b border-[var(--line-soft)]">
-                  {EDIT_TABS.map((tab) => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={editPanelTab === tab.id}
-                      onClick={() => setEditPanelTab(tab.id)}
-                      className={`px-3 py-2 text-sm font-semibold border-b-2 -mb-px transition-colors ${
-                        editPanelTab === tab.id
-                          ? 'border-[var(--brand)] text-[var(--brand)]'
-                          : 'border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
+                <OverlayTabs
+                  ariaLabel="Edit sections"
+                  value={editPanelTab}
+                  onChange={(id) => setEditPanelTab(id as typeof editPanelTab)}
+                  items={EDIT_TABS}
+                  className="-mt-2 mb-4"
+                />
               )}
 
               {/* Service Image / Icon Section */}
@@ -1550,7 +1542,7 @@ const Services: React.FC<ServicesProps> = ({
                         onChange={(e) => setFormData({ ...formData, description: e.target.value.slice(0, DESCRIPTION_MAX_LENGTH) })}
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <FormGrid>
                       <div>
                         <label className="m-settings-label block mb-2">Price (RM)</label>
                         <input
@@ -1574,7 +1566,7 @@ const Services: React.FC<ServicesProps> = ({
                           onChange={(e) => setFormData({ ...formData, points: parseInt(e.target.value) || 0 })}
                         />
                       </div>
-                    </div>
+                    </FormGrid>
                   </section>
                   <section className="space-y-4 pt-6 border-t border-[var(--line-soft)]">
                     <h4 className="text-app-section font-bold text-[var(--text-primary)]">Services</h4>
@@ -1677,7 +1669,7 @@ const Services: React.FC<ServicesProps> = ({
                   </section>
                 </div>
               ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormGrid className="gap-6">
                 <div className="space-y-4">
                   {showSection('details') && (
                     <>
@@ -1855,7 +1847,7 @@ const Services: React.FC<ServicesProps> = ({
                     </div>
                   </div>
                 )}
-              </div>
+              </FormGrid>
               )}
 
               <div className={`pt-4 ${formData.type === 'package' ? 'border-t border-[var(--line)]' : ''}`}>
@@ -1990,7 +1982,7 @@ const Services: React.FC<ServicesProps> = ({
             <p className="text-app-label font-bold uppercase text-[var(--text-secondary)] mb-3">
               {cat.title}
             </p>
-            <div className="grid grid-cols-5 sm:grid-cols-6 gap-2">
+            <div className="m-icon-grid">
               {cat.iconIds.map((iconId) => {
                 const isSelected = formData.iconId === iconId;
                 return (

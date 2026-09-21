@@ -53,4 +53,16 @@ describe('overlay primitives', () => {
 
     expect(screen.getByRole('dialog', { name: 'Edit member' })).toHaveClass('m-modal-panel--fullscreen');
   });
+
+  it('sizes editor drawers with the shared editor token instead of max-w-lg', () => {
+    render(
+      <AppDrawer open onClose={() => undefined} title="Edit service" variant="right" size="editor">
+        Service form
+      </AppDrawer>,
+    );
+
+    const dialog = screen.getByRole('dialog', { name: 'Edit service' });
+    expect(dialog).toHaveClass('m-drawer', 'm-drawer--right', 'm-drawer--editor');
+    expect(dialog.className).not.toMatch(/max-w-lg/);
+  });
 });

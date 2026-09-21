@@ -120,6 +120,7 @@ Map existing BookGlow aliases onto primitives. Keep current names so production 
   --safe-left: env(safe-area-inset-left, 0px);
 
   --touch-min: 44px;
+  --drawer-size-editor: min(42rem, calc(100vw - var(--space-8)));
 }
 ```
 

@@ -10,6 +10,7 @@
 
 - Shell classes in `index.css` (`.bookglow-app-shell`, `.bookglow-sidebar`, `.bookglow-mobile-nav`) stay the composition model
 - `lg` (1024px) switches from bottom nav to sidebar
+- Overlay editors follow `pages/responsive.md` (not a 420px rail at tablet)
 - Schedule is full-bleed (`bookglow-content-frame--schedule`); other pages use the content frame
 - Mobile page titles are owned by the app header when `.m-page-header--app-owned` is set
 - Keep outlet/role context in the sidebar; do not move tenant switching into page bodies
@@ -24,7 +25,7 @@
 
 ## Components to reuse
 
-`Button`, `IconButton`, `PageHeader`, `SectionHeader`, `FilterToolbar`, `DenseEntityRow`, `Field`, `SelectField`, `StatusBadge`, `Alert`, `EmptyState`, `ErrorState`, `LoadingSkeleton`, `AppModal`, `AppSheet`, `AppDrawer`, `StickyActionBar`, `ConfirmationDialog`, `NetworkStatusBanner`
+`Button`, `IconButton`, `PageHeader`, `SectionHeader`, `FilterToolbar`, `DenseEntityRow`, `Field`, `SelectField`, `StatusBadge`, `Alert`, `EmptyState`, `ErrorState`, `LoadingSkeleton`, `AppModal`, `AppSheet`, `AppDrawer`, `OverlayTabs`, `FormGrid`, `ScrollTable`, `StickyActionBar`, `ConfirmationDialog`, `NetworkStatusBanner`
 
 Page-specific cards (inventory, POS, members, staff) already follow `.m-*` mobile tokens — extend those classes instead of new one-off CSS.
 

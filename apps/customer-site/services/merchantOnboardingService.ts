@@ -1,4 +1,5 @@
 import { createBrowserSupabaseClient } from '@bookglow/supabase';
+import { merchantLoginHref } from '../src/merchantPortalUrl';
 import type { MerchantOnboardingPayload, OnboardingDraft, OnboardingStepId } from '../apps/merchant-onboarding/onboardingTypes';
 import { MERCHANT_PROVISION_REQUEST_KEY } from '@bookglow/auth-contracts';
 
@@ -63,10 +64,5 @@ export async function acceptMerchantInvitation(token: string) {
 }
 
 export function merchantPortalLoginUrl(email?: string): string {
-  const base = (import.meta.env as unknown as Record<string, string | undefined>).VITE_MERCHANT_PORTAL_URL?.trim();
-  if (!base) throw new Error('Missing VITE_MERCHANT_PORTAL_URL.');
-  const url = new URL('/login', base);
-  url.searchParams.set('onboarding', 'complete');
-  if (email) url.searchParams.set('email', email);
-  return url.toString();
+  return merchantLoginHref({ onboarding: 'complete', ...(email ? { email } : {}) });
 }

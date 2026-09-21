@@ -59,16 +59,38 @@ const Harness = () => {
             { id: 'media', label: 'Media' },
           ]}
         />
-        <FormGrid>
-          <label className="m-settings-label block">
-            Name
-            <input className="m-settings-control mt-1 w-full" defaultValue="Aromatherapy massage with hot stone add-on" />
-          </label>
-          <label className="m-settings-label block">
-            Price
-            <input className="m-settings-control mt-1 w-full" defaultValue="1234567.89" />
-          </label>
-        </FormGrid>
+        {tab === 'details' && (
+          <FormGrid className="gap-6">
+            <label className="m-settings-label block">
+              Name
+              <input className="m-settings-control mt-1 w-full" defaultValue="Aromatherapy massage with hot stone add-on" />
+            </label>
+            <label className="m-settings-label block">
+              Description
+              <textarea className="m-settings-control mt-1 w-full min-h-[8rem]" defaultValue="Relaxing full-body treatment." />
+            </label>
+          </FormGrid>
+        )}
+        {tab === 'pricing' && (
+          <FormGrid className="gap-6">
+            <label className="m-settings-label block">
+              Price ($)
+              <input className="m-settings-control mt-1 w-full" defaultValue="1234567.89" />
+            </label>
+            <label className="m-settings-label block">
+              Free Point (Loyalty)
+              <input className="m-settings-control mt-1 w-full" defaultValue="37" />
+            </label>
+            <label className="m-settings-label block">
+              Commission Eligible
+              <input type="checkbox" className="mt-2" defaultChecked />
+            </label>
+            <label className="m-settings-label block">
+              Redeem Point
+              <input className="m-settings-control mt-1 w-full" defaultValue="3" />
+            </label>
+          </FormGrid>
+        )}
         <p className="text-sm text-[var(--text-secondary)]">
           Validation: duration is required for this service.
         </p>

@@ -105,6 +105,28 @@ test('POS layout stays within the viewport at required widths', async ({ page })
       await expect(page.locator('.m-pos-mobile-card').first()).toBeHidden();
       await expect(page.locator('.m-pos-sticky-cart')).toBeHidden();
       await expect(page.getByRole('heading', { name: 'Order Summary' }).locator('visible=true')).toBeVisible();
+
+      const catalogueScroll = await page.evaluate(() => {
+        const scroller = document.querySelector<HTMLElement>('.m-pos-catalogue-scroll');
+        const lastRow = [...document.querySelectorAll<HTMLElement>('.m-pos-desktop-row')].at(-1);
+        if (!scroller || !lastRow) return { canScroll: false, lastVisible: false };
+        const lastTop = lastRow.getBoundingClientRect().top;
+        const scrollerBottom = scroller.getBoundingClientRect().bottom;
+        return {
+          canScroll: scroller.scrollHeight > scroller.clientHeight + 8,
+          lastVisible: lastTop < scrollerBottom - 8,
+          scrollHeight: scroller.scrollHeight,
+          clientHeight: scroller.clientHeight,
+        };
+      });
+      if (!catalogueScroll.lastVisible) {
+        expect(catalogueScroll.canScroll, `catalogue must scroll at ${viewport.width}`).toBe(true);
+        await page.locator('.m-pos-desktop-row').last().scrollIntoViewIfNeeded();
+        await expect(page.locator('.m-pos-desktop-row').last()).toBeInViewport();
+        await page.locator('.m-pos-catalogue-scroll').evaluate((el) => {
+          el.scrollTop = 0;
+        });
+      }
     }
 
     if (viewport.width < 1024) {
@@ -140,6 +162,8 @@ test('POS iPad Mini portrait keeps checkout above the bottom nav', async ({ page
   await page.locator('.m-pos-tablet-card').filter({ hasText: 'Signature facial' }).locator('.m-pos-add-btn').click();
   await expect(page.locator('.m-pos-order-rail .m-pos-cart-item__name').filter({ hasText: 'Signature facial' }).first()).toBeVisible();
   await expect(page.getByRole('button', { name: 'Proceed to Payment' })).toBeEnabled();
+  const staffSelect = page.getByLabel('Assign staff for Signature facial');
+  await expect(staffSelect).toBeVisible();
 
   const geometry = await page.evaluate(() => {
     const visible = (el: Element | null) => {
@@ -151,14 +175,28 @@ test('POS iPad Mini portrait keeps checkout above the bottom nav', async ({ page
     const checkout = [...document.querySelectorAll<HTMLElement>('.m-pos-checkout-btn')].find(visible);
     const nav = document.querySelector<HTMLElement>('.bookglow-mobile-nav');
     const add = [...document.querySelectorAll<HTMLElement>('[aria-label="Add Signature facial"]')].find(visible);
+    const rail = document.querySelector<HTMLElement>('.m-pos-cart-sheet');
+    const staff = document.querySelector<HTMLElement>('[id^="pos-staff-Signature-facial"]');
+    const staffBox = staff?.getBoundingClientRect();
+    const railBox = rail?.getBoundingClientRect();
     return {
       checkoutBottom: checkout?.getBoundingClientRect().bottom ?? 0,
       navTop: nav && visible(nav) ? nav.getBoundingClientRect().top : 0,
       addHeight: add?.getBoundingClientRect().height ?? 0,
       overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      staffInsideRail: Boolean(
+        staffBox &&
+          railBox &&
+          staffBox.left >= railBox.left - 1 &&
+          staffBox.right <= railBox.right + 1 &&
+          staffBox.top >= railBox.top - 1 &&
+          staffBox.bottom <= railBox.bottom + 1 &&
+          staffBox.width > 80,
+      ),
     };
   });
   expect(geometry.overflow).toBe(false);
+  expect(geometry.staffInsideRail, 'assigned staff control overflowed the order summary').toBe(true);
   expect(geometry.checkoutBottom).toBeGreaterThan(0);
   expect(geometry.checkoutBottom).toBeLessThanOrEqual(geometry.navTop + 1);
   expect(Math.round(geometry.addHeight)).toBeGreaterThanOrEqual(44);
@@ -184,6 +222,45 @@ test('POS iPad Mini portrait remains usable at 24px root font', async ({ page })
   await expect(page.getByRole('heading', { name: 'Order Summary' }).locator('visible=true')).toBeVisible();
   await page.screenshot({
     path: artifact('pos-layout-768x1024-font-24.png'),
+    fullPage: false,
+    animations: 'disabled',
+  });
+});
+
+test('POS desktop catalogue scrolls and assigned staff stays inside Order Summary', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openPOS(page);
+
+  await expect(page.locator('.m-pos-desktop-row').first()).toBeVisible();
+  await page.locator('.m-pos-catalogue-scroll').evaluate((el) => {
+    el.scrollTop = el.scrollHeight;
+  });
+  await expect(page.getByText('Hydrating body wrap', { exact: true }).locator('visible=true')).toBeVisible();
+
+  await page.locator('.m-pos-desktop-row').filter({ hasText: 'Signature facial' }).click();
+  await expect(page.locator('.m-pos-order-rail .m-pos-cart-item__name').filter({ hasText: 'Signature facial' })).toBeVisible();
+  const staffSelect = page.getByLabel('Assign staff for Signature facial');
+  await expect(staffSelect).toBeVisible();
+  await staffSelect.selectOption({ label: 'Senior Therapist Alexandra Chen' });
+
+  const inside = await page.evaluate(() => {
+    const rail = document.querySelector<HTMLElement>('.m-pos-cart-sheet');
+    const staff = document.querySelector<HTMLElement>('[id^="pos-staff-Signature-facial"]');
+    if (!rail || !staff) return false;
+    const railBox = rail.getBoundingClientRect();
+    const staffBox = staff.getBoundingClientRect();
+    return (
+      staffBox.left >= railBox.left - 1 &&
+      staffBox.right <= railBox.right + 1 &&
+      staffBox.top >= railBox.top - 1 &&
+      staffBox.bottom <= railBox.bottom + 1 &&
+      staffBox.width > 80
+    );
+  });
+  expect(inside, 'assigned staff control overflowed the order summary').toBe(true);
+
+  await page.screenshot({
+    path: artifact('pos-layout-1280x800-with-item.png'),
     fullPage: false,
     animations: 'disabled',
   });

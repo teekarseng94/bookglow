@@ -969,10 +969,6 @@ const Services: React.FC<ServicesProps> = ({
     { id: 'availability', label: 'Availability' },
     { id: 'media', label: 'Media' },
   ];
-  // Products/packages keep their existing single-scroll layout (always shown, ignores the tab state).
-  // Services get the same fields grouped behind Details/Pricing/Availability/Media.
-  const showSection = (tabId: 'details' | 'pricing' | 'availability' | 'media') =>
-    formData.type !== 'service' || editPanelTab === tabId;
 
   const filteredCount =
     activeTab === 'services'
@@ -1461,41 +1457,40 @@ const Services: React.FC<ServicesProps> = ({
 
               {/* Service Image / Icon Section */}
               {formData.type === 'service' && editPanelTab === 'media' && (
-                <div className="mb-6">
-                  <label className="m-settings-label block uppercase">Service Image</label>
-                  <div className="flex items-start gap-4 flex-wrap">
-                    {/* Preview: uploaded image, selected icon, or placeholder */}
-                    <div className="flex-shrink-0">
+                <FormGrid className="gap-6 mb-6">
+                  <div>
+                    <label className="m-settings-label block uppercase">Service Image</label>
+                    <div className="mt-2 rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] p-4 flex items-center justify-center min-h-[10rem]">
                       {imagePreview ? (
                         <div className="relative">
-                          <img src={imagePreview} alt="Preview" className="w-20 h-20 rounded-ui-sm object-cover border-2 border-[var(--line)]" />
+                          <img src={imagePreview} alt="Preview" className="w-28 h-28 rounded-ui-sm object-cover border-2 border-[var(--line)]" />
                           <button type="button" onClick={handleRemoveImage} className="absolute -top-2 -right-2 w-6 h-6 bg-[var(--danger)] text-[var(--text-on-brand)] rounded-full flex items-center justify-center text-xs hover:opacity-90" title="Remove image">×</button>
                         </div>
                       ) : formData.iconId ? (
-                        <div className="w-20 h-20 rounded-xl bg-[var(--brand-soft)] border-2 border-[var(--brand)]/30 flex items-center justify-center text-[var(--brand)]">
-                          {renderServiceIcon(formData.iconId, 'w-10 h-10')}
+                        <div className="w-28 h-28 rounded-xl bg-[var(--brand-soft)] border-2 border-[var(--brand)]/30 flex items-center justify-center text-[var(--brand)]">
+                          {renderServiceIcon(formData.iconId, 'w-14 h-14')}
                         </div>
                       ) : (
-                        <div className="w-20 h-20 rounded-ui-sm bg-[var(--bg-soft)] border-2 border-dashed border-[var(--line-strong)] flex items-center justify-center text-app-section">
+                        <div className="w-28 h-28 rounded-ui-sm bg-[var(--bg-surface)] border-2 border-dashed border-[var(--line-strong)] flex items-center justify-center text-app-section">
                           {getCategoryIcon(formData.category)}
                         </div>
                       )}
                     </div>
-                    <div className="flex-1 min-w-[200px] space-y-2">
-                      <p className="m-settings-label uppercase">Photo Library</p>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" id="service-image-upload" />
-                        <label htmlFor="service-image-upload" className="w-14 h-14 rounded-xl bg-[var(--brand-soft)] border-2 border-dashed border-[var(--brand)]/40 flex items-center justify-center text-[var(--brand)] cursor-pointer hover:bg-[var(--bg-selection)] transition-colors" title="Upload Image">
-                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                        </label>
-                        <button type="button" onClick={() => setShowIconPickerModal(true)} className="m-btn m-btn--secondary m-btn--sm">
-                          Select Icon
-                        </button>
-                      </div>
-                      <p className="text-xs text-[var(--text-muted)]">Upload image or choose a preset icon. JPG, PNG or GIF (max 5MB).</p>
-                    </div>
                   </div>
-                </div>
+                  <div className="space-y-3 rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] p-4">
+                    <p className="m-settings-label uppercase">Photo Library</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" id="service-image-upload" />
+                      <label htmlFor="service-image-upload" className="w-14 h-14 rounded-xl bg-[var(--brand-soft)] border-2 border-dashed border-[var(--brand)]/40 flex items-center justify-center text-[var(--brand)] cursor-pointer hover:bg-[var(--bg-selection)] transition-colors" title="Upload Image">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                      </label>
+                      <button type="button" onClick={() => setShowIconPickerModal(true)} className="m-btn m-btn--secondary m-btn--sm">
+                        Select Icon
+                      </button>
+                    </div>
+                    <p className="text-xs text-[var(--text-muted)]">Upload image or choose a preset icon. JPG, PNG or GIF (max 5MB).</p>
+                  </div>
+                </FormGrid>
               )}
               
               {formData.type === 'package' ? (
@@ -1668,11 +1663,11 @@ const Services: React.FC<ServicesProps> = ({
                     )}
                   </section>
                 </div>
-              ) : (
-              <FormGrid className="gap-6">
-                <div className="space-y-4">
-                  {showSection('details') && (
-                    <>
+              ) : formData.type === 'service' ? (
+              <>
+                {editPanelTab === 'details' && (
+                  <FormGrid className="gap-6">
+                    <div className="space-y-4">
                       <div>
                         <label className="m-settings-label block uppercase">Name</label>
                         <input required type="text" className="m-settings-control w-full outline-none font-medium" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
@@ -1683,15 +1678,23 @@ const Services: React.FC<ServicesProps> = ({
                           {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                         </select>
                       </div>
-                    </>
-                  )}
-                  {showSection('pricing') && (
+                      <div>
+                        <label className="m-settings-label block uppercase">Duration (Mins)</label>
+                        <input required type="number" className="m-settings-control w-full outline-none font-medium" value={formData.duration} onChange={e => setFormData({ ...formData, duration: parseInt(e.target.value) || 0 })} />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="m-settings-label block uppercase">Description</label>
+                      <textarea rows={8} className="m-settings-control w-full h-full min-h-[12rem] outline-none text-sm" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
+                    </div>
+                  </FormGrid>
+                )}
+                {editPanelTab === 'pricing' && (
+                  <FormGrid className="gap-6">
                     <div>
                       <label className="m-settings-label block uppercase">Price ($)</label>
                       <input required type="number" step="0.01" className="m-settings-control w-full outline-none font-bold text-lg" value={formData.price} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })} />
                     </div>
-                  )}
-                  {(formData.type === 'service' || formData.type === 'package') && showSection('pricing') && (
                     <div>
                       <label className="m-settings-label block uppercase">Free Point (Loyalty)</label>
                       <input
@@ -1708,92 +1711,101 @@ const Services: React.FC<ServicesProps> = ({
                       />
                       <p className="mt-1 m-settings-hint">Free point is the point given to the customer when they buy this item.</p>
                     </div>
-                  )}
-                  {formData.type === 'service' && showSection('details') && (
-                    <div>
-                      <label className="m-settings-label block uppercase">Duration (Mins)</label>
-                      <input required type="number" className="m-settings-control w-full outline-none font-medium" value={formData.duration} onChange={e => setFormData({ ...formData, duration: parseInt(e.target.value) || 0 })} />
-                    </div>
-                  )}
-                  {formData.type === 'service' && showSection('pricing') && (
-                    <>
-                      <label className="flex items-center gap-3 p-4 bg-[var(--bg-soft)] rounded-xl border border-[var(--line)] cursor-pointer">
-                        <input type="checkbox" checked={formData.isCommissionable} onChange={e => setFormData({ ...formData, isCommissionable: e.target.checked })} />
-                        <span className="text-xs font-bold text-[var(--text-secondary)]">Commission Eligible</span>
-                      </label>
-                      <div className="mt-4 space-y-3 rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] p-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <p className="m-settings-label uppercase">Redeem Point</p>
-                            <p className="m-settings-hint">Allow this service to be redeemed for free with member points.</p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setFormData({ ...formData, redeemPointsEnabled: !formData.redeemPointsEnabled })}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                              formData.redeemPointsEnabled ? 'bg-[var(--brand)]' : 'bg-[var(--line-strong)]'
-                            }`}
-                            aria-pressed={!!formData.redeemPointsEnabled}
-                          >
-                            <span
-                              className={`inline-block h-4 w-4 transform rounded-full bg-[var(--bg-surface)] shadow transition-transform ${
-                                formData.redeemPointsEnabled ? 'translate-x-5' : 'translate-x-1'
-                              }`}
-                            />
-                          </button>
-                        </div>
-                        <div>
-                          <label className="m-settings-label block uppercase">Item Point Value</label>
-                          <input
-                            type="number"
-                            min="0"
-                            step="1"
-                            value={formData.redeemPoints ?? 0}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                redeemPoints: parseInt(e.target.value) || 0,
-                              })
-                            }
-                            disabled={!formData.redeemPointsEnabled}
-                            className={`w-full p-4 rounded-xl outline-none border text-sm font-semibold ${
-                              formData.redeemPointsEnabled
-                                ? 'bg-[var(--bg-surface)] border-[var(--brand-border)] text-[var(--brand-deep)] focus:ring-2 focus:ring-[var(--brand)]'
-                                : 'bg-[var(--bg-soft)] border-[var(--line)] text-[var(--text-muted)] cursor-not-allowed'
-                            }`}
-                          />
-                          <p className="mt-1 m-settings-hint">
-                            When a member has at least this many points, this service can be redeemed for free.
-                          </p>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                  {formData.type === 'service' && showSection('availability') && (
+                    <label className="flex items-center gap-3 p-4 bg-[var(--bg-soft)] rounded-xl border border-[var(--line)] cursor-pointer min-h-full">
+                      <input type="checkbox" checked={formData.isCommissionable} onChange={e => setFormData({ ...formData, isCommissionable: e.target.checked })} />
+                      <span className="text-xs font-bold text-[var(--text-secondary)]">Commission Eligible</span>
+                    </label>
                     <div className="space-y-3 rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] p-4">
                       <div className="flex items-center justify-between gap-3">
                         <div>
-                          <p className="m-settings-label uppercase">Show on Booking Page</p>
-                          <p className="m-settings-hint">When off, this service is hidden from the customer booking page but still available in POS.</p>
+                          <p className="m-settings-label uppercase">Redeem Point</p>
+                          <p className="m-settings-hint">Allow this service to be redeemed for free with member points.</p>
                         </div>
                         <button
                           type="button"
-                          role="switch"
-                          aria-checked={formData.isVisible !== false}
-                          onClick={() => setFormData({ ...formData, isVisible: formData.isVisible === false })}
+                          onClick={() => setFormData({ ...formData, redeemPointsEnabled: !formData.redeemPointsEnabled })}
                           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                            formData.isVisible !== false ? 'bg-[var(--brand)]' : 'bg-[var(--line-strong)]'
+                            formData.redeemPointsEnabled ? 'bg-[var(--brand)]' : 'bg-[var(--line-strong)]'
                           }`}
+                          aria-pressed={!!formData.redeemPointsEnabled}
                         >
                           <span
                             className={`inline-block h-4 w-4 transform rounded-full bg-[var(--bg-surface)] shadow transition-transform ${
-                              formData.isVisible !== false ? 'translate-x-5' : 'translate-x-1'
+                              formData.redeemPointsEnabled ? 'translate-x-5' : 'translate-x-1'
                             }`}
                           />
                         </button>
                       </div>
+                      <div>
+                        <label className="m-settings-label block uppercase">Item Point Value</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={formData.redeemPoints ?? 0}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              redeemPoints: parseInt(e.target.value) || 0,
+                            })
+                          }
+                          disabled={!formData.redeemPointsEnabled}
+                          className={`w-full p-4 rounded-xl outline-none border text-sm font-semibold ${
+                            formData.redeemPointsEnabled
+                              ? 'bg-[var(--bg-surface)] border-[var(--brand-border)] text-[var(--brand-deep)] focus:ring-2 focus:ring-[var(--brand)]'
+                              : 'bg-[var(--bg-soft)] border-[var(--line)] text-[var(--text-muted)] cursor-not-allowed'
+                          }`}
+                        />
+                        <p className="mt-1 m-settings-hint">
+                          When a member has at least this many points, this service can be redeemed for free.
+                        </p>
+                      </div>
                     </div>
-                  )}
+                  </FormGrid>
+                )}
+                {editPanelTab === 'availability' && (
+                  <div className="space-y-3 rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="m-settings-label uppercase">Show on Booking Page</p>
+                        <p className="m-settings-hint">When off, this service is hidden from the customer booking page but still available in POS.</p>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={formData.isVisible !== false}
+                        onClick={() => setFormData({ ...formData, isVisible: formData.isVisible === false })}
+                        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+                          formData.isVisible !== false ? 'bg-[var(--brand)]' : 'bg-[var(--line-strong)]'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-[var(--bg-surface)] shadow transition-transform ${
+                            formData.isVisible !== false ? 'translate-x-5' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+              ) : (
+              <FormGrid className="gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="m-settings-label block uppercase">Name</label>
+                    <input required type="text" className="m-settings-control w-full outline-none font-medium" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="m-settings-label block uppercase">Category</label>
+                    <select required className="m-settings-control w-full outline-none font-medium" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
+                      {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="m-settings-label block uppercase">Price ($)</label>
+                    <input required type="number" step="0.01" className="m-settings-control w-full outline-none font-bold text-lg" value={formData.price} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })} />
+                  </div>
                   {formData.type === 'product' && (
                     <>
                       <div>
@@ -1838,15 +1850,10 @@ const Services: React.FC<ServicesProps> = ({
                     </>
                   )}
                 </div>
-
-                {showSection('details') && (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="m-settings-label block uppercase">Description</label>
-                      <textarea rows={8} className="m-settings-control w-full outline-none text-sm" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
-                    </div>
-                  </div>
-                )}
+                <div>
+                  <label className="m-settings-label block uppercase">Description</label>
+                  <textarea rows={8} className="m-settings-control w-full h-full min-h-[12rem] outline-none text-sm" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
+                </div>
               </FormGrid>
               )}
 

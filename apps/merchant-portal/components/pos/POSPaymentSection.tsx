@@ -61,7 +61,7 @@ export const POSPaymentSection: React.FC<POSPaymentSectionProps> = ({
         </label>
       </div>
 
-      {/* Desktop (1200+): previous stacked layout */}
+      {/* Desktop (1200+): stacked sale date */}
       <div className="hidden items-center justify-between gap-2 posd:flex">
         <div>
           <p className="m-pos-label uppercase tracking-wider text-[var(--text-muted)]">Sale Date &amp; Time</p>

@@ -26,6 +26,10 @@ const services: Service[] = [
   { id: 's6', outletID: 'o1', name: 'Manicure', price: 45, duration: 30, category: 'Nails', points: 4, isCommissionable: false },
   { id: 's7', outletID: 'o1', name: 'Pedicure', price: 55, duration: 40, category: 'Nails', points: 5, isCommissionable: false },
   { id: 's8', outletID: 'o1', name: 'Deep tissue massage', price: 168, duration: 90, category: 'Massage', points: 18, isCommissionable: true },
+  { id: 's9', outletID: 'o1', name: 'Hot oil scalp treatment', price: 118, duration: 50, category: 'Hair', points: 11, isCommissionable: true },
+  { id: 's10', outletID: 'o1', name: 'Express manicure', price: 35, duration: 20, category: 'Nails', points: 3, isCommissionable: false },
+  { id: 's11', outletID: 'o1', name: 'Couples massage', price: 288, duration: 90, category: 'Massage', points: 28, isCommissionable: true },
+  { id: 's12', outletID: 'o1', name: 'Hydrating body wrap', price: 148, duration: 70, category: 'Body', points: 14, isCommissionable: true },
 ];
 
 const clients: Client[] = [
@@ -43,6 +47,7 @@ const clients: Client[] = [
 
 const staff: Staff[] = [
   { id: 'st1', outletID: 'o1', name: 'Aisha', role: 'Therapist', phone: '', email: '', createdAt: '2026-01-01' },
+  { id: 'st2', outletID: 'o1', name: 'Senior Therapist Alexandra Chen', role: 'Therapist', phone: '', email: '', createdAt: '2026-01-01' },
 ];
 
 createRoot(document.getElementById('root')!).render(

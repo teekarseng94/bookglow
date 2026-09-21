@@ -64,6 +64,22 @@ test('Merchant editor drawer and tabs stay usable across required viewports', as
 
     await expect(page.getByRole('tab', { name: 'Details' })).toBeVisible();
     await expect(page.getByRole('tab', { name: 'Availability' })).toBeVisible();
+
+    if (viewport.width >= 600) {
+      await page.getByRole('tab', { name: 'Pricing' }).click();
+      const pricingGrid = await page.evaluate(() => {
+        const grid = document.querySelector<HTMLElement>('.m-form-grid--2');
+        if (!grid) return { columns: '', childCount: 0 };
+        const style = getComputedStyle(grid);
+        return {
+          columns: style.gridTemplateColumns,
+          childCount: grid.children.length,
+        };
+      });
+      expect(pricingGrid.childCount, `pricing fields at ${viewport.width}`).toBeGreaterThanOrEqual(4);
+      expect(pricingGrid.columns.split(' ').length, `pricing should be 2 columns at ${viewport.width}`).toBeGreaterThanOrEqual(2);
+    }
+
     await page.screenshot({
       path: artifact(`merchant-responsive-${viewport.width}x${viewport.height}.png`),
       animations: 'disabled',

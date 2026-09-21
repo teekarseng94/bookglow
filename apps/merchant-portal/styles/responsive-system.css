@@ -148,6 +148,18 @@
   }
 }
 
+@media (min-width: 600px) {
+  .m-drawer--editor .m-form-grid--2,
+  .m-drawer--lg .m-form-grid--2,
+  .m-drawer--xl .m-form-grid--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.m-form-grid__span {
+  grid-column: 1 / -1;
+}
+
 .m-table-scroll {
   width: 100%;
   max-width: 100%;

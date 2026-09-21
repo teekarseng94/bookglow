@@ -16,18 +16,17 @@ export interface POSCartSheetProps {
 /**
  * Phone (<720): compact bottom sheet.
  * Tablet (720–1199): persistent Order Summary rail sized by the POS workspace grid.
- * Desktop (1200+): sticky ~360px Order Summary matching the approved reference.
+ * Desktop (1200+): 360px Order Summary matching the catalogue list layout.
  */
 export const POSCartSheet: React.FC<POSCartSheetProps> = ({
   open, onClose, clockLabel, dateLabel, headerRight, children, footer, className,
 }) => (
   <aside
     className={cx(
-      'm-pos-order-rail post:sticky post:top-3 post:self-stretch posd:top-4',
+      'm-pos-order-rail post:sticky post:top-3 post:self-stretch posd:static posd:top-auto',
       'post:min-w-0 post:w-full',
-      'posd:w-[360px] posd:min-w-[340px] posd:max-w-[360px] xl:w-[360px]',
+      'posd:w-auto posd:min-w-[280px] posd:max-w-[360px] xl:w-[360px]',
       'post:flex post:min-h-0 post:h-full post:flex-col post:overflow-hidden',
-      'posd:h-[calc(100dvh-6.75rem)]',
       open
         ? 'fixed inset-0 z-[50] flex items-end post:static post:z-auto'
         : 'hidden post:flex',

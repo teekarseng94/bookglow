@@ -93,7 +93,7 @@ export default {
         compact: '900px',
         /** POS tablet split (iPad Mini and similar). Phone sticky-cart stays below this. */
         post: '720px',
-        /** POS desktop rail / desktop catalogue cards (tablet split ends below this). */
+        /** POS desktop list + 360px rail. */
         posd: '1200px',
         xl: '1280px',
       },

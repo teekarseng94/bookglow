@@ -669,7 +669,7 @@ const POS: React.FC<POSProps> = ({
       />
 
       {/* Phone: stacked. Tablet: catalogue + checkout rail. Desktop: catalogue + 360px Order Summary. */}
-      <div className="m-pos-workspace flex min-h-0 flex-1 flex-col gap-4 post:grid post:grid-cols-[minmax(0,1fr)_minmax(300px,320px)] post:items-stretch post:gap-3 post:overflow-hidden posd:grid-cols-[minmax(0,1fr)_360px] posd:gap-5">
+      <div className="m-pos-workspace flex min-h-0 flex-1 flex-col gap-4 post:grid post:grid-cols-[minmax(0,1fr)_minmax(300px,320px)] post:items-stretch post:gap-3 post:overflow-hidden posd:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] posd:gap-5">
         <div className="m-pos-catalogue flex min-h-0 min-w-0 flex-1 flex-col post:overflow-hidden">
           <div className="shrink-0 pb-2.5">
             <POSCatalogueToolbar
@@ -1045,7 +1045,7 @@ const POS: React.FC<POSProps> = ({
                     onStaffChange={(nextStaffId) => updateStaffAssignment(lineId, nextStaffId)}
                     redeemControl={
                       showRedeem ? (
-                        <div className="mt-1.5 flex items-center justify-between gap-2 posd:mt-2 posd:pl-[2.75rem]">
+                        <div className="mt-1.5 flex min-w-0 items-center justify-between gap-2 posd:mt-2">
                           <button
                             type="button"
                             onClick={() => toggleRedeemWithPoints(lineId)}

@@ -68,7 +68,7 @@ export const POSCartItem: React.FC<POSCartItemProps> = ({
         </div>
 
         {/* Tablet: small service thumb beside qty */}
-        <div className="hidden h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[var(--brand-soft)] sm:flex posd:hidden">
+        <div className="m-pos-cart-item__thumb hidden h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-[var(--brand-soft)] sm:flex posd:hidden">
           {imageUrl ? (
             <img src={imageUrl} alt="" className="h-full w-full object-cover" />
           ) : (
@@ -98,7 +98,7 @@ export const POSCartItem: React.FC<POSCartItemProps> = ({
               <button
                 type="button"
                 onClick={onRemove}
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--text-muted)] hover:bg-[var(--danger-soft)] hover:text-[var(--danger)] focus-visible:shadow-ui-focus-strong"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-md text-[var(--text-muted)] hover:bg-[var(--danger-soft)] hover:text-[var(--danger)] focus-visible:shadow-ui-focus-strong"
                 aria-label="Remove item"
               >
                 <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -109,22 +109,22 @@ export const POSCartItem: React.FC<POSCartItemProps> = ({
           </div>
 
           {(typeof quantity === 'number' && onQuantityChange) || showStaffSelector ? (
-            <div className="mt-1.5 flex min-w-0 items-center gap-1.5">
+            <div className="m-pos-cart-item__controls mt-1.5 flex min-w-0 items-center gap-1.5">
               {typeof quantity === 'number' && onQuantityChange ? (
-                <div className="inline-flex h-7 shrink-0 items-center overflow-hidden rounded-md border border-[var(--line)] bg-[var(--bg-surface)]">
+                <div className="inline-flex h-11 shrink-0 items-center overflow-hidden rounded-md border border-[var(--line)] bg-[var(--bg-surface)]">
                   <button
                     type="button"
                     aria-label="Decrease quantity"
-                    className="inline-flex h-7 w-7 items-center justify-center text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] focus-visible:shadow-ui-focus-strong"
+                    className="m-pos-cart-item__qty-btn inline-flex h-11 w-11 items-center justify-center text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] focus-visible:shadow-ui-focus-strong"
                     onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
                   >
                     −
                   </button>
-                  <span className="w-6 text-center text-xs font-bold tabular-nums">{quantity}</span>
+                  <span className="w-7 text-center text-sm font-bold tabular-nums">{quantity}</span>
                   <button
                     type="button"
                     aria-label="Increase quantity"
-                    className="inline-flex h-7 w-7 items-center justify-center text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] focus-visible:shadow-ui-focus-strong"
+                    className="m-pos-cart-item__qty-btn inline-flex h-11 w-11 items-center justify-center text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] focus-visible:shadow-ui-focus-strong"
                     onClick={() => onQuantityChange(quantity + 1)}
                   >
                     +
@@ -149,7 +149,7 @@ export const POSCartItem: React.FC<POSCartItemProps> = ({
                   <select
                     id={staffSelectId}
                     className={cx(
-                      'h-7 w-full truncate appearance-none rounded-md border bg-[var(--bg-surface)] pl-7 pr-6 text-[11px] font-semibold outline-none',
+                      'h-11 w-full min-h-[44px] truncate appearance-none rounded-md border bg-[var(--bg-surface)] pl-7 pr-6 text-sm font-semibold outline-none',
                       'focus-visible:shadow-ui-focus-strong',
                       selectedStaff
                         ? 'border-[var(--line)] text-[var(--text-primary)]'

@@ -74,8 +74,8 @@ const FilterSortControl: React.FC<{
         aria-haspopup="dialog"
         onClick={() => flushSync(() => setOpen((value) => !value))}
         className={cx(
-          'inline-flex h-10 w-10 items-center justify-center rounded-ui-md border transition-colors',
-          'focus-visible:shadow-ui-focus-strong posd:h-11 posd:w-11',
+          'inline-flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-ui-md border transition-colors',
+          'focus-visible:shadow-ui-focus-strong',
           open || filtersActive
             ? 'border-[var(--brand)] bg-[var(--brand-soft)] text-[var(--brand)]'
             : 'border-[var(--line)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]',
@@ -183,6 +183,7 @@ export const POSCatalogueToolbar: React.FC<POSCatalogueToolbarProps> = ({
           onClick={() => onCategoryChange(cat)}
           className={cx(
             'm-pos-category-chip shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-all whitespace-nowrap',
+            'min-h-9',
             selectedCategory === cat
               ? 'bg-[var(--brand)] text-white shadow-ui-xs'
               : 'border border-[var(--line)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]',
@@ -200,7 +201,7 @@ export const POSCatalogueToolbar: React.FC<POSCatalogueToolbarProps> = ({
         type="search"
         placeholder="Search services"
         aria-label="Search services"
-        className="m-pos-search h-10 w-full rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] py-2 pl-9 pr-3 text-sm outline-none focus-visible:shadow-ui-focus-strong posd:h-11"
+        className="m-pos-search h-11 w-full min-h-[44px] rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] py-2 pl-9 pr-3 text-sm outline-none focus-visible:shadow-ui-focus-strong"
         value={search}
         onChange={(e) => onSearchChange(e.target.value)}
       />
@@ -225,8 +226,8 @@ export const POSCatalogueToolbar: React.FC<POSCatalogueToolbarProps> = ({
         className,
       )}
     >
-      {/* Mobile / tablet */}
-      <div className="space-y-2.5 posd:hidden">
+      {/* Phone + tablet */}
+      <div className="space-y-2 posd:hidden">
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">{renderSearchField()}</div>
           <FilterSortControl

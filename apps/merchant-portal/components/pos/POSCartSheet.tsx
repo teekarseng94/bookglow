@@ -14,8 +14,8 @@ export interface POSCartSheetProps {
 }
 
 /**
- * Phone (<640): compact bottom sheet.
- * Tablet (640–1199): persistent Order Summary rail beside the catalogue.
+ * Phone (<720): compact bottom sheet.
+ * Tablet (720–1199): persistent Order Summary rail sized by the POS workspace grid.
  * Desktop (1200+): sticky ~360px Order Summary matching the approved reference.
  */
 export const POSCartSheet: React.FC<POSCartSheetProps> = ({
@@ -23,21 +23,21 @@ export const POSCartSheet: React.FC<POSCartSheetProps> = ({
 }) => (
   <aside
     className={cx(
-      'sm:sticky sm:top-3 sm:self-start posd:top-4',
-      'sm:w-[min(40%,340px)] sm:min-w-[280px] sm:max-w-[360px] sm:shrink-0',
+      'm-pos-order-rail post:sticky post:top-3 post:self-stretch posd:top-4',
+      'post:min-w-0 post:w-full',
       'posd:w-[360px] posd:min-w-[340px] posd:max-w-[360px] xl:w-[360px]',
-      'sm:flex sm:h-[calc(100vh-8.75rem)] sm:flex-col',
-      'lg:h-[calc(100vh-7.5rem)]',
+      'post:flex post:min-h-0 post:h-full post:flex-col post:overflow-hidden',
+      'posd:h-[calc(100dvh-6.75rem)]',
       open
-        ? 'fixed inset-0 z-[50] flex items-end sm:static sm:z-auto'
-        : 'hidden sm:flex',
+        ? 'fixed inset-0 z-[50] flex items-end post:static post:z-auto'
+        : 'hidden post:flex',
       className,
     )}
   >
     {open ? (
       <button
         type="button"
-        className="absolute inset-0 cursor-default border-0 bg-ui-overlay sm:hidden"
+        className="absolute inset-0 cursor-default border-0 bg-ui-overlay post:hidden"
         aria-label="Close cart overlay"
         onClick={onClose}
       />
@@ -45,14 +45,14 @@ export const POSCartSheet: React.FC<POSCartSheetProps> = ({
     <div
       className={cx(
         'm-pos-cart-sheet relative flex h-full w-full flex-col overflow-hidden border border-[var(--line)] bg-[var(--bg-surface)] shadow-ui-sm',
-        'rounded-t-ui-lg sm:rounded-[16px]',
-        'max-h-[92vh] sm:h-full sm:max-h-none',
-        'mb-[calc(var(--mobile-bottom-nav-height)+var(--mobile-safe-area-bottom))] sm:mb-0',
+        'rounded-t-ui-lg post:rounded-[16px]',
+        'max-h-[92vh] post:h-full post:max-h-full',
+        'mb-[calc(var(--mobile-bottom-nav-height)+var(--mobile-safe-area-bottom))] post:mb-0',
       )}
     >
-      {/* —— Phone + tablet compact header —— */}
-      <div className="m-pos-cart-header posd:hidden shrink-0 border-b border-[var(--line)] px-3 pt-2 pb-2.5">
-        <div className="mb-2 flex items-center justify-between gap-2 sm:hidden">
+      {/* —— Phone sheet chrome; tablet uses the compact banner + trash only —— */}
+      <div className="m-pos-cart-header m-pos-cart-header--compact shrink-0 border-b border-[var(--line)] px-3 pt-2 pb-2.5">
+        <div className="m-pos-cart-phone-chrome mb-2 flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-1.5">
             <span className="bookglow-brand-mark shrink-0 text-[var(--brand)]" aria-hidden>
               ✦
@@ -67,7 +67,7 @@ export const POSCartSheet: React.FC<POSCartSheetProps> = ({
           </div>
         </div>
 
-        <div className="mb-2 hidden items-center justify-end gap-0.5 sm:flex">
+        <div className="m-pos-cart-tablet-tools mb-2 hidden items-center justify-end gap-0.5">
           {headerRight}
         </div>
 
@@ -97,7 +97,7 @@ export const POSCartSheet: React.FC<POSCartSheetProps> = ({
       </div>
 
       {/* —— Desktop header (1200+) —— */}
-      <div className="m-pos-cart-header hidden shrink-0 border-b border-[var(--line)] posd:block">
+      <div className="m-pos-cart-header m-pos-cart-header--desktop hidden shrink-0 border-b border-[var(--line)]">
         <div className="flex items-start justify-between gap-3 px-4 pt-3.5 pb-2">
           <div className="min-w-0">
             <p className="m-pos-cart-meta text-[15px] font-bold tabular-nums leading-tight text-[var(--brand)]">

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '../ui/Button';
 import { cx } from '../ui/cx';
+import { MoneyAmount } from '../dashboard/MoneyAmount';
 
 export interface POSTotalsProps {
   totalLabel: string;
@@ -33,20 +34,20 @@ export const POSTotals: React.FC<POSTotalsProps> = ({
     {subtotalLabel ? (
       <div className="flex justify-between text-xs text-[var(--text-secondary)] posd:text-sm">
         <span>Subtotal</span>
-        <span className="font-medium tabular-nums text-[var(--text-primary)]">{subtotalLabel}</span>
+        <span className="font-medium tabular-nums text-[var(--text-primary)]"><MoneyAmount value={subtotalLabel} /></span>
       </div>
     ) : null}
     {discountLabel ? (
       <div className="flex justify-between text-xs text-[var(--text-secondary)] posd:text-sm">
         <span>Discount</span>
-        <span className="font-medium tabular-nums text-[var(--text-primary)]">{discountLabel}</span>
+        <span className="font-medium tabular-nums text-[var(--text-primary)]"><MoneyAmount value={discountLabel} /></span>
       </div>
     ) : null}
     <div className="border-t border-[var(--line)]" />
     <div className="flex items-baseline justify-between text-[var(--text-primary)]">
       <span className="text-sm font-bold posd:text-[17px]">Total</span>
-      <span className="m-pos-totals-total text-lg font-bold tabular-nums text-[var(--brand)] posd:text-[22px]">
-        {totalLabel}
+      <span className="m-pos-totals-total text-lg font-bold text-[var(--brand)] posd:text-[22px]">
+        <MoneyAmount value={totalLabel} />
       </span>
     </div>
     {warning}

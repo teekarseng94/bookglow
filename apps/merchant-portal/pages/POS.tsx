@@ -650,7 +650,7 @@ const POS: React.FC<POSProps> = ({
     activeCatalog === 'products' ? 'Products' : activeCatalog === 'packages' ? 'Packages' : 'Services';
 
   return (
-    <div className="m-page-with-sticky-action m-pos-page flex h-full min-h-0 flex-col gap-3 sm:pb-[calc(var(--mobile-bottom-nav-height)+var(--mobile-safe-area-bottom))] lg:pb-0 posd:gap-3">
+    <div className="m-page-with-sticky-action m-pos-page flex h-full min-h-0 flex-col gap-3 post:overflow-hidden post:pb-0 lg:pb-0 posd:gap-3">
       <POSPageHeader
         shopName={outletSettings.shopName}
         banner={
@@ -668,9 +668,9 @@ const POS: React.FC<POSProps> = ({
         }
       />
 
-      {/* Phone: stacked. Tablet: split. Desktop: catalogue + 360px Order Summary. */}
-      <div className="flex min-h-0 flex-1 flex-col gap-4 sm:flex-row sm:items-start sm:gap-3 posd:grid posd:grid-cols-[minmax(0,1fr)_360px] posd:gap-5">
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col sm:max-h-[calc(100vh-8.75rem)] lg:max-h-[calc(100vh-7.5rem)]">
+      {/* Phone: stacked. Tablet: catalogue + checkout rail. Desktop: catalogue + 360px Order Summary. */}
+      <div className="m-pos-workspace flex min-h-0 flex-1 flex-col gap-4 post:grid post:grid-cols-[minmax(0,1fr)_minmax(300px,320px)] post:items-stretch post:gap-3 post:overflow-hidden posd:grid-cols-[minmax(0,1fr)_360px] posd:gap-5">
+        <div className="m-pos-catalogue flex min-h-0 min-w-0 flex-1 flex-col post:overflow-hidden">
           <div className="shrink-0 pb-2.5">
             <POSCatalogueToolbar
               search={globalSearch}
@@ -686,7 +686,7 @@ const POS: React.FC<POSProps> = ({
             />
           </div>
 
-          <div className="min-h-0 flex-1 overflow-visible sm:overflow-y-auto sm:pr-1 scrollbar-thin">
+          <div className="m-pos-catalogue-scroll min-h-0 flex-1 overflow-y-auto post:pr-1 scrollbar-thin">
             <POSCatalogueList>
               {(activeCatalog === 'all' || activeCatalog === 'services') && (
                 <POSCatalogueSection
@@ -899,7 +899,7 @@ const POS: React.FC<POSProps> = ({
                 type="text"
                 placeholder="Search by name or phone..."
                 autoComplete="off"
-                className="m-pos-control m-pos-customer-search box-border w-full min-h-[36px] rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] py-2 pl-9 pr-3 text-sm font-medium outline-none focus-visible:shadow-ui-focus-strong posd:min-h-[40px]"
+                className="m-pos-control m-pos-customer-search box-border w-full min-h-[44px] rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] py-2 pl-9 pr-3 text-sm font-medium outline-none focus-visible:shadow-ui-focus-strong"
                 value={selectedClientData ? selectedClientData.name : customerSearchQuery}
                 onChange={(e) => {
                   setCustomerSearchQuery(e.target.value);
@@ -1069,9 +1069,9 @@ const POS: React.FC<POSProps> = ({
                 );
               })}
               {cart.length === 0 && (
-                <div className="px-2 py-6 text-center posd:py-5">
-                  <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--bg-soft)]">
-                    <svg className="h-5 w-5 text-[var(--text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="m-pos-empty-order px-2 py-3 text-center post:py-4">
+                  <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-[var(--bg-soft)]">
+                    <svg className="h-4 w-4 text-[var(--text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"

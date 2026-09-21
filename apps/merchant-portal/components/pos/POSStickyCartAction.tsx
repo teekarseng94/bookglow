@@ -17,7 +17,7 @@ export const POSStickyCartAction: React.FC<POSStickyCartActionProps> = ({
 }) => (
   <div
     className={cx(
-      'm-pos-sticky-cart fixed bottom-[calc(var(--mobile-bottom-nav-height)+var(--mobile-safe-area-bottom))] left-0 right-0 z-[45] sm:hidden',
+      'm-pos-sticky-cart fixed bottom-[calc(var(--mobile-bottom-nav-height)+var(--mobile-safe-area-bottom))] left-0 right-0 z-[45] post:hidden',
       'bg-[var(--bg-surface)] shadow-[0_-6px_24px_rgba(39,25,42,0.12)]',
       className,
     )}

@@ -1594,6 +1594,12 @@ textarea.m-settings-control {
     gap: var(--mobile-space-3);
   }
 
+  .m-pos-catalogue-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.625rem;
+  }
+
   .m-pos-search {
     min-height: var(--mobile-control-md);
     height: var(--mobile-control-md);
@@ -2609,8 +2615,145 @@ textarea.m-settings-control {
   }
 }
 
-/* ——— Tablet / iPad POS split (640–1199) ——— */
-@media (min-width: 640px) and (max-width: 1199.98px) {
+/* ——— Tablet / iPad POS split (720–1199) ——— */
+@media (min-width: 720px) and (max-width: 1199.98px) {
+  /* Lock the POS pane to the shell's already-padded visible area. */
+  .bookglow-main-scroll:has(.m-pos-page) {
+    overflow: hidden;
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .bookglow-content-frame:has(.m-pos-page),
+  .bookglow-page:has(.m-pos-page) {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+  }
+
+  .m-pos-page.m-page-with-sticky-action {
+    padding-bottom: 0;
+  }
+
+  .m-pos-page {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    height: 100% !important;
+    max-height: 100%;
+    overflow: hidden;
+  }
+
+  .m-pos-workspace {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 320px);
+    align-items: stretch;
+    gap: 0.75rem;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .m-pos-catalogue {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+    z-index: 2;
+  }
+
+  .m-pos-catalogue-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .m-pos-order-rail {
+    display: flex !important;
+    position: relative !important;
+    inset: auto !important;
+    z-index: 1;
+    align-self: stretch;
+    align-items: stretch;
+    width: auto;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    max-height: 100%;
+    overflow: hidden;
+    flex-direction: column;
+  }
+
+  .m-pos-cart-sheet {
+    height: 100% !important;
+    max-height: 100% !important;
+    margin-bottom: 0 !important;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .m-pos-sticky-cart {
+    display: none !important;
+  }
+
+  .m-pos-mobile-card {
+    display: none !important;
+  }
+
+  .m-pos-tablet-card {
+    display: flex !important;
+  }
+
+  .m-pos-catalogue-grid {
+    container-type: inline-size;
+    container-name: pos-catalogue;
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @container pos-catalogue (min-width: 560px) {
+    .m-pos-catalogue-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .m-pos-tablet-card {
+    min-height: 0;
+  }
+
+  .m-pos-tablet-card__title {
+    font-size: 13px;
+    font-weight: var(--mobile-font-semibold);
+    line-height: 1.3;
+  }
+
+  .m-pos-tablet-card__meta {
+    font-size: 11px;
+  }
+
+  .m-pos-tablet-card__price {
+    font-size: 13px;
+    font-weight: var(--mobile-font-bold);
+  }
+
+  .m-pos-add-btn {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
   .m-pos-cart-sheet {
     border-radius: var(--mobile-radius-lg);
   }
@@ -2637,6 +2780,7 @@ textarea.m-settings-control {
 
   .m-pos-cart-footer {
     padding: 10px 12px;
+    padding-bottom: max(10px, var(--safe-bottom));
     gap: 8px;
   }
 
@@ -2663,18 +2807,18 @@ textarea.m-settings-control {
   }
 
   .m-pos-control {
-    min-height: 36px !important;
+    min-height: 44px !important;
     font-size: var(--mobile-text-body);
   }
 
   .m-pos-payment-select {
-    min-height: 32px !important;
-    height: 32px !important;
-    font-size: 12px !important;
+    min-height: 44px !important;
+    height: auto !important;
+    font-size: 14px !important;
   }
 
   .m-pos-totals-total {
-    font-size: 18px !important;
+    font-size: 20px !important;
     font-weight: var(--mobile-font-bold) !important;
   }
 
@@ -2684,23 +2828,24 @@ textarea.m-settings-control {
     font-size: 14px !important;
   }
 
-  .m-pos-mobile-card__title {
-    font-size: 13px;
-    font-weight: var(--mobile-font-bold);
+  .m-pos-toolbar .m-pos-category-chip {
+    min-height: 36px;
   }
 
-  .m-pos-mobile-card__meta {
-    font-size: 11px;
-  }
-
-  .m-pos-mobile-card__price {
-    font-size: 13px;
-    font-weight: var(--mobile-font-bold);
+  .m-pos-toolbar .m-pos-search {
+    min-height: 44px;
+    height: 44px;
   }
 }
 
 /* ——— Desktop POS catalogue list (1200+) ——— */
 @media (min-width: 1200px) {
+  .m-pos-catalogue-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+  }
+
   .m-pos-desktop-row {
     min-height: 72px;
     max-height: 82px;

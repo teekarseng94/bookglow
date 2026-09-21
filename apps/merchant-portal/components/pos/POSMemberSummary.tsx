@@ -41,7 +41,7 @@ export const POSMemberSummary: React.FC<POSMemberSummaryProps> = ({
         <button
           type="button"
           onClick={onNewCustomer}
-          className="text-[12px] font-semibold text-[var(--brand)] hover:underline posd:text-xs"
+          className="text-[13px] font-semibold text-[var(--brand)] min-h-11 px-1 hover:underline"
         >
           + New Customer
         </button>
@@ -49,7 +49,7 @@ export const POSMemberSummary: React.FC<POSMemberSummaryProps> = ({
     </div>
     {children}
     {selectedCustomer ? (
-      <div className="hidden items-center gap-2.5 rounded-ui-md border border-[var(--line)] bg-[var(--bg-soft)] px-2.5 py-2 posd:flex">
+      <div className="hidden items-center gap-2.5 rounded-ui-md border border-[var(--line)] bg-[var(--bg-soft)] px-2.5 py-2 post:flex">
         <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--brand-soft)] text-sm font-bold text-[var(--brand)]">
           {(selectedCustomer.name || '?').trim().charAt(0).toUpperCase()}
         </span>

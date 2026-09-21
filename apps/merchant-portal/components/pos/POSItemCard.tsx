@@ -1,5 +1,6 @@
 import React from 'react';
 import { cx } from '../ui/cx';
+import { MoneyAmount } from '../dashboard/MoneyAmount';
 
 /** Neutral Bookglow catalogue placeholder when no service/category image exists. */
 const POS_PLACEHOLDER_IMAGE =
@@ -32,8 +33,8 @@ export interface POSItemCardProps {
 
 /**
  * Catalogue card.
- * Phone (<640): full-width readable row.
- * Tablet (640–1199): compact horizontal card in the split catalogue grid.
+ * Phone (<720): full-width readable row.
+ * Tablet (720–1199): compact vertical tile in a 3–4 column scan grid.
  * Desktop (1200+): compact list row matching the approved POS reference.
  */
 export const POSItemCard: React.FC<POSItemCardProps> = ({
@@ -81,10 +82,10 @@ export const POSItemCard: React.FC<POSItemCardProps> = ({
       }}
       aria-label={`Add ${name}`}
       className={cx(
-        'inline-flex items-center justify-center transition-all',
+        'm-pos-add-btn inline-flex items-center justify-center transition-all',
         'focus-visible:shadow-ui-focus-strong active:scale-95',
         variant === 'tablet-filled'
-          ? 'rounded-full border border-[var(--brand-soft)] bg-[var(--bg-surface)] text-[var(--brand)] hover:bg-[var(--brand)] hover:text-white sm:border-[var(--brand)] sm:bg-[var(--brand)] sm:text-white sm:hover:opacity-90'
+          ? 'rounded-full bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)]'
           : variant === 'desktop'
             ? 'rounded-[11px] border border-[var(--brand-soft)] bg-[var(--brand-soft)] text-[var(--brand)] hover:bg-[var(--brand)] hover:text-white'
             : 'rounded-xl border border-[var(--brand-soft)] bg-[var(--brand-soft)] text-[var(--brand)] hover:bg-[var(--brand)] hover:text-white',
@@ -116,37 +117,36 @@ export const POSItemCard: React.FC<POSItemCardProps> = ({
   );
 
   return (
-    <div className={cx('relative', className)}>
+    <div className={cx('relative min-w-0', className)}>
       {badge ? <div className="absolute right-2 top-2 z-[1]">{badge}</div> : null}
 
-      {/* Phone + tablet horizontal card */}
+      {/* Phone (<720): horizontal row */}
       <div
         className={cx(
           'm-pos-mobile-card m-card m-card-interactive flex h-full items-center gap-3 border border-[var(--line)] bg-[var(--bg-surface)]',
           'rounded-ui-md p-3 min-h-[96px]',
-          'sm:min-h-[88px] sm:gap-2.5 sm:p-2.5 sm:shadow-ui-xs',
-          'posd:hidden',
+          'post:hidden',
         )}
       >
         <div className="relative shrink-0">
           {qtyBadge}
-          <div className="m-pos-mobile-card__thumb flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl bg-[var(--bg-soft)] sm:h-[52px] sm:w-[52px]">
+          <div className="m-pos-mobile-card__thumb flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl bg-[var(--bg-soft)]">
             {thumb}
           </div>
         </div>
         <div className="min-w-0 flex-1">
-          <p className="m-pos-mobile-card__title whitespace-normal break-words text-[15px] font-semibold leading-snug text-[var(--text-primary)] sm:text-[13px] sm:font-bold">
+          <p className="m-pos-mobile-card__title whitespace-normal break-words text-[15px] font-semibold leading-snug text-[var(--text-primary)]">
             {displayName}
           </p>
           {metaLeft || metaRight ? (
             <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-0.5">
               {metaLeft ? (
-                <span className="m-pos-mobile-card__meta truncate text-[12px] text-[var(--text-muted)] sm:text-[11px]">
+                <span className="m-pos-mobile-card__meta truncate text-[12px] text-[var(--text-muted)]">
                   {metaLeft}
                 </span>
               ) : null}
               {metaRight ? (
-                <span className="m-pos-mobile-card__meta truncate text-[12px] font-semibold text-[var(--warning)] sm:text-[11px]">
+                <span className="m-pos-mobile-card__meta truncate text-[12px] font-semibold text-[var(--warning)]">
                   {metaRight}
                 </span>
               ) : null}
@@ -154,14 +154,50 @@ export const POSItemCard: React.FC<POSItemCardProps> = ({
           ) : null}
           {chips}
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-1.5 pl-1 sm:gap-1">
-          <span className="m-pos-mobile-card__price text-[14px] font-semibold tabular-nums text-[var(--text-primary)] sm:text-[13px] sm:font-bold">
-            {priceLabel}
-          </span>
-          {addButton(
-            'm-pos-mobile-card__add h-10 w-10 min-h-[40px] min-w-[40px] sm:h-8 sm:w-8 sm:min-h-[32px] sm:min-w-[32px]',
-            'tablet-filled',
-          )}
+        <div className="flex shrink-0 flex-col items-end gap-1.5 pl-1">
+          <MoneyAmount
+            value={priceLabel}
+            className="m-pos-mobile-card__price text-[14px] font-semibold text-[var(--text-primary)]"
+          />
+          {addButton('h-11 w-11 min-h-[44px] min-w-[44px]', 'outline')}
+        </div>
+      </div>
+
+      {/* Tablet (720–1199): compact vertical scan tile */}
+      <div
+        className={cx(
+          'm-pos-tablet-card hidden h-full min-w-0 flex-col overflow-hidden rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)]',
+          'post:flex posd:hidden',
+        )}
+      >
+        <div className="relative shrink-0">
+          {qtyBadge}
+          <div className="m-pos-tablet-card__thumb aspect-[4/3] w-full overflow-hidden bg-[var(--bg-soft)]">
+            {thumb}
+          </div>
+        </div>
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-1.5 p-2.5">
+          <p
+            className="m-pos-tablet-card__title line-clamp-2 min-w-0 text-[13px] font-semibold leading-snug text-[var(--text-primary)]"
+            title={displayName}
+          >
+            {displayName}
+          </p>
+          {metaLeft || metaRight ? (
+            <p className="m-pos-tablet-card__meta min-w-0 truncate text-[11px] text-[var(--text-muted)]">
+              {metaLeft}
+              {metaLeft && metaRight ? ' · ' : null}
+              {metaRight ? <span className="font-semibold text-[var(--warning)]">{metaRight}</span> : null}
+            </p>
+          ) : null}
+          {chips ? <div className="min-w-0 [&_.m-pos-mini-chip]:truncate">{chips}</div> : null}
+          <div className="mt-auto flex items-end justify-between gap-2 pt-1">
+            <MoneyAmount
+              value={priceLabel}
+              className="m-pos-tablet-card__price min-w-0 text-[13px] font-bold text-[var(--text-primary)]"
+            />
+            {addButton('h-11 w-11 min-h-[44px] min-w-[44px] shrink-0', 'tablet-filled')}
+          </div>
         </div>
       </div>
 
@@ -215,9 +251,7 @@ export const POSItemCard: React.FC<POSItemCardProps> = ({
           {chips ? <div className="posd:hidden">{chips}</div> : null}
         </div>
 
-        <span className="whitespace-nowrap text-[15px] font-semibold tabular-nums text-[var(--text-primary)]">
-          {priceLabel}
-        </span>
+        <MoneyAmount value={priceLabel} className="whitespace-nowrap text-[15px] font-semibold text-[var(--text-primary)]" />
 
         {addButton('h-10 w-10 min-h-[40px] min-w-[40px]', 'desktop', true)}
       </div>

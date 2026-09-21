@@ -35,7 +35,7 @@ export const POSCatalogueSection: React.FC<POSCatalogueSectionProps> = ({
     {empty ? (
       <EmptyState className="border-0" title={emptyMessage || 'No items found'} />
     ) : (
-      <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-1 md:grid-cols-2 posd:flex posd:flex-col posd:gap-2.5">
+      <div className="m-pos-catalogue-grid">
         {children}
       </div>
     )}

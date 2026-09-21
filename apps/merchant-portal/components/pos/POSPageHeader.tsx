@@ -23,20 +23,18 @@ export const POSPageHeader: React.FC<POSPageHeaderProps> = ({
   if (!banner && !title && !shopName) return null;
 
   return (
-    <div className={cx('space-y-3', className)}>
-      <header className="hidden space-y-1 md:block posd:hidden">
+    <div className={cx('space-y-3 post:space-y-0 post:mb-1', className)}>
+      <header className="hidden items-center gap-2 post:flex posd:hidden">
+        <h1 className="sr-only">{title}</h1>
         {shopName ? (
-          <p className="m-pos-page-eyebrow uppercase tracking-wider text-[var(--text-muted)]">
+          <p className="m-pos-page-eyebrow min-w-0 truncate uppercase tracking-wider text-[var(--text-muted)]">
             {shopName}
           </p>
         ) : null}
-        <div className="flex flex-wrap items-center gap-2.5">
-          <h1 className="ui-page-title">{title}</h1>
-          <StatusBadge tone="success" className="m-pos-live-badge gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)]" aria-hidden />
-            Live outlet
-          </StatusBadge>
-        </div>
+        <StatusBadge tone="success" className="m-pos-live-badge shrink-0 gap-1.5">
+          <span className="h-1.5 w-1.5 rounded-full bg-[var(--success)]" aria-hidden />
+          Live outlet
+        </StatusBadge>
       </header>
       {banner}
     </div>

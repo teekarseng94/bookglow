@@ -16,7 +16,7 @@ export interface AppDrawerProps {
   headerActions?: React.ReactNode;
   /** Fullscreen (mobile detail) or right rail. */
   variant?: 'fullscreen' | 'right';
-  /** Right-rail width. `editor` is full-screen on phones and near-full on tablets. */
+  /** Right-rail width. `editor` is full-screen on phones, inset-stretched on tablets, and a wide rail on desktop. */
   size?: AppDrawerSize;
   zIndexClass?: string;
   className?: string;

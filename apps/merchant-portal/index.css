@@ -1098,14 +1098,13 @@
   :root {
     --page-pad-x: var(--space-5);
     --page-pad-y: var(--space-5);
-    --drawer-size-editor: min(48rem, calc(100vw - var(--space-8)));
+    --drawer-size-editor: 48rem;
   }
 }
 
 @media (min-width: 900px) {
   :root {
     --page-pad-x: var(--space-6);
-    --drawer-size-editor: min(48rem, 90vw);
   }
 }
 
@@ -1120,7 +1119,7 @@
     --page-pad-x: var(--space-8);
     --page-pad-y: 1.75rem;
     --drawer-chrome-top: 4.5rem;
-    --drawer-size-editor: min(52rem, calc(100vw - var(--sidebar-width) - var(--space-12)));
+    --drawer-size-editor: 52rem;
   }
 
   .bookglow-main-scroll {

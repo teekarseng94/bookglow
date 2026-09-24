@@ -123,6 +123,7 @@ function Start-Avd {
     '-no-snapshot-load',
     '-no-boot-anim',
     '-gpu', 'auto',
+    '-feature', '-Vulkan',
     '-netdelay', 'none',
     '-netspeed', 'full'
   ) -PassThru

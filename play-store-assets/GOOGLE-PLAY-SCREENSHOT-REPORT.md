@@ -6,7 +6,7 @@ Capacitor 7 Android WebView app (`apps/merchant-portal/android`).
 
 - Package: `com.bookglow.merchant`
 - App name: BookGlow Merchant
-- versionName 1.0.7 / versionCode 9
+- versionName 1.0.8 / versionCode 10
 - minSdk 23, compileSdk/targetSdk 36
 - Web bundle is copied from `apps/merchant-portal/dist` into the APK (`npx cap sync android`)
 - Production backend in this build: Supabase (`uecphpjymbgtttrizhgy.supabase.co`)
@@ -122,4 +122,4 @@ Android XR in Play Console is a **separate** slot (8:5 screenshots). These table
 3. Review the five PNGs per folder: no spinner, no keyboard, no debug overlays, no real phone numbers/emails.
 4. Upload to Play Console → Store listing → 7-inch tablet screenshots and 10-inch tablet screenshots. Do not upload `previews/*-login.png` unless you want a sign-in shot as an extra image.
 5. Optional: capture the phone set with `BookGlow_phone`.
-6. App icon 512×512 and feature graphic 1024×500 are separate Play Console fields (already prepared under `apps/merchant-portal/assets/`).
+6. App icon and feature graphic: upload `play-store-assets/play-icon-512.png` (512×512) and `play-store-assets/play-feature-graphic.png` (1024×500).

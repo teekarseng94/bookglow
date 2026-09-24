@@ -9,11 +9,13 @@ const viewports = [
   { width: 390, height: 844 },
   { width: 600, height: 960 },
   { width: 768, height: 1024 },
+  { width: 811, height: 1444 },
   { width: 820, height: 1180 },
   { width: 1024, height: 768 },
   { width: 1180, height: 820 },
   { width: 1280, height: 800 },
   { width: 1440, height: 900 },
+  { width: 1463, height: 823 },
   { width: 1920, height: 1080 },
 ] as const;
 
@@ -56,10 +58,17 @@ test('Merchant editor drawer and tabs stay usable across required viewports', as
     expect(geometry.saveVisible).toBe(true);
     if (viewport.width < 600) {
       expect(geometry.drawerWidth, `phone drawer at ${viewport.width}`).toBeGreaterThan(viewport.width - 8);
-    } else if (viewport.width === 768) {
-      expect(geometry.drawerWidth, 'iPad Mini drawer should not stay at 420px').toBeGreaterThan(500);
-    } else if (viewport.width >= 1440) {
-      expect(geometry.drawerWidth, 'desktop editor drawer').toBeGreaterThan(500);
+    } else if (viewport.width < 1024) {
+      expect(
+        geometry.drawerWidth,
+        `tablet editor at ${viewport.width} should be near-full, not a 32rem rail`,
+      ).toBeGreaterThan(viewport.width - 40);
+    } else {
+      expect(geometry.drawerWidth, `desktop editor at ${viewport.width}`).toBeGreaterThan(800);
+      expect(
+        geometry.drawerWidth,
+        `desktop editor at ${viewport.width} should stay a rail`,
+      ).toBeLessThan(viewport.width - 80);
     }
 
     await expect(page.getByRole('tab', { name: 'Details' })).toBeVisible();
@@ -69,15 +78,24 @@ test('Merchant editor drawer and tabs stay usable across required viewports', as
       await page.getByRole('tab', { name: 'Pricing' }).click();
       const pricingGrid = await page.evaluate(() => {
         const grid = document.querySelector<HTMLElement>('.m-form-grid--2');
-        if (!grid) return { columns: '', childCount: 0 };
+        if (!grid) return { columns: '', childCount: 0, inputWidth: 0, gridWidth: 0 };
         const style = getComputedStyle(grid);
+        const input = grid.querySelector('input');
         return {
           columns: style.gridTemplateColumns,
           childCount: grid.children.length,
+          inputWidth: input ? input.getBoundingClientRect().width : 0,
+          gridWidth: grid.getBoundingClientRect().width,
         };
       });
       expect(pricingGrid.childCount, `pricing fields at ${viewport.width}`).toBeGreaterThanOrEqual(4);
       expect(pricingGrid.columns.split(' ').length, `pricing should be 2 columns at ${viewport.width}`).toBeGreaterThanOrEqual(2);
+      if (viewport.width >= 1024) {
+        expect(
+          pricingGrid.inputWidth,
+          `pricing input should fill a column at ${viewport.width}, not sit in the left gutter`,
+        ).toBeGreaterThan(pricingGrid.gridWidth * 0.35);
+      }
     }
 
     await page.screenshot({

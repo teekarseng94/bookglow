@@ -12,9 +12,9 @@ This system is additive. Existing Tailwind `sm` / `md` / `lg` / `post` / `posd` 
 | Band | Width | Shell | Overlay default |
 |------|-------|-------|-----------------|
 | Phone | 320–599 | Mobile header + bottom nav | Editor drawer full-screen |
-| Tablet portrait | 600–899 | Still mobile chrome (`Layout` switches at 1024) | Editor drawer near-full width (`min(42rem, 100vw − 2rem)`) |
-| Tablet landscape / compact desktop | 900–1199 | Sidebar from 1024 | Editor drawer `min(40rem, 92vw)` |
-| Desktop | 1200+ | Sidebar | Editor drawer 42rem |
+| Tablet portrait | 600–899 | Still mobile chrome (`Layout` switches at 1024) | Editor drawer inset-stretched (`inset-inline-start: 2rem`) |
+| Tablet landscape / compact desktop | 900–1023 | Still mobile chrome | Same inset-stretched editor |
+| Desktop | 1024+ | Sidebar | Editor drawer fixed `52rem` rail (10-inch landscape included) |
 | Large desktop | 1440+ | Sidebar | Same editor width; page grids may add columns |
 
 Keep using:
@@ -65,8 +65,8 @@ Do not create extra wrappers that force POS, Schedule, and Finance into one page
 **Editor drawers** (`size="editor"`):
 
 - Phone: full viewport
-- Tablet: near-full overlay, not a 420px rail
-- Desktop: 42rem right rail below the utility bar
+- Tablet (600–1023, including 7-inch ~811 CSS px): inset-stretched overlay, not a 32rem rail. Do not put `min()` + `vw` in `:root` custom properties; Android WebView drops those.
+- Desktop / 10-inch landscape (~1463 CSS px): plain `52rem` right rail below the utility bar. Do not use `min()` + `%` on the rail width.
 - Sticky header, scroll body, sticky footer with safe-area padding
 - Parent still owns save / cancel / unsaved rules
 
@@ -156,9 +156,9 @@ Unchanged and still required:
 ## 11. Responsive test matrix
 
 Harness: `apps/merchant-portal/test/visual/merchant-responsive.spec.ts`  
-Viewports: 320×700, 375×812, 390×844, 600×960, 768×1024, 820×1180, 1024×768, 1180×820, 1280×800, 1440×900, 1920×1080, plus 375 and 768 at 24px root font.
+Viewports: 320×700, 375×812, 390×844, 600×960, 768×1024, 811×1444 (7-inch), 820×1180, 1024×768, 1180×820, 1280×800, 1440×900, 1463×823 (10-inch), 1920×1080, plus 375 and 768 at 24px root font.
 
-Checks: no page overflow, drawer not overflowing, tabs not wrapping, save visible, phone drawer full-width, 768 drawer >500px.
+Checks: no page overflow, drawer not overflowing, tabs not wrapping, save visible, phone drawer full-width, tablet 600–1023 drawer near-full (`viewport − 40px`), desktop/10-inch rail ~52rem with 2-column pricing.
 
 POS and Dashboard keep their own harnesses.
 

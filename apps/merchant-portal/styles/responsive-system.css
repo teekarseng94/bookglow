@@ -7,6 +7,12 @@
 }
 
 .m-drawer {
+  min-width: 0;
+}
+
+/* Size containment on the positioned panel itself makes Android WebView
+   ignore max-width / % width and fall back to the 32rem rail. Query the body. */
+.m-drawer .m-modal-body {
   container-type: inline-size;
   container-name: drawer;
   min-width: 0;
@@ -43,9 +49,29 @@
   }
 }
 
+/* Tablet / 7-inch: stretch with insets instead of min()+vw in :root tokens.
+   Android WebView often invalidates those custom properties and keeps 32rem. */
+@media (min-width: 600px) and (max-width: 1023.98px) {
+  .m-drawer--right.m-drawer--editor {
+    inset-block: 0;
+    inset-inline-end: 0;
+    inset-inline-start: var(--space-8);
+    width: auto;
+    max-width: none;
+  }
+}
+
 @media (min-width: 1024px) {
   .m-drawer--right {
     top: var(--drawer-chrome-top);
+  }
+
+  /* 10-inch / desktop: plain rem rail. Do not use min()+% here — Android WebView
+     drops those and the form collapses to a single column on the left. */
+  .m-drawer--right.m-drawer--editor {
+    inset-inline-start: auto;
+    width: 52rem;
+    max-width: 52rem;
   }
 }
 
@@ -123,6 +149,7 @@
   display: grid;
   gap: var(--form-gap);
   grid-template-columns: minmax(0, 1fr);
+  width: 100%;
   min-width: 0;
 }
 
@@ -130,21 +157,38 @@
   min-width: 0;
 }
 
+.m-form-grid input,
+.m-form-grid textarea,
+.m-form-grid select,
+.m-form-grid .m-settings-control {
+  display: block;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
 @container drawer (min-width: 28rem) {
   .m-form-grid--2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 }
 
 @container overlay (min-width: 28rem) {
   .m-form-grid--2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 }
 
 @container page (min-width: 36rem) {
   .m-form-grid--2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 599.98px) {
+  .m-drawer--editor .m-form-grid--2 {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -152,7 +196,7 @@
   .m-drawer--editor .m-form-grid--2,
   .m-drawer--lg .m-form-grid--2,
   .m-drawer--xl .m-form-grid--2 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 }
 

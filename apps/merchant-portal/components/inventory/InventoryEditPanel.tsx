@@ -18,7 +18,7 @@ export interface InventoryEditPanelProps {
 
 /**
  * Catalog editor chrome. Uses the shared editor drawer: full-screen on phones,
- * near-full-width on tablets, and a wide right rail on desktop.
+ * inset-stretched on 7-inch / iPad Mini tablets, and a wide right rail on desktop.
  */
 export const InventoryEditPanel: React.FC<InventoryEditPanelProps> = ({
   open,

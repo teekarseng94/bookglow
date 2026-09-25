@@ -27,44 +27,34 @@ export const StaffPageHeader: React.FC<StaffPageHeaderProps> = ({
   className,
 }) => (
   <div className={cx(className)}>
+    <div className="md:hidden flex gap-2">
+      <Button variant="secondary" size="md" onClick={onOpenRoleRates} disabled={ratesDisabled} className="flex-1">
+        {locked ? 'Locked' : 'Roles'}
+      </Button>
+      <Button variant="primary" size="md" onClick={onAddStaff} disabled={addDisabled} className="flex-1">
+        {locked ? 'Locked' : 'Add Staff'}
+      </Button>
+    </div>
     <PageHeader
-      className="m-page-header--compact m-page-header--app-owned !pb-3 sm:!pb-4"
+      className="m-page-header--compact hidden md:flex !pb-4"
       title={
         <span className="inline-flex flex-wrap items-center gap-2">
           <span>{title}</span>
           {liveBadge ? (
             <span className="m-staff-card__role inline-flex items-center gap-1.5 bg-[var(--success-soft)] text-[var(--success)] border border-[var(--success-border)]">
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)]" aria-hidden />
-              <span className="sm:hidden">Live</span>
-              <span className="hidden sm:inline">Live outlet</span>
+              Live outlet
             </span>
           ) : null}
         </span>
       }
-      description={<span className="hidden sm:inline">{description}</span>}
+      description={description}
       actions={
-        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={onOpenRoleRates}
-            disabled={ratesDisabled}
-            className="flex-1 sm:flex-none"
-          >
-            {locked ? 'Locked' : (
-              <>
-                <span className="sm:hidden">Roles</span>
-                <span className="hidden sm:inline">View Roles & Permissions</span>
-              </>
-            )}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={onOpenRoleRates} disabled={ratesDisabled}>
+            {locked ? 'Locked' : 'View Roles & Permissions'}
           </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={onAddStaff}
-            disabled={addDisabled}
-            className="flex-1 sm:flex-none"
-          >
+          <Button variant="primary" size="sm" onClick={onAddStaff} disabled={addDisabled}>
             {locked ? 'Locked' : '+ Add Staff'}
           </Button>
         </div>

@@ -992,7 +992,7 @@ const Services: React.FC<ServicesProps> = ({
   );
 
   return (
-    <div className="m-page-with-bottom-nav space-y-4 animate-fadeIn">
+    <div className="m-page-with-bottom-nav min-w-0 overflow-x-hidden space-y-4 animate-fadeIn">
       {/* ——— Mobile chrome (below 768px) ——— */}
       {saveMessage ? (
         <Alert tone="success" title="Changes saved">
@@ -1137,7 +1137,32 @@ const Services: React.FC<ServicesProps> = ({
       {/* Mobile inventory cards */}
       <div className="m-service-list md:hidden flex flex-col space-y-0">
         {activeTab === 'services' && filteredServices.length === 0 && (
-          <InventoryEmptyState title="No services found" />
+          <InventoryEmptyState
+            title={services.length === 0 ? 'No services yet' : 'No services found'}
+            description={
+              services.length === 0
+                ? 'Add a service to sell it in POS and bookings.'
+                : 'Try changing the category or search.'
+            }
+            action={
+              services.length === 0 && !isLocked ? (
+                <Button type="button" variant="primary" onClick={handleOpenAddModal}>
+                  Add Service
+                </Button>
+              ) : menuSearchQuery.trim() || selectedCategory !== 'All' ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setMenuSearchQuery('');
+                    setSelectedCategory('All');
+                  }}
+                >
+                  Clear filters
+                </Button>
+              ) : null
+            }
+          />
         )}
         {activeTab === 'services' &&
           sortItems(filteredServices, menuSortBy).map((service) => {
@@ -1158,7 +1183,32 @@ const Services: React.FC<ServicesProps> = ({
               />
             );
           })}        {activeTab === 'products' && filteredProducts.length === 0 && (
-          <InventoryEmptyState title="No products found" />
+          <InventoryEmptyState
+            title={products.length === 0 ? 'No products yet' : 'No products found'}
+            description={
+              products.length === 0
+                ? 'Add a product to sell it in POS.'
+                : 'Try changing the category or search.'
+            }
+            action={
+              products.length === 0 && !isLocked ? (
+                <Button type="button" variant="primary" onClick={handleOpenAddModal}>
+                  Add Product
+                </Button>
+              ) : menuSearchQuery.trim() || selectedCategory !== 'All' ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setMenuSearchQuery('');
+                    setSelectedCategory('All');
+                  }}
+                >
+                  Clear filters
+                </Button>
+              ) : null
+            }
+          />
         )}
         {activeTab === 'products' &&
           filteredProducts.map((product) => (
@@ -1181,7 +1231,32 @@ const Services: React.FC<ServicesProps> = ({
             />
           ))}
         {activeTab === 'packages' && filteredPackages.length === 0 && (
-          <InventoryEmptyState title="No packages found" />
+          <InventoryEmptyState
+            title={packages.length === 0 ? 'No packages yet' : 'No packages found'}
+            description={
+              packages.length === 0
+                ? 'Add a package to sell it in POS.'
+                : 'Try changing the category or search.'
+            }
+            action={
+              packages.length === 0 && !isLocked ? (
+                <Button type="button" variant="primary" onClick={handleOpenAddModal}>
+                  Add Package
+                </Button>
+              ) : menuSearchQuery.trim() || selectedCategory !== 'All' ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setMenuSearchQuery('');
+                    setSelectedCategory('All');
+                  }}
+                >
+                  Clear filters
+                </Button>
+              ) : null
+            }
+          />
         )}
         {activeTab === 'packages' &&
           filteredPackages.map((pkg) => {

@@ -1,5 +1,4 @@
 import React from 'react';
-import { OverlayTabs } from '../ui/OverlayTabs';
 import { cx } from '../ui/cx';
 
 export type SettingsSectionId =
@@ -35,16 +34,24 @@ export const SettingsNavigation: React.FC<SettingsNavigationProps> = ({
   className,
 }) => (
   <>
-    <OverlayTabs
-      ariaLabel="Settings sections"
-      value={activeId}
-      onChange={onSelect}
-      items={SETTINGS_NAV_ITEMS}
-      className={cx('lg:hidden w-full min-w-0', className)}
-    />
+    <label className={cx('md:hidden block min-w-0 w-full', className)}>
+      <span className="sr-only">Settings sections</span>
+      <select
+        aria-label="Settings sections"
+        value={activeId}
+        onChange={(event) => onSelect(event.target.value as SettingsSectionId)}
+        className="m-settings-jump m-settings-control min-h-11 w-full max-w-full"
+      >
+        {SETTINGS_NAV_ITEMS.map((item) => (
+          <option key={item.id} value={item.id}>
+            {item.label}
+          </option>
+        ))}
+      </select>
+    </label>
     <nav
       className={cx(
-        'hidden lg:block w-56 shrink-0 sticky top-4 self-start',
+        'hidden md:block w-56 shrink-0 sticky top-4 self-start',
         className,
       )}
       aria-label="Settings sections"

@@ -58,13 +58,14 @@ const IntegrationsPage: React.FC = () => {
   const apis = INTEGRATION_REGISTRY.filter((item) => item.category === "api");
 
   return (
-    <div className="m-page-with-bottom-nav animate-fadeIn">
+    <div className="m-page-with-bottom-nav min-w-0 overflow-x-hidden animate-fadeIn">
       <div className="max-w-2xl mx-auto">
         <PageHeader
+          className="hidden md:flex"
           title="Integrations"
           description="Connect BookGlow with the services you use to run your business."
         />
-        <div className="mt-6 space-y-8">
+        <div className="mt-2 md:mt-6 space-y-8">
           <IntegrationSection title="Reviews">
             {reviews.map((item) => (
               <IntegrationRow

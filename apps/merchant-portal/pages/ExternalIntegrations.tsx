@@ -107,8 +107,18 @@ const ExternalIntegrations: React.FC<ExternalIntegrationsProps> = ({
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-fadeIn pb-20">
+    <div className="m-page-with-bottom-nav max-w-4xl mx-auto min-w-0 overflow-x-hidden space-y-6 animate-fadeIn">
+      <Link
+        to="/settings"
+        className="md:hidden inline-flex min-h-11 items-center gap-2 text-sm font-medium text-[var(--text-secondary)]"
+      >
+        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        Back to Settings
+      </Link>
       <PageHeader
+        className="hidden md:flex"
         title="External Integrations"
         description="Sync appointments from Setmore (ICS/iCal feed). Only real integrations are shown."
         actions={

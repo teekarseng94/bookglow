@@ -167,8 +167,18 @@ const ApiIntegrationManagement: React.FC = () => {
         : 'disconnected';
 
   return (
-    <div className="space-y-8 animate-fadeIn pb-20">
+    <div className="m-page-with-bottom-nav min-w-0 overflow-x-hidden space-y-8 animate-fadeIn">
+      <Link
+        to="/settings"
+        className="md:hidden inline-flex min-h-11 items-center gap-2 text-sm font-medium text-[var(--text-secondary)]"
+      >
+        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        Back to Settings
+      </Link>
       <PageHeader
+        className="hidden md:flex"
         title="API Integration Management"
         description="Connect your chatbot to this POS. Manage API key and webhook. Key generation and hashing behavior is unchanged."
         actions={
@@ -222,7 +232,7 @@ const ApiIntegrationManagement: React.FC = () => {
                 type="text"
                 readOnly
                 value={displayKey}
-                className="flex-1 min-w-[200px] p-3 bg-[var(--bg-soft)] border border-[var(--line)] rounded-ui-md text-sm font-mono text-[var(--text-secondary)]"
+                className="flex-1 min-w-0 w-full p-3 bg-[var(--bg-soft)] border border-[var(--line)] rounded-ui-md text-sm font-mono text-[var(--text-secondary)]"
               />
               {revealedKey && (
                 <Button type="button" onClick={handleCopyKey}>
@@ -273,7 +283,7 @@ const ApiIntegrationManagement: React.FC = () => {
             value={webhookUrl}
             onChange={(e) => setWebhookUrl(e.target.value)}
             placeholder="https://your-webhook.example/events"
-            className="flex-1 min-w-[260px] p-3 border border-[var(--line)] rounded-ui-md text-sm text-[var(--text-secondary)] placeholder:text-[var(--text-muted)] focus-visible:shadow-ui-focus-strong outline-none"
+            className="flex-1 min-w-0 w-full p-3 border border-[var(--line)] rounded-ui-md text-sm text-[var(--text-secondary)] placeholder:text-[var(--text-muted)] focus-visible:shadow-ui-focus-strong outline-none"
           />
           <Button type="button" onClick={handleSaveWebhook} disabled={webhookSaving}>
             {webhookSaving ? 'Saving…' : webhookSaved ? 'Saved' : 'Save'}

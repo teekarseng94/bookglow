@@ -208,7 +208,7 @@ const GoogleReviewsIntegrationPage: React.FC = () => {
   };
 
   return (
-    <div className="m-page-with-bottom-nav animate-fadeIn flex flex-col min-h-[calc(100dvh-8rem)]">
+    <div className="m-page-with-bottom-nav min-w-0 overflow-x-hidden animate-fadeIn flex flex-col min-h-[calc(100dvh-8rem)]">
       <div className="max-w-xl mx-auto w-full flex-1 flex flex-col">
         <div className="flex items-center gap-2 mb-4">
           <Link

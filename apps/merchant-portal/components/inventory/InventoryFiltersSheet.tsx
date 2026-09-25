@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sheet } from '../ui/Sheet';
+import { MobileFilterSheet } from '../ui/MobileShell';
 import { Button } from '../ui/Button';
 import { cx } from '../ui/cx';
 
@@ -18,11 +18,10 @@ export const InventoryFiltersSheet: React.FC<InventoryFiltersSheetProps> = ({
   selectedCategory,
   onCategoryChange,
 }) => (
-  <Sheet
+  <MobileFilterSheet
     open={open}
     onClose={onClose}
     title="Filters"
-    side="bottom"
     footer={
       <Button fullWidth variant="primary" onClick={onClose}>
         Done
@@ -61,7 +60,7 @@ export const InventoryFiltersSheet: React.FC<InventoryFiltersSheetProps> = ({
         ))}
       </div>
     </div>
-  </Sheet>
+  </MobileFilterSheet>
 );
 
 export default InventoryFiltersSheet;

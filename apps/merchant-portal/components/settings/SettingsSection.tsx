@@ -8,7 +8,7 @@ export interface SettingsSectionProps {
   title: string;
   description?: string;
   defaultOpen?: boolean;
-  /** When true, always expanded on desktop (lg+). Mobile remains accordion. */
+  /** When true, always expanded on desktop (md+). Mobile remains accordion. */
   desktopAlwaysOpen?: boolean;
   className?: string;
   children: React.ReactNode;
@@ -46,7 +46,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
           'w-full flex items-center text-left',
           'm-settings-row',
           'sm:gap-4 sm:p-4 sm:min-h-0',
-          desktopAlwaysOpen && 'lg:cursor-default lg:p-5',
+          desktopAlwaysOpen && 'md:cursor-default md:p-5',
           'border-b border-[var(--line-soft)]',
         )}
       >
@@ -58,7 +58,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
             {title}
           </h3>
           {description ? (
-            <p className="m-settings-desc text-xs text-[var(--text-muted)] font-medium mt-1 truncate lg:whitespace-normal lg:overflow-visible">
+            <p className="m-settings-desc text-xs text-[var(--text-muted)] font-medium mt-1 whitespace-normal break-words">
               {description}
             </p>
           ) : null}
@@ -66,7 +66,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
         <svg
           className={cx(
             'w-5 h-5 text-[var(--text-muted)] flex-shrink-0 transition-transform',
-            desktopAlwaysOpen && 'lg:hidden',
+            desktopAlwaysOpen && 'md:hidden',
             open && 'rotate-180',
           )}
           fill="none"
@@ -81,7 +81,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
         className={cx(
           'px-4 py-4 sm:px-5 sm:py-5',
           open ? 'block' : 'hidden',
-          desktopAlwaysOpen && 'lg:block',
+          desktopAlwaysOpen && 'md:block',
         )}
       >
         <div className="m-settings-content">{children}</div>

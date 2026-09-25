@@ -222,11 +222,7 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
 
   if (role !== 'admin') {
     return (
-      <div className="space-y-6 animate-fadeIn">
-        <PageHeader
-          title="Marketing"
-          description="Create and manage customer vouchers."
-        />
+      <div className="m-page-with-bottom-nav min-w-0 overflow-x-hidden space-y-6 animate-fadeIn">
         <EmptyState
           icon={<Megaphone size={28} />}
           title="Marketing access is restricted"
@@ -237,8 +233,15 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-4 animate-fadeIn">
+    <div className="m-page-with-bottom-nav mx-auto max-w-5xl min-w-0 overflow-x-hidden space-y-4 animate-fadeIn">
+      <div className="md:hidden">
+        <Button type="button" fullWidth onClick={() => setIsEditorOpen(true)}>
+          <Plus size={16} aria-hidden="true" />
+          Create voucher
+        </Button>
+      </div>
       <PageHeader
+        className="hidden md:flex"
         title="Marketing"
         description="Create and manage customer vouchers."
         actions={

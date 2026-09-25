@@ -700,13 +700,13 @@ const CRM: React.FC<CRMProps> = ({
   };
 
   return (
-    <div className="m-page-with-bottom-nav space-y-3 sm:space-y-5 md:space-y-6 animate-fadeIn m-body md:text-base m-member-page sm:pb-6">
+    <div className="m-page-with-bottom-nav min-w-0 overflow-x-hidden space-y-3 sm:space-y-5 md:space-y-6 animate-fadeIn m-body md:text-base m-member-page sm:pb-6">
       <div className="hidden sm:block">
         <MemberPageHeader clientCount={clientTotalCount} />
       </div>
       {/* Recent import toast: show last import count + Undo button */}
       {lastImportToast && (
-        <div className="fixed bottom-6 right-6 z-[70] max-w-sm animate-fadeIn">
+          <div className="fixed bottom-[calc(var(--mobile-bottom-nav-height)+var(--mobile-safe-area-bottom)+0.75rem)] inset-x-4 z-[70] max-w-full animate-fadeIn sm:inset-x-auto sm:right-6 sm:left-auto sm:max-w-sm">
           <div className="bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-md p-4 flex flex-col gap-3">
             <p className="text-sm font-semibold text-[var(--text-primary)]">
               Recent activity

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { acceptMerchantInvitation, completeMerchantOnboarding, ensureMerchantWorkspace, hasMerchantWorkspace, loadMerchantDraft, merchantPortalLoginUrl, saveMerchantDraft } from '../../services/merchantOnboardingService';
 import { activeSteps, BUSINESS_CATEGORIES, PREVIOUS_SOFTWARE, TEAM_SIZES } from './onboardingSteps';
 import { emptyOnboardingPayload, type MerchantOnboardingPayload, type OnboardingStepId } from './onboardingTypes';
-import { normalizeWebsite, serializeDraft, validateStep } from './onboardingValidation';
+import { canContinueOnboarding, isOnboardingStepOptional, normalizeWebsite, serializeDraft, validateStep } from './onboardingValidation';
 import OnboardingShell from './components/OnboardingShell';
 
 interface Props {
@@ -45,6 +45,7 @@ export default function MerchantOnboardingWizard({ email, completeHref, saveExit
   useEffect(() => { titleRef.current?.focus(); }, [step]);
 
   const persistAndMove = async () => {
+    if (saving) return;
     setError('');
     const validation = validateStep(step, payload);
     if (validation) { setError(validation); return; }
@@ -72,6 +73,7 @@ export default function MerchantOnboardingWizard({ email, completeHref, saveExit
   };
 
   const saveAndExit = async () => {
+    if (saving) return;
     setSaving(true); setError('');
     try {
       await saveMerchantDraft(step, payload);
@@ -93,7 +95,17 @@ export default function MerchantOnboardingWizard({ email, completeHref, saveExit
   };
 
   if (loading) return <div className="merchant-onboarding__loading" role="status">Loading your setup…</div>;
-  const footer = step !== 'complete' ? <button type="button" className="merchant-onboarding__continue" onClick={persistAndMove} disabled={saving}>{saving ? 'Saving…' : <>Continue <span aria-hidden>→</span></>}</button> : undefined;
+  const stepError = validateStep(step, payload);
+  const canContinue = canContinueOnboarding(step, payload) && !saving;
+  const optionalStep = isOnboardingStepOptional(step);
+  const footer = step !== 'complete' ? (
+    <>
+      {error ? <div className="merchant-onboarding__error" role="alert">{error}</div> : null}
+      {!error && stepError ? <p className="merchant-onboarding__hint" role="status">{stepError}</p> : null}
+      {optionalStep && !stepError ? <p className="merchant-onboarding__hint">This step is optional. You can continue without choosing software.</p> : null}
+      <button type="button" className="merchant-onboarding__continue" onClick={() => void persistAndMove()} disabled={!canContinue}>{saving ? 'Saving…' : <>Continue <span aria-hidden>→</span></>}</button>
+    </>
+  ) : undefined;
 
   return (
     <OnboardingShell
@@ -144,7 +156,6 @@ export default function MerchantOnboardingWizard({ email, completeHref, saveExit
           <dl><div><dt>Business</dt><dd>{payload.businessName}</dd></div><div><dt>Outlet_ID</dt><dd>{result?.outlet_id || 'Created'}</dd></div><div><dt>Booking path</dt><dd>/book/{result?.booking_slug || 'your-business'}</dd></div><div><dt>Owner email</dt><dd>{email}</dd></div></dl>
           <button type="button" className="merchant-onboarding__continue" onClick={() => window.location.assign(portalHref)}>Go to dashboard <span aria-hidden>→</span></button>
         </div>}
-        {error && <div className="merchant-onboarding__error" role="alert">{error}</div>}
       </section>
     </OnboardingShell>
   );

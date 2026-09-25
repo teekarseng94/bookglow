@@ -201,8 +201,13 @@ const SalesReports: React.FC<SalesReportsProps> = ({
   }, [dailySales, paymentMethods]);
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+    const date = new Date(`${dateString}T12:00:00`);
     return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+
+  const formatCompactDate = (dateString: string) => {
+    const date = new Date(`${dateString}T12:00:00`);
+    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
   };
 
   const navigateDate = (direction: 'prev' | 'next') => {
@@ -246,7 +251,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
           .no-print { display: none !important; }
         }
       `}</style>
-      <div className="m-page-with-bottom-nav m-sales-report-page space-y-3 sm:space-y-4 sales-report-print-area">
+      <div className="m-page-with-bottom-nav m-sales-report-page min-w-0 overflow-x-hidden space-y-3 sm:space-y-4 sales-report-print-area">
       <div className="no-print hidden sm:block">
         <ReportPageHeader
           title="Sales Reports"
@@ -269,6 +274,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
         onPrint={handlePrint}
         onOpenFilters={() => setShowFiltersSheet(true)}
         rangeLabel={startDate === endDate ? formatDate(startDate) : `${formatDate(startDate)} – ${formatDate(endDate)}`}
+        compactRangeLabel={startDate === endDate ? formatCompactDate(startDate) : `${formatCompactDate(startDate)} – ${formatCompactDate(endDate)}`}
       />
       <div className="flex flex-col lg:flex-row gap-3 sm:gap-6 animate-fadeIn">
       {/* Collection Summary Sidebar - included in print */}
@@ -331,7 +337,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
             { label: 'Staff', value: String(collectionSummary.staffCount), tone: 'neutral' },
           ]}
         />
-        <div className="m-sales-metrics grid grid-cols-2 sm:hidden">
+        <div className="m-sales-metrics md:hidden">
           {[
             ['Orders', collectionSummary.orderCount],
             ['Items', collectionSummary.itemCount],
@@ -339,15 +345,8 @@ const SalesReports: React.FC<SalesReportsProps> = ({
             ['Staff', collectionSummary.staffCount],
           ].map(([label, value]) => (
             <div key={String(label)} className="m-sales-metric">
-              <span className="m-sales-metric__icon" aria-hidden>
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 7h14l-1 11H6L5 7zm3 0V5a4 4 0 018 0v2" />
-                </svg>
-              </span>
-              <span>
-                <span className="m-sales-metric__label block">{label}</span>
-                <span className="m-sales-metric__value block tabular-nums">{value}</span>
-              </span>
+              <span className="m-sales-metric__label">{label}</span>
+              <span className="m-sales-metric__value tabular-nums">{value}</span>
             </div>
           ))}
         </div>

@@ -2,6 +2,7 @@ import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { DenseEntityRow } from './DenseEntityRow';
+import { EmptyState } from './EmptyState';
 import { FilterToolbar } from './FilterToolbar';
 import { PageHeader } from './PageHeader';
 import { SectionHeader } from './SectionHeader';
@@ -36,6 +37,11 @@ describe('shared mobile primitives', () => {
 
     expect(container.firstChild).toHaveClass('m-filter-toolbar--active');
     expect(screen.getByRole('button', { name: 'Active' })).toBeInTheDocument();
+  });
+
+  it('uses compact empty-state padding on mobile', () => {
+    const { container } = render(<EmptyState title="No transactions yet" description="Completed sales and expenses will appear here." />);
+    expect(container.firstChild).toHaveClass('py-6');
   });
 
   it('renders section counts and accessible status labels', () => {

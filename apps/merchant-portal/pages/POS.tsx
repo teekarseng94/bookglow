@@ -9,8 +9,10 @@ import { clientService, getCurrentOutletID } from '../services/databaseService';
 import {
   POSCartItem,
   POSCartSheet,
+  POSCatalogueEmptyState,
   POSCatalogueList,
   POSCatalogueSection,
+  resolvePOSEmptyKind,
   POSCatalogueToolbar,
   POSItemCard,
   POSMemberSummary,
@@ -649,8 +651,23 @@ const POS: React.FC<POSProps> = ({
   const catalogueSectionTitle =
     activeCatalog === 'products' ? 'Products' : activeCatalog === 'packages' ? 'Packages' : 'Services';
 
+  const catalogueEmptyKind = resolvePOSEmptyKind({
+    activeCatalog,
+    filteredServices: filteredServices.length,
+    filteredProducts: filteredProducts.length,
+    filteredPackages: filteredPackages.length,
+    hasSearch: Boolean(globalSearch.trim()),
+    category: posCategory,
+  });
+
+  const clearCatalogueFilters = () => {
+    setGlobalSearch('');
+    setPosCategory('All');
+    setActiveCatalog('all');
+  };
+
   return (
-    <div className="m-page-with-sticky-action m-pos-page flex h-full min-h-0 flex-col gap-3 post:overflow-hidden post:pb-0 lg:pb-0 posd:gap-3">
+    <div className="m-page-with-sticky-action m-pos-page flex h-full min-h-0 min-w-0 overflow-x-hidden flex-col gap-3 post:overflow-hidden post:pb-0 lg:pb-0 posd:gap-3">
       <POSPageHeader
         shopName={outletSettings.shopName}
         banner={
@@ -688,12 +705,18 @@ const POS: React.FC<POSProps> = ({
 
           <div className="m-pos-catalogue-scroll min-h-0 flex-1 overflow-y-auto post:pr-1 scrollbar-thin">
             <POSCatalogueList>
-              {(activeCatalog === 'all' || activeCatalog === 'services') && (
+              {catalogueEmptyKind !== 'none' ? (
+                <POSCatalogueEmptyState
+                  kind={catalogueEmptyKind}
+                  onClearFilters={clearCatalogueFilters}
+                  onGoToMenu={() => navigate('/menu')}
+                />
+              ) : (
+                <>
+              {(activeCatalog === 'all' || activeCatalog === 'services') && filteredServices.length > 0 && (
                 <POSCatalogueSection
                   title="Services"
                   hideTitle
-                  empty={filteredServices.length === 0}
-                  emptyMessage="No services found. Try a different category or search."
                 >
                   {filteredServices.map((service) => (
                     <POSItemCard
@@ -710,14 +733,11 @@ const POS: React.FC<POSProps> = ({
                 </POSCatalogueSection>
               )}
 
-              {(activeCatalog === 'all' || activeCatalog === 'products') &&
-                (filteredProducts.length > 0 || activeCatalog === 'products') && (
+              {(activeCatalog === 'all' || activeCatalog === 'products') && filteredProducts.length > 0 && (
                 <POSCatalogueSection
                   title="Products"
                   hideTitle={activeCatalog === 'products'}
                   className={activeCatalog === 'all' ? 'posd:mt-2' : undefined}
-                  empty={filteredProducts.length === 0}
-                  emptyMessage="No products found. Try a different category or search."
                 >
                   {filteredProducts.map((product) => (
                     <POSItemCard
@@ -732,14 +752,11 @@ const POS: React.FC<POSProps> = ({
                 </POSCatalogueSection>
               )}
 
-              {(activeCatalog === 'all' || activeCatalog === 'packages') &&
-                (filteredPackages.length > 0 || activeCatalog === 'packages') && (
+              {(activeCatalog === 'all' || activeCatalog === 'packages') && filteredPackages.length > 0 && (
                 <POSCatalogueSection
                   title="Packages"
                   hideTitle={activeCatalog === 'packages'}
                   className={activeCatalog === 'all' ? 'posd:mt-2' : undefined}
-                  empty={filteredPackages.length === 0}
-                  emptyMessage="No packages found. Try a different category or search."
                 >
                   {filteredPackages.map((pkg) => (
                     <POSItemCard
@@ -768,15 +785,8 @@ const POS: React.FC<POSProps> = ({
                   ))}
                 </POSCatalogueSection>
               )}
-
-              {activeCatalog === 'all' &&
-                filteredServices.length === 0 &&
-                filteredProducts.length === 0 &&
-                filteredPackages.length === 0 && (
-                  <div className="py-12 text-center text-[var(--text-muted)] text-sm">
-                    No items found. Try a different category or search.
-                  </div>
-                )}
+                </>
+              )}
             </POSCatalogueList>
           </div>
 

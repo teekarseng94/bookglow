@@ -205,7 +205,9 @@
 /* Desktop + mobile: controls must look like real inputs (border/padding). */
 .m-settings-control {
   display: block;
+  box-sizing: border-box;
   width: 100%;
+  max-width: 100%;
   min-height: 2.75rem;
   padding: 0.625rem 0.875rem;
   border-radius: var(--radius-ui-sm, 0.5rem);
@@ -235,6 +237,12 @@
 textarea.m-settings-control {
   min-height: 4.5rem;
   resize: vertical;
+}
+
+select.m-settings-control,
+.m-settings-jump {
+  appearance: auto;
+  background-image: none;
 }
 
 .m-settings-block {
@@ -286,7 +294,45 @@ textarea.m-settings-control {
   gap: var(--settings-list-gap);
 }
 
+.m-mobile-page-shell {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.m-mobile-scroll-area {
+  min-height: 0;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.m-safe-area-spacer[data-position='top'] {
+  height: env(safe-area-inset-top, 0px);
+}
+
+.m-safe-area-spacer[data-position='bottom'] {
+  height: env(safe-area-inset-bottom, 0px);
+}
+
+
 @media (max-width: 767.98px) {
+  .bookglow-page,
+  .bookglow-content-frame {
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+    overflow-x: clip;
+  }
+
+  .bookglow-mobile-nav-item__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   /* The app shell owns the mobile page title; local headers keep only contextual actions. */
   .m-page-header--app-owned .m-page-header-main {
     display: none;
@@ -486,7 +532,7 @@ textarea.m-settings-control {
   }
 
   .bookglow-mobile-header {
-    height: calc(68px + var(--mobile-safe-area-top));
+    height: calc(56px + var(--mobile-safe-area-top));
   }
 
   .bookglow-mobile-safe-area-top {
@@ -494,16 +540,16 @@ textarea.m-settings-control {
   }
 
   .bookglow-mobile-header__inner {
-    height: 68px;
-    padding: 8px max(16px, var(--safe-right)) 8px max(16px, var(--safe-left));
+    height: 56px;
+    padding: 6px max(12px, var(--safe-right)) 6px max(12px, var(--safe-left));
   }
 
   .bookglow-main-scroll {
-    padding-top: calc(68px + var(--mobile-safe-area-top));
+    padding-top: calc(56px + var(--mobile-safe-area-top));
   }
 
   .bookglow-mobile-header__title {
-    font-size: 18px;
+    font-size: 16px;
     line-height: 1.2;
   }
 
@@ -833,19 +879,36 @@ textarea.m-settings-control {
   }
 
   .m-inventory-tabs {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    display: flex;
+    align-items: stretch;
     gap: 4px;
     width: 100%;
-    height: var(--mobile-inventory-tab-height);
+    min-width: 0;
+    height: auto;
+    min-height: var(--mobile-inventory-tab-height);
     padding: 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
     border-radius: var(--mobile-radius-md);
     background: var(--bg-soft);
     border: 1px solid var(--line);
   }
 
+  .m-inventory-tabs [role='tab'] {
+    flex: 1 0 auto;
+    min-width: max-content;
+    height: auto;
+    min-height: var(--touch-min, 44px);
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: unset;
+  }
+
   .m-inventory-tabs__btn {
-    min-width: 0;
+    min-width: max-content;
     height: 100%;
     border-radius: var(--mobile-radius-sm);
     font-size: var(--mobile-text-secondary);
@@ -855,6 +918,7 @@ textarea.m-settings-control {
     justify-content: center;
     gap: 6px;
     white-space: nowrap;
+    overflow: visible;
   }
 
   .m-inventory-page-title {
@@ -1103,7 +1167,7 @@ textarea.m-settings-control {
   .m-inventory-fab {
     position: fixed;
     right: max(16px, env(safe-area-inset-right));
-    bottom: calc(72px + 16px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(var(--mobile-bottom-nav-height) + var(--mobile-safe-area-bottom) + 16px);
     z-index: 40;
     min-height: var(--mobile-inventory-fab-height);
     height: var(--mobile-inventory-fab-height);
@@ -1127,7 +1191,7 @@ textarea.m-settings-control {
     display: flex;
     flex-direction: column;
     gap: var(--mobile-inventory-card-gap);
-    padding-bottom: calc(72px + var(--mobile-inventory-fab-height) + 28px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(var(--mobile-bottom-nav-height) + var(--mobile-inventory-fab-height) + 28px + env(safe-area-inset-bottom, 0px));
   }
 
   .m-service-thumb-sm {
@@ -1755,7 +1819,9 @@ textarea.m-settings-control {
   .m-report-date-bar__arrow,
   .m-report-date-bar__action {
     display: inline-flex;
-    height: 36px;
+    height: 44px;
+    min-height: 44px;
+    min-width: 44px;
     flex: 0 0 auto;
     align-items: center;
     justify-content: center;
@@ -1766,28 +1832,27 @@ textarea.m-settings-control {
   }
 
   .m-report-date-bar__arrow {
-    width: 34px;
+    width: 44px;
     color: var(--text-primary);
   }
 
   .m-report-date-bar__action {
-    gap: 4px;
-    padding: 0 8px;
-    font-size: 12px;
-    font-weight: 700;
+    padding: 0;
   }
 
   .m-report-date-bar__date {
     display: flex;
-    height: 36px;
+    height: 44px;
+    min-height: 44px;
     align-items: center;
     justify-content: center;
     gap: 6px;
-    overflow: hidden;
+    min-width: 0;
+    overflow: visible;
     border: 1px solid var(--line);
     border-radius: 10px;
     color: var(--text-primary);
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 700;
   }
 
@@ -1843,41 +1908,28 @@ textarea.m-settings-control {
 
   .m-sales-metric {
     display: flex;
-    min-height: 82px;
+    min-height: 44px;
     align-items: center;
-    gap: 10px;
-    padding: 12px;
-    border-right: 1px solid var(--line-soft);
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--line-soft);
   }
 
-  .m-sales-metric:nth-child(2n) { border-right: 0; }
-  .m-sales-metric:nth-child(n+3) { border-bottom: 0; }
-
-  .m-sales-metric__icon {
-    display: grid;
-    width: 38px;
-    height: 38px;
-    flex: 0 0 auto;
-    place-items: center;
-    border-radius: 999px;
-    color: var(--brand);
-    background: var(--brand-soft);
+  .m-sales-metric:last-child {
+    border-bottom: 0;
   }
 
   .m-sales-metric__label {
     color: var(--text-muted);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .03em;
-    text-transform: uppercase;
+    font-size: 13px;
+    font-weight: 600;
   }
 
   .m-sales-metric__value {
-    margin-top: 2px;
-    color: var(--text-primary);
-    font-size: 22px;
+    font-size: 16px;
     font-weight: 700;
+    color: var(--text-primary);
   }
 
   .m-sales-asof {

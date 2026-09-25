@@ -25,6 +25,7 @@ describe('responsive layout primitives', () => {
     const tabs = screen.getAllByRole('tab');
     expect(tabs).toHaveLength(4);
     expect(screen.getByRole('tab', { name: 'Details' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tablist').className).toMatch(/m-overlay-tabs/);
     fireEvent.keyDown(screen.getByRole('tablist'), { key: 'ArrowRight' });
     expect(onChange).toHaveBeenCalledWith('pricing');
   });

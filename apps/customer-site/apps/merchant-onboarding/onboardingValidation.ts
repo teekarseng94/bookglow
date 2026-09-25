@@ -24,6 +24,14 @@ export function validateStep(step: OnboardingStepId, payload: MerchantOnboarding
   return null;
 }
 
+export function isOnboardingStepOptional(step: OnboardingStepId): boolean {
+  return step === 'software';
+}
+
+export function canContinueOnboarding(step: OnboardingStepId, payload: MerchantOnboardingPayload): boolean {
+  return validateStep(step, payload) === null;
+}
+
 export function serializeDraft(payload: MerchantOnboardingPayload): MerchantOnboardingPayload {
   return JSON.parse(JSON.stringify(payload)) as MerchantOnboardingPayload;
 }

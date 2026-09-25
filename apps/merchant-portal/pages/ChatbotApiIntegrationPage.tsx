@@ -83,7 +83,7 @@ const ChatbotApiIntegrationPage: React.FC = () => {
   const connected = Boolean(integration?.apiKeyHash);
 
   return (
-    <div className="m-page-with-bottom-nav animate-fadeIn">
+    <div className="m-page-with-bottom-nav min-w-0 overflow-x-hidden animate-fadeIn">
       <div className="max-w-xl mx-auto w-full">
         <div className="flex items-center gap-2 mb-4">
           <Link

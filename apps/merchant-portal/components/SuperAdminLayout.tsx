@@ -99,7 +99,7 @@ const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ user, onLogout, chi
               key={to}
               to={to}
               className={({ isActive }) =>
-                `whitespace-nowrap rounded-ui-sm px-3 py-2 text-xs font-semibold ${
+                `inline-flex min-h-11 items-center whitespace-nowrap rounded-ui-sm px-3 py-2 text-xs font-semibold ${
                   isActive ? 'bg-[var(--brand-soft)] text-[var(--brand-deep)]' : 'text-[var(--text-secondary)]'
                 }`
               }

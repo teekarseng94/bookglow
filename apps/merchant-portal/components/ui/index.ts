@@ -58,3 +58,21 @@ export { StickyActionBar } from './StickyActionBar';
 export type { StickyActionBarProps } from './StickyActionBar';
 export { ModalLoadingFallback } from './ModalLoadingFallback';
 export { NetworkStatusBanner } from './NetworkStatusBanner';
+export {
+  MobilePageShell,
+  MobileHeader,
+  MobileScrollArea,
+  BottomActionBar,
+  SafeAreaSpacer,
+  ResponsiveTabs,
+  MobileFilterSheet,
+  LoadingState,
+} from './MobileShell';
+export type {
+  MobilePageShellProps,
+  MobileHeaderProps,
+  MobileScrollAreaProps,
+  BottomActionBarProps,
+  SafeAreaSpacerProps,
+  MobileFilterSheetProps,
+} from './MobileShell';

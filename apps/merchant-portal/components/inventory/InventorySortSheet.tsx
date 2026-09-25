@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sheet } from '../ui/Sheet';
+import { MobileFilterSheet } from '../ui/MobileShell';
 import { Button } from '../ui/Button';
 import { cx } from '../ui/cx';
 import type { InventorySortOption } from './InventoryToolbar';
@@ -24,11 +24,10 @@ export const InventorySortSheet: React.FC<InventorySortSheetProps> = ({
   sortBy,
   onSortChange,
 }) => (
-  <Sheet
+  <MobileFilterSheet
     open={open}
     onClose={onClose}
     title="Sort"
-    side="bottom"
     footer={
       <Button fullWidth variant="primary" onClick={onClose}>
         Done
@@ -57,7 +56,7 @@ export const InventorySortSheet: React.FC<InventorySortSheetProps> = ({
         );
       })}
     </div>
-  </Sheet>
+  </MobileFilterSheet>
 );
 
 export default InventorySortSheet;

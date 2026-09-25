@@ -754,7 +754,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
 
   // —— Summary view (default)
   return (
-    <div className={`m-member-details-page space-y-3 sm:space-y-6 animate-fadeIn max-w-2xl mx-auto ${bgClass} p-3 sm:p-4 pb-[calc(72px+env(safe-area-inset-bottom,0px)+12px)] sm:pb-8`}>
+    <div className={`m-member-details-page m-page-with-bottom-nav min-w-0 overflow-x-hidden space-y-3 sm:space-y-6 animate-fadeIn max-w-2xl mx-auto ${bgClass} p-3 sm:p-4 sm:pb-8`}>
       {memberDataError && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
           <p className="font-medium">Could not load member activity in real time.</p>

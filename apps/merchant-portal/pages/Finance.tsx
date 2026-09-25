@@ -97,7 +97,7 @@ const Finance: React.FC<FinanceProps> = ({
   }, [transactions]);
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="m-page-with-bottom-nav min-w-0 overflow-x-hidden space-y-6 animate-fadeIn">
       <MobileFinanceOverview
         expenses={expenseHistory}
         categories={expenseCategories}

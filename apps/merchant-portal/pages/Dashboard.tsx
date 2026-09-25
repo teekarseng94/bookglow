@@ -725,7 +725,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const marginPct = dashboardData.stats.revenue > 0 ? (dashboardData.stats.profit / dashboardData.stats.revenue) * 100 : null;
 
   return (
-    <div className="dashboard-today space-y-2 pb-6 animate-fadeIn lg:space-y-4">
+    <div className="dashboard-today m-page-with-bottom-nav min-w-0 overflow-x-hidden space-y-2 animate-fadeIn lg:space-y-4">
       {/* 1. Greeting + top actions */}
       <TodayHeader
         className="dashboard-today-header"

@@ -663,7 +663,7 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
 
   if (!scheduleReady) {
     return (
-      <div className="animate-fadeIn space-y-4 pb-24">
+      <div className="m-page-with-bottom-nav min-w-0 overflow-x-hidden animate-fadeIn space-y-4">
         <SchedulePageHeader />
         <ScheduleSetupState
           businessName={outletSettings.shopName}
@@ -675,7 +675,7 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
   }
 
   return (
-    <div className="animate-fadeIn md:space-y-4 md:pb-24">
+    <div className="m-page-with-bottom-nav min-w-0 overflow-x-hidden animate-fadeIn md:space-y-4">
       <SchedulePageHeader
         dateLabel={desktopDateLabel}
         viewLabel={`${viewMode} view`}

@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { cx } from './cx';
 
 export interface OverlayTabItem<T extends string> {
@@ -28,6 +28,13 @@ export function OverlayTabs<T extends string>({
   className,
 }: OverlayTabsProps<T>) {
   const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const selected = listRef.current?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]');
+    if (typeof selected?.scrollIntoView === 'function') {
+      selected.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' });
+    }
+  }, [value]);
 
   const focusTab = (index: number) => {
     const buttons = listRef.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]:not([disabled])');

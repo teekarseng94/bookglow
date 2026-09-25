@@ -14,7 +14,7 @@ describe('ReportFilterToolbar', () => {
       />,
     );
 
-    expect(container.querySelector('.m-filter-toolbar')).toHaveClass('lg:flex-wrap');
+    expect(container.querySelector('.m-filter-toolbar')).toHaveClass('compact:flex-wrap');
     expect(screen.getByRole('button', { name: 'Sales' }).parentElement?.parentElement).toHaveClass('w-full');
   });
 });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '../ui/Button';
-import { Sheet } from '../ui/Sheet';
+import { MobileFilterSheet } from '../ui/MobileShell';
 import { cx } from '../ui/cx';
 
 export interface ReportDateRangeBarProps {
@@ -11,6 +11,7 @@ export interface ReportDateRangeBarProps {
   onPrev?: () => void;
   onNext?: () => void;
   rangeLabel?: string;
+  compactRangeLabel?: string;
   onPrint?: () => void;
   onOpenFilters?: () => void;
   title?: string;
@@ -26,6 +27,7 @@ export const ReportDateRangeBar: React.FC<ReportDateRangeBarProps> = ({
   onPrev,
   onNext,
   rangeLabel,
+  compactRangeLabel,
   onPrint,
   onOpenFilters,
   title,
@@ -39,7 +41,7 @@ export const ReportDateRangeBar: React.FC<ReportDateRangeBarProps> = ({
         </button>
       ) : null}
       <label className="m-report-date-bar__date relative min-w-0 flex-1">
-        <span className="truncate tabular-nums">{rangeLabel || `${startDate} – ${endDate}`}</span>
+        <span className="whitespace-nowrap tabular-nums">{compactRangeLabel || rangeLabel || `${startDate} – ${endDate}`}</span>
         <svg className="h-4 w-4 shrink-0 text-[var(--brand)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 3v3m10-3v3M4 9h16M5 5h14a1 1 0 011 1v14H4V6a1 1 0 011-1z" /></svg>
         <input type="date" value={startDate} onChange={(event) => { onStartDateChange(event.target.value); onEndDateChange(event.target.value); }} aria-label="Report date" />
       </label>
@@ -49,15 +51,13 @@ export const ReportDateRangeBar: React.FC<ReportDateRangeBarProps> = ({
         </button>
       ) : null}
       {onOpenFilters ? (
-        <button type="button" className="m-report-date-bar__action" onClick={onOpenFilters}>
+        <button type="button" className="m-report-date-bar__action" onClick={onOpenFilters} aria-label="Filters">
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M7 12h10M10 18h4" /></svg>
-          <span>Filters</span>
         </button>
       ) : null}
       {onPrint ? (
-        <button type="button" className="m-report-date-bar__action" onClick={onPrint}>
+        <button type="button" className="m-report-date-bar__action" onClick={onPrint} aria-label="Print">
           <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 9V3h12v6M6 18H4V9h16v9h-2m-12-4h12v7H6v-7z" /></svg>
-          <span>Print</span>
         </button>
       ) : null}
     </div>
@@ -90,9 +90,9 @@ export interface ReportFiltersSheetProps {
 }
 
 export const ReportFiltersSheet: React.FC<ReportFiltersSheetProps> = ({ open, onClose, children, title = 'Filters' }) => (
-  <Sheet open={open} onClose={onClose} title={title} side="bottom" footer={<Button fullWidth variant="primary" onClick={onClose}>Apply</Button>}>
+  <MobileFilterSheet open={open} onClose={onClose} title={title} footer={<Button fullWidth variant="primary" onClick={onClose}>Apply</Button>}>
     {children}
-  </Sheet>
+  </MobileFilterSheet>
 );
 
 export default ReportDateRangeBar;

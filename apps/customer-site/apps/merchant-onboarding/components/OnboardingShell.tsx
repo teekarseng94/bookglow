@@ -1,4 +1,5 @@
 import React from 'react';
+import './OnboardingShell.css';
 
 interface Props {
   progress: number;

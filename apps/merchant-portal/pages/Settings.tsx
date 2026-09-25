@@ -294,12 +294,20 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
 
   const scrollToSection = (id: SettingsSectionId) => {
     setActiveSection(id);
+    const desktop = window.matchMedia('(min-width: 768px)').matches;
+    if (!desktop) {
+      document.querySelector('.bookglow-main-scroll')?.scrollTo({ top: 0 });
+      return;
+    }
     const el = document.getElementById(`settings-${id}`);
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   // Keep side nav in sync with which section is in view (jump links, not tabs).
   useEffect(() => {
+    const desktop = window.matchMedia('(min-width: 768px)');
+    if (!desktop.matches) return;
+
     const ids = SETTINGS_NAV_ITEMS.map((item) => `settings-${item.id}`);
     const elements = ids
       .map((id) => document.getElementById(id))
@@ -334,15 +342,19 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           ? 'saving'
           : 'idle';
 
+  const panel = (visible: boolean) =>
+    visible ? 'block min-w-0 w-full md:contents' : 'hidden md:contents';
+
   return (
-    <div className="m-page-with-bottom-nav animate-fadeIn sm:pb-20">
+    <div className="m-page-with-bottom-nav animate-fadeIn min-w-0 overflow-x-hidden sm:pb-20">
       <SettingsPageHeader />
 
-      <div className="mt-4 lg:mt-6 flex flex-col lg:flex-row gap-6 items-start">
+      <div className="mt-4 md:mt-6 flex flex-col md:flex-row gap-6 items-start min-w-0">
         <SettingsNavigation activeId={activeSection} onSelect={scrollToSection} />
 
-        <div className="min-w-0 flex-1 max-w-3xl space-y-5 sm:space-y-6">
+        <div className="min-w-0 flex-1 max-w-3xl w-full space-y-5 sm:space-y-6 overflow-x-hidden">
       {/* 1. Business profile */}
+      <div className={panel(activeSection === 'business-profile')}>
       <SettingsSection
         id="settings-business-profile"
         defaultOpen
@@ -387,7 +399,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
             <div className="m-settings-field">
               <label htmlFor="settings-team-size" className="m-settings-label block">Team size</label>
               <select id="settings-team-size" className="m-settings-control" value={settings.teamSize || ''} onChange={(event) => onUpdateSettings({ ...settings, teamSize: event.target.value as OutletSettings['teamSize'] })}>
-                <option value="">Not set</option><option value="independent">Independent</option><option value="2-5">2â€“5 people</option><option value="6-10">6â€“10 people</option><option value="11-20">11â€“20 people</option><option value="20-plus">20+ people</option>
+                <option value="">Not set</option><option value="independent">Independent</option><option value="2-5">2–5 people</option><option value="6-10">6–10 people</option><option value="11-20">11–20 people</option><option value="20-plus">20+ people</option>
               </select>
             </div>
           </div>
@@ -402,10 +414,12 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           </div>
         </div>
       </SettingsSection>
+      </div>
 
       {/* Booking + hours share one Save */}
-      <div className="space-y-5 sm:space-y-6">
+      <div className={`space-y-5 sm:space-y-6 ${panel(activeSection === 'booking-page' || activeSection === 'operating-hours')}`}>
       {/* 2. Booking page */}
+      <div className={panel(activeSection === 'booking-page')}>
       <SettingsSection
         id="settings-booking-page"
         defaultOpen
@@ -517,8 +531,10 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           </div>
         )}
       </SettingsSection>
+      </div>
 
       {/* 3. Operating hours */}
+      <div className={panel(activeSection === 'operating-hours')}>
       <SettingsSection
         id="settings-operating-hours"
         defaultOpen
@@ -529,11 +545,11 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       >
         {settings.businessHoursConfigured === false && (
           <div className="mb-3 rounded-ui-sm border border-[var(--warning)]/30 bg-[var(--warning-soft)] p-3 text-sm text-[var(--warning)]" role="status">
-            Operating hours are not configured yet. Set each dayâ€™s hours and availability, then save outlet details.
+            Operating hours are not configured yet. Set each day's hours and availability, then save outlet details.
           </div>
         )}
         {!effectiveOutletId ? (
-          <p className="text-sm text-[var(--danger)] font-semibold">Outlet ID missing â€” cannot save hours.</p>
+          <p className="text-sm text-[var(--danger)] font-semibold">Outlet ID missing — cannot save hours.</p>
         ) : (contextLoading || outletLoading) ? (
           <div className="flex items-center justify-center py-6">
             <div className="w-8 h-8 border-4 border-[var(--brand)] border-t-transparent rounded-full animate-spin" />
@@ -572,8 +588,9 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           </div>
         )}
       </SettingsSection>
+      </div>
 
-      <div className="sticky bottom-3 z-20 sm:bottom-4">
+      <div className="sticky z-20 bottom-3 md:bottom-4 max-md:static max-md:mt-4">
         <div className="rounded-ui-md border border-[var(--line-strong,var(--line))] bg-[var(--bg-surface)]/95 backdrop-blur-sm shadow-ui-md px-4 py-3">
           <SettingsSaveBar
             status={bookingSaveStatus}
@@ -592,11 +609,13 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       </div>
 
       {/* 4. Notifications */}
+      <div className={panel(activeSection === 'notifications')}>
       <SettingsSection
         id="settings-notifications"
         iconWrap="bg-indigo-50 text-indigo-600"
         title="Notifications & reminders"
         description="Configure automated client notifications for upcoming bookings."
+        defaultOpen
         icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -661,13 +680,16 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           </div>
         </div>
       </SettingsSection>
+      </div>
 
       {/* 5. Receipt & payment */}
+      <div className={panel(activeSection === 'receipt-payment')}>
       <SettingsSection
         id="settings-receipt-payment"
         iconWrap="bg-[var(--success-soft)] text-[var(--success)]"
         title="Receipt & payment"
         description="POS payment methods and printed receipt layout for this outlet."
+        defaultOpen
         icon={<Icons.POS />}
       >
         <div className="m-settings-group !gap-8">
@@ -688,7 +710,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                       ) : (
                         <>
                           <span className="text-sm font-bold text-[var(--text-secondary)]">{method}</span>
-                          <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex gap-2 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                             <button onClick={() => setEditingMethod({ index, name: method })} className="text-[var(--text-muted)] hover:text-[var(--brand)]"><Icons.Edit /></button>
                             <button onClick={() => removePaymentMethod(index)} className="text-[var(--text-muted)] hover:text-[var(--danger)]"><Icons.Trash /></button>
                           </div>
@@ -789,11 +811,13 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           </div>
         </div>
       </SettingsSection>
+      </div>
 
+      <div className={panel(activeSection === 'access-permissions')}>
       <TeamAccess outletId={effectiveOutletId} accountLimit={Number((propOutlet as any)?.accountLimit || 3)} />
 
       {/* 6. Access & permissions */}
-      <div id="settings-access-permissions" className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 scroll-mt-4">
+      <div id="settings-access-permissions" className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 scroll-mt-4">
         <SettingsSection
           className="h-fit"
           iconWrap="bg-[var(--brand-soft)] text-[var(--brand)]"
@@ -882,8 +906,10 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           </div>
         </SettingsSection>
       </div>
+      </div>
 
       {/* 7. Advanced */}
+      <div className={panel(activeSection === 'advanced')}>
       <SettingsSection
         id="settings-advanced"
         iconWrap="bg-[var(--danger-soft)] text-[var(--danger)]"
@@ -920,12 +946,15 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           </p>
         </div>
       </SettingsSection>
+      </div>
 
+      <div className={panel(activeSection === 'legal')}>
       <SettingsSection
         id="settings-legal"
         iconWrap="bg-[var(--brand-soft)] text-[var(--brand)]"
         title="About & legal"
         description="Privacy Policy and account deletion for this BookGlow Merchant workspace."
+        defaultOpen
         icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6M7 4h7l5 5v11a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z" /></svg>}
       >
         <div className="space-y-3 max-w-md">
@@ -953,6 +982,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           <DeleteAccountSection />
         </div>
       </SettingsSection>
+      </div>
         </div>
       </div>
     </div>

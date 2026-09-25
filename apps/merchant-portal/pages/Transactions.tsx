@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { CalendarDays, Info, Search, SlidersHorizontal } from 'lucide-react';
+import { Info, Search, SlidersHorizontal } from 'lucide-react';
 import { Transaction, TransactionType, Client } from '../types';
 import { Icons } from '../constants';
 import {
@@ -205,7 +205,7 @@ const Transactions: React.FC<TransactionsProps> = ({
   };
 
   return (
-    <div className="m-page-with-bottom-nav space-y-4 animate-fadeIn">
+    <div className="m-page-with-bottom-nav min-w-0 overflow-x-hidden space-y-4 animate-fadeIn">
       <div className="hidden md:block">
         <ReportPageHeader title="Sales History" description="Review, edit, or filter past transactions." />
       </div>
@@ -222,32 +222,19 @@ const Transactions: React.FC<TransactionsProps> = ({
       </div>
 
       <div className="space-y-3 md:hidden">
-        <div className="flex gap-2">
-          <label className="relative min-w-0 flex-1">
+        <div className="flex min-w-0 items-center gap-2 max-[339px]:flex-col max-[339px]:items-stretch">
+          <label className="relative min-w-0 flex-1 w-full">
             <span className="sr-only">Search transactions</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
-            <input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setVisibleCount(12); }} placeholder="Search transactions" className="h-12 w-full rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] pl-10 pr-3 text-sm outline-none focus-visible:shadow-ui-focus-strong" />
+            <input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setVisibleCount(12); }} placeholder="Search transactions" className="h-12 w-full max-w-full rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] pl-10 pr-3 text-sm outline-none focus-visible:shadow-ui-focus-strong" />
           </label>
-          <button type="button" onClick={() => setShowSortSheet(true)} className={`relative grid h-12 w-12 shrink-0 place-items-center rounded-ui-md border bg-[var(--bg-surface)] text-[var(--brand)] ${hasActiveFilters ? 'border-[var(--brand)]' : 'border-[var(--line)]'}`} aria-label="Sort and filter transactions">
+          <button type="button" onClick={() => setShowSortSheet(true)} className={`relative grid h-12 w-12 max-[339px]:w-full shrink-0 place-items-center rounded-ui-md border bg-[var(--bg-surface)] text-[var(--brand)] ${hasActiveFilters ? 'border-[var(--brand)]' : 'border-[var(--line)]'}`} aria-label="Sort and filter transactions">
             <SlidersHorizontal className="h-5 w-5" />
             {hasActiveFilters ? <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--brand)]" /> : null}
           </button>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="no-scrollbar flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1">
+        <div className="no-scrollbar -mx-1 flex min-w-0 max-w-full gap-2 overflow-x-auto px-1 pb-1" role="toolbar" aria-label="Transaction type filters">
             {filterChips.map((chip) => <button key={chip.key} type="button" aria-pressed={filterType === chip.key} onClick={() => { setFilterType(chip.key); setVisibleCount(12); }} className={`min-h-11 shrink-0 rounded-full border px-4 text-xs font-bold ${filterType === chip.key ? 'border-[var(--brand)] bg-[var(--brand)] text-white' : 'border-[var(--line)] bg-[var(--bg-surface)] text-[var(--text-secondary)]'}`}>{chip.label}</button>)}
-          </div>
-          <label className="relative shrink-0">
-            <span className="sr-only">Transaction date period</span>
-            <CalendarDays className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--brand)]" />
-            <select value={datePeriod} onChange={(event) => { setDatePeriod(event.target.value as TransactionDatePeriod); setVisibleCount(12); }} className="h-11 appearance-none rounded-ui-md border border-[var(--brand)] bg-[var(--bg-surface)] pl-9 pr-8 text-xs font-bold text-[var(--text-secondary)] outline-none">
-              <option value="THIS_MONTH">This month</option>
-              <option value="LAST_MONTH">Last month</option>
-              <option value="THIS_WEEK">This week</option>
-              <option value="CUSTOM">Custom range</option>
-            </select>
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--brand)]">⌄</span>
-          </label>
         </div>
         {datePeriod === 'CUSTOM' ? <div className="grid grid-cols-2 gap-2"><label className="text-[11px] font-semibold text-[var(--text-muted)]">From<input type="date" value={customStart} onChange={(event) => setCustomStart(event.target.value)} className={`${fieldControlClassName} mt-1`} /></label><label className="text-[11px] font-semibold text-[var(--text-muted)]">To<input type="date" value={customEnd} onChange={(event) => setCustomEnd(event.target.value)} className={`${fieldControlClassName} mt-1`} /></label></div> : null}
       </div>

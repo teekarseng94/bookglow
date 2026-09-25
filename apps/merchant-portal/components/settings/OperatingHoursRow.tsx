@@ -48,7 +48,7 @@ export const OperatingHoursRow: React.FC<OperatingHoursRowProps> = ({
   return (
     <div
       className={cx(
-        'm-hours-row flex flex-wrap sm:flex-nowrap items-center gap-x-2 gap-y-1.5 py-2 border-b border-[var(--line)] last:border-b-0',
+        'm-hours-row flex flex-col min-[380px]:flex-row min-[380px]:flex-wrap sm:flex-nowrap items-stretch min-[380px]:items-center gap-x-2 gap-y-1.5 py-2 border-b border-[var(--line)] last:border-b-0',
         className,
       )}
     >
@@ -96,17 +96,21 @@ export const OperatingHoursRow: React.FC<OperatingHoursRowProps> = ({
         aria-checked={isOpen}
         aria-label={`Toggle ${dayLabel} ${statusLabel}`}
         onClick={() => onToggleOpen(!isOpen)}
-        className={cx(
-          'relative flex-shrink-0 w-10 h-6 rounded-full transition-colors',
-          isOpen ? 'bg-[var(--brand)]' : 'bg-[var(--line-strong)]',
-        )}
+        className="relative flex-shrink-0 min-h-11 min-w-11 grid place-items-center"
       >
         <span
           className={cx(
-            'absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all',
-            isOpen ? 'left-5' : 'left-1',
+            'relative block w-11 h-6 rounded-full transition-colors',
+            isOpen ? 'bg-[var(--brand)]' : 'bg-[var(--line-strong)]',
           )}
-        />
+        >
+          <span
+            className={cx(
+              'absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all',
+              isOpen ? 'left-6' : 'left-1',
+            )}
+          />
+        </span>
       </button>
       <span
         className={cx(

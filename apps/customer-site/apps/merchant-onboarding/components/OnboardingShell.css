@@ -1,0 +1,471 @@
+/* Shared merchant account-setup shell. Used by customer-site and the Android WebView. */
+
+.merchant-onboarding {
+  --onboarding-action-pad: 0.75rem;
+  --onboarding-action-button: 4rem;
+  --onboarding-footer-height: calc(
+    var(--onboarding-action-pad) + var(--onboarding-action-button) + var(--onboarding-action-pad) + var(--safe-bottom, env(safe-area-inset-bottom, 0px))
+  );
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
+  overflow: hidden;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+}
+
+.merchant-onboarding__progress {
+  position: relative;
+  z-index: 20;
+  flex: 0 0 auto;
+  height: 4px;
+  background: var(--line);
+}
+
+.merchant-onboarding__progress span {
+  display: block;
+  height: 100%;
+  border-radius: 0 99px 99px 0;
+  background: var(--brand);
+  transition: width 220ms ease;
+}
+
+.merchant-onboarding__frame {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: min(100%, 46rem);
+  max-width: 100%;
+  margin: auto;
+  overflow: hidden;
+  background: #fff;
+}
+
+.merchant-onboarding__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 3.5rem;
+  padding: calc(0.5rem + var(--safe-top, env(safe-area-inset-top, 0px))) clamp(1rem, 4vw, 1.5rem) 0.25rem;
+}
+
+.merchant-onboarding__header button {
+  min-width: 44px;
+  min-height: 44px;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 750;
+}
+
+.merchant-onboarding__header button:first-child {
+  font-size: 1.8rem;
+  text-align: left;
+}
+
+.merchant-onboarding__header button:disabled {
+  visibility: hidden;
+}
+
+.merchant-onboarding__scroll {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+.merchant-onboarding__content {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  padding: 1.25rem clamp(1.25rem, 5vw, 2.5rem) 1.5rem;
+}
+
+.merchant-onboarding__eyebrow {
+  margin: 0 0 1rem;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+.merchant-onboarding__content h1 {
+  max-width: 38rem;
+  margin: 0;
+  outline: none;
+  font-size: clamp(1.5rem, 7vw, 2.35rem);
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+  overflow-wrap: anywhere;
+}
+
+.merchant-onboarding__description {
+  margin: 0.75rem 0 1.5rem;
+  color: var(--text-muted);
+  font-size: 0.98rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.merchant-onboarding__choices {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.merchant-onboarding__choices button {
+  position: relative;
+  display: grid;
+  gap: 0.3rem;
+  width: 100%;
+  min-height: 4.5rem;
+  padding: 1rem 3rem 1rem 1.1rem;
+  text-align: left;
+  border: 1px solid var(--line-strong);
+  border-radius: 1rem;
+  background: #fff;
+  transition: 150ms ease;
+}
+
+.merchant-onboarding__choices button strong {
+  font-size: 1rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.merchant-onboarding__choices button span {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.merchant-onboarding__choices button b {
+  position: absolute;
+  top: 50%;
+  right: 1.2rem;
+  color: var(--brand);
+  font-size: 1.35rem;
+  translate: 0 -50%;
+}
+
+.merchant-onboarding__choices button.is-selected,
+.merchant-onboarding__category-grid button.is-selected {
+  border-color: var(--brand);
+  box-shadow: inset 0 0 0 1px var(--brand), var(--focus-ring);
+}
+
+.merchant-onboarding__field {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 1.5rem;
+  font-size: 0.94rem;
+  font-weight: 760;
+}
+
+.merchant-onboarding__field > span {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.merchant-onboarding__field input,
+.merchant-onboarding__field textarea,
+.merchant-onboarding__field select {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-height: 3.25rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.85rem;
+  background: #fff;
+  outline: none;
+  font: inherit;
+  font-weight: 500;
+}
+
+.merchant-onboarding__field textarea {
+  min-height: 5.5rem;
+  max-height: 10rem;
+  resize: vertical;
+}
+
+.merchant-onboarding__field input:focus,
+.merchant-onboarding__field textarea:focus,
+.merchant-onboarding__field select:focus {
+  border-color: var(--brand);
+  box-shadow: var(--focus-ring);
+}
+
+.merchant-onboarding__category-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.merchant-onboarding__category-grid button {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  min-height: 4.5rem;
+  padding: 1rem 2.75rem 1rem 1rem;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+}
+
+.merchant-onboarding__category-grid button > span {
+  color: var(--brand);
+  font-size: 1.25rem;
+}
+
+.merchant-onboarding__category-grid button strong {
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
+.merchant-onboarding__category-grid button b {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  color: #fff;
+  border-radius: 50%;
+  background: var(--brand);
+  translate: 0 -50%;
+}
+
+.merchant-onboarding__software {
+  display: grid;
+  margin-top: 1.25rem;
+}
+
+.merchant-onboarding__software label {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-height: 44px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.merchant-onboarding__software input {
+  width: 1.5rem;
+  height: 1.5rem;
+  accent-color: var(--brand);
+}
+
+.merchant-onboarding__map,
+.merchant-onboarding__map-fallback {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: min(14rem, 38dvh);
+  min-height: 10rem;
+  margin-top: 1.25rem;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--bg-soft);
+}
+
+.merchant-onboarding__map-fallback {
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.merchant-onboarding__two-fields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
+.merchant-onboarding__footer {
+  position: static;
+  z-index: 15;
+  display: grid;
+  gap: 0.65rem;
+  padding: var(--onboarding-action-pad) clamp(1rem, 5vw, 1.5rem) calc(var(--onboarding-action-pad) + var(--safe-bottom, env(safe-area-inset-bottom, 0px)));
+  border-top: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.merchant-onboarding__continue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  width: 100%;
+  min-height: var(--onboarding-action-button);
+  border-radius: 999px;
+  color: #fff;
+  background: #111;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.merchant-onboarding__continue:disabled {
+  color: #f7f4f6;
+  background: #6b6570;
+  opacity: 1;
+}
+
+.merchant-onboarding__hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.merchant-onboarding__error {
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid #efcfd7;
+  border-radius: 0.85rem;
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.merchant-onboarding__complete {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: min(28rem, calc(100dvh - 9rem));
+  text-align: center;
+}
+
+.merchant-onboarding__complete-mark {
+  display: grid;
+  place-items: center;
+  width: 5rem;
+  height: 5rem;
+  margin: 0 auto 2rem;
+  border-radius: 1.5rem;
+  color: #fff;
+  background: var(--brand);
+  font-size: 2rem;
+  box-shadow: 0 1.25rem 3rem rgba(118, 86, 214, 0.28);
+}
+
+.merchant-onboarding__complete h1 {
+  margin-inline: auto;
+}
+
+.merchant-onboarding__complete > p {
+  color: var(--text-muted);
+}
+
+.merchant-onboarding__complete dl {
+  display: grid;
+  gap: 0.75rem;
+  margin: 2rem 0;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  text-align: left;
+}
+
+.merchant-onboarding__complete dl div {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: 0.75rem;
+}
+
+.merchant-onboarding__complete dt {
+  color: var(--text-muted);
+}
+
+.merchant-onboarding__complete dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
+.merchant-onboarding__loading {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  color: var(--text-muted);
+}
+
+@media (min-width: 380px) {
+  .merchant-onboarding__category-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .merchant-onboarding__category-grid button {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    min-height: 8.25rem;
+    padding: 1.15rem;
+  }
+
+  .merchant-onboarding__category-grid button b {
+    top: 0.65rem;
+    right: 0.65rem;
+    translate: 0 0;
+  }
+}
+
+@media (min-width: 520px) {
+  .merchant-onboarding__two-fields {
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .merchant-onboarding {
+    height: auto;
+    max-height: none;
+    min-height: 100dvh;
+    padding: 2rem;
+    overflow: auto;
+    background: var(--bg-page);
+  }
+
+  .merchant-onboarding__progress {
+    position: absolute;
+    top: 2rem;
+    left: 50%;
+    width: min(calc(100% - 4rem), 46rem);
+    translate: -50% 0;
+  }
+
+  .merchant-onboarding__frame {
+    position: relative;
+    min-height: calc(100dvh - 4rem);
+    height: calc(100dvh - 4rem);
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 1.5rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .merchant-onboarding__footer {
+    padding-inline: 2.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .merchant-onboarding__progress span,
+  .merchant-onboarding__choices button {
+    transition: none;
+  }
+}

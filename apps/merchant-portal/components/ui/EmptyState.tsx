@@ -19,7 +19,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   <div
     className={cx(
       'm-empty-state flex flex-col items-center justify-center text-center gap-3',
-      'px-6 py-10 rounded-ui-md border border-dashed border-[var(--line-strong)]',
+      'px-4 py-6 sm:px-6 sm:py-10 rounded-ui-md border border-dashed border-[var(--line-strong)]',
       'bg-[var(--bg-soft)]',
       className,
     )}

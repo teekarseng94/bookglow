@@ -1,7 +1,13 @@
 export { POSPageHeader } from './POSPageHeader';
 export { POSCatalogueToolbar } from './POSCatalogueToolbar';
 export type { POSCatalogTab, POSSortBy } from './POSCatalogueToolbar';
-export { POSCatalogueList, POSCatalogueSection } from './POSCatalogueList';
+export {
+  POSCatalogueList,
+  POSCatalogueSection,
+  POSCatalogueEmptyState,
+  resolvePOSEmptyKind,
+} from './POSCatalogueList';
+export type { POSEmptyKind } from './POSCatalogueList';
 export { POSItemCard } from './POSItemCard';
 export { POSStickyCartAction } from './POSStickyCartAction';
 export { POSCartSheet } from './POSCartSheet';

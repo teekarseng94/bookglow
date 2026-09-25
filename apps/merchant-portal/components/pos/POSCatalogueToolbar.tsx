@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
+import { Button } from '../ui/Button';
+import { MobileFilterSheet } from '../ui/MobileShell';
 import { cx } from '../ui/cx';
 
 export type POSCatalogTab = 'all' | 'services' | 'products' | 'packages';
@@ -45,12 +47,20 @@ const FilterSortControl: React.FC<{
   sortBy: POSSortBy;
   onSortChange: (value: POSSortBy) => void;
   filtersActive: boolean;
-}> = ({ activeCatalog, onCatalogChange, sortBy, onSortChange, filtersActive }) => {
+  presentation?: 'popover' | 'sheet';
+}> = ({
+  activeCatalog,
+  onCatalogChange,
+  sortBy,
+  onSortChange,
+  filtersActive,
+  presentation = 'popover',
+}) => {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || presentation === 'sheet') return;
     const onPointerDown = (event: MouseEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
     };
@@ -63,7 +73,65 @@ const FilterSortControl: React.FC<{
       document.removeEventListener('mousedown', onPointerDown);
       document.removeEventListener('keydown', onKeyDown);
     };
-  }, [open]);
+  }, [open, presentation]);
+
+  const optionClass = (selected: boolean) =>
+    cx(
+      'flex min-h-11 w-full items-center justify-between px-3 py-2 text-left text-sm font-medium transition-colors',
+      selected
+        ? 'bg-[var(--brand-soft)] text-[var(--brand)]'
+        : 'text-[var(--text-primary)] hover:bg-[var(--bg-soft)]',
+    );
+
+  const options = (
+    <>
+      <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+        Sort
+      </p>
+      {SORT_OPTIONS.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          onClick={() => {
+            onSortChange(option.value);
+            setOpen(false);
+          }}
+          className={optionClass(sortBy === option.value)}
+        >
+          <span>{option.label}</span>
+          {sortBy === option.value ? (
+            <span className="text-[var(--brand)]" aria-hidden>
+              ✓
+            </span>
+          ) : null}
+        </button>
+      ))}
+
+      <div className="my-1 border-t border-[var(--line)]" />
+
+      <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+        Catalogue
+      </p>
+      {(['all', 'services', 'products', 'packages'] as const).map((cat) => (
+        <button
+          key={cat}
+          type="button"
+          onClick={() => {
+            onCatalogChange(cat);
+            setOpen(false);
+          }}
+          className={optionClass(activeCatalog === cat)}
+        >
+          <span>{TAB_LABELS[cat]}</span>
+          {activeCatalog === cat ? (
+            <span className="text-[var(--brand)]" aria-hidden>
+              ✓
+            </span>
+          ) : null}
+        </button>
+      ))}
+    </>
+  );
 
   return (
     <div ref={rootRef} className="relative shrink-0">
@@ -91,68 +159,29 @@ const FilterSortControl: React.FC<{
         </svg>
       </button>
 
-      {open ? (
+      {open && presentation === 'popover' ? (
         <div
           role="dialog"
           aria-label="Catalogue filters and sort"
-          className="absolute right-0 top-[calc(100%+6px)] z-40 w-56 overflow-hidden rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] py-1 shadow-ui-lg"
+          className="absolute right-0 top-[calc(100%+6px)] z-40 w-56 max-w-[calc(100vw-2rem)] overflow-hidden rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] py-1 shadow-ui-lg"
         >
-          <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-            Sort
-          </p>
-          {SORT_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => {
-                onSortChange(option.value);
-                setOpen(false);
-              }}
-              className={cx(
-                'flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium transition-colors',
-                sortBy === option.value
-                  ? 'bg-[var(--brand-soft)] text-[var(--brand)]'
-                  : 'text-[var(--text-primary)] hover:bg-[var(--bg-soft)]',
-              )}
-            >
-              <span>{option.label}</span>
-              {sortBy === option.value ? (
-                <span className="text-[var(--brand)]" aria-hidden>
-                  ✓
-                </span>
-              ) : null}
-            </button>
-          ))}
-
-          <div className="my-1 border-t border-[var(--line)]" />
-
-          <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-            Catalogue
-          </p>
-          {(['all', 'services', 'products', 'packages'] as const).map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => {
-                onCatalogChange(cat);
-                setOpen(false);
-              }}
-              className={cx(
-                'flex w-full items-center justify-between px-3 py-2 text-left text-sm font-medium transition-colors',
-                activeCatalog === cat
-                  ? 'bg-[var(--brand-soft)] text-[var(--brand)]'
-                  : 'text-[var(--text-primary)] hover:bg-[var(--bg-soft)]',
-              )}
-            >
-              <span>{TAB_LABELS[cat]}</span>
-              {activeCatalog === cat ? (
-                <span className="text-[var(--brand)]" aria-hidden>
-                  ✓
-                </span>
-              ) : null}
-            </button>
-          ))}
+          {options}
         </div>
+      ) : null}
+
+      {presentation === 'sheet' ? (
+        <MobileFilterSheet
+          open={open}
+          onClose={() => setOpen(false)}
+          title="Filters and sort"
+          footer={
+            <Button fullWidth variant="primary" onClick={() => setOpen(false)}>
+              Done
+            </Button>
+          }
+        >
+          {options}
+        </MobileFilterSheet>
       ) : null}
     </div>
   );
@@ -236,6 +265,7 @@ export const POSCatalogueToolbar: React.FC<POSCatalogueToolbarProps> = ({
             sortBy={sortBy}
             onSortChange={onSortChange}
             filtersActive={filtersActive}
+            presentation="sheet"
           />
         </div>
         {renderCategoryChips('m')}

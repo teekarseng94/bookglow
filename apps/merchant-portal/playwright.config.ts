@@ -33,7 +33,7 @@ export default defineConfig({
     },
     {
       name: 'desktop',
-      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/, /dashboard-layout\.spec\.ts/, /pos-layout\.spec\.ts/, /merchant-responsive\.spec\.ts/, /merchant-mobile-ux\.spec\.ts/],
+      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/, /dashboard-layout\.spec\.ts/, /pos-layout\.spec\.ts/, /merchant-responsive\.spec\.ts/, /merchant-mobile-ux\.spec\.ts/, /merchant-density\.spec\.ts/],
       dependencies: ['auth-setup'],
       use: {
         ...devices['Desktop Edge'],
@@ -44,7 +44,7 @@ export default defineConfig({
     },
     {
       name: 'mobile',
-      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/, /dashboard-layout\.spec\.ts/, /pos-layout\.spec\.ts/, /merchant-responsive\.spec\.ts/, /merchant-mobile-ux\.spec\.ts/],
+      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/, /dashboard-layout\.spec\.ts/, /pos-layout\.spec\.ts/, /merchant-responsive\.spec\.ts/, /merchant-mobile-ux\.spec\.ts/, /merchant-density\.spec\.ts/],
       dependencies: ['auth-setup'],
       use: {
         ...devices['iPhone 13'],
@@ -56,7 +56,7 @@ export default defineConfig({
     },
     {
       name: 'mobile-360',
-      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/, /dashboard-layout\.spec\.ts/, /pos-layout\.spec\.ts/, /merchant-responsive\.spec\.ts/, /merchant-mobile-ux\.spec\.ts/, /dashboard-authenticated\.spec\.ts/],
+      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/, /dashboard-layout\.spec\.ts/, /pos-layout\.spec\.ts/, /merchant-responsive\.spec\.ts/, /merchant-mobile-ux\.spec\.ts/, /merchant-density\.spec\.ts/, /dashboard-authenticated\.spec\.ts/],
       dependencies: ['auth-setup'],
       use: {
         ...devices['iPhone 13'],
@@ -68,7 +68,7 @@ export default defineConfig({
     },
     {
       name: 'mobile-430',
-      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/, /dashboard-layout\.spec\.ts/, /pos-layout\.spec\.ts/, /merchant-responsive\.spec\.ts/, /merchant-mobile-ux\.spec\.ts/, /dashboard-authenticated\.spec\.ts/],
+      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/, /dashboard-layout\.spec\.ts/, /pos-layout\.spec\.ts/, /merchant-responsive\.spec\.ts/, /merchant-mobile-ux\.spec\.ts/, /merchant-density\.spec\.ts/, /dashboard-authenticated\.spec\.ts/],
       dependencies: ['auth-setup'],
       use: {
         ...devices['iPhone 13'],
@@ -80,7 +80,7 @@ export default defineConfig({
     },
     {
       name: 'tablet-768',
-      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/, /dashboard-layout\.spec\.ts/, /pos-layout\.spec\.ts/, /merchant-responsive\.spec\.ts/, /merchant-mobile-ux\.spec\.ts/, /dashboard-authenticated\.spec\.ts/],
+      testIgnore: [/auth\.setup\.ts/, /mobile-workflows\.spec\.ts/, /dashboard-layout\.spec\.ts/, /pos-layout\.spec\.ts/, /merchant-responsive\.spec\.ts/, /merchant-mobile-ux\.spec\.ts/, /merchant-density\.spec\.ts/, /dashboard-authenticated\.spec\.ts/],
       dependencies: ['auth-setup'],
       use: {
         ...devices['Desktop Edge'],
@@ -91,7 +91,7 @@ export default defineConfig({
     },
     {
       name: 'layout-harness',
-      testMatch: /(dashboard-layout|pos-layout|merchant-responsive|merchant-mobile-ux)\.spec\.ts/,
+      testMatch: /(dashboard-layout|pos-layout|merchant-responsive|merchant-mobile-ux|merchant-density)\.spec\.ts/,
       use: {
         ...devices['Desktop Edge'],
         channel: 'msedge',

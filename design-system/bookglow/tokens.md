@@ -159,6 +159,18 @@ Existing `--color-action-primary` aliases stay as compatibility shims.
 
 ## Density overrides
 
+Merchant phone (≤599px) uses **compact** tokens in `apps/merchant-portal/styles/density-system.css`. Tablet (600–1023) is **medium**. Desktop (≥1024) is **comfortable**. Do not shrink tablet POS to phone density.
+
+| Band | Header inner | Nav inner | Body | Control | Card pad |
+| --- | --- | --- | --- | --- | --- |
+| Phone compact | 48px | 56px (+ safe-bottom on the container only) | 14px | 40px visual / 44px hit | 12px |
+| Tablet medium | 52px | 60px | 14px | 44px | 16px |
+| Desktop comfortable | utility bar 4.5rem | sidebar | 14px | 40px | 16px |
+
+Canonical tokens: `--font-page-title`, `--font-section-title`, `--font-body`, `--font-label`, `--font-caption`, `--control-height`, `--button-height`, `--page-padding-x/y`, `--card-padding`, `--section-gap`, `--row-gap`, `--shell-header-height`, `--bottom-nav-height`, `--icon-size`.
+
+See `docs/ANDROID_COMPACT_DENSITY_SYSTEM.md`.
+
 | App | Density | Spacing character |
 |-----|---------|-------------------|
 | Master | 6 / Standard | 4–24px rhythm |

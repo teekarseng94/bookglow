@@ -36,11 +36,12 @@ Visual tests: `test/visual/safe-area.spec.ts` and `finance.spec.ts` — treat th
 
 ## Touch and density
 
-- Hit targets ≥ 44px (`--mobile-min-touch-target`)
+- Hit targets ≥ 44px (`--touch-min`) for icon buttons and nav items
+- Compact **visual** fields may be 40px high; expand the hit area rather than inflating padding
 - Adjacent controls ≥ 8px apart
-- POS add buttons currently 38–40px — raise to 44px in a future pass
-- Bottom nav labels ≥ 12px
+- Bottom nav labels 11px on phone (token `--mobile-text-nav`); inner bar `--bottom-nav-height` 56px
 - Hardware back: existing `androidShell` history handler — do not replace with a custom in-app back stack
+- Full density rules: `docs/ANDROID_COMPACT_DENSITY_SYSTEM.md`
 
 ## Motion and performance
 

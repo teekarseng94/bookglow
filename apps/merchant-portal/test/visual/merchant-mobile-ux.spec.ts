@@ -89,16 +89,15 @@ test('Category cards are reachable above Continue', async ({ page }) => {
   expect(covered).toBe(false);
 });
 
-test('Settings section dropdown stays inside the viewport and remains tappable', async ({ page }) => {
+test('Settings stacks as cards without a section dropdown', async ({ page }) => {
   test.setTimeout(120_000);
   for (const viewport of viewports) {
     await page.setViewportSize(viewport);
     await openHarness(page, 'screen=settings');
+    await expect(page.getByRole('combobox', { name: 'Settings sections' })).toHaveCount(0);
     if (viewport.width < 768) {
-      const jump = page.getByRole('combobox', { name: 'Settings sections' });
-      await expect(jump).toBeVisible();
-      await jump.selectOption('operating-hours');
-      await expect(jump).toHaveValue('operating-hours');
+      await expect(page.getByRole('navigation', { name: 'Settings sections' })).toBeHidden();
+      await expect(page.locator('input.m-settings-control')).toBeVisible();
     }
     const geometry = await page.evaluate(overflowCheck);
     expect(geometry.scrollWidth, `settings overflow at ${viewport.width}`).toBeLessThanOrEqual(geometry.clientWidth + 1);
@@ -108,6 +107,131 @@ test('Settings section dropdown stays inside the viewport and remains tappable',
     }
     await page.screenshot({ path: artifact(`settings-${viewport.width}.png`), fullPage: false });
   }
+});
+
+test('Operating hours stay compact by usable width, not a 380px viewport guess', async ({ page }) => {
+  test.setTimeout(120_000);
+  const phoneWidths = [
+    { width: 360, height: 800 },
+    { width: 375, height: 812 },
+    { width: 390, height: 844 },
+    { width: 412, height: 915 },
+    { width: 427, height: 952 },
+  ];
+  for (const viewport of [...phoneWidths, { width: 320, height: 568 }, { width: 768, height: 1024 }]) {
+    await page.setViewportSize(viewport);
+    await openHarness(page, 'screen=settings');
+    const hours = page.locator('.m-hours-row');
+    await expect(hours).toHaveCount(7);
+    await expect(page.getByLabel('Sunday opening time')).toBeVisible();
+    await expect(page.getByLabel('Sunday closing time')).toBeVisible();
+    await expect(page.getByRole('switch', { name: 'Toggle Sunday Open' })).toBeVisible();
+    await expect(hours.first().getByText('Open')).toBeVisible();
+    await expect(hours.first().getByText('9:00 AM')).toBeVisible();
+    await expect(hours.first().getByText('5:00 PM')).toBeVisible();
+    const geometry = await page.evaluate(() => {
+      const rows = [...document.querySelectorAll<HTMLElement>('.m-hours-row')];
+      const row = rows[0];
+      const box = (selector: string) => row?.querySelector<HTMLElement>(selector)?.getBoundingClientRect();
+      const day = box('.m-hours-row__day');
+      const start = box('.m-hours-row__start');
+      const end = box('.m-hours-row__end');
+      const toggle = box('.m-hours-row__toggle');
+      const status = box('.m-hours-row__status');
+      const startValue = row?.querySelector<HTMLElement>('.m-hours-row__start .m-time-field__value');
+      const endValue = row?.querySelector<HTMLElement>('.m-hours-row__end .m-time-field__value');
+      const computed = row ? getComputedStyle(row) : null;
+      const centerY = (rect?: DOMRect) => (rect ? rect.top + rect.height / 2 : 0);
+      const aligned = (...rects: Array<DOMRect | undefined>) => {
+        const centers = rects.map(centerY);
+        return Math.max(...centers) - Math.min(...centers);
+      };
+      const pageEl = document.querySelector<HTMLElement>('.bookglow-content-frame');
+      const section = document.querySelector<HTMLElement>('#settings-operating-hours');
+      const panel = document.querySelector<HTMLElement>('.m-hours-panel');
+      return {
+        pageOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+        rowOverflow: Boolean(row && row.scrollWidth > row.clientWidth + 1),
+        rowCount: rows.length,
+        maxRowHeight: Math.max(0, ...rows.map((item) => item.getBoundingClientRect().height)),
+        display: computed?.display ?? '',
+        template: computed?.gridTemplateAreas ?? '',
+        columns: computed?.gridTemplateColumns ?? '',
+        innerWidth: window.innerWidth,
+        pageClientWidth: pageEl?.clientWidth ?? 0,
+        sectionClientWidth: section?.clientWidth ?? 0,
+        panelClientWidth: panel?.clientWidth ?? 0,
+        rowClientWidth: row?.clientWidth ?? 0,
+        rowScrollWidth: row?.scrollWidth ?? 0,
+        alignSpread: aligned(day, start, end, toggle, status),
+        tops: [day?.top ?? 0, start?.top ?? 0, end?.top ?? 0, toggle?.top ?? 0, status?.top ?? 0],
+        startVisible: Boolean(startValue && startValue.scrollWidth <= startValue.clientWidth + 1 && (startValue.textContent || '').includes('9:00')),
+        endVisible: Boolean(endValue && endValue.scrollWidth <= endValue.clientWidth + 1 && (endValue.textContent || '').includes('5:00')),
+      };
+    });
+    expect(geometry.rowCount, `hours count at ${viewport.width}`).toBe(7);
+    expect(geometry.pageOverflow, `hours overflow at ${viewport.width}`).toBe(false);
+    expect(geometry.rowOverflow, `hours row overflow at ${viewport.width}`).toBe(false);
+    expect(geometry.display, `hours display at ${viewport.width}`).toBe('grid');
+    expect(geometry.template.replace(/"/g, "'"), `hours areas at ${viewport.width}`).toContain('day start dash end toggle status');
+    expect(geometry.maxRowHeight, `hours row too tall at ${viewport.width}`).toBeLessThanOrEqual(56);
+    expect(geometry.alignSpread, `hours not one row at ${viewport.width}: ${JSON.stringify(geometry.tops)}`).toBeLessThanOrEqual(8);
+    expect(geometry.startVisible, `start time clipped at ${viewport.width}`).toBe(true);
+    expect(geometry.endVisible, `end time clipped at ${viewport.width}`).toBe(true);
+    if (viewport.width >= 360 && viewport.width <= 427) {
+      expect(geometry.rowClientWidth, `usable row width at ${viewport.width}`).toBeGreaterThanOrEqual(270);
+    }
+    if (viewport.width < 1024) {
+      await page.locator('#settings-operating-hours').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+      const overlap = await page.evaluate(() => {
+        const section = document.querySelector<HTMLElement>('#settings-operating-hours')?.getBoundingClientRect();
+        const header = document.querySelector<HTMLElement>('.bookglow-mobile-header')?.getBoundingClientRect();
+        return {
+          sectionTop: section?.top ?? 0,
+          headerBottom: header?.bottom ?? 0,
+        };
+      });
+      expect(overlap.sectionTop, `hours under header at ${viewport.width}`).toBeGreaterThanOrEqual(overlap.headerBottom - 2);
+      await hours.last().scrollIntoViewIfNeeded();
+      const lastAboveNav = await page.evaluate(() => {
+        const last = document.querySelectorAll<HTMLElement>('.m-hours-row')[6]?.getBoundingClientRect();
+        const nav = document.querySelector<HTMLElement>('.bookglow-mobile-nav')?.getBoundingClientRect();
+        return Boolean(last && nav && last.bottom <= nav.top + 8);
+      });
+      expect(lastAboveNav, `hours covered by nav at ${viewport.width}`).toBe(true);
+    }
+    await page.screenshot({ path: artifact(`settings-hours-${viewport.width}.png`), fullPage: false });
+  }
+});
+
+test('Operating hours remain usable with enlarged root font', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await openHarness(page, 'screen=settings');
+  await page.evaluate(() => {
+    document.documentElement.style.fontSize = '24px';
+  });
+  await expect(page.getByLabel('Sunday opening time')).toBeVisible();
+  await expect(page.getByLabel('Sunday closing time')).toBeVisible();
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
+  expect(overflow).toBe(false);
+  const layout = await page.evaluate(() => {
+    const row = document.querySelector<HTMLElement>('.m-hours-row');
+    const box = (selector: string) => row?.querySelector<HTMLElement>(selector)?.getBoundingClientRect();
+    const day = box('.m-hours-row__day');
+    const start = box('.m-hours-row__start');
+    const end = box('.m-hours-row__end');
+    const toggle = box('.m-hours-row__toggle');
+    const status = box('.m-hours-row__status');
+    const centers = [day, start, end, toggle, status].map((rect) => (rect ? rect.top + rect.height / 2 : 0));
+    return {
+      height: row?.getBoundingClientRect().height ?? 0,
+      alignSpread: Math.max(...centers) - Math.min(...centers),
+      overflow: Boolean(row && row.scrollWidth > row.clientWidth + 1),
+    };
+  });
+  expect(layout.overflow).toBe(false);
+  expect(layout.height).toBeLessThanOrEqual(160);
+  await page.screenshot({ path: artifact('settings-hours-375-font-24.png'), fullPage: false });
 });
 
 test('Sales History chips scroll inside their own row', async ({ page }) => {

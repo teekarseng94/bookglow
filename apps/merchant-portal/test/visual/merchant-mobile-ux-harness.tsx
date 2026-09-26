@@ -5,6 +5,7 @@ import OnboardingShell from '../../../customer-site/apps/merchant-onboarding/com
 import { PREVIOUS_SOFTWARE, BUSINESS_CATEGORIES } from '../../../customer-site/apps/merchant-onboarding/onboardingSteps';
 import Layout from '../../components/Layout';
 import { SettingsNavigation, type SettingsSectionId } from '../../components/settings/SettingsNavigation';
+import { OperatingHoursRow } from '../../components/settings/OperatingHoursRow';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Button } from '../../components/ui/Button';
 import { InventoryTypeTabs } from '../../components/inventory/InventoryTypeTabs';
@@ -77,6 +78,7 @@ function OnboardingHarness() {
 
 function SettingsHarness() {
   const [active, setActive] = useState<SettingsSectionId>('business-profile');
+  const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   return (
     <Layout activeTab="settings" setActiveTab={() => undefined} isAdmin shopName="Fiola" outletName="Fiola" role="admin">
       <div className="m-page-with-bottom-nav min-w-0 overflow-x-hidden">
@@ -87,6 +89,26 @@ function SettingsHarness() {
           <p className="m-settings-desc mt-2 text-xs text-[var(--text-muted)]">
             Name shown in the sidebar, invoices, and browser title.
           </p>
+          <button type="button" className="m-btn m-btn--md mt-3">Save outlet details</button>
+        </section>
+        <section id="settings-operating-hours" className="m-card m-settings-section m-hours-section mt-4 min-w-0 !p-0">
+          <h2 className="m-settings-row m-settings-title px-4 py-3 text-base font-bold">Operating hours</h2>
+          <div className="m-settings-section-body">
+            <div className="m-hours-panel m-settings-list">
+              {days.map((day) => (
+                <OperatingHoursRow
+                  key={day}
+                  day={day}
+                  openTime="09:00"
+                  closeTime="17:00"
+                  isOpen
+                  onChangeOpenTime={() => undefined}
+                  onChangeCloseTime={() => undefined}
+                  onToggleOpen={() => undefined}
+                />
+              ))}
+            </div>
+          </div>
         </section>
       </div>
     </Layout>

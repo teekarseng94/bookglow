@@ -12,6 +12,36 @@ function formatTime12(hhmm: string): string {
   return `${h12}:${String(mins).padStart(2, '0')} ${ampm}`;
 }
 
+function HoursTimeField({
+  value,
+  ariaLabel,
+  onChange,
+  className,
+}: {
+  value: string;
+  ariaLabel: string;
+  onChange: (value: string) => void;
+  className?: string;
+}) {
+  return (
+    <label className={cx('m-time-field', className)}>
+      <span className="m-time-field__face" aria-hidden>
+        <span className="m-time-field__value">{formatTime12(value)}</span>
+        <svg className="m-time-field__caret" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+          <path d="M5.8 7.5a1 1 0 011.4 0L10 10.3l2.8-2.8a1 1 0 111.4 1.4l-3.5 3.5a1 1 0 01-1.4 0L5.8 8.9a1 1 0 010-1.4z" />
+        </svg>
+      </span>
+      <input
+        type="time"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="m-time-field__native"
+        aria-label={ariaLabel}
+      />
+    </label>
+  );
+}
+
 export interface OperatingHoursRowProps {
   day: string;
   openTime: string;
@@ -24,9 +54,9 @@ export interface OperatingHoursRowProps {
 }
 
 /**
- * One-line operating hours row:
- * Sunday | 11:00 AM – 11:00 PM | Open
- * Time inputs remain editable; values are not renamed.
+ * Phone row is always one line at 360–427px:
+ * Sun | 9:00 AM | – | 5:00 PM | Toggle | OPEN
+ * Native Android time widgets are covered by a compact BookGlow field.
  */
 export const OperatingHoursRow: React.FC<OperatingHoursRowProps> = ({
   day,
@@ -40,86 +70,42 @@ export const OperatingHoursRow: React.FC<OperatingHoursRowProps> = ({
 }) => {
   const dayLabel = day.charAt(0).toUpperCase() + day.slice(1);
   const compactDayLabel = dayLabel.slice(0, 3);
-  const rangeLabel = isOpen
-    ? `${formatTime12(openTime)} – ${formatTime12(closeTime)}`
-    : 'Closed';
   const statusLabel = isOpen ? 'Open' : 'Closed';
 
   return (
-    <div
-      className={cx(
-        'm-hours-row flex flex-col min-[380px]:flex-row min-[380px]:flex-wrap sm:flex-nowrap items-stretch min-[380px]:items-center gap-x-2 gap-y-1.5 py-2 border-b border-[var(--line)] last:border-b-0',
-        className,
-      )}
-    >
-      <span
-        className="m-hours-row__day w-[72px] sm:w-24 flex-shrink-0 text-sm font-semibold text-[var(--text-primary)] capitalize"
-        title={dayLabel}
-        aria-label={dayLabel}
-      >
-        <span className="sm:hidden" aria-hidden>{compactDayLabel}</span>
-        <span className="hidden sm:inline" aria-hidden>{dayLabel}</span>
-      </span>
-      <span className="hidden sm:inline text-[var(--text-muted)] flex-shrink-0" aria-hidden>
-        |
+    <div className={cx('m-hours-row', className)}>
+      <span className="m-hours-row__day" title={dayLabel} aria-label={dayLabel}>
+        <span className="m-hours-row__day-short" aria-hidden>
+          {compactDayLabel}
+        </span>
+        <span className="m-hours-row__day-full" aria-hidden>
+          {dayLabel}
+        </span>
       </span>
       {isOpen ? (
-        <div className="flex items-center gap-1.5 flex-1 min-w-0">
-          <input
-            type="time"
-            value={openTime}
-            onChange={(e) => onChangeOpenTime(e.target.value)}
-            className="m-hours-row__time flex-1 min-w-0 h-9 px-2 bg-[var(--bg-soft)] border border-[var(--line)] rounded-ui-sm text-sm outline-none focus-visible:shadow-ui-focus-strong"
-            aria-label={`${dayLabel} opening time`}
-          />
-          <span className="text-[var(--text-muted)] text-xs flex-shrink-0">–</span>
-          <input
-            type="time"
-            value={closeTime}
-            onChange={(e) => onChangeCloseTime(e.target.value)}
-            className="m-hours-row__time flex-1 min-w-0 h-9 px-2 bg-[var(--bg-soft)] border border-[var(--line)] rounded-ui-sm text-sm outline-none focus-visible:shadow-ui-focus-strong"
-            aria-label={`${dayLabel} closing time`}
-          />
-          <span className="hidden md:inline text-xs text-[var(--text-muted)] whitespace-nowrap ml-1">
-            {rangeLabel}
+        <>
+          <HoursTimeField className="m-hours-row__start" value={openTime} ariaLabel={`${dayLabel} opening time`} onChange={onChangeOpenTime} />
+          <span className="m-hours-row__dash" aria-hidden>
+            –
           </span>
-        </div>
+          <HoursTimeField className="m-hours-row__end" value={closeTime} ariaLabel={`${dayLabel} closing time`} onChange={onChangeCloseTime} />
+        </>
       ) : (
-        <span className="flex-1 text-sm text-[var(--text-muted)] italic">{rangeLabel}</span>
+        <span className="m-hours-row__closed">Closed</span>
       )}
-      <span className="hidden sm:inline text-[var(--text-muted)] flex-shrink-0" aria-hidden>
-        |
-      </span>
       <button
         type="button"
         role="switch"
         aria-checked={isOpen}
         aria-label={`Toggle ${dayLabel} ${statusLabel}`}
         onClick={() => onToggleOpen(!isOpen)}
-        className="relative flex-shrink-0 min-h-11 min-w-11 grid place-items-center"
+        className="m-hours-row__toggle"
       >
-        <span
-          className={cx(
-            'relative block w-11 h-6 rounded-full transition-colors',
-            isOpen ? 'bg-[var(--brand)]' : 'bg-[var(--line-strong)]',
-          )}
-        >
-          <span
-            className={cx(
-              'absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all',
-              isOpen ? 'left-6' : 'left-1',
-            )}
-          />
+        <span className={cx('m-hours-row__switch', isOpen && 'm-hours-row__switch--on')}>
+          <span className="m-hours-row__knob" />
         </span>
       </button>
-      <span
-        className={cx(
-          'm-hours-row__status w-12 text-right text-xs font-bold uppercase tracking-wide',
-          isOpen ? 'text-[var(--success)]' : 'text-[var(--text-muted)]',
-        )}
-      >
-        {statusLabel}
-      </span>
+      <span className={cx('m-hours-row__status', isOpen ? 'is-open' : 'is-closed')}>{statusLabel}</span>
     </div>
   );
 };

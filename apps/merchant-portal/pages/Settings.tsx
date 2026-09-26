@@ -342,8 +342,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           ? 'saving'
           : 'idle';
 
-  const panel = (visible: boolean) =>
-    visible ? 'block min-w-0 w-full md:contents' : 'hidden md:contents';
+  const panel = (_visible: boolean) => 'block min-w-0 w-full md:contents';
 
   return (
     <div className="m-page-with-bottom-nav animate-fadeIn min-w-0 overflow-x-hidden sm:pb-20">
@@ -358,6 +357,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       <SettingsSection
         id="settings-business-profile"
         defaultOpen
+        hideHeaderOnMobile
         iconWrap="bg-[var(--brand-soft)] text-[var(--brand)]"
         title="Business profile"
         description="Name shown in the sidebar, invoices, and browser title."
@@ -365,12 +365,12 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       >
         <div className="m-settings-block max-w-xl">
           <div className="m-settings-field">
-            <label htmlFor="settings-shop-name" className="m-settings-label block">Shop name</label>
+            <label htmlFor="settings-shop-name" className="m-settings-label hidden md:block">Shop name</label>
             <input
               id="settings-shop-name"
               type="text"
               placeholder="e.g. Bookglow Spa"
-              className="m-settings-control"
+              className="m-settings-control m-settings-shop-title"
               value={settings.shopName}
               onChange={handleShopNameChange}
             />
@@ -537,6 +537,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       <div className={panel(activeSection === 'operating-hours')}>
       <SettingsSection
         id="settings-operating-hours"
+        className="m-hours-section"
         defaultOpen
         iconWrap="bg-sky-50 text-sky-600"
         title="Operating hours"
@@ -556,8 +557,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
             <span className="ml-3 text-[var(--text-secondary)]">Loading outlet information...</span>
           </div>
         ) : (
-          <div className="m-settings-block !p-3 sm:!p-4">
-            <div className="m-settings-list">
+          <div className="m-hours-panel m-settings-list">
               {DAYS.map((day) => {
                 const dayKey = day;
                 const hours = businessHours[dayKey] || {
@@ -585,7 +585,6 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                 );
               })}
             </div>
-          </div>
         )}
       </SettingsSection>
       </div>

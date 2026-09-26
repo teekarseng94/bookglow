@@ -1,0 +1,268 @@
+/* BookGlow Merchant density system.
+   Phone compact / tablet medium / desktop comfortable.
+   Do not use zoom, transform: scale() on the page, or WebView textZoom=100. */
+
+:root {
+  --density-mode: comfortable;
+
+  --font-page-title: 1.5rem;
+  --font-section-title: 1rem;
+  --font-body: 0.875rem;
+  --font-label: 0.6875rem;
+  --font-caption: 0.75rem;
+
+  --control-height: 40px;
+  --control-height-sm: 32px;
+  --button-height: 40px;
+
+  --page-padding-x: var(--space-4, 16px);
+  --page-padding-y: var(--space-4, 16px);
+  --card-padding: var(--space-4, 16px);
+  --section-gap: var(--space-4, 16px);
+  --row-gap: var(--space-2, 8px);
+
+  --shell-header-height: 3.75rem;
+  --bottom-nav-height: 56px;
+  --icon-size: 20px;
+  --icon-size-sm: 16px;
+
+  --page-pad-x: var(--page-padding-x);
+  --page-pad-y: var(--page-padding-y);
+  --card-pad: var(--card-padding);
+}
+
+/* Phone — compact operational density (320–599 CSS px). */
+@media (max-width: 599.98px) {
+  :root {
+    --density-mode: compact;
+
+    --font-page-title: 20px;
+    --font-section-title: 16px;
+    --font-body: 14px;
+    --font-label: 11px;
+    --font-caption: 12px;
+
+    --control-height: 40px;
+    --control-height-sm: 36px;
+    --button-height: 40px;
+
+    --page-padding-x: 12px;
+    --page-padding-y: 10px;
+    --card-padding: 12px;
+    --section-gap: 12px;
+    --row-gap: 8px;
+
+    --shell-header-height: 48px;
+    --bottom-nav-height: 56px;
+    --icon-size: 20px;
+    --icon-size-sm: 16px;
+
+    --page-pad-x: 12px;
+    --page-pad-y: 10px;
+    --card-pad: 12px;
+
+    --mobile-text-header-title: 15px;
+    --mobile-text-list-title: 15px;
+    --mobile-text-secondary: 13px;
+    --mobile-text-nav: 11px;
+  }
+
+  html {
+    font-size: 16px;
+  }
+
+  body {
+    font-size: var(--font-body);
+    line-height: 1.4;
+  }
+}
+
+/* Tablet / large-phone chrome — medium. Layout still uses mobile header+nav below 1024. */
+@media (min-width: 600px) and (max-width: 1023.98px) {
+  :root {
+    --density-mode: medium;
+
+    --font-page-title: 22px;
+    --font-section-title: 17px;
+    --font-body: 14px;
+    --font-label: 12px;
+    --font-caption: 12px;
+
+    --control-height: 44px;
+    --control-height-sm: 36px;
+    --button-height: 44px;
+
+    --page-padding-x: var(--space-5, 20px);
+    --page-padding-y: var(--space-5, 20px);
+    --card-padding: 16px;
+    --section-gap: 16px;
+    --row-gap: 8px;
+
+    --shell-header-height: 52px;
+    --bottom-nav-height: 60px;
+    --icon-size: 22px;
+    --icon-size-sm: 18px;
+
+    --page-pad-x: var(--space-5, 20px);
+    --page-pad-y: var(--space-5, 20px);
+    --card-pad: 16px;
+    --drawer-size-editor: 48rem;
+
+    --mobile-text-header-title: 17px;
+    --mobile-text-list-title: 16px;
+    --mobile-text-secondary: 14px;
+    --mobile-text-nav: 11px;
+    --mobile-list-row: 72px;
+    --mobile-list-row-compact: 64px;
+    --mobile-pos-card-min-height: 96px;
+    --mobile-pos-thumbnail-size: 56px;
+    --mobile-pos-card-padding: 12px;
+    --mobile-pos-card-gap: 12px;
+    --mobile-pos-title-size: 15px;
+    --mobile-pos-add-size: 44px;
+    --mobile-inventory-card-height: 96px;
+    --mobile-inventory-thumbnail: 56px;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1023.98px) {
+  :root {
+    --page-padding-x: var(--space-6, 24px);
+    --page-pad-x: var(--space-6, 24px);
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --density-mode: comfortable;
+    --page-pad-x: var(--space-8, 32px);
+    --page-pad-y: 1.75rem;
+    --page-padding-x: var(--space-8, 32px);
+    --page-padding-y: 1.75rem;
+    --card-padding: 16px;
+    --section-gap: 16px;
+    --drawer-chrome-top: 4.5rem;
+    --drawer-size-editor: 52rem;
+  }
+}
+
+/* Shared shell uses density tokens at every width. Safe-area is added separately. */
+.bookglow-mobile-header__inner {
+  height: var(--shell-header-height);
+}
+
+.bookglow-mobile-nav__inner {
+  min-height: var(--bottom-nav-height);
+}
+
+.bookglow-main-scroll {
+  padding-bottom: calc(var(--bottom-nav-height) + var(--safe-bottom, 0px) + 8px);
+  scroll-padding-bottom: calc(var(--bottom-nav-height) + var(--safe-bottom, 0px) + 8px);
+}
+
+.bookglow-icon-button {
+  width: var(--touch-min, 44px);
+  height: var(--touch-min, 44px);
+}
+
+.bookglow-mobile-nav-item__icon,
+.bookglow-mobile-nav-item__icon svg {
+  width: var(--icon-size);
+  height: var(--icon-size);
+}
+
+@media (max-width: 599.98px) {
+  .bookglow-mobile-header__inner {
+    padding: 0 8px;
+    gap: 4px;
+  }
+
+  .bookglow-mobile-header__title {
+    font-size: 15px;
+    line-height: 1.2;
+    font-weight: 600;
+  }
+
+  .bookglow-mobile-avatar {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    font-size: 11px;
+  }
+
+  .bookglow-icon-button svg {
+    width: var(--icon-size);
+    height: var(--icon-size);
+  }
+
+  .bookglow-mobile-nav {
+    padding-bottom: var(--safe-bottom, 0px);
+  }
+
+  .bookglow-mobile-nav-item {
+    gap: 2px;
+    padding: 4px 2px 6px;
+  }
+
+  .bookglow-mobile-nav-item::before {
+    top: 4px;
+    width: 16px;
+    height: 2px;
+  }
+
+  .bookglow-mobile-nav-item__label {
+    font-size: 11px;
+    line-height: 1.1;
+    font-weight: 600;
+  }
+
+  .bookglow-more-sheet {
+    padding: 8px 12px calc(var(--bottom-nav-height) + var(--safe-bottom, 0px) + 8px);
+  }
+
+  .bookglow-more-link {
+    min-height: 52px;
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  /* Shell already clears the nav. Do not stack a second nav-height spacer. */
+  .m-page-with-bottom-nav {
+    padding-bottom: 0;
+  }
+
+  .m-page-with-sticky-action {
+    padding-bottom: calc(var(--mobile-sticky-footer-height, 68px) + 8px);
+  }
+
+  .m-settings-block {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  .m-settings-control {
+    min-height: var(--control-height);
+    padding: 8px 10px;
+    font-size: var(--font-body);
+  }
+
+  textarea.m-settings-control {
+    min-height: 4.5rem;
+  }
+
+  input:not([type='checkbox']):not([type='radio']):not([type='hidden']):not([type='file']):not([type='range']),
+  select {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  input[type='date'],
+  input[type='time'],
+  input[type='datetime-local'],
+  input[type='month'] {
+    min-width: 0;
+    max-width: 100%;
+    min-height: var(--control-height);
+  }
+}

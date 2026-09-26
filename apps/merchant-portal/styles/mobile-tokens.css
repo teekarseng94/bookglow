@@ -4,17 +4,17 @@
  */
 
 :root {
-  /* Typography */
+  /* Typography — follow the global density tokens. */
   --mobile-font-sans: Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
 
-  --mobile-text-page-title: 26px;
-  --mobile-text-header-title: 20px;
-  --mobile-text-section-title: 18px;
-  --mobile-text-list-title: 16px;
-  --mobile-text-body: 15px;
-  --mobile-text-secondary: 14px;
-  --mobile-text-caption: 12px;
-  --mobile-text-nav: 12px;
+  --mobile-text-page-title: var(--font-page-title, 20px);
+  --mobile-text-header-title: 17px;
+  --mobile-text-section-title: var(--font-section-title, 16px);
+  --mobile-text-list-title: 15px;
+  --mobile-text-body: var(--font-body, 14px);
+  --mobile-text-secondary: 13px;
+  --mobile-text-caption: var(--font-caption, 12px);
+  --mobile-text-nav: 11px;
 
   --mobile-font-regular: 400;
   --mobile-font-medium: 500;
@@ -26,8 +26,8 @@
   --mobile-leading-caption: 1.35;
 
   /* Spacing */
-  --mobile-page-padding: 16px;
-  --mobile-page-padding-compact: 16px;
+  --mobile-page-padding: var(--page-padding-x, 12px);
+  --mobile-page-padding-compact: var(--page-padding-x, 12px);
 
   --mobile-space-1: 4px;
   --mobile-space-2: 8px;
@@ -37,14 +37,14 @@
   --mobile-space-6: 24px;
   --mobile-space-8: 32px;
 
-  /* Controls */
-  --mobile-control-sm: 36px;
-  --mobile-control-md: 44px;
-  --mobile-control-lg: 52px;
+  /* Controls — visual height from density; hit area stays --touch-min. */
+  --mobile-control-sm: var(--control-height-sm, 36px);
+  --mobile-control-md: var(--control-height, 40px);
+  --mobile-control-lg: 44px;
 
-  --mobile-icon-sm: 18px;
-  --mobile-icon-md: 22px;
-  --mobile-icon-lg: 28px;
+  --mobile-icon-sm: var(--icon-size-sm, 16px);
+  --mobile-icon-md: var(--icon-size, 20px);
+  --mobile-icon-lg: 24px;
 
   /* Radius */
   --mobile-radius-sm: 8px;
@@ -53,42 +53,42 @@
   --mobile-radius-pill: 9999px;
 
   /* Layout */
-  --mobile-list-row: 80px;
-  --mobile-list-row-compact: 72px;
-  --mobile-list-row-tall: 88px;
-  --mobile-settings-row: 72px;
-  --mobile-avatar: 48px;
-  --mobile-avatar-lg: 56px;
-  --mobile-bottom-nav-height: 72px;
-  --mobile-fab-size: 56px;
-  --mobile-date-cell: 40px;
-  --mobile-booking-card: 72px;
-  --mobile-service-card-min: 144px;
-  --mobile-thumb: 50px;
+  --mobile-list-row: 64px;
+  --mobile-list-row-compact: 56px;
+  --mobile-list-row-tall: 72px;
+  --mobile-settings-row: 56px;
+  --mobile-avatar: 36px;
+  --mobile-avatar-lg: 44px;
+  --mobile-bottom-nav-height: var(--bottom-nav-height, 56px);
+  --mobile-fab-size: 48px;
+  --mobile-date-cell: 36px;
+  --mobile-booking-card: 64px;
+  --mobile-service-card-min: 128px;
+  --mobile-thumb: 44px;
 
   /* Menu & Inventory mobile cards (not list-row) */
-  --mobile-inventory-card-height: 104px;
-  --mobile-inventory-card-min-height: 96px;
-  --mobile-inventory-card-padding: 12px;
-  --mobile-inventory-media-size: 56px;
-  --mobile-inventory-thumbnail: 56px;
-  --mobile-inventory-title-size: 15px;
+  --mobile-inventory-card-height: 88px;
+  --mobile-inventory-card-min-height: 84px;
+  --mobile-inventory-card-padding: 10px;
+  --mobile-inventory-media-size: 48px;
+  --mobile-inventory-thumbnail: 48px;
+  --mobile-inventory-title-size: 14px;
   --mobile-inventory-meta-size: 12px;
   --mobile-inventory-price-size: 14px;
   --mobile-inventory-action-size: 44px;
-  --mobile-inventory-card-gap: 10px;
-  --mobile-inventory-outlet-height: 76px;
-  --mobile-inventory-tab-height: 48px;
-  --mobile-inventory-fab-height: 52px;
+  --mobile-inventory-card-gap: 8px;
+  --mobile-inventory-outlet-height: 64px;
+  --mobile-inventory-tab-height: 40px;
+  --mobile-inventory-fab-height: 48px;
 
   /* POS mobile catalogue card (full-width row layout, below 640px) */
-  --mobile-pos-card-min-height: 96px;
-  --mobile-pos-thumbnail-size: 56px;
-  --mobile-pos-card-padding: 12px;
-  --mobile-pos-card-gap: 12px;
-  --mobile-pos-title-size: 15px;
+  --mobile-pos-card-min-height: 84px;
+  --mobile-pos-thumbnail-size: 48px;
+  --mobile-pos-card-padding: 10px;
+  --mobile-pos-card-gap: 10px;
+  --mobile-pos-title-size: 14px;
   --mobile-pos-meta-size: 12px;
-  --mobile-pos-price-size: 16px;
+  --mobile-pos-price-size: 15px;
   --mobile-pos-add-size: 44px;
 
   /* POS desktop catalogue list row (1200px+) */
@@ -98,19 +98,19 @@
 
   /* Semantic mobile layout roles. Keep these aliases page-agnostic. */
   --mobile-page-horizontal-padding: var(--mobile-page-padding);
-  --mobile-page-top-spacing: var(--mobile-space-4);
-  --mobile-section-gap: var(--mobile-space-6);
-  --mobile-section-gap-compact: var(--mobile-space-4);
-  --mobile-list-row-gap: var(--mobile-space-3);
-  --mobile-card-padding: var(--mobile-space-4);
+  --mobile-page-top-spacing: var(--mobile-space-3);
+  --mobile-section-gap: var(--section-gap, 12px);
+  --mobile-section-gap-compact: var(--row-gap, 8px);
+  --mobile-list-row-gap: var(--mobile-space-2);
+  --mobile-card-padding: var(--card-padding, 12px);
   --mobile-sheet-content-padding: var(--mobile-page-padding-compact);
   --mobile-sticky-footer-height: 68px;
   --mobile-safe-area-top: var(--safe-top, env(safe-area-inset-top, 0px));
   --mobile-safe-area-bottom: var(--safe-bottom, env(safe-area-inset-bottom, 0px));
 
   /* Settings content rhythm. These roles are intentionally opt-in. */
-  --settings-section-content-gap: var(--mobile-space-6);
-  --settings-group-gap: var(--mobile-space-6);
+  --settings-section-content-gap: var(--section-gap, 12px);
+  --settings-group-gap: var(--section-gap, 12px);
   --settings-field-gap: var(--mobile-space-2);
   --settings-helper-gap: var(--mobile-space-2);
   --settings-paragraph-gap: var(--mobile-space-3);
@@ -208,10 +208,10 @@
   box-sizing: border-box;
   width: 100%;
   max-width: 100%;
-  min-height: 2.75rem;
-  padding: 0.625rem 0.875rem;
+  min-height: var(--control-height, 40px);
+  padding: 0.5rem 0.75rem;
   border-radius: var(--radius-ui-sm, 0.5rem);
-  font-size: 0.9375rem;
+  font-size: var(--font-body, 0.875rem);
   font-weight: 500;
   line-height: 1.4;
   color: var(--text-primary);
@@ -319,6 +319,7 @@ select.m-settings-control,
 
 
 @media (max-width: 767.98px) {
+
   .bookglow-page,
   .bookglow-content-frame {
     max-width: 100%;
@@ -458,7 +459,7 @@ select.m-settings-control,
   }
 
   .m-page-with-bottom-nav {
-    padding-bottom: calc(var(--mobile-bottom-nav-height) + var(--mobile-safe-area-bottom) + var(--mobile-section-gap-compact));
+    padding-bottom: 0;
   }
 
   .m-page-with-sticky-action {
@@ -528,11 +529,11 @@ select.m-settings-control,
 
   /* ——— Shell / content padding ——— */
   .bookglow-content-frame:not(.bookglow-content-frame--schedule) {
-    padding: 12px var(--mobile-page-padding-compact);
+    padding: var(--page-pad-y) var(--page-pad-x);
   }
 
   .bookglow-mobile-header {
-    height: calc(56px + var(--mobile-safe-area-top));
+    height: var(--shell-header-offset);
   }
 
   .bookglow-mobile-safe-area-top {
@@ -540,16 +541,17 @@ select.m-settings-control,
   }
 
   .bookglow-mobile-header__inner {
-    height: 56px;
+    height: var(--shell-header-height);
     padding: 6px max(12px, var(--safe-right)) 6px max(12px, var(--safe-left));
   }
 
   .bookglow-main-scroll {
-    padding-top: calc(56px + var(--mobile-safe-area-top));
+    padding-top: var(--shell-header-offset);
+    scroll-padding-top: var(--shell-header-offset);
   }
 
   .bookglow-mobile-header__title {
-    font-size: 16px;
+    font-size: 15px;
     line-height: 1.2;
   }
 
@@ -560,7 +562,7 @@ select.m-settings-control,
   }
 
   .bookglow-main-scroll {
-    padding-bottom: calc(var(--mobile-bottom-nav-height) + var(--mobile-safe-area-bottom) + 8px);
+    padding-bottom: calc(var(--bottom-nav-height) + var(--mobile-safe-area-bottom) + 8px);
   }
 
   /* ——— Bottom navigation ——— */
@@ -573,7 +575,6 @@ select.m-settings-control,
 
   .bookglow-mobile-nav__inner {
     min-height: var(--mobile-bottom-nav-height);
-    height: var(--mobile-bottom-nav-height);
   }
 
   .bookglow-mobile-nav-item {
@@ -589,17 +590,17 @@ select.m-settings-control,
   }
 
   .bookglow-mobile-nav-item__icon {
-    width: 24px;
-    height: 24px;
+    width: var(--icon-size);
+    height: var(--icon-size);
   }
 
   .bookglow-mobile-nav-item__icon svg {
-    width: 24px;
-    height: 24px;
+    width: var(--icon-size);
+    height: var(--icon-size);
   }
 
   .bookglow-mobile-nav-item__label {
-    font-size: 12px;
+    font-size: var(--mobile-text-nav);
     font-weight: var(--mobile-font-semibold);
     line-height: var(--mobile-leading-caption);
   }
@@ -2261,15 +2262,26 @@ select.m-settings-control,
   }
 
   .m-settings-control {
+    box-sizing: border-box;
+    height: var(--mobile-control-md);
     min-height: var(--mobile-control-md) !important;
-    padding: var(--mobile-space-3) !important;
+    padding: 6px 10px !important;
     border-radius: var(--mobile-radius-md) !important;
     font-size: var(--mobile-text-body) !important;
+    line-height: 1.25;
   }
 
   .m-settings-block {
     padding: var(--mobile-space-4);
     gap: var(--mobile-space-4);
+  }
+
+  .m-settings-shop-title {
+    text-align: center;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
 
   .m-settings-btn {
@@ -2284,54 +2296,11 @@ select.m-settings-control,
     padding-top: var(--mobile-space-1);
   }
 
-  .m-hours-row {
-    min-height: var(--mobile-control-md);
-    padding-top: var(--mobile-space-2);
-    padding-bottom: var(--mobile-space-2);
-    gap: var(--mobile-space-2);
-  }
-
-  .m-hours-row__day {
-    width: 72px;
-    font-size: var(--mobile-text-secondary) !important;
-    font-weight: var(--mobile-font-semibold) !important;
-  }
-
   .m-hours-row__time {
-    min-height: var(--mobile-control-sm) !important;
-    height: var(--mobile-control-sm) !important;
-    font-size: var(--mobile-text-secondary) !important;
-    border-radius: var(--mobile-radius-sm) !important;
-  }
-
-  .m-hours-row__status {
-    font-size: var(--mobile-text-caption) !important;
-    font-weight: var(--mobile-font-semibold) !important;
-  }
-
-  @media (max-width: 479px) {
-    .m-hours-row {
-      flex-wrap: nowrap !important;
-      gap: 4px;
-    }
-
-    .m-hours-row__day {
-      width: 32px !important;
-      font-size: 12px !important;
-    }
-
-    .m-hours-row__time {
-      min-width: 0 !important;
-      padding-left: 4px !important;
-      padding-right: 2px !important;
-      font-size: 11px !important;
-    }
-
-    .m-hours-row__status {
-      width: 38px !important;
-      font-size: 10px !important;
-      letter-spacing: 0 !important;
-    }
+    min-height: var(--mobile-control-md);
+    height: var(--mobile-control-md);
+    font-size: var(--mobile-text-secondary);
+    border-radius: var(--mobile-radius-sm);
   }
 
   .m-inventory-tab {

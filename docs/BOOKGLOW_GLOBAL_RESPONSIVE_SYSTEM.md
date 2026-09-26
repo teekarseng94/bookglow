@@ -43,6 +43,8 @@ Added on `:root` (index.css):
 
 `.bookglow-content-frame` is a named container: `container-name: page`.
 
+Phone / tablet / desktop **density** (type, controls, header, bottom nav) lives in `styles/density-system.css`. See `docs/ANDROID_COMPACT_DENSITY_SYSTEM.md`. Do not use `zoom` or page-level `transform: scale()`.
+
 ---
 
 ## 3. Reusable layout components

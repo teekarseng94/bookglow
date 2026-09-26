@@ -11,6 +11,8 @@ export interface SettingsSectionProps {
   /** When true, always expanded on desktop (md+). Mobile remains accordion. */
   desktopAlwaysOpen?: boolean;
   className?: string;
+  /** Hide the accordion chrome on small screens; the body stays visible. */
+  hideHeaderOnMobile?: boolean;
   children: React.ReactNode;
 }
 
@@ -26,6 +28,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
   description,
   defaultOpen = false,
   desktopAlwaysOpen = true,
+  hideHeaderOnMobile = false,
   className,
   children,
 }) => {
@@ -34,7 +37,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
     <section
       id={id}
       className={cx(
-        'm-card !p-0 bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line-strong,var(--line))] shadow-ui-sm scroll-mt-6',
+        'm-card m-settings-section !p-0 bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line-strong,var(--line))] shadow-ui-sm',
         className,
       )}
     >
@@ -48,6 +51,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
           'sm:gap-4 sm:p-4 sm:min-h-0',
           desktopAlwaysOpen && 'md:cursor-default md:p-5',
           'border-b border-[var(--line-soft)]',
+          hideHeaderOnMobile && 'hidden md:flex',
         )}
       >
         {icon ? (
@@ -79,7 +83,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
       </button>
       <div
         className={cx(
-          'px-4 py-4 sm:px-5 sm:py-5',
+          'm-settings-section-body px-4 py-4 sm:px-5 sm:py-5',
           open ? 'block' : 'hidden',
           desktopAlwaysOpen && 'md:block',
         )}

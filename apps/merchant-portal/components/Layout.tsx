@@ -14,6 +14,7 @@ import type { PortalAuthUser } from '../services/authService';
 import { isTabAllowed } from '../utils/permissions';
 import { NetworkStatusBanner } from './ui';
 import { publicPrivacyPolicyUrl } from '../src/legal/publicLegalUrls';
+import { installViewportProbe } from '../src/debug/viewportProbe';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -212,6 +213,10 @@ const Layout: React.FC<LayoutProps> = ({
   const desktopPopupRef = useRef<HTMLDivElement>(null);
   const mobileProfileMenuRef = useRef<HTMLDivElement>(null);
   const moreMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    installViewportProbe();
+  }, []);
 
   /** Position the fixed desktop popup anchored to the trigger button */
   const positionPopup = useCallback(() => {

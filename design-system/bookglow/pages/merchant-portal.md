@@ -17,11 +17,15 @@
 
 ## Density and type
 
-- Page title 24px desktop, 26px compact mobile (existing `.ui-page-title` / mobile tokens)
-- Body 15px; section titles 16–18px
-- Card padding 12–16px
-- List rows 72–80px
+- Phone compact: page title **20px**, body **14px**, section **16px**, labels **11–12px** (`styles/density-system.css`)
+- Tablet medium: page title 22px, controls 44px
+- Desktop: page title 24px, body 14px
+- Card padding 12px phone / 16px tablet+
+- List rows ~56–64px on phone
+- Header 48px phone / 52px tablet (plus `--safe-top`)
+- Bottom nav **56px inner** on phone; safe-area is extra padding, not part of the token
 - Do not use marketing 32px+ heroes on operational pages
+- Do not use `zoom` or page-level `transform: scale()`
 
 ## Components to reuse
 

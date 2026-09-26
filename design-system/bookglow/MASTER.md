@@ -101,13 +101,13 @@ Superadmin chrome should consume these tokens instead of hardcoded `#171322`.
 
 | Role | Size | Line height | Weight | Token / class |
 |------|------|-------------|--------|---------------|
-| Page title | 24px desktop / 26px mobile | 1.25 | 700 | `--text-page` / `.ui-page-title` |
-| Section title | 16–18px | 1.25 | 600–700 | `--text-section` / `.ui-section-title` |
-| Body | 15px (0.9375rem) | 1.5 | 400 | Align `--text-body` to the live `body` size |
-| Label / eyebrow | 11px | 1 | 600 | `--text-label`, uppercase + tracking |
-| Caption | 12px | 1.35 | 400 | Mobile `--mobile-text-caption` |
+| Page title | 24px desktop / 20px phone compact | 1.25 | 700 | `--font-page-title` / `.ui-page-title` |
+| Section title | 16px phone / 16–17px tablet | 1.25 | 600–700 | `--font-section-title` / `.ui-section-title` |
+| Body | 14px | 1.4 | 400 | `--font-body` |
+| Label / eyebrow | 11px | 1 | 600 | `--font-label`, uppercase + tracking |
+| Caption | 12px | 1.35 | 400 | `--font-caption` |
 
-Minimum readable text: **12px**. Bottom-nav labels that are 0.62rem (~10px) should become 12px.
+Minimum readable text on phone: **11px** for labels/nav. Body stays 14px. See `docs/ANDROID_COMPACT_DENSITY_SYSTEM.md`.
 
 ### Spacing
 

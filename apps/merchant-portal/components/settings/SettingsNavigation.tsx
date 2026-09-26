@@ -33,29 +33,13 @@ export const SettingsNavigation: React.FC<SettingsNavigationProps> = ({
   onSelect,
   className,
 }) => (
-  <>
-    <label className={cx('md:hidden block min-w-0 w-full', className)}>
-      <span className="sr-only">Settings sections</span>
-      <select
-        aria-label="Settings sections"
-        value={activeId}
-        onChange={(event) => onSelect(event.target.value as SettingsSectionId)}
-        className="m-settings-jump m-settings-control min-h-11 w-full max-w-full"
-      >
-        {SETTINGS_NAV_ITEMS.map((item) => (
-          <option key={item.id} value={item.id}>
-            {item.label}
-          </option>
-        ))}
-      </select>
-    </label>
-    <nav
-      className={cx(
-        'hidden md:block w-56 shrink-0 sticky top-4 self-start',
-        className,
-      )}
-      aria-label="Settings sections"
-    >
+  <nav
+    className={cx(
+      'hidden md:block w-56 shrink-0 sticky top-4 self-start',
+      className,
+    )}
+    aria-label="Settings sections"
+  >
       <p className="px-1 mb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
         On this page
       </p>
@@ -78,8 +62,7 @@ export const SettingsNavigation: React.FC<SettingsNavigationProps> = ({
           </li>
         ))}
       </ul>
-    </nav>
-  </>
+  </nav>
 );
 
 export default SettingsNavigation;

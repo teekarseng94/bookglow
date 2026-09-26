@@ -12,7 +12,7 @@ import { InventoryTypeTabs } from '../../components/inventory/InventoryTypeTabs'
 import { InventoryEmptyState } from '../../components/inventory/InventoryEmptyState';
 import { POSCatalogueEmptyState, POSCatalogueToolbar } from '../../components/pos';
 import { POSStickyCartAction } from '../../components/pos/POSStickyCartAction';
-import '../../index.css';
+import '../../src/loadStyles';
 
 const screen = new URLSearchParams(window.location.search).get('screen') || 'onboarding';
 
@@ -42,6 +42,23 @@ function OnboardingHarness() {
                   <input type="radio" name="software" checked={selected === software} onChange={() => setSelected(software)} />
                   <span>{software}</span>
                 </label>
+              ))}
+            </div>
+          </>
+        ) : null}
+        {step === 'service-location' ? (
+          <>
+            <h1>Where do you provide your services?</h1>
+            <p className="merchant-onboarding__description">Choose where you provide services.</p>
+            <div className="merchant-onboarding__choices">
+              {[
+                'Clients come to me at a physical location',
+                'I visit my clients as a mobile operator',
+                'I provide virtual services online',
+              ].map((label) => (
+                <button type="button" key={label} className={selected === label ? 'is-selected' : ''} onClick={() => setSelected(label)}>
+                  <strong>{label}</strong>
+                </button>
               ))}
             </div>
           </>

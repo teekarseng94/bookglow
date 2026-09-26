@@ -2366,9 +2366,9 @@ select.m-settings-control,
   }
 
   .dashboard-today .dashboard-kpi-card {
-    min-height: 84px;
+    min-height: 0;
     height: 100%;
-    padding: 10px 12px;
+    padding: 10px;
     gap: 4px;
   }
 
@@ -2400,7 +2400,7 @@ select.m-settings-control,
   }
 
   .dashboard-today > section.lg\:hidden button {
-    min-height: 56px;
+    min-height: 44px;
   }
 
   .dashboard-today .dashboard-primary section {

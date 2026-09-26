@@ -4,7 +4,7 @@
  * Legacy /book/:id on this host redirects to the customer booking site.
 
  */
-import './index.css';
+import './src/loadStyles';
 import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';

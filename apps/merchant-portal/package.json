@@ -21,7 +21,8 @@
     "deploy:functions": "npm run install:functions && cross-env FUNCTIONS_DISCOVERY_TIMEOUT=60 firebase deploy --only functions",
     "cap:sync": "npm run build && npx cap sync android",
     "android:sync": "npx cap sync android",
-    "android:open": "npx cap open android"
+    "android:open": "npx cap open android",
+    "android:debug:fresh": "node ./scripts/android-debug-fresh.mjs"
   },
   "dependencies": {
     "@bookglow/auth-contracts": "file:../../packages/auth-contracts",

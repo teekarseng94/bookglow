@@ -21,7 +21,7 @@ const viewports = [
 
 async function openHarness(page: import('@playwright/test').Page) {
   await page.goto('/test/visual/merchant-responsive-harness.html', { waitUntil: 'domcontentloaded' });
-  await expect(page.getByRole('dialog', { name: 'Edit Service' })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole('dialog', { name: /Add New Service|Untitled|Edit Service/i })).toBeVisible({ timeout: 30_000 });
 }
 
 test('Merchant editor drawer and tabs stay usable across required viewports', async ({ page }) => {

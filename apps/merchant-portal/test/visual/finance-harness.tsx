@@ -4,7 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import Finance from '../../pages/Finance';
 import { TransactionType, type Transaction } from '../../types';
-import '../../index.css';
+import '../../src/loadStyles';
 
 const currentDescriptions = [
   'Commission: Foot Massage 60mins',

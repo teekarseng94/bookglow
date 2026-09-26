@@ -1,11 +1,13 @@
-import './index.css';
+import './src/loadStyles';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { HashRouter } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
 import { initAndroidShell } from './src/native/androidShell';
+import { installViewportProbe } from './src/debug/viewportProbe';
 
 void initAndroidShell();
+installViewportProbe();
 
 // Supabase redirects to a real path. HashRouter apps need the pathname copied
 // into the hash so Vercel SPA refreshes (including /integrations) land correctly.

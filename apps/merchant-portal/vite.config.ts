@@ -1,13 +1,46 @@
+import { execSync } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+function readGitCommit(root: string): string {
+  try {
+    return execSync('git rev-parse --short HEAD', { cwd: root, encoding: 'utf8' }).trim();
+  } catch {
+    return 'unknown';
+  }
+}
+
+function bookglowBuildInfo(root: string) {
+  return {
+    name: 'BookGlow frontend',
+    commit: readGitCommit(root),
+    built: new Date().toISOString(),
+    density: 'v4',
+  };
+}
+
+function bookglowBuildInfoPlugin(root: string): Plugin {
+  const info = bookglowBuildInfo(root);
+  return {
+    name: 'bookglow-build-info',
+    generateBundle() {
+      this.emitFile({
+        type: 'asset',
+        fileName: 'bookglow-build.json',
+        source: `${JSON.stringify(info, null, 2)}\n`,
+      });
+    },
+  };
+}
+
 export default defineConfig(({ mode }) => {
   const root = path.resolve(__dirname);
   const env = loadEnv(mode, root, '');
+  const buildInfo = bookglowBuildInfo(root);
 
   return {
     root,
@@ -18,10 +51,11 @@ export default defineConfig(({ mode }) => {
       strictPort: false,
       fs: { allow: [path.resolve(root, '../..')] },
     },
-    plugins: [react({ include: /\.(tsx|jsx)$/ })],
+    plugins: [react({ include: /\.(tsx|jsx)$/ }), bookglowBuildInfoPlugin(root)],
     define: {
       'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY ?? ''),
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY ?? ''),
+      __BOOKGLOW_BUILD__: JSON.stringify(buildInfo),
     },
     resolve: {
       // Onboarding imports the customer-site wizard, which has its own React.

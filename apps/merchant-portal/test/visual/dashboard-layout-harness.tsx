@@ -12,8 +12,8 @@ import { SalesSnapshot } from '../../components/dashboard/SalesSnapshot';
 import { TodayHeader } from '../../components/dashboard/TodayHeader';
 import { UpcomingAppointments } from '../../components/dashboard/UpcomingAppointments';
 import { Button } from '../../components/ui/Button';
-import { Calendar, CreditCard, Plus, Users, Wallet } from 'lucide-react';
-import '../../index.css';
+import { Calendar, CreditCard, Plus, Users, BarChart3 } from 'lucide-react';
+import '../../src/loadStyles';
 
 const weekChart = [
   { label: 'Mon', value: 1200 },
@@ -41,7 +41,7 @@ createRoot(document.getElementById('root')!).render(
           title="Good afternoon, Mei"
           actions={
             <>
-              <span className="inline-flex min-h-11 items-center gap-1.5 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)] px-3 py-2 text-sm font-semibold text-[var(--text-secondary)]">
+              <span className="dashboard-date-chip inline-flex items-center gap-1.5 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)] px-3 text-sm font-semibold text-[var(--text-secondary)]">
                 <Calendar className="h-4 w-4" aria-hidden />
                 Sun, 20 Sep
               </span>
@@ -55,10 +55,10 @@ createRoot(document.getElementById('root')!).render(
           className="lg:hidden"
           title="Quick actions"
           actions={[
-            { id: 'pos', label: 'New Sale', icon: <CreditCard className="h-5 w-5" aria-hidden />, onClick: () => undefined },
-            { id: 'booking', label: 'Booking', icon: <Calendar className="h-5 w-5" aria-hidden />, onClick: () => undefined },
-            { id: 'member', label: 'Member', icon: <Users className="h-5 w-5" aria-hidden />, onClick: () => undefined },
-            { id: 'expense', label: 'Expense', icon: <Wallet className="h-5 w-5" aria-hidden />, onClick: () => undefined },
+            { id: 'pos', label: 'New Sale', icon: <CreditCard className="h-4 w-4" aria-hidden />, onClick: () => undefined },
+            { id: 'booking', label: 'Booking', icon: <Calendar className="h-4 w-4" aria-hidden />, onClick: () => undefined },
+            { id: 'member', label: 'Member', icon: <Users className="h-4 w-4" aria-hidden />, onClick: () => undefined },
+            { id: 'expense', label: 'Expense', icon: <BarChart3 className="h-4 w-4" aria-hidden />, onClick: () => undefined },
           ]}
         />
         <DashboardKpiCards

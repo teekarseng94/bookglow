@@ -31,22 +31,16 @@ export const OperationalStatus: React.FC<OperationalStatusProps> = ({
       {title}
     </h2>
     {actions && actions.length > 0 ? (
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="m-quick-actions" data-testid="m-quick-actions">
         {actions.map((action) => (
           <button
             key={action.id}
             type="button"
             onClick={action.onClick}
-            className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] px-2 py-2 hover:border-[var(--brand)] hover:bg-[var(--brand-soft)] focus-visible:shadow-ui-focus-strong sm:min-h-[4.5rem] sm:gap-1.5 sm:py-3"
+            className="m-quick-action"
           >
-            {action.icon ? (
-              <span className="grid h-8 w-8 place-items-center rounded-ui-sm bg-[var(--brand-soft)] text-[var(--brand)] sm:h-10 sm:w-10">
-                {action.icon}
-              </span>
-            ) : null}
-            <span className="text-center text-xs font-semibold leading-tight text-[var(--text-secondary)]">
-              {action.label}
-            </span>
+            {action.icon ? <span className="m-quick-action__icon">{action.icon}</span> : null}
+            <span className="m-quick-action__label">{action.label}</span>
           </button>
         ))}
       </div>

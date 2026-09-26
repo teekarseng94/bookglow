@@ -236,6 +236,133 @@ Also re-ran Operating Hours one-row tests.
 - Very large Android font scale will wrap rows. That is intended.
 - Debug APK is unsigned and **must not** be uploaded to Play.
 
-### Debug APK
+## 16. Real-device parity verification
 
-`apps/merchant-portal/android/app/build/outputs/apk/debug/app-debug.apk`
+Date: 2026-09-26 (F12 baseline pass)
+
+Chrome F12 mobile is the **visual target**. There is one BookGlow Mobile UI. Android does not get a separate oversized design.
+
+### Build identity
+
+| Surface | How to read |
+| --- | --- |
+| Localhost F12 | `http://127.0.0.1:5173/#/dashboard?bg-debug-build=1` (or `?bg-debug-viewport=1`) |
+| Debug APK | Open Today, then add `#/dashboard?bg-debug-build=1` after login, or append the query to the hash |
+| File on disk | `apps/merchant-portal/dist/bookglow-build.json` after Vite build |
+
+Fingerprint fields: git commit SHA, ISO build timestamp, `density: v4`. Overlay is **opt-in only**.
+
+### Capacitor / Vite chain
+
+| Step | Path |
+| --- | --- |
+| Capacitor `webDir` | `dist` (`apps/merchant-portal/capacitor.config.ts`) |
+| Vite output | `apps/merchant-portal/dist` |
+| Copied Android assets | `apps/merchant-portal/android/app/src/main/assets/public` |
+| Fresh debug APK | `npm run android:debug:fresh` from `apps/merchant-portal` |
+
+`android:debug:fresh` deletes `dist` and `android/app/src/main/assets/public` (generated web assets only), then `npm run cap:sync` (Vite build + `npx cap sync android`), then `assembleDebug`. It does **not** delete signing keys or `keystore.properties`.
+
+### Why icons differed (not a failed Lucide load)
+
+Both platforms render **Lucide React SVG components**. There is no Android-only icon branch and no emoji substitution for Quick Actions.
+
+| Action | Previous APK/source | F12 target (now shared) |
+| --- | --- | --- |
+| New Sale | `CreditCard` | `CreditCard` |
+| Booking | `Calendar` | `Calendar` |
+| Member | `Users` | `Users` |
+| Expense | `Wallet` | `BarChart3` |
+
+The APK 2×2 tiles were the **current source**: `grid-cols-2 sm:grid-cols-4` (`sm` = 640px) plus `min-h-14` / `min-height: 56px`. The F12 screenshot is 4-across compact. Phone Quick Actions are now `.m-quick-actions` 4 columns with 44px min-height in the shared density CSS.
+
+### CSS cascade
+
+`density-system.css` is imported **after** `index.css` (Tailwind included) via `src/loadStyles.ts`. That is the intended order so density chrome wins over Tailwind `min-h-14` / `text-app-page` on shared components.
+
+`OnboardingShell.css` is a component stylesheet (can load after). Account Setup therefore **consumes density tokens** (`--font-page-title`, `--button-height` / `--touch-min`, `--page-padding-*`) instead of `clamp(1.5rem, 7vw, 2.35rem)` titles and `4rem` Continue.
+
+### Fonts
+
+Inter is bundled as `styles/fonts/inter-latin.woff2` (+ latin-ext). The Google Fonts CDN `<link>` was removed so the APK does not silently fall back to Roboto when offline.
+
+### Cache / service workers
+
+Merchant Portal has **no** service worker, Workbox, or PWA cache. Capacitor copies hashed Vite assets (`index-*.js`). A fresh `android:debug:fresh` rebuild cannot serve a previous JS bundle from those copies. WebView HTTP cache may retain CDN leftovers; bundled Inter avoids that for the UI font.
+
+### Pages on the shared mobile system
+
+Today, Schedule, POS, Menu & Inventory, Members, Member Details, Staff, Sales / History, Finance, Marketing, Settings, Integrations, Account Setup / Onboarding, Authentication. Workflows unchanged; chrome uses the same tokens.
+
+### Unresolved native differences
+
+- Status bar and Android system navigation sit **outside** the WebView (`overlaysWebView: false`). Do not count them as BookGlow UI.
+- `env(safe-area-inset-bottom)` may still add a few pixels under the in-app tab bar on gesture devices.
+- Android font/display scale remains enabled.
+- Pixel-perfect screenshot match is not required; density and structure must match F12 at the same CSS width.
+
+### Debug APK (2026-09-26 secondary-surface pass)
+
+`D:\GitHub\bookglow\apps\merchant-portal\android\app\build\outputs\apk\debug\app-debug.apk`
+
+```
+BookGlow frontend
+commit: c3df753
+built: 2026-09-26T10:38:02.495Z
+density: v4
+```
+
+`dist/bookglow-build.json` matches `android/app/src/main/assets/public/bookglow-build.json`. Inter woff2 files are inside `assets/public/assets/`. Do not upload this APK to Play.
+
+---
+
+## 17. Secondary surfaces / editors
+
+Main pages were compacted first. Drawers, modals, sheets, and editors still looked oversized because **Tailwind `px-4 py-4 space-y-4 text-lg` on `ModalParts` loaded after `mobile-tokens.css`**, and inventory forms used `gap-6` / `space-y-6` / `min-h-[12rem]` / `p-4` cards.
+
+Portals (`createPortal` → `document.body`) inherit density tokens from `:root`. Page-scoped selectors are not required. The fix is shared chrome CSS in `density-system.css` (loaded last), not per-dialog `!important`.
+
+### Editor tokens (aliases of the existing density scale)
+
+| Token | Phone compact | Role |
+| --- | --- | --- |
+| `--editor-title-size` | 16px (`--font-section-title`) | Drawer/modal title and editor heading |
+| `--editor-tab-height` | 40px (44px tablet) | Overlay tab min-height |
+| `--editor-content-padding` | `--page-padding-x` (12px) | Header/body/footer horizontal pad |
+| `--editor-section-gap` | `--section-gap` (12px) | Body stack |
+| `--editor-field-gap` | `--row-gap` (8px) | Field stack / `--form-gap` |
+| `--editor-header-padding-y` | 8px | Header vertical pad |
+| `--editor-footer-padding-y` | 8px | Footer vertical pad; **plus `--safe-bottom` once** |
+| `--editor-textarea-min-height` | 6rem | Textarea only; inputs stay `--control-height` |
+| `--modal-padding` / `--drawer-padding` / `--sheet-padding` | alias of `--editor-content-padding` | Do not invent a second padding scale |
+
+### Tab rules
+
+One component: `OverlayTabs` (`.m-overlay-tabs`). Phone: 40px min-height, `--font-body`, horizontal scroll if needed, no wrap. Tablet: 44px. Desktop: same component, container query can stretch underline tabs.
+
+### Form rules
+
+Inputs/selects in drawers and modals use `--control-height` (40px phone). Labels use `--font-label`. Nested option cards use `.m-editor-card` (`--card-padding`). Do not use `p-4` + `text-lg` + `min-h-[12rem]` for ordinary editor fields.
+
+### Footer rules
+
+`.m-modal-footer` padding is tokenized. Safe-area is added only on `padding-bottom`. Buttons use `--button-height`. Inventory, staff, schedule, finance, and member flows all share `ModalFooter`.
+
+### Drawer / modal / sheet
+
+`AppDrawer`, `AppModal`, `AppSheet` all compose `ModalHeader` / `ModalBody` / `ModalFooter`. Compacting those three files + density CSS migrates every overlay.
+
+### Components migrated
+
+InventoryEditPanel, OverlayTabs, ModalParts, AppDrawer/AppModal/AppSheet (via chrome), Services Add/Edit item form (consumes `.m-editor-*`), StaffDialogShell, ScheduleBookingDetailPanel, member/finance/marketing/settings overlays (chrome only).
+
+### Justified exceptions
+
+- Close `IconButton` stays 44×44 (`--touch-min`).
+- Textareas stay taller than inputs (`--editor-textarea-min-height`).
+- Media image preview `min-h-[8rem]` is content, not chrome.
+- POS cart / sticky checkout keep `--mobile-sticky-footer-height`.
+
+See `docs/MOBILE_SECONDARY_SURFACE_PARITY.md`.
+
+

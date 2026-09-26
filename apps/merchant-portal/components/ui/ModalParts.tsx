@@ -29,13 +29,13 @@ export const ModalHeader: React.FC<ModalHeaderProps> = ({
 }) => (
   <header
     className={cx(
-      'm-modal-header flex items-start justify-between gap-3 px-4 py-3 sm:px-5',
+      'm-modal-header flex items-start justify-between',
       'border-b border-[var(--line)] bg-[var(--bg-surface)]',
       className,
     )}
   >
-    <div className="min-w-0 flex-1 space-y-0.5">
-      <h2 id={titleId} className="m-modal-title text-base sm:text-lg font-bold text-[var(--text-primary)] truncate">
+    <div className="min-w-0 flex-1">
+      <h2 id={titleId} className="m-modal-title font-bold text-[var(--text-primary)]">
         {title}
       </h2>
       {description ? (
@@ -81,7 +81,7 @@ export const ModalBody: React.FC<ModalBodyProps> = ({
       id={id}
       onSubmit={onSubmit}
       className={cx(
-        'm-modal-body min-h-0 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 space-y-4',
+        'm-modal-body min-h-0 overflow-y-auto overscroll-contain',
         className,
       )}
     >
@@ -99,8 +99,6 @@ export const ModalFooter: React.FC<ModalFooterProps> = ({ children, className })
   <footer
     className={cx(
       'm-modal-footer border-t border-[var(--line)] bg-[var(--bg-surface)]',
-      'px-4 py-3 sm:px-5',
-      'pb-[max(0.75rem,env(safe-area-inset-bottom))]',
       className,
     )}
   >

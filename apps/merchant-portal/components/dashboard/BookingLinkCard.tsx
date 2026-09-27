@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { CalendarHeart, Check, Copy } from 'lucide-react';
 import { outletService } from '../../services/databaseService';
 import { customerSiteOrigin } from '../../utils/customerSiteUrl';
+import { resolveBookingSlug } from '../../utils/bookingSlug';
+import { ensureOutletBookingSlug } from '../../utils/ensureOutletBookingSlug';
 import { cx } from '../ui/cx';
 
 // Matches the booking URL Settings.tsx already builds from the same outlet doc — kept as a local
@@ -14,7 +16,7 @@ export interface BookingLinkCardProps {
   className?: string;
 }
 
-/** Promotional card — reads the outlet's real bookingSlug (falls back to the outlet id, same as Settings). */
+/** Promotional card — reads/heals the outlet's public bookingSlug (never the raw outlet id). */
 export const BookingLinkCard: React.FC<BookingLinkCardProps> = ({ outletId, className }) => {
   const [bookingSlug, setBookingSlug] = useState('');
   const [copied, setCopied] = useState(false);
@@ -27,18 +29,26 @@ export const BookingLinkCard: React.FC<BookingLinkCardProps> = ({ outletId, clas
     let cancelled = false;
     outletService
       .getById(outletId)
-      .then((outlet) => {
-        if (!cancelled) setBookingSlug((outlet?.bookingSlug || '').trim());
+      .then(async (outlet) => {
+        const slug = await ensureOutletBookingSlug({
+          outletId,
+          existing: outlet?.bookingSlug,
+          name: outlet?.name,
+        });
+        if (!cancelled) setBookingSlug(slug || resolveBookingSlug(outlet?.bookingSlug, outlet?.name || '', outletId));
       })
       .catch(() => {
-        if (!cancelled) setBookingSlug('');
+        if (!cancelled) setBookingSlug(resolveBookingSlug('', '', outletId));
       });
     return () => {
       cancelled = true;
     };
   }, [outletId]);
 
-  const bookingUrl = outletId && BOOKING_BASE_URL ? `${BOOKING_BASE_URL}/${bookingSlug || outletId}` : '';
+  const bookingUrl =
+    outletId && BOOKING_BASE_URL
+      ? `${BOOKING_BASE_URL}/${resolveBookingSlug(bookingSlug, '', outletId)}`
+      : '';
 
   const handleShare = async () => {
     if (!bookingUrl) return;

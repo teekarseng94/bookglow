@@ -12,6 +12,15 @@ export function shopNameToBookingSlug(name: string): string {
   return first + rest.join("");
 }
 
+/** Matches public.slugify_booking_name — ASCII kebab-case. CJK-only names become "". */
+export function slugifyBookingName(value: string): string {
+  return (value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 /** Letters, numbers, underscores, hyphens; must start with a letter (supports camelCase). */
 export const BOOKING_SLUG_REGEX = /^[a-zA-Z][a-zA-Z0-9_-]*$/;
 

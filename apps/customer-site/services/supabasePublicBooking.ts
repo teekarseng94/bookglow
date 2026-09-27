@@ -5,7 +5,7 @@
 import type { BookglowSupabaseClient } from "@bookglow/supabase";
 import { createBrowserSupabaseClient } from "@bookglow/supabase";
 import type { PublicOutlet, PublicService, PublicTeamMember } from "./bookingApi";
-import { shopNameToBookingSlug } from "../utils/bookingSlug";
+import { shopNameToBookingSlug, slugifyBookingName } from "../utils/bookingSlug";
 
 type OutletRow = {
   outlet_id: string;
@@ -139,6 +139,8 @@ export async function resolveOutletIdFromBookingPathSupabase(
     if (stored && stored.toLowerCase() === lower) return row.outlet_id;
     const derived = shopNameToBookingSlug(row.name || "");
     if (derived && derived.toLowerCase() === lower) return row.outlet_id;
+    const kebab = slugifyBookingName(row.name || "");
+    if (kebab && kebab.toLowerCase() === lower) return row.outlet_id;
   }
 
   return null;

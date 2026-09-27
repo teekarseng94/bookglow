@@ -4,7 +4,8 @@ import { OutletSettings, Outlet } from '../types';
 import { Icons } from '../constants';
 import { useUserContext } from '../contexts/UserContext';
 import { outletService } from '../services/databaseService';
-import { shopNameToBookingSlug, isValidBookingSlug } from '../utils/bookingSlug';
+import { isValidBookingSlug, resolveBookingSlug, uniqueBookingSlug } from '../utils/bookingSlug';
+import { ensureOutletBookingSlug } from '../utils/ensureOutletBookingSlug';
 import {
   OperatingHoursRow,
   SETTINGS_NAV_ITEMS,
@@ -75,29 +76,30 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       return;
     }
 
+    const applyOutletFields = async (outletData: {
+      addressDisplay?: string;
+      website?: string;
+      phoneNumber?: string;
+      businessHours?: Record<string, { open: string; close: string; isOpen?: boolean }>;
+      bookingSlug?: string;
+      name?: string;
+    } | null) => {
+      setAddressDisplay(outletData?.addressDisplay || '');
+      setWebsite(outletData?.website || '');
+      setPhoneNumber(outletData?.phoneNumber || '');
+      setBusinessHours(outletData?.businessHours || {});
+      const name = outletData?.name || settings.shopName || '';
+      const slug = await ensureOutletBookingSlug({
+        outletId: effectiveOutletId,
+        existing: outletData?.bookingSlug,
+        name,
+      });
+      setBookingSlug(slug || uniqueBookingSlug(name, effectiveOutletId));
+    };
+
     // If outlet prop is provided, use it
     if (propOutlet) {
-      setAddressDisplay(propOutlet.addressDisplay || '');
-      setWebsite(propOutlet.website || '');
-      setPhoneNumber(propOutlet.phoneNumber || '');
-      setBusinessHours(propOutlet.businessHours || {});
-      const derived = shopNameToBookingSlug(propOutlet.name || '');
-      const existing = (propOutlet.bookingSlug && propOutlet.bookingSlug.trim()) || '';
-      setBookingSlug(existing || derived);
-      setOutletLoading(false);
-
-      if (!existing && derived && isValidBookingSlug(derived) && effectiveOutletId) {
-        outletService
-          .getByBookingSlug(derived)
-          .then(async (taken) => {
-            if (!taken || taken.outletID === effectiveOutletId) {
-              await outletService.update(effectiveOutletId, { bookingSlug: derived });
-            }
-          })
-          .catch((persistErr) => {
-            console.warn('Could not auto-persist bookingSlug:', persistErr);
-          });
-      }
+      void applyOutletFields(propOutlet).finally(() => setOutletLoading(false));
       return;
     }
 
@@ -110,43 +112,13 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
     outletService.getById(effectiveOutletId)
       .then(async (outletData) => {
         clearTimeout(timeoutId);
-        if (outletData) {
-          setAddressDisplay(outletData.addressDisplay || '');
-          setWebsite(outletData.website || '');
-          setPhoneNumber(outletData.phoneNumber || '');
-          setBusinessHours(outletData.businessHours || {});
-          const derived = shopNameToBookingSlug(outletData.name || '');
-          const existing = (outletData.bookingSlug && outletData.bookingSlug.trim()) || '';
-          setBookingSlug(existing || derived);
-
-          // Persist derived slug when Settings showed a URL that was never saved to Firestore.
-          if (!existing && derived && isValidBookingSlug(derived)) {
-            try {
-              const taken = await outletService.getByBookingSlug(derived);
-              if (!taken || taken.outletID === effectiveOutletId) {
-                await outletService.update(effectiveOutletId, { bookingSlug: derived });
-              }
-            } catch (persistErr) {
-              console.warn('Could not auto-persist bookingSlug:', persistErr);
-            }
-          }
-        } else {
-          // Outlet doesn't exist yet - initialize with empty values
-          setAddressDisplay('');
-          setWebsite('');
-          setPhoneNumber('');
-          setBusinessHours({});
-          setBookingSlug(shopNameToBookingSlug(settings.shopName || ''));
-        }
+        await applyOutletFields(outletData);
       })
       .catch((err) => {
         clearTimeout(timeoutId);
         console.error('Failed to load outlet:', err);
-        // On error, still allow editing (initialize with empty values)
-        setAddressDisplay('');
-        setWebsite('');
-        setPhoneNumber('');
-        setBusinessHours({});
+        // On error, still allocate a public path so Copy link is not a truncated outlet id.
+        void applyOutletFields(null);
       })
       .finally(() => {
         setOutletLoading(false);
@@ -170,20 +142,19 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
 
     try {
       const slugRaw = bookingSlug.trim();
-      if (slugRaw && !isValidBookingSlug(slugRaw)) {
+      const slugToSave = slugRaw || uniqueBookingSlug(settings.shopName || '', effectiveOutletId);
+      if (!isValidBookingSlug(slugToSave)) {
         setBookingSlugError('Use a letter first, then letters, numbers, hyphens, or underscores only.');
         setBookingInfoStatus('error');
         setTimeout(() => setBookingInfoStatus('idle'), 3000);
         return;
       }
-      if (slugRaw) {
-        const taken = await outletService.getByBookingSlug(slugRaw);
-        if (taken && taken.outletID !== effectiveOutletId) {
-          setBookingSlugError('This booking path is already used by another outlet.');
-          setBookingInfoStatus('error');
-          setTimeout(() => setBookingInfoStatus('idle'), 3000);
-          return;
-        }
+      const taken = await outletService.getByBookingSlug(slugToSave);
+      if (taken && taken.outletID !== effectiveOutletId) {
+        setBookingSlugError('This booking path is already used by another outlet.');
+        setBookingInfoStatus('error');
+        setTimeout(() => setBookingInfoStatus('idle'), 3000);
+        return;
       }
 
       // Build payload: always send full businessHours object so all 7 days persist
@@ -193,14 +164,11 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         businessHours: { ...businessHours },
       };
 
-      if (slugRaw) {
-        await outletService.update(effectiveOutletId, { ...payload, bookingSlug: slugRaw });
-      } else {
-        await outletService.update(effectiveOutletId, { ...payload, bookingSlug: '' });
-      }
+      setBookingSlug(slugToSave);
+      await outletService.update(effectiveOutletId, { ...payload, bookingSlug: slugToSave });
 
       if (onUpdateOutlet) {
-        await Promise.resolve(onUpdateOutlet(slugRaw ? { ...payload, bookingSlug: slugRaw } : payload));
+        await Promise.resolve(onUpdateOutlet({ ...payload, bookingSlug: slugToSave }));
       }
 
       if (settings.businessHoursConfigured === false) {
@@ -215,7 +183,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
     }
   };
 
-  const bookingPathSegment = (bookingSlug || '').trim() || effectiveOutletId;
+  const bookingPathSegment = resolveBookingSlug(bookingSlug, settings.shopName || '', effectiveOutletId);
   const bookingUrl = effectiveOutletId && BOOKING_BASE_URL ? `${BOOKING_BASE_URL}/${bookingPathSegment}` : '';
 
   const handleCopyLink = async () => {
@@ -428,7 +396,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         description="Public link and contact details customers see when booking."
         icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>}
       >
-        {bookingUrl ? (
+        {bookingUrl && !outletLoading ? (
           <div className="m-settings-block">
             <h4 className="m-settings-subhead text-[var(--text-primary)]">Public booking link</h4>
 
@@ -442,11 +410,11 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                   setBookingSlug(e.target.value);
                   setBookingSlugError(null);
                 }}
-                placeholder={shopNameToBookingSlug(settings.shopName || '') || 'baliWellness'}
+                placeholder={uniqueBookingSlug(settings.shopName || '', effectiveOutletId) || 'baliWellness'}
                 className="m-settings-control"
               />
               <p className="m-settings-hint">
-                Last segment of your public link (e.g. baliWellness). Leave empty to use your outlet id.
+                Last segment of your public link (e.g. baliWellness). Saved automatically for new shops.
               </p>
               {bookingSlugError && (
                 <p className="text-xs text-[var(--danger)]">{bookingSlugError}</p>
@@ -462,11 +430,12 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                     type="text"
                     readOnly
                     value={bookingUrl}
-                    className="m-settings-control flex-1 min-w-0 truncate font-mono text-sm"
+                    className="m-settings-control flex-1 min-w-0 font-mono text-sm [overflow-wrap:anywhere]"
                   />
                   <div className="relative w-full sm:w-auto shrink-0">
                     <button
                       type="button"
+                      disabled={!bookingUrl || !bookingSlug}
                       onClick={handleCopyLink}
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[2.75rem] rounded-ui-sm m-settings-btn bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)] transition-colors"
                     >
@@ -481,7 +450,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                   </div>
                 </div>
                 <p className="m-settings-hint">
-                  Customers open this link to view services and book â€” no login required.
+                  Customers open this link to view services and book — no login required.
                 </p>
               </div>
               <div className="flex flex-col items-center gap-2 p-3 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] shrink-0 justify-self-start">
@@ -491,7 +460,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
             </div>
           </div>
         ) : (
-          <p className="text-[var(--text-muted)] text-sm">Loading your outlet linkâ€¦</p>
+          <p className="text-[var(--text-muted)] text-sm">Loading your outlet link…</p>
         )}
 
         {effectiveOutletId && (

@@ -345,7 +345,7 @@ interface AppContentProps {
   handleUpdateRewards: (newRewards: Reward[]) => Promise<void>;
   handleAddServiceCategory: (category: string) => Promise<void> | void;
   handleUpdateServiceCategory: (oldName: string, newName: string) => Promise<void> | void;
-  handleDeleteServiceCategory: (category: string) => Promise<void> | void;
+  handleDeleteServiceCategory: (category: string, options?: { reassignTo?: string }) => Promise<void> | void;
   handleReorderServiceCategories: (orderedNames: string[]) => Promise<void> | void;
 }
 

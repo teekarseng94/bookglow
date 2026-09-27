@@ -39,6 +39,8 @@ export { AppDrawer } from './AppDrawer';
 export type { AppDrawerProps, AppDrawerSize } from './AppDrawer';
 export { OverlayTabs } from './OverlayTabs';
 export type { OverlayTabsProps, OverlayTabItem } from './OverlayTabs';
+export { BooleanSettingRow } from './BooleanSettingRow';
+export type { BooleanSettingRowProps } from './BooleanSettingRow';
 export { FormGrid } from './FormGrid';
 export type { FormGridProps } from './FormGrid';
 export { ScrollTable } from './ScrollTable';

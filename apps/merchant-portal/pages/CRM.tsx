@@ -21,6 +21,7 @@ import {
   FormSection,
   IconButton,
   ModalFooterActions,
+  OverlayTabs,
 } from '../components/ui';
 
 type SortFilter = 'Recent' | 'New' | 'Birthday' | 'Name';
@@ -783,19 +784,20 @@ const CRM: React.FC<CRMProps> = ({
           </>
         }
         sortTabs={
-          <div className="m-member-sort-tabs flex gap-1 p-1 bg-slate-100 rounded-xl w-full sm:w-fit overflow-x-auto">
-            {(['Recent', 'New', 'Birthday', 'Name'] as SortFilter[]).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setSortFilter(tab)}
-                className={`m-member-sort-tab flex-1 sm:flex-none whitespace-nowrap px-3 md:px-4 rounded-lg text-xs md:text-sm font-medium transition-colors ${
-                  sortFilter === tab ? 'm-member-sort-tab--active bg-[var(--bg-surface)] text-[var(--brand)] shadow-ui-xs' : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
+          <OverlayTabs<SortFilter>
+            variant="segmented"
+            layout="equal"
+            ariaLabel="Sort members"
+            className="m-member-sort-tabs w-full"
+            value={sortFilter}
+            onChange={setSortFilter}
+            items={[
+              { id: 'Recent', label: 'Recent' },
+              { id: 'New', label: 'New' },
+              { id: 'Birthday', label: 'Birthday' },
+              { id: 'Name', label: 'Name' },
+            ]}
+          />
         }
       />
 

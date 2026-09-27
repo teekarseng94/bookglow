@@ -21,7 +21,7 @@ describe('InventoryTypeTabs', () => {
   it('scrolls labels instead of truncating them', () => {
     render(<InventoryTypeTabs activeTab="services" onChange={() => undefined} />);
     const tablist = screen.getByRole('tablist', { name: 'Catalog type' });
-    expect(tablist.className).toMatch(/m-overlay-tabs/);
+    expect(tablist.className).toMatch(/m-overlay-tabs--equal/);
     expect(screen.getByRole('tab', { name: 'Services' }).className).not.toMatch(/truncate/);
   });
 });

@@ -28,6 +28,7 @@ import {
   OverlayTabs,
   FormGrid,
   ScrollTable,
+  BooleanSettingRow,
   type StatusTone,
 } from '../components/ui';
 import {
@@ -41,11 +42,15 @@ import {
   InventoryEditPanel,
   InventoryKpiCards,
   InventoryStatusBadge,
+  CategorySelect,
+  AddCategoryDialog,
+  CategoryManagerModal,
   type InventoryCatalogTab,
   type InventorySortOption,
   type InventoryStatusFilter,
   type InventoryVisibilityFilter,
 } from '../components/inventory';
+import { countCategoryUsage, mergeFilterCategories } from '../src/inventory/categories';
 
 const SERVICE_ICON_COMPONENTS: Record<string, LucideIcon> = {
   Activity, Bath, Brush, CircleDot, CircleUser, Cloud, Droplets, Flame, Flower2,
@@ -73,7 +78,7 @@ interface ServicesProps {
   categories: string[];
   onAddCategory: (category: string) => void | Promise<void>;
   onEditCategory?: (oldName: string, newName: string) => void | Promise<void>;
-  onDeleteCategory: (category: string) => void | Promise<void>;
+  onDeleteCategory: (category: string, options?: { reassignTo?: string }) => void | Promise<void>;
   onReorderCategories?: (orderedNames: string[]) => void | Promise<void>;
   isLocked?: boolean;
 }
@@ -105,14 +110,11 @@ const Services: React.FC<ServicesProps> = ({
   const [showItemModal, setShowItemModal] = useState(false);
   const [editPanelTab, setEditPanelTab] = useState<'details' | 'pricing' | 'availability' | 'media'>('details');
   const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [showRearrangeCategoriesModal, setShowRearrangeCategoriesModal] = useState(false);
-  const [reorderCategoriesList, setReorderCategoriesList] = useState<string[]>([]);
+  const [showAddCategoryDialog, setShowAddCategoryDialog] = useState(false);
+  const [categoryFieldError, setCategoryFieldError] = useState<string | null>(null);
   const [itemToDelete, setItemToDelete] = useState<{ id: string; name: string; type: CatalogTab } | null>(null);
   const [editingItem, setEditingItem] = useState<Service | Product | Package | null>(null);
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
-  const [newCategoryName, setNewCategoryName] = useState('');
-  const [editingCategory, setEditingCategory] = useState<string | null>(null);
-  const [editingCategoryValue, setEditingCategoryValue] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -140,10 +142,10 @@ const Services: React.FC<ServicesProps> = ({
   const LOW_STOCK_THRESHOLD = 5;
 
   const categoriesForTab = useMemo(() => {
-    if (activeTab === 'services') return categories;
-    if (activeTab === 'products') return [...new Set(products.map((p) => p.category))].sort();
-    return [...new Set(packages.map((p) => p.category))].sort();
-  }, [activeTab, categories, products, packages]);
+    const items =
+      activeTab === 'services' ? services : activeTab === 'products' ? products : packages;
+    return mergeFilterCategories(categories, items);
+  }, [activeTab, categories, services, products, packages]);
 
   const sortItems = <T extends { name: string; price: number }>(list: T[], sort: SortOption): T[] => {
     const sorted = [...list];
@@ -275,7 +277,7 @@ const Services: React.FC<ServicesProps> = ({
     name: '',
     price: 0,
     duration: 60,
-    category: categories[0] || '',
+    category: '',
     points: 0,
     redeemPointsEnabled: false,
     redeemPoints: 0,
@@ -295,12 +297,13 @@ const Services: React.FC<ServicesProps> = ({
     setImagePreview(null);
     setImageFile(null);
     setEditPanelTab('details');
+    setCategoryFieldError(null);
     setFormData({
       type: activeTab === 'services' ? 'service' : activeTab === 'products' ? 'product' : 'package',
       name: '',
       price: 0,
       duration: 60,
-      category: categories[0] || '',
+      category: '',
       points: 0,
       redeemPointsEnabled: false,
       redeemPoints: 0,
@@ -323,6 +326,7 @@ const Services: React.FC<ServicesProps> = ({
     setImagePreview(item.imageUrl || null);
     setImageFile(null);
     setEditPanelTab('details');
+    setCategoryFieldError(null);
     setFormData({
       ...item,
       type: type === 'services' ? 'service' : type === 'products' ? 'product' : 'package',
@@ -431,23 +435,6 @@ const Services: React.FC<ServicesProps> = ({
     }
   };
 
-  const SortableCategoryItem: React.FC<{ id: string; name: string }> = ({ id, name }) => {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
-    const style = {
-      transform: CSS.Transform.toString(transform),
-      transition,
-      opacity: isDragging ? 0.8 : 1
-    };
-    return (
-      <div ref={setNodeRef} style={style} className="flex items-center gap-3 p-3 bg-[var(--bg-soft)] border border-[var(--line)] rounded-xl">
-        <button type="button" className="p-1.5 rounded-lg text-[var(--text-muted)] hover:bg-[var(--bg-selection)] cursor-grab active:cursor-grabbing" {...attributes} {...listeners} aria-label="Drag to reorder">
-          <GripVertical className="w-4 h-4" />
-        </button>
-        <span className="text-sm font-semibold text-[var(--text-primary)]">{name}</span>
-      </div>
-    );
-  };
-
   const SortableServiceRow: React.FC<{ service: Service }> = ({ service }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
       id: service.id
@@ -547,7 +534,7 @@ const Services: React.FC<ServicesProps> = ({
           <span className="m-caption font-semibold text-[var(--warning)]">+{service.points}</span>
         </td>
         <td className="px-6 py-4 text-right font-bold text-[var(--text-primary)] text-sm">
-          ${service.price.toLocaleString()}
+          RM {service.price.toLocaleString()}
         </td>
         <td className="px-6 py-4 text-right">
           <div onClick={(e) => e.stopPropagation()}>
@@ -632,6 +619,13 @@ const Services: React.FC<ServicesProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLocked) return;
+
+    if (!String(formData.category || '').trim()) {
+      setCategoryFieldError('Select a category before saving.');
+      setEditPanelTab('details');
+      return;
+    }
+    setCategoryFieldError(null);
 
     // Get outletID once for all types
     const outletID = getCurrentOutletID() || 
@@ -822,38 +816,10 @@ const Services: React.FC<ServicesProps> = ({
     }
   };
 
-  const handleAddCategory = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isLocked) return;
-    if (newCategoryName.trim()) {
-      await Promise.resolve(onAddCategory(newCategoryName.trim()));
-      setNewCategoryName('');
-    }
-  };
-
-  const handleSaveEditCategory = async () => {
-    const newName = editingCategoryValue.trim();
-    if (!editingCategory || !newName || !onEditCategory) return;
-    if (newName !== editingCategory && categories.includes(newName)) return;
-    await Promise.resolve(onEditCategory(editingCategory, newName));
-    setEditingCategory(null);
-    setEditingCategoryValue('');
-  };
-
-  const handleReorderCategoriesDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const oldIndex = reorderCategoriesList.indexOf(active.id as string);
-    const newIndex = reorderCategoriesList.indexOf(over.id as string);
-    if (oldIndex === -1 || newIndex === -1) return;
-    setReorderCategoriesList(arrayMove(reorderCategoriesList, oldIndex, newIndex));
-  };
-
-  const handleSaveReorderCategories = async () => {
-    if (onReorderCategories && reorderCategoriesList.length > 0) {
-      await Promise.resolve(onReorderCategories(reorderCategoriesList));
-      setShowRearrangeCategoriesModal(false);
-    }
+  const handleCreateCategoryForEditor = async (name: string) => {
+    await Promise.resolve(onAddCategory(name));
+    setFormData((current) => ({ ...current, category: name }));
+    setCategoryFieldError(null);
   };
 
   const toggleExpand = (id: string) => {
@@ -1011,6 +977,8 @@ const Services: React.FC<ServicesProps> = ({
           onSortChange={setMenuSortBy}
           onOpenFiltersSheet={() => setFiltersSheetOpen(true)}
           onOpenSortSheet={() => setSortSheetOpen(true)}
+          onManageCategories={() => setShowCategoryModal(true)}
+          manageCategoriesDisabled={Boolean(isLocked)}
           activeTab={activeTab}
         />
 
@@ -1049,18 +1017,6 @@ const Services: React.FC<ServicesProps> = ({
             >
               {isLocked ? <Icons.Lock /> : <Icons.Settings />} Categories
             </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              disabled={Boolean(isLocked)}
-              onClick={() => {
-                if (isLocked) return;
-                setReorderCategoriesList([...categories]);
-                setShowRearrangeCategoriesModal(true);
-              }}
-            >
-              {isLocked ? <Icons.Lock /> : <GripVertical className="w-4 h-4" />} Rearrange
-            </Button>
             <Button variant="primary" size="sm" onClick={handleOpenAddModal} disabled={Boolean(isLocked)}>
               {fabLabel}
             </Button>
@@ -1083,7 +1039,7 @@ const Services: React.FC<ServicesProps> = ({
               className="m-inventory-search w-full h-10 pl-9 pr-3 rounded-ui-sm border border-[var(--line-strong)] bg-[var(--bg-surface)] text-sm text-[var(--text-primary)] focus-visible:shadow-ui-focus-strong"
             />
           </div>
-          <InventoryTypeTabs activeTab={activeTab} onChange={setActiveTab} />
+          <InventoryTypeTabs activeTab={activeTab} onChange={setActiveTab} className="min-[720px]:max-w-sm min-[720px]:flex-none" />
         </div>
 
         {/* Row 3: category / status / visibility filters (left), sort (right) */}
@@ -1167,7 +1123,7 @@ const Services: React.FC<ServicesProps> = ({
               <InventoryEntityCard
                 key={service.id}
                 name={service.name}
-                priceLabel={`$${service.price.toLocaleString()}`}
+                priceLabel={`RM ${service.price.toLocaleString()}`}
                 metaLabel={`${durationLabel} • ${service.category || '—'}`}
                 secondaryLabel={durationLabel}
                 visible={service.isVisible !== false}
@@ -1211,7 +1167,7 @@ const Services: React.FC<ServicesProps> = ({
             <InventoryEntityCard
               key={product.id}
               name={product.name}
-              priceLabel={`$${product.price.toLocaleString()}`}
+              priceLabel={`RM ${product.price.toLocaleString()}`}
               metaLabel={product.category || '—'}
               secondaryLabel={`Stock: ${product.stock}`}
               lowStock={product.stock <= 5}
@@ -1261,7 +1217,7 @@ const Services: React.FC<ServicesProps> = ({
               <InventoryEntityCard
                 key={pkg.id}
                 name={pkg.name}
-                priceLabel={`$${pkg.price.toLocaleString()}`}
+                priceLabel={`RM ${pkg.price.toLocaleString()}`}
                 metaLabel={`${itemCount} items • ${pkg.category || '—'}`}
                 secondaryLabel={`${itemCount} items`}
                 visible
@@ -1355,7 +1311,7 @@ const Services: React.FC<ServicesProps> = ({
                   </td>
                   <td className="px-6 py-4 text-[var(--line-strong)]" aria-label="Visibility not tracked for products">—</td>
                   <td className="px-6 py-4"><span className={`text-xs font-bold ${product.stock <= LOW_STOCK_THRESHOLD ? 'text-[var(--danger)] animate-pulse' : 'text-[var(--text-muted)]'}`}>{product.stock} units</span></td>
-                  <td className="px-6 py-4 text-right font-bold text-[var(--text-primary)] text-sm">${product.price.toLocaleString()}</td>
+                  <td className="px-6 py-4 text-right font-bold text-[var(--text-primary)] text-sm">RM {product.price.toLocaleString()}</td>
                   <td className="px-6 py-4 text-right">
                     <div onClick={(e) => e.stopPropagation()}>
                       <RowActionsMenu
@@ -1399,7 +1355,7 @@ const Services: React.FC<ServicesProps> = ({
                     </div>
                   </td>
                   <td className="px-6 py-4"><span className="m-caption font-semibold text-[var(--warning)]">+{pkg.points}</span></td>
-                  <td className="px-6 py-4 text-right font-bold text-[var(--text-primary)] text-sm">${pkg.price.toLocaleString()}</td>
+                  <td className="px-6 py-4 text-right font-bold text-[var(--text-primary)] text-sm">RM {pkg.price.toLocaleString()}</td>
                   <td className="px-6 py-4 text-right">
                     <div onClick={(e) => e.stopPropagation()}>
                       <RowActionsMenu
@@ -1519,6 +1475,7 @@ const Services: React.FC<ServicesProps> = ({
               {formData.type === 'service' && (
                 <OverlayTabs
                   ariaLabel="Edit sections"
+                  layout="equal"
                   value={editPanelTab}
                   onChange={(id) => setEditPanelTab(id as typeof editPanelTab)}
                   items={EDIT_TABS}
@@ -1579,21 +1536,20 @@ const Services: React.FC<ServicesProps> = ({
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       />
                     </div>
-                    <div>
-                      <label className="m-settings-label block mb-2">Category</label>
-                      <select
-                        required
-                        className="m-settings-control w-full appearance-none cursor-pointer"
+                    <CategorySelect
+                        id="package-category"
+                        label="Category"
                         value={formData.category}
-                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                      >
-                        <option value="">Select a category</option>
-                        {categories.map((cat) => (
-                          <option key={cat} value={cat}>{cat}</option>
-                        ))}
-                      </select>
-                      <p className="mt-1.5 text-xs text-[var(--text-muted)]">The category displayed to you, and to clients online.</p>
-                    </div>
+                        categories={categories}
+                        onChange={(category) => {
+                          setFormData({ ...formData, category });
+                          setCategoryFieldError(null);
+                        }}
+                        onAddCategory={() => setShowAddCategoryDialog(true)}
+                        required
+                        error={categoryFieldError || undefined}
+                        hint="Shown to your team and to clients online."
+                      />
                     <div>
                       <div className="flex justify-between items-center mb-2">
                         <label className="m-settings-label block">Description (Optional)</label>
@@ -1740,39 +1696,47 @@ const Services: React.FC<ServicesProps> = ({
                   <FormGrid>
                     <div className="m-editor-stack">
                       <div>
-                        <label className="m-settings-label block uppercase">Name</label>
-                        <input required type="text" className="m-settings-control w-full outline-none font-medium" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+                        <label htmlFor="service-name" className="m-settings-label block uppercase">Name</label>
+                        <input id="service-name" required type="text" className="m-settings-control w-full outline-none font-medium" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
                       </div>
+                      <CategorySelect
+                        id="service-category"
+                        value={formData.category}
+                        categories={categories}
+                        onChange={(category) => {
+                          setFormData({ ...formData, category });
+                          setCategoryFieldError(null);
+                        }}
+                        onAddCategory={() => setShowAddCategoryDialog(true)}
+                        required
+                        error={categoryFieldError || undefined}
+                      />
                       <div>
-                        <label className="m-settings-label block uppercase">Category</label>
-                        <select required className="m-settings-control w-full outline-none font-medium" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
-                          {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="m-settings-label block uppercase">Duration (Mins)</label>
-                        <input required type="number" className="m-settings-control w-full outline-none font-medium" value={formData.duration} onChange={e => setFormData({ ...formData, duration: parseInt(e.target.value) || 0 })} />
+                        <label htmlFor="service-duration" className="m-settings-label block uppercase">Duration (Mins)</label>
+                        <input id="service-duration" required type="number" inputMode="numeric" className="m-settings-control w-full outline-none font-medium" value={formData.duration} onChange={e => setFormData({ ...formData, duration: parseInt(e.target.value) || 0 })} />
                       </div>
                     </div>
                     <div>
-                      <label className="m-settings-label block uppercase">Description</label>
-                      <textarea rows={5} className="m-settings-control m-editor-textarea w-full outline-none" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
+                      <label htmlFor="service-description" className="m-settings-label block uppercase">Description</label>
+                      <textarea id="service-description" rows={3} className="m-settings-control m-editor-textarea w-full outline-none" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
                     </div>
                   </FormGrid>
                 )}
                 {editPanelTab === 'pricing' && (
                   <FormGrid>
                     <div>
-                      <label className="m-settings-label block uppercase">Price ($)</label>
-                      <input required type="number" step="0.01" className="m-settings-control w-full outline-none font-bold" value={formData.price} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })} />
+                      <label htmlFor="service-price" className="m-settings-label block uppercase">Price (RM)</label>
+                      <input id="service-price" required type="number" step="0.01" inputMode="decimal" className="m-settings-control w-full outline-none font-bold" value={formData.price} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })} />
                     </div>
                     <div>
-                      <label className="m-settings-label block uppercase">Free Point (Loyalty)</label>
+                      <label htmlFor="service-points" className="m-settings-label block uppercase">Free Point (Loyalty)</label>
                       <input
+                        id="service-points"
                         required
                         type="number"
                         min="0"
                         step="1"
+                        inputMode="numeric"
                         className="m-settings-control w-full outline-none font-bold text-[var(--warning)]"
                         value={formData.points ?? 0}
                         onChange={e => {
@@ -1782,23 +1746,27 @@ const Services: React.FC<ServicesProps> = ({
                       />
                       <p className="mt-1 m-settings-hint">Free point is the point given to the customer when they buy this item.</p>
                     </div>
-                    <label className="m-editor-card flex items-center gap-3 cursor-pointer">
-                      <input type="checkbox" checked={formData.isCommissionable} onChange={e => setFormData({ ...formData, isCommissionable: e.target.checked })} />
-                      <span className="text-xs font-bold text-[var(--text-secondary)]">Commission Eligible</span>
-                    </label>
-                    <div className="m-editor-card">
-                      <div className="flex items-center justify-between gap-3">
+                    <BooleanSettingRow
+                      id="service-commission"
+                      label="Commission eligible"
+                      checked={!!formData.isCommissionable}
+                      onChange={(checked) => setFormData({ ...formData, isCommissionable: checked })}
+                    />
+                    <div className="m-redeem-block m-editor-card">
+                      <div className="m-redeem-block__header">
                         <div>
                           <p className="m-settings-label uppercase">Redeem Point</p>
                           <p className="m-settings-hint">Allow this service to be redeemed for free with member points.</p>
                         </div>
                         <button
                           type="button"
+                          role="switch"
+                          aria-checked={!!formData.redeemPointsEnabled}
+                          aria-label="Redeem with member points"
                           onClick={() => setFormData({ ...formData, redeemPointsEnabled: !formData.redeemPointsEnabled })}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
                             formData.redeemPointsEnabled ? 'bg-[var(--brand)]' : 'bg-[var(--line-strong)]'
                           }`}
-                          aria-pressed={!!formData.redeemPointsEnabled}
                         >
                           <span
                             className={`inline-block h-4 w-4 transform rounded-full bg-[var(--bg-surface)] shadow transition-transform ${
@@ -1807,30 +1775,31 @@ const Services: React.FC<ServicesProps> = ({
                           />
                         </button>
                       </div>
-                      <div>
-                        <label className="m-settings-label block uppercase">Item Point Value</label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="1"
-                          value={formData.redeemPoints ?? 0}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              redeemPoints: parseInt(e.target.value) || 0,
-                            })
-                          }
-                          disabled={!formData.redeemPointsEnabled}
-                          className={`m-settings-control w-full font-semibold ${
-                            formData.redeemPointsEnabled
-                              ? 'bg-[var(--bg-surface)] border-[var(--brand-border)] text-[var(--brand-deep)] focus:ring-2 focus:ring-[var(--brand)]'
-                              : 'bg-[var(--bg-soft)] border-[var(--line)] text-[var(--text-muted)] cursor-not-allowed'
-                          }`}
-                        />
-                        <p className="mt-1 m-settings-hint">
-                          When a member has at least this many points, this service can be redeemed for free.
-                        </p>
-                      </div>
+                      {formData.redeemPointsEnabled ? (
+                        <div>
+                          <label htmlFor="service-redeem-points" className="m-settings-label block uppercase">Item Point Value</label>
+                          <input
+                            id="service-redeem-points"
+                            type="number"
+                            min="0"
+                            step="1"
+                            inputMode="numeric"
+                            value={formData.redeemPoints ?? 0}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                redeemPoints: parseInt(e.target.value) || 0,
+                              })
+                            }
+                            className="m-settings-control w-full font-semibold bg-[var(--bg-surface)] border-[var(--brand-border)] text-[var(--brand-deep)]"
+                          />
+                          <p className="mt-1 m-settings-hint">
+                            When a member has at least this many points, this service can be redeemed for free.
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="m-settings-hint">Turn this on to set the member point value required to redeem this service.</p>
+                      )}
                     </div>
                   </FormGrid>
                 )}
@@ -1867,15 +1836,21 @@ const Services: React.FC<ServicesProps> = ({
                     <label className="m-settings-label block uppercase">Name</label>
                     <input required type="text" className="m-settings-control w-full outline-none font-medium" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
                   </div>
+                  <CategorySelect
+                    id="product-category"
+                    value={formData.category}
+                    categories={categories}
+                    onChange={(category) => {
+                      setFormData({ ...formData, category });
+                      setCategoryFieldError(null);
+                    }}
+                    onAddCategory={() => setShowAddCategoryDialog(true)}
+                    required
+                    error={categoryFieldError || undefined}
+                  />
                   <div>
-                    <label className="m-settings-label block uppercase">Category</label>
-                    <select required className="m-settings-control w-full outline-none font-medium" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
-                      {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="m-settings-label block uppercase">Price ($)</label>
-                    <input required type="number" step="0.01" className="m-settings-control w-full outline-none font-bold" value={formData.price} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })} />
+                    <label className="m-settings-label block uppercase">Price (RM)</label>
+                    <input required type="number" step="0.01" inputMode="decimal" className="m-settings-control w-full outline-none font-bold" value={formData.price} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })} />
                   </div>
                   {formData.type === 'product' && (
                     <>
@@ -1898,7 +1873,7 @@ const Services: React.FC<ServicesProps> = ({
                       </div>
                       <div>
                         <label className="m-settings-label block uppercase">
-                          Fixed Commission ($)
+                          Fixed Commission (RM)
                         </label>
                         <input
                           type="number"
@@ -1923,7 +1898,7 @@ const Services: React.FC<ServicesProps> = ({
                 </div>
                 <div>
                   <label className="m-settings-label block uppercase">Description</label>
-                  <textarea rows={5} className="m-settings-control m-editor-textarea w-full outline-none" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
+                  <textarea rows={3} className="m-settings-control m-editor-textarea w-full outline-none" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
                 </div>
               </FormGrid>
               )}
@@ -2108,131 +2083,23 @@ const Services: React.FC<ServicesProps> = ({
         tone="danger"
       />
 
-      <AppModal
-        open={showRearrangeCategoriesModal}
-        onClose={() => setShowRearrangeCategoriesModal(false)}
-        title="Rearrange Categories"
-        description='Drag to reorder. "All" always stays first on the menu.'
-        size="md"
-        mobileFullscreen
-        footer={
-          <ModalFooterActions>
-            <Button variant="secondary" onClick={() => setShowRearrangeCategoriesModal(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveReorderCategories}>Save Order</Button>
-          </ModalFooterActions>
-        }
-      >
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleReorderCategoriesDragEnd}
-        >
-          <SortableContext items={reorderCategoriesList} strategy={verticalListSortingStrategy}>
-            <div className="space-y-2">
-              {reorderCategoriesList.map((cat) => (
-                <SortableCategoryItem key={cat} id={cat} name={cat} />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
-      </AppModal>
-
-      <AppModal
+      <CategoryManagerModal
         open={showCategoryModal}
         onClose={() => setShowCategoryModal(false)}
-        title="Manage Categories"
-        description="Add, rename, or remove inventory categories."
-        size="md"
-        mobileFullscreen
-        footer={
-          <ModalFooterActions>
-            <Button variant="secondary" onClick={() => setShowCategoryModal(false)}>
-              Close
-            </Button>
-          </ModalFooterActions>
-        }
-      >
-        <form onSubmit={handleAddCategory} className="flex gap-2">
-          <input
-            required
-            type="text"
-            placeholder="New category..."
-            className={`${fieldControlClassName} flex-1`}
-            value={newCategoryName}
-            onChange={(e) => setNewCategoryName(e.target.value)}
-          />
-          <Button type="submit" size="md" aria-label="Add category">
-            <Icons.Add />
-          </Button>
-        </form>
-        <div className="space-y-2 max-h-64 overflow-y-auto">
-          {categories.map((cat) => (
-            <div
-              key={editingCategory === cat ? `editing-${cat}` : cat}
-              className="flex items-center justify-between gap-2 p-3 bg-[var(--bg-soft)] rounded-ui-md border border-[var(--line)]"
-            >
-              {editingCategory === cat ? (
-                <>
-                  <input
-                    type="text"
-                    className={`${fieldControlClassName} flex-1 h-9`}
-                    value={editingCategoryValue}
-                    onChange={(e) => setEditingCategoryValue(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleSaveEditCategory();
-                      if (e.key === 'Escape') {
-                        setEditingCategory(null);
-                        setEditingCategoryValue('');
-                      }
-                    }}
-                  />
-                  <Button size="sm" variant="ghost" onClick={handleSaveEditCategory}>
-                    Save
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setEditingCategory(null);
-                      setEditingCategoryValue('');
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <span className="text-sm font-bold text-[var(--text-primary)] flex-1 truncate">
-                    {cat}
-                  </span>
-                  {onEditCategory && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingCategory(cat);
-                        setEditingCategoryValue(cat);
-                      }}
-                      className="p-2 text-[var(--text-muted)] hover:text-[var(--brand)]"
-                      title="Edit name"
-                    >
-                      <Icons.Edit />
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => Promise.resolve(onDeleteCategory(cat))}
-                    className="p-2 text-[var(--text-muted)] hover:text-[var(--danger)]"
-                  >
-                    <Icons.Trash />
-                  </button>
-                </>
-              )}
-            </div>
-          ))}
-        </div>
-      </AppModal>
+        categories={categories}
+        locked={Boolean(isLocked)}
+        usageFor={(category) => countCategoryUsage(category, services, products, packages)}
+        onAdd={onAddCategory}
+        onRename={onEditCategory}
+        onDelete={onDeleteCategory}
+        onReorder={onReorderCategories}
+      />
+      <AddCategoryDialog
+        open={showAddCategoryDialog}
+        onClose={() => setShowAddCategoryDialog(false)}
+        existing={categories}
+        onAdd={handleCreateCategoryForEditor}
+      />
     </div>
   );
 };

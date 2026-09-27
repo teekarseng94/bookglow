@@ -30,6 +30,25 @@ describe('responsive layout primitives', () => {
     expect(onChange).toHaveBeenCalledWith('pricing');
   });
 
+  it('uses equal columns when layout is equal', () => {
+    render(
+      <OverlayTabs
+        ariaLabel="Catalog type"
+        layout="equal"
+        variant="segmented"
+        value="services"
+        onChange={() => undefined}
+        items={[
+          { id: 'services', label: 'Services' },
+          { id: 'products', label: 'Products' },
+          { id: 'packages', label: 'Packages' },
+        ]}
+      />,
+    );
+    expect(screen.getByRole('tablist').className).toMatch(/m-overlay-tabs--equal/);
+    expect(screen.getByRole('tablist').style.gridTemplateColumns).toMatch(/repeat\(3/);
+  });
+
   it('marks form grids as container-aware two-column layouts', () => {
     const { container } = render(
       <FormGrid>

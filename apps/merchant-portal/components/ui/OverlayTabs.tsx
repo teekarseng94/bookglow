@@ -13,11 +13,14 @@ export interface OverlayTabsProps<T extends string> {
   onChange: (id: T) => void;
   ariaLabel: string;
   variant?: 'underline' | 'segmented';
+  /** hug = content-sized tabs. equal = shared column widths (Members / Menu pattern). */
+  layout?: 'hug' | 'equal';
   className?: string;
 }
 
 /**
- * Scrollable tab list that keeps labels readable instead of wrapping or shrinking.
+ * Tab list with hug (content-sized) or equal (shared column) layouts.
+ * Equal layout is the BookGlow segmented control used by Menu and Members.
  */
 export function OverlayTabs<T extends string>({
   items,
@@ -25,6 +28,7 @@ export function OverlayTabs<T extends string>({
   onChange,
   ariaLabel,
   variant = 'underline',
+  layout = 'hug',
   className,
 }: OverlayTabsProps<T>) {
   const listRef = useRef<HTMLDivElement>(null);
@@ -81,9 +85,15 @@ export function OverlayTabs<T extends string>({
       role="tablist"
       aria-label={ariaLabel}
       onKeyDown={onKeyDown}
+      style={
+        layout === 'equal'
+          ? { gridTemplateColumns: `repeat(${Math.max(items.length, 1)}, minmax(0, 1fr))` }
+          : undefined
+      }
       className={cx(
         'm-overlay-tabs',
         variant === 'segmented' ? 'm-overlay-tabs--segmented' : 'm-overlay-tabs--underline',
+        layout === 'equal' && 'm-overlay-tabs--equal',
         className,
       )}
     >

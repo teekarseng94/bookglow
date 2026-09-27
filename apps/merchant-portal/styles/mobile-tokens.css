@@ -743,7 +743,7 @@ select.m-settings-control,
     width: 100%;
     min-height: 44px;
     padding: 4px;
-    gap: 0;
+    gap: 4px;
     border: 1px solid var(--line);
     background: var(--bg-surface);
     border-radius: var(--mobile-radius-lg);
@@ -880,7 +880,8 @@ select.m-settings-control,
   }
 
   .m-inventory-tabs {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     align-items: stretch;
     gap: 4px;
     width: 100%;
@@ -888,24 +889,21 @@ select.m-settings-control,
     height: auto;
     min-height: var(--mobile-inventory-tab-height);
     padding: 4px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    overscroll-behavior-x: contain;
-    scrollbar-width: thin;
-    -webkit-overflow-scrolling: touch;
+    overflow: hidden;
     border-radius: var(--mobile-radius-md);
     background: var(--bg-soft);
     border: 1px solid var(--line);
   }
 
   .m-inventory-tabs [role='tab'] {
-    flex: 1 0 auto;
-    min-width: max-content;
+    flex: unset;
+    min-width: 0;
+    width: 100%;
     height: auto;
     min-height: var(--touch-min, 44px);
     white-space: nowrap;
-    overflow: visible;
-    text-overflow: unset;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .m-inventory-tabs__btn {

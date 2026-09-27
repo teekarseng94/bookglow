@@ -35,6 +35,7 @@ import {
   TransactionType
 } from '../types';
 import { domainsForRoute, tableToDomain, type OutletDataDomain } from './outletDataDomains';
+import { normalizeLoadedCategories } from '../src/inventory/categories';
 
 export type { OutletDataDomain } from './outletDataDomains';
 export { domainsForRoute } from './outletDataDomains';
@@ -68,8 +69,6 @@ function saleDateParts(isoOrDate: string): { date: string; time: string } {
   const mm = String(d.getMinutes()).padStart(2, '0');
   return { date: `${y}-${mo}-${day}`, time: `${hh}:${mm}` };
 }
-
-const DEFAULT_SERVICE_CATEGORIES = ['Massage', 'Facial', 'Nails', 'Aromatherapy', 'Packages'];
 
 /** Sale document IDs we've already created commissions for this session (prevents duplicate if handler runs twice) */
 const commissionCreatedForSaleIds = new Set<string>();
@@ -181,11 +180,7 @@ export const useFirestoreData = (
         setProducts(productsData);
         setPackages(packagesData);
         setRewards(rewardsData);
-        if (Array.isArray(categoriesData) && categoriesData.length > 0) {
-          setServiceCategories(categoriesData);
-        } else {
-          setServiceCategories(DEFAULT_SERVICE_CATEGORIES);
-        }
+        setServiceCategories(normalizeLoadedCategories(categoriesData));
       } else if (domain === 'clients') {
         const [clientsData, total] = await Promise.all([
           clientService.listPage(outletID, { limit: DEFAULT_LIST_PAGE_SIZE, offset: 0 }),
@@ -1476,8 +1471,23 @@ export const useFirestoreData = (
     setServiceCategories(next);
   }, [outletID, hasOutlet, serviceCategories]);
 
-  const handleDeleteServiceCategory = useCallback(async (category: string) => {
+  const handleDeleteServiceCategory = useCallback(async (category: string, options?: { reassignTo?: string }) => {
     if (!hasOutlet || !outletID) return;
+    const reassignTo = (options?.reassignTo || '').trim();
+    if (reassignTo && reassignTo !== category) {
+      const next = normalizeLoadedCategories([
+        ...serviceCategories.filter((name) => name !== category),
+        reassignTo,
+      ]);
+      await Promise.all([
+        serviceService.updateCategoryName(outletID, category, reassignTo),
+        productService.updateCategoryName(outletID, category, reassignTo),
+        packageService.updateCategoryName(outletID, category, reassignTo),
+      ]);
+      await outletService.updateServiceCategories(outletID, next);
+      setServiceCategories(next);
+      return;
+    }
     const next = serviceCategories.filter((c) => c !== category);
     await outletService.updateServiceCategories(outletID, next);
     setServiceCategories(next);

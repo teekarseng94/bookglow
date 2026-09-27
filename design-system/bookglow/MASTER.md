@@ -228,7 +228,8 @@ Canonical implementations live in `apps/merchant-portal/components/ui/`. Specs a
 | Field / SelectField | `components/ui/Field.tsx` |
 | Dialog | `AppModal` + `useDialogInteraction` |
 | Sheet / drawer | `AppSheet`, `AppDrawer` (`size`) |
-| Overlay tabs / forms / tables | `OverlayTabs`, `FormGrid`, `ScrollTable` |
+| Overlay tabs / forms / tables | `OverlayTabs` (`layout="hug" \| "equal"`), `FormGrid`, `ScrollTable` |
+| Compact boolean | `BooleanSettingRow` |
 | Feedback | `Alert`, `StatusBadge`, `EmptyState`, `ErrorState`, `LoadingSkeleton`, `SaveStatus` |
 | Page chrome | `PageHeader`, `SectionHeader`, `FilterToolbar`, `StickyActionBar` |
 | Toast | Existing `Toast.tsx` — restyle to status tokens later |

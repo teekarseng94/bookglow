@@ -27,9 +27,9 @@ export const InventorySaveBar: React.FC<InventorySaveBarProps> = ({
   formId,
   className,
 }) => (
-  <div className={cx('flex items-center justify-between gap-3 w-full', className)}>
+  <div className={cx('m-inventory-save-bar', className)}>
     <SaveStatus status={saving ? 'saving' : status} />
-    <div className="flex items-center gap-2">
+    <div className="m-inventory-save-bar__actions">
       {onCancel ? (
         <Button type="button" variant="secondary" onClick={onCancel} disabled={saving}>
           {cancelLabel}

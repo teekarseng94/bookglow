@@ -121,6 +121,26 @@ Mobile merchant: 72px bottom nav + safe-area; max 5 destinations including More.
 
 Icon-only collapsed nav: tooltip + `aria-label`.
 
+## Segmented tabs
+
+`OverlayTabs` is the shared primitive. Members and Menu must not invent a second control.
+
+| Prop | Use |
+|------|-----|
+| `variant="segmented"` + `layout="equal"` | Services/Products/Packages; Members Recent/New/Birthday/Name |
+| `variant="underline"` + `layout="equal"` | Editor Details/Pricing/Availability/Media |
+| `layout="hug"` | Overflowing tab sets that should scroll |
+
+Equal layout uses CSS grid `repeat(n, minmax(0, 1fr))`. Selected segmented tabs use brand fill **and** selected semantics (`aria-selected`), not colour alone.
+
+## Category selector
+
+`CategorySelect` for inventory editors. Placeholder **Select category**. Footer action **+ Add new category**. Empty merchant: **No categories yet** + **Create your first category**. Categories are outlet `service_categories` strings — never a hardcoded Massage default.
+
+## Compact boolean-setting row
+
+`BooleanSettingRow`: one labelled checkbox row (`htmlFor` + `id`). Do not put a single boolean in `.m-editor-card`.
+
 ## Feedback
 
 | Component | Role |

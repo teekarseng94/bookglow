@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowUpDown, Filter, Search } from 'lucide-react';
+import { ArrowUpDown, Filter, Search, Tags } from 'lucide-react';
 import { FilterToolbar } from '../ui/FilterToolbar';
 import { IconButton } from '../ui/IconButton';
 import { cx } from '../ui/cx';
@@ -23,6 +23,8 @@ export interface InventoryToolbarProps {
   onVisibilityFilterChange?: (value: InventoryVisibilityFilter) => void;
   onOpenFiltersSheet?: () => void;
   onOpenSortSheet?: () => void;
+  onManageCategories?: () => void;
+  manageCategoriesDisabled?: boolean;
   activeTab?: InventoryCatalogTab;
   className?: string;
 }
@@ -47,6 +49,8 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
   onVisibilityFilterChange,
   onOpenFiltersSheet,
   onOpenSortSheet,
+  onManageCategories,
+  manageCategoriesDisabled,
   activeTab = 'services',
   className,
 }) => {
@@ -82,6 +86,17 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
             onClick={onOpenFiltersSheet}
           >
             <Filter className="h-4 w-4 shrink-0" aria-hidden />
+          </IconButton>
+        ) : null}
+        {onManageCategories ? (
+          <IconButton
+            variant="outline"
+            size="md"
+            label="Manage categories"
+            disabled={manageCategoriesDisabled}
+            onClick={onManageCategories}
+          >
+            <Tags className="h-4 w-4 shrink-0" aria-hidden />
           </IconButton>
         ) : null}
         {onOpenSortSheet ? (

@@ -29,7 +29,7 @@
 
 ## Components to reuse
 
-`Button`, `IconButton`, `PageHeader`, `SectionHeader`, `FilterToolbar`, `DenseEntityRow`, `Field`, `SelectField`, `StatusBadge`, `Alert`, `EmptyState`, `ErrorState`, `LoadingSkeleton`, `AppModal`, `AppSheet`, `AppDrawer`, `OverlayTabs`, `FormGrid`, `ScrollTable`, `StickyActionBar`, `ConfirmationDialog`, `NetworkStatusBanner`
+`Button`, `IconButton`, `PageHeader`, `SectionHeader`, `FilterToolbar`, `DenseEntityRow`, `Field`, `SelectField`, `StatusBadge`, `Alert`, `EmptyState`, `ErrorState`, `LoadingSkeleton`, `AppModal`, `AppSheet`, `AppDrawer`, `OverlayTabs` (`layout="equal"` for Menu/Members), `BooleanSettingRow`, `FormGrid`, `ScrollTable`, `StickyActionBar`, `ConfirmationDialog`, `NetworkStatusBanner`
 
 Page-specific cards (inventory, POS, members, staff) already follow `.m-*` mobile tokens — extend those classes instead of new one-off CSS.
 

@@ -299,7 +299,7 @@ export interface Outlet {
   /** Merchant portal access; independent from public booking publication. */
   accessStatus?: 'active' | 'suspended' | string;
   settings?: OutletSettings;
-  /** Service/menu categories (e.g. Massage, Facial). Persisted per outlet. */
+  /** Service/menu categories persisted per outlet. Merchant-defined; not a BookGlow massage default. */
   serviceCategories?: string[];
   /**
    * Public booking URL segment under /book/:slug (e.g. baliWellness).

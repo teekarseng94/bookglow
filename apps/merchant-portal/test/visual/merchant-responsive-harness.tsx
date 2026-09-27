@@ -3,11 +3,16 @@ import { createRoot } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { InventoryEditPanel } from '../../components/inventory/InventoryEditPanel';
-import { FormGrid, OverlayTabs, PageHeader, ScrollTable } from '../../components/ui';
+import { CategorySelect } from '../../components/inventory/CategorySelect';
+import { InventoryTypeTabs } from '../../components/inventory/InventoryTypeTabs';
+import { BooleanSettingRow, FormGrid, OverlayTabs, PageHeader, ScrollTable } from '../../components/ui';
 import '../../src/loadStyles';
 
 const Harness = () => {
   const [tab, setTab] = useState<'details' | 'pricing' | 'availability' | 'media'>('details');
+  const [catalog, setCatalog] = useState<'services' | 'products' | 'packages'>('services');
+  const [category, setCategory] = useState('');
+  const [commission, setCommission] = useState(true);
   const title = (
     <span className="block min-w-0">
       <span className="m-editor-eyebrow">Add New Service</span>
@@ -30,6 +35,7 @@ const Harness = () => {
           description="Catalog layout harness for drawer, tabs, and tables."
           actions={<button type="button" className="m-btn m-btn--md">Add Item</button>}
         />
+        <InventoryTypeTabs activeTab={catalog} onChange={setCatalog} />
         <ScrollTable label="Catalog items">
           <table>
             <thead>
@@ -57,6 +63,7 @@ const Harness = () => {
         <form id="inventory-edit-form" className="m-inventory-editor m-editor-form">
           <OverlayTabs
             ariaLabel="Edit sections"
+            layout="equal"
             value={tab}
             onChange={(id) => setTab(id as typeof tab)}
             items={[
@@ -74,12 +81,12 @@ const Harness = () => {
                   Name
                   <input className="m-settings-control mt-1 w-full" defaultValue="Aromatherapy massage with hot stone add-on" />
                 </label>
-                <label className="m-settings-label block">
-                  Category
-                  <select className="m-settings-control mt-1 w-full" defaultValue="Massage">
-                    <option>Massage</option>
-                  </select>
-                </label>
+                <CategorySelect
+                  value={category}
+                  categories={['Facial', 'Nails']}
+                  onChange={setCategory}
+                  onAddCategory={() => undefined}
+                />
                 <label className="m-settings-label block">
                   Duration (Mins)
                   <input className="m-settings-control mt-1 w-full" defaultValue="60" />
@@ -94,24 +101,22 @@ const Harness = () => {
           {tab === 'pricing' && (
             <FormGrid>
               <label className="m-settings-label block">
-                Price ($)
+                Price (RM)
                 <input className="m-settings-control mt-1 w-full" defaultValue="0" />
               </label>
               <label className="m-settings-label block">
                 Free Point (Loyalty)
                 <input className="m-settings-control mt-1 w-full" defaultValue="0" />
               </label>
-              <label className="m-editor-card flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" defaultChecked />
-                <span className="m-settings-label">Commission Eligible</span>
-              </label>
-              <div className="m-editor-card">
+              <BooleanSettingRow
+                id="harness-commission"
+                label="Commission eligible"
+                checked={commission}
+                onChange={setCommission}
+              />
+              <div className="m-redeem-block m-editor-card">
                 <p className="m-settings-label uppercase">Redeem Point</p>
                 <p className="m-settings-hint">Allow this service to be redeemed for free with member points.</p>
-                <label className="m-settings-label block">
-                  Item Point Value
-                  <input className="m-settings-control mt-1 w-full" defaultValue="0" />
-                </label>
               </div>
             </FormGrid>
           )}

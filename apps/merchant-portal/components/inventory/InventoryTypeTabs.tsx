@@ -23,8 +23,9 @@ export const InventoryTypeTabs: React.FC<InventoryTypeTabsProps> = ({
 }) => (
   <OverlayTabs
     variant="segmented"
+    layout="equal"
     ariaLabel="Catalog type"
-    className={cx('m-inventory-tabs', className)}
+    className={cx('m-inventory-tabs w-full', className)}
     items={TABS}
     value={activeTab}
     onChange={onChange}

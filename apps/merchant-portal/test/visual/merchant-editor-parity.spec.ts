@@ -51,6 +51,13 @@ test('Editor chrome stays compact across phone widths and tabs', async ({ page }
               input.getBoundingClientRect().bottom > footer.getBoundingClientRect().top + 1,
           ),
           dialogWidth: dialog?.getBoundingClientRect().width ?? 0,
+          tabSpread: (() => {
+            const tabs = [...document.querySelectorAll<HTMLElement>('.m-editor-tabs [role="tab"]')];
+            if (tabs.length < 2) return 0;
+            const widths = tabs.map((el) => el.getBoundingClientRect().width);
+            return Math.max(...widths) - Math.min(...widths);
+          })(),
+          commissionHeight: document.querySelector<HTMLElement>('.m-boolean-row')?.getBoundingClientRect().height ?? 0,
         };
       });
       expect(metrics.overflow, `overflow ${viewport.width} ${tab}`).toBe(false);
@@ -70,6 +77,12 @@ test('Editor chrome stays compact across phone widths and tabs', async ({ page }
       expect(metrics.headerHeight, `header ${viewport.width}`).toBeLessThanOrEqual(72);
       expect(metrics.footerOverlapsInput, `footer overlap ${viewport.width} ${tab}`).toBe(false);
       expect(metrics.dialogWidth).toBeGreaterThan(viewport.width - 8);
+      expect(metrics.tabSpread, `tab spread ${viewport.width} ${tab}`).toBeLessThan(20);
+      if (tab === 'Pricing') {
+        expect(metrics.commissionHeight, `commission ${viewport.width}`).toBeGreaterThan(0);
+        expect(metrics.commissionHeight, `commission ${viewport.width}`).toBeLessThanOrEqual(56);
+        await expect(page.getByText('Price (RM)')).toBeVisible();
+      }
     }
     await page.screenshot({
       path: artifact(`editor-parity-${viewport.width}.png`),

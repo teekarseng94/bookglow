@@ -12,3 +12,6 @@ export { InventoryFiltersSheet } from './InventoryFiltersSheet';
 export { InventorySortSheet } from './InventorySortSheet';
 export { InventoryOutletCard } from './InventoryOutletCard';
 export { InventoryKpiCards } from './InventoryKpiCards';
+export { CategorySelect } from './CategorySelect';
+export { AddCategoryDialog } from './AddCategoryDialog';
+export { CategoryManagerModal } from './CategoryManagerModal';

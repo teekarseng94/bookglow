@@ -4,7 +4,7 @@ import { OutletSettings, Outlet } from '../types';
 import { Icons } from '../constants';
 import { useUserContext } from '../contexts/UserContext';
 import { outletService } from '../services/databaseService';
-import { isValidBookingSlug, resolveBookingSlug, uniqueBookingSlug } from '../utils/bookingSlug';
+import { bookingSlugForEditor, isValidBookingSlug, resolveBookingSlug, uniqueBookingSlug } from '../utils/bookingSlug';
 import { ensureOutletBookingSlug } from '../utils/ensureOutletBookingSlug';
 import {
   OperatingHoursRow,
@@ -89,12 +89,17 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       setPhoneNumber(outletData?.phoneNumber || '');
       setBusinessHours(outletData?.businessHours || {});
       const name = outletData?.name || settings.shopName || '';
+      const savedSlug = bookingSlugForEditor(outletData?.bookingSlug);
+      if ((outletData?.bookingSlug || '').trim() && !savedSlug) {
+        setBookingSlug('');
+        return;
+      }
       const slug = await ensureOutletBookingSlug({
         outletId: effectiveOutletId,
-        existing: outletData?.bookingSlug,
+        existing: savedSlug,
         name,
       });
-      setBookingSlug(slug || uniqueBookingSlug(name, effectiveOutletId));
+      setBookingSlug(bookingSlugForEditor(slug || uniqueBookingSlug(name, effectiveOutletId)));
     };
 
     // If outlet prop is provided, use it
@@ -410,11 +415,11 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                   setBookingSlug(e.target.value);
                   setBookingSlugError(null);
                 }}
-                placeholder={uniqueBookingSlug(settings.shopName || '', effectiveOutletId) || 'baliWellness'}
+                placeholder=""
                 className="m-settings-control"
               />
               <p className="m-settings-hint">
-                Last segment of your public link (e.g. baliWellness). Saved automatically for new shops.
+                Last segment of your public link. Leave blank to use the generated outlet path.
               </p>
               {bookingSlugError && (
                 <p className="text-xs text-[var(--danger)]">{bookingSlugError}</p>

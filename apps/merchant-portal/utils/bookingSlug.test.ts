@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   bookingSlugOutletSuffix,
+  bookingSlugForEditor,
   isValidBookingSlug,
   resolveBookingSlug,
   shopNameToBookingSlug,
@@ -27,7 +28,7 @@ describe('uniqueBookingSlug', () => {
   });
 
   it('keeps a kebab base plus the outlet suffix', () => {
-    expect(uniqueBookingSlug('Bali Wellness', outletId)).toBe('bali-wellness-12ab34');
+    expect(uniqueBookingSlug('Harbour Spa', outletId)).toBe('harbour-spa-12ab34');
   });
 
   it('prefixes names that start with a digit', () => {
@@ -37,7 +38,7 @@ describe('uniqueBookingSlug', () => {
 
 describe('resolveBookingSlug', () => {
   it('keeps a saved slug', () => {
-    expect(resolveBookingSlug('baliWellness', '白金卡', 'outlet_abc')).toBe('baliWellness');
+    expect(resolveBookingSlug('harbourSpa', '白金卡', 'outlet_abc')).toBe('harbourSpa');
   });
 
   it('does not fall back to the raw outlet id when the slug is missing', () => {
@@ -50,7 +51,18 @@ describe('resolveBookingSlug', () => {
 
 describe('shopNameToBookingSlug', () => {
   it('still produces camelCase for English names', () => {
-    expect(shopNameToBookingSlug('Bali Wellness')).toBe('baliWellness');
+    expect(shopNameToBookingSlug('Harbour Spa')).toBe('harbourSpa');
+  });
+});
+
+describe('bookingSlugForEditor', () => {
+  it('hides the retired demo path', () => {
+    expect(bookingSlugForEditor('baliWellness')).toBe('');
+    expect(bookingSlugForEditor(' BALIWELLNESS ')).toBe('');
+  });
+
+  it('keeps a merchant-created path', () => {
+    expect(bookingSlugForEditor('harbourSpa')).toBe('harbourSpa');
   });
 });
 

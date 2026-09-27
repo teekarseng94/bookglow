@@ -302,7 +302,7 @@ export interface Outlet {
   /** Service/menu categories persisted per outlet. Merchant-defined; not a BookGlow massage default. */
   serviceCategories?: string[];
   /**
-   * Public booking URL segment under /book/:slug (e.g. baliWellness).
+   * Public booking URL segment under /book/:slug (e.g. harbourSpa).
    * The Firestore document id (outletID) stays the canonical tenant key.
    */
   bookingSlug?: string;

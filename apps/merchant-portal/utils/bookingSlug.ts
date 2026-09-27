@@ -1,4 +1,4 @@
-/** Convert a display name like "Bali Wellness" to a URL segment like "baliWellness". */
+/** Convert a display name like "Harbour Spa" to a URL segment like "harbourSpa". */
 export function shopNameToBookingSlug(name: string): string {
   const words = (name || '').trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return '';
@@ -27,6 +27,12 @@ export const BOOKING_SLUG_REGEX = /^[a-zA-Z][a-zA-Z0-9_-]*$/;
 export function isValidBookingSlug(s: string): boolean {
   const t = (s || '').trim();
   return t.length > 0 && BOOKING_SLUG_REGEX.test(t);
+}
+
+/** Hide the retired demo path from the merchant editor without changing real custom paths. */
+export function bookingSlugForEditor(value: string | undefined | null): string {
+  const stored = (value || '').trim();
+  return stored.toLowerCase() === 'baliwellness' ? '' : stored;
 }
 
 /** Last 6 identifier characters — same suffix ensure_merchant_workspace appends. */

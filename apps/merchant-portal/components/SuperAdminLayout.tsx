@@ -29,7 +29,7 @@ const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ user, onLogout, chi
   <OutletInspectorProvider>
   <div className="min-h-screen overflow-x-hidden bg-[var(--bg-canvas)] text-[var(--text-primary)]">
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-white/10 bg-[#171322] text-white lg:flex">
-      <div className="border-b border-white/10 px-5 py-5">
+      <div className="shrink-0 border-b border-white/10 px-5 py-5">
         <div className="flex items-center gap-3">
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-ui-md bg-[var(--brand)] shadow-ui-sm">
             <ShieldCheck className="h-5 w-5" aria-hidden />
@@ -41,7 +41,7 @@ const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ user, onLogout, chi
         </div>
       </div>
 
-      <nav className="flex-1 space-y-1 px-3 py-5" aria-label="Platform navigation">
+      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-5" aria-label="Platform navigation">
         {navigation.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
@@ -58,7 +58,7 @@ const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ user, onLogout, chi
         ))}
       </nav>
 
-      <div className="border-t border-white/10 p-4">
+      <div className="shrink-0 border-t border-white/10 p-4">
         <div className="mb-3 rounded-ui-md bg-white/7 p-3">
           <div className="flex items-center gap-2 text-xs font-semibold text-white">
             <span className="h-2 w-2 rounded-full bg-[var(--success)]" aria-hidden />
@@ -91,6 +91,14 @@ const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ user, onLogout, chi
           <div className="ml-auto flex min-w-0 items-center gap-2">
             <GlobalSuperAdminSearch />
             <Activity className="hidden h-5 w-5 shrink-0 text-[var(--brand)] sm:block" aria-hidden />
+            <button
+              type="button"
+              onClick={() => onLogout()}
+              className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-ui-md border border-[var(--line)] px-3 text-xs font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--brand-soft)] lg:hidden"
+            >
+              <LogOut className="h-4 w-4" aria-hidden />
+              Log out
+            </button>
           </div>
         </div>
         <nav className="flex max-w-full gap-1 overflow-x-auto px-3 pb-3 lg:hidden" aria-label="Platform navigation">

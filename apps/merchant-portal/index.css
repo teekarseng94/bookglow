@@ -1,7 +1,6 @@
 @import './styles/mobile-tokens.css';
 @import './styles/responsive-system.css';
 @import './styles/hours-row.css';
-@import './styles/density-system.css';
 
 @tailwind base;
 @tailwind components;

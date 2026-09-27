@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import { ScheduleDateStrip } from '../../components/schedule/ScheduleDateStrip';
-import '../../index.css';
+import '../../src/loadStyles';
 
 const requestedRoute = new URLSearchParams(window.location.search).get('route') || '/finance';
 const routeSegment = requestedRoute.split('/').filter(Boolean)[0] || 'dashboard';

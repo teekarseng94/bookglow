@@ -18,7 +18,6 @@ import {
   Download,
   Plus,
   Users,
-  Wallet,
 } from 'lucide-react';
 import { Transaction, TransactionType, Client, Appointment, Service, Product, OutletSettings } from '../types';
 import { useUserContext } from '../contexts/UserContext';
@@ -733,7 +732,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         titleClassName="text-app-page sm:text-app-page-lg"
         actions={
           <>
-            <span className="inline-flex min-h-11 items-center gap-1.5 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)] px-3 py-2 text-sm font-semibold text-[var(--text-secondary)]">
+            <span className="dashboard-date-chip inline-flex items-center gap-1.5 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)] px-3 text-sm font-semibold text-[var(--text-secondary)]">
               <Calendar className="h-4 w-4 shrink-0" aria-hidden />
               <span className="sm:hidden">{compactDateLabel}</span>
               <span className="hidden sm:inline">{dateLabel}</span>
@@ -752,10 +751,10 @@ const Dashboard: React.FC<DashboardProps> = ({
         className="lg:hidden"
         title="Quick actions"
         actions={[
-          { id: 'pos', label: 'New Sale', icon: <CreditCard className="h-5 w-5" aria-hidden />, onClick: () => navigate('/pos') },
-          { id: 'booking', label: 'Booking', icon: <Calendar className="h-5 w-5" aria-hidden />, onClick: () => navigate('/schedule') },
-          { id: 'member', label: 'Member', icon: <Users className="h-5 w-5" aria-hidden />, onClick: () => navigate('/member') },
-          { id: 'expense', label: 'Expense', icon: <Wallet className="h-5 w-5" aria-hidden />, onClick: () => navigate('/finance') },
+          { id: 'pos', label: 'New Sale', icon: <CreditCard className="h-4 w-4" aria-hidden />, onClick: () => navigate('/pos') },
+          { id: 'booking', label: 'Booking', icon: <Calendar className="h-4 w-4" aria-hidden />, onClick: () => navigate('/schedule') },
+          { id: 'member', label: 'Member', icon: <Users className="h-4 w-4" aria-hidden />, onClick: () => navigate('/member') },
+          { id: 'expense', label: 'Expense', icon: <BarChart3 className="h-4 w-4" aria-hidden />, onClick: () => navigate('/finance') },
         ]}
       />
 
@@ -883,10 +882,10 @@ const Dashboard: React.FC<DashboardProps> = ({
             className="hidden lg:block"
             title="Operational status"
             actions={[
-              { id: 'pos', label: 'New Sale', icon: <CreditCard className="h-5 w-5" aria-hidden />, onClick: () => navigate('/pos') },
-              { id: 'booking', label: 'Booking', icon: <Calendar className="h-5 w-5" aria-hidden />, onClick: () => navigate('/schedule') },
-              { id: 'member', label: 'Member', icon: <Users className="h-5 w-5" aria-hidden />, onClick: () => navigate('/member') },
-              { id: 'expense', label: 'Expense', icon: <Wallet className="h-5 w-5" aria-hidden />, onClick: () => navigate('/finance') },
+              { id: 'pos', label: 'New Sale', icon: <CreditCard className="h-4 w-4" aria-hidden />, onClick: () => navigate('/pos') },
+              { id: 'booking', label: 'Booking', icon: <Calendar className="h-4 w-4" aria-hidden />, onClick: () => navigate('/schedule') },
+              { id: 'member', label: 'Member', icon: <Users className="h-4 w-4" aria-hidden />, onClick: () => navigate('/member') },
+              { id: 'expense', label: 'Expense', icon: <BarChart3 className="h-4 w-4" aria-hidden />, onClick: () => navigate('/finance') },
             ]}
             calendarHeader={
               <div className="mb-4 flex items-center justify-between gap-3">

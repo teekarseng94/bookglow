@@ -7,7 +7,7 @@ import { superAdminPhase1Service } from '../../services/superAdminPhase1Service'
 import { platformStep2Service } from '../../services/platformStep2Service';
 import { platformOperationsService } from '../../services/platformOperationsService';
 import { auditService } from '../../services/auditService';
-import '../../index.css';
+import '../../src/loadStyles';
 
 const outletId = 'outlet-moon-001';
 const timestamp = '2026-09-18T02:00:00.000Z';

@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import POS from '../../pages/POS';
 import type { Client, OutletSettings, Service, Staff } from '../../types';
-import '../../index.css';
+import '../../src/loadStyles';
 
 const outletSettings: OutletSettings = {
   shopName: 'SOHOKAKI WELLNESS CENTER',

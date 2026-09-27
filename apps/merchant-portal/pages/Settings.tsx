@@ -509,7 +509,6 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                   <textarea
                     id="settings-address"
                     rows={3}
-                    placeholder="e.g. 43-G, Jln Damai Perdana 6/1F, Bandar Damai Perdana, 56000 Cheras, Kuala Lumpur"
                     className="m-settings-control"
                     value={addressDisplay}
                     onChange={(e) => setAddressDisplay(e.target.value)}

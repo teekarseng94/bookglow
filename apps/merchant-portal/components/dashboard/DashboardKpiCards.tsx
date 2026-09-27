@@ -33,7 +33,7 @@ const Sparkline: React.FC<{ points: number[] }> = ({ points }) => {
     <svg
       viewBox={`0 0 ${width} ${height}`}
       preserveAspectRatio="none"
-      className="dashboard-kpi-sparkline h-6 w-14 shrink-0 sm:h-7 sm:w-16"
+      className="dashboard-kpi-sparkline h-5 w-12 shrink-0 sm:h-7 sm:w-16"
       aria-hidden
     >
       <path d={path} fill="none" className="stroke-[var(--brand)]" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
@@ -44,7 +44,7 @@ const Sparkline: React.FC<{ points: number[] }> = ({ points }) => {
 export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({ cards, className }) => (
   <div
     className={cx(
-      'grid grid-cols-2 items-stretch gap-3 lg:grid-cols-4',
+      'grid grid-cols-2 items-start gap-2 lg:grid-cols-4 lg:gap-3',
       className,
     )}
     role="region"
@@ -57,17 +57,17 @@ export const DashboardKpiCards: React.FC<DashboardKpiCardsProps> = ({ cards, cla
           key={card.id}
           aria-labelledby={labelId}
           className={cx(
-            'dashboard-kpi-card m-card flex h-full min-w-0 flex-col gap-1.5 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] p-3 shadow-ui-xs sm:p-4',
+            'dashboard-kpi-card m-card flex h-full min-w-0 flex-col gap-1 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] shadow-ui-xs',
           )}
         >
           <p id={labelId} className="m-caption font-semibold text-[var(--text-secondary)]">
             {card.label}
           </p>
-          <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-2">
+          <div className="flex min-w-0 items-end justify-between gap-2">
             <MoneyAmount
               value={card.value}
               className={cx(
-                'dashboard-kpi-value text-[clamp(0.95rem,3.6vw,1.25rem)] font-bold leading-tight',
+                'dashboard-kpi-value font-bold leading-tight',
                 card.valueToneClass || 'text-[var(--text-primary)]',
               )}
             />

@@ -4,6 +4,7 @@
 
 :root {
   --density-mode: comfortable;
+  --density-version: v4;
 
   --font-page-title: 1.5rem;
   --font-section-title: 1rem;
@@ -29,6 +30,20 @@
   --page-pad-x: var(--page-padding-x);
   --page-pad-y: var(--page-padding-y);
   --card-pad: var(--card-padding);
+
+  /* Secondary surfaces (drawers, modals, sheets, editors). Aliases, not a second system. */
+  --editor-title-size: var(--font-section-title);
+  --editor-tab-height: 40px;
+  --editor-content-padding: var(--page-padding-x);
+  --editor-section-gap: var(--section-gap);
+  --editor-field-gap: var(--row-gap);
+  --editor-header-padding-y: 8px;
+  --editor-footer-padding-y: 8px;
+  --editor-textarea-min-height: 6rem;
+  --modal-padding: var(--editor-content-padding);
+  --drawer-padding: var(--editor-content-padding);
+  --sheet-padding: var(--editor-content-padding);
+  --form-gap: var(--editor-field-gap);
 }
 
 /* Phone — compact operational density (320–599 CSS px). */
@@ -65,6 +80,13 @@
     --mobile-text-list-title: 15px;
     --mobile-text-secondary: 13px;
     --mobile-text-nav: 11px;
+
+    --editor-title-size: 16px;
+    --editor-tab-height: 40px;
+    --editor-header-padding-y: 8px;
+    --editor-footer-padding-y: 8px;
+    --editor-textarea-min-height: 6rem;
+    --form-gap: var(--row-gap);
   }
 
   html {
@@ -122,6 +144,11 @@
     --mobile-pos-add-size: 44px;
     --mobile-inventory-card-height: 96px;
     --mobile-inventory-thumbnail: 56px;
+
+    --editor-tab-height: 44px;
+    --editor-header-padding-y: 10px;
+    --editor-footer-padding-y: 10px;
+    --form-gap: var(--row-gap);
   }
 }
 
@@ -265,4 +292,227 @@
     max-width: 100%;
     min-height: var(--control-height);
   }
+
+  .dashboard-date-chip {
+    height: var(--button-height);
+    min-height: var(--button-height);
+    padding-block: 0;
+  }
+
+  .dashboard-kpi-card {
+    min-height: 0;
+    gap: 4px;
+  }
+
+  .dashboard-kpi-value {
+    font-size: 1rem;
+  }
+
+  .m-btn--lg {
+    min-height: var(--touch-min, 44px);
+    height: var(--touch-min, 44px);
+  }
+}
+
+/* Shared BookGlow mobile chrome — one layout for F12 and Android WebView. */
+.m-quick-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.m-quick-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 6px 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md, 12px);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+}
+
+.m-quick-action:hover {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+
+.m-quick-action:focus-visible {
+  box-shadow: var(--focus-ring-strong, var(--shadow-ui-focus-strong, 0 0 0 3px var(--brand-border)));
+}
+
+.m-quick-action__icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm, 10px);
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.m-quick-action__icon svg {
+  width: var(--icon-size-sm, 16px);
+  height: var(--icon-size-sm, 16px);
+}
+
+.m-quick-action__label {
+  text-align: center;
+  font-size: var(--font-caption, 12px);
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--text-secondary);
+}
+
+.dashboard-kpi-card {
+  padding: var(--card-padding);
+}
+
+@media (min-width: 600px) {
+  .m-quick-action {
+    min-height: 4.5rem;
+    gap: 6px;
+    padding: 12px 8px;
+  }
+
+  .m-quick-action__icon {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* Secondary surfaces — drawers, modals, sheets, editors.
+   Portals render on document.body; tokens inherit from :root.
+   These rules load after Tailwind so chrome padding is not stuck at px-4 / py-4. */
+.m-modal-header {
+  gap: var(--row-gap);
+  padding: var(--editor-header-padding-y) var(--editor-content-padding);
+}
+
+.m-modal-title {
+  font-size: var(--editor-title-size);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text-primary);
+}
+
+.m-modal-desc {
+  font-size: var(--font-caption);
+  line-height: 1.35;
+}
+
+.m-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--editor-section-gap);
+  padding: var(--editor-section-gap) var(--editor-content-padding);
+}
+
+.m-modal-footer {
+  padding: var(--editor-footer-padding-y) var(--editor-content-padding);
+  padding-bottom: calc(var(--editor-footer-padding-y) + var(--safe-bottom, env(safe-area-inset-bottom, 0px)));
+}
+
+.m-overlay-tabs [role='tab'] {
+  min-height: var(--editor-tab-height);
+  padding: 0 var(--row-gap);
+  font-size: var(--font-body);
+  font-weight: 600;
+}
+
+.m-editor-eyebrow {
+  display: block;
+  font-size: var(--font-label);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.m-editor-heading {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--editor-title-size);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text-primary);
+}
+
+.m-editor-form,
+.m-inventory-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--editor-section-gap);
+}
+
+.m-editor-form .m-form-grid,
+.m-drawer .m-form-grid,
+.m-modal-panel .m-form-grid,
+.m-sheet-panel .m-form-grid,
+[class*='m-sheet-panel'] .m-form-grid {
+  gap: var(--editor-field-gap);
+}
+
+.m-editor-card {
+  padding: var(--card-padding);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md, 12px);
+  background: var(--bg-soft);
+}
+
+.m-editor-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--editor-field-gap);
+}
+
+.m-editor-tabs {
+  margin: 0 0 var(--editor-field-gap);
+}
+
+.m-editor-textarea,
+.m-drawer textarea.m-settings-control,
+.m-modal-panel textarea.m-settings-control,
+.m-drawer textarea.m-field-control,
+.m-modal-panel textarea.m-field-control {
+  min-height: var(--editor-textarea-min-height);
+  height: auto;
+}
+
+.m-drawer .m-settings-control,
+.m-modal-panel .m-settings-control,
+.m-drawer .m-field-control,
+.m-modal-panel .m-field-control,
+[class*='m-sheet-panel'] .m-settings-control,
+[class*='m-sheet-panel'] .m-field-control {
+  min-height: var(--control-height);
+  height: var(--control-height);
+  padding: 6px 10px;
+  font-size: var(--font-body);
+}
+
+.m-drawer textarea.m-settings-control,
+.m-modal-panel textarea.m-settings-control,
+.m-drawer textarea.m-field-control,
+.m-modal-panel textarea.m-field-control {
+  height: auto;
+  min-height: var(--editor-textarea-min-height);
+}
+
+.m-drawer .m-settings-label,
+.m-modal-panel .m-settings-label,
+.m-drawer .m-field-label,
+.m-modal-panel .m-field-label {
+  font-size: var(--font-label);
+  margin-bottom: 4px;
+}
+
+.m-modal-footer .m-btn--md,
+.m-modal-footer-actions .m-btn--md {
+  min-height: var(--button-height);
+  height: var(--button-height);
 }

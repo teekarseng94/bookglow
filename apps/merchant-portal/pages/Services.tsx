@@ -954,13 +954,9 @@ const Services: React.FC<ServicesProps> = ({
     formData.type === 'service' ? 'Service' : formData.type === 'product' ? 'Product' : 'Package'
   }`;
   const itemModalTitleNode = (
-    <span className="block">
-      <span className="block text-[11px] font-bold tracking-wide uppercase text-[var(--text-muted)]">
-        {itemModalTitle}
-      </span>
-      <span className="block text-lg font-bold text-[var(--text-primary)] mt-0.5 truncate">
-        {formData.name || 'Untitled'}
-      </span>
+    <span className="block min-w-0">
+      <span className="m-editor-eyebrow">{itemModalTitle}</span>
+      <span className="m-editor-heading truncate">{formData.name || 'Untitled'}</span>
     </span>
   );
   const EDIT_TABS: { id: 'details' | 'pricing' | 'availability' | 'media'; label: string }[] = [
@@ -1516,7 +1512,7 @@ const Services: React.FC<ServicesProps> = ({
         saving={isUploadingImage}
         saveDisabled={Boolean(isLocked)}
       >
-            <form id="inventory-edit-form" onSubmit={handleSubmit} className={`m-inventory-editor ${formData.type === 'package' ? 'space-y-8' : 'space-y-6'}`}>
+            <form id="inventory-edit-form" onSubmit={handleSubmit} className="m-inventory-editor m-editor-form">
               {/* Details / Pricing / Availability / Media tabs — services only. Products and packages
                   keep their existing single-scroll layout below: their smaller field sets don't gain
                   anything from tab-splitting, and forcing empty tabs onto them isn't the goal here. */}
@@ -1526,16 +1522,16 @@ const Services: React.FC<ServicesProps> = ({
                   value={editPanelTab}
                   onChange={(id) => setEditPanelTab(id as typeof editPanelTab)}
                   items={EDIT_TABS}
-                  className="-mt-2 mb-4"
+                  className="m-editor-tabs"
                 />
               )}
 
               {/* Service Image / Icon Section */}
               {formData.type === 'service' && editPanelTab === 'media' && (
-                <FormGrid className="gap-6 mb-6">
+                <FormGrid>
                   <div>
                     <label className="m-settings-label block uppercase">Service Image</label>
-                    <div className="mt-2 rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] p-4 flex items-center justify-center min-h-[10rem]">
+                    <div className="mt-2 m-editor-card flex items-center justify-center min-h-[8rem]">
                       {imagePreview ? (
                         <div className="relative">
                           <img src={imagePreview} alt="Preview" className="w-28 h-28 rounded-ui-sm object-cover border-2 border-[var(--line)]" />
@@ -1552,7 +1548,7 @@ const Services: React.FC<ServicesProps> = ({
                       )}
                     </div>
                   </div>
-                  <div className="space-y-3 rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] p-4">
+                  <div className="m-editor-card">
                     <p className="m-settings-label uppercase">Photo Library</p>
                     <div className="flex items-center gap-2 flex-wrap">
                       <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" id="service-image-upload" />
@@ -1569,8 +1565,8 @@ const Services: React.FC<ServicesProps> = ({
               )}
               
               {formData.type === 'package' ? (
-                <div className="space-y-10">
-                  <section className="space-y-6">
+                <div className="m-editor-form">
+                  <section className="m-editor-stack">
                     <h4 className="text-app-section font-bold text-[var(--text-primary)]">Basic info</h4>
                     <div>
                       <label className="m-settings-label block mb-2">Bundle name</label>
@@ -1741,8 +1737,8 @@ const Services: React.FC<ServicesProps> = ({
               ) : formData.type === 'service' ? (
               <>
                 {editPanelTab === 'details' && (
-                  <FormGrid className="gap-6">
-                    <div className="space-y-4">
+                  <FormGrid>
+                    <div className="m-editor-stack">
                       <div>
                         <label className="m-settings-label block uppercase">Name</label>
                         <input required type="text" className="m-settings-control w-full outline-none font-medium" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
@@ -1760,15 +1756,15 @@ const Services: React.FC<ServicesProps> = ({
                     </div>
                     <div>
                       <label className="m-settings-label block uppercase">Description</label>
-                      <textarea rows={8} className="m-settings-control w-full h-full min-h-[12rem] outline-none text-sm" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
+                      <textarea rows={5} className="m-settings-control m-editor-textarea w-full outline-none" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
                     </div>
                   </FormGrid>
                 )}
                 {editPanelTab === 'pricing' && (
-                  <FormGrid className="gap-6">
+                  <FormGrid>
                     <div>
                       <label className="m-settings-label block uppercase">Price ($)</label>
-                      <input required type="number" step="0.01" className="m-settings-control w-full outline-none font-bold text-lg" value={formData.price} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })} />
+                      <input required type="number" step="0.01" className="m-settings-control w-full outline-none font-bold" value={formData.price} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })} />
                     </div>
                     <div>
                       <label className="m-settings-label block uppercase">Free Point (Loyalty)</label>
@@ -1786,11 +1782,11 @@ const Services: React.FC<ServicesProps> = ({
                       />
                       <p className="mt-1 m-settings-hint">Free point is the point given to the customer when they buy this item.</p>
                     </div>
-                    <label className="flex items-center gap-3 p-4 bg-[var(--bg-soft)] rounded-xl border border-[var(--line)] cursor-pointer min-h-full">
+                    <label className="m-editor-card flex items-center gap-3 cursor-pointer">
                       <input type="checkbox" checked={formData.isCommissionable} onChange={e => setFormData({ ...formData, isCommissionable: e.target.checked })} />
                       <span className="text-xs font-bold text-[var(--text-secondary)]">Commission Eligible</span>
                     </label>
-                    <div className="space-y-3 rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] p-4">
+                    <div className="m-editor-card">
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <p className="m-settings-label uppercase">Redeem Point</p>
@@ -1825,7 +1821,7 @@ const Services: React.FC<ServicesProps> = ({
                             })
                           }
                           disabled={!formData.redeemPointsEnabled}
-                          className={`w-full p-4 rounded-xl outline-none border text-sm font-semibold ${
+                          className={`m-settings-control w-full font-semibold ${
                             formData.redeemPointsEnabled
                               ? 'bg-[var(--bg-surface)] border-[var(--brand-border)] text-[var(--brand-deep)] focus:ring-2 focus:ring-[var(--brand)]'
                               : 'bg-[var(--bg-soft)] border-[var(--line)] text-[var(--text-muted)] cursor-not-allowed'
@@ -1839,7 +1835,7 @@ const Services: React.FC<ServicesProps> = ({
                   </FormGrid>
                 )}
                 {editPanelTab === 'availability' && (
-                  <div className="space-y-3 rounded-xl border border-[var(--line)] bg-[var(--bg-soft)] p-4">
+                  <div className="m-editor-card">
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <p className="m-settings-label uppercase">Show on Booking Page</p>
@@ -1865,8 +1861,8 @@ const Services: React.FC<ServicesProps> = ({
                 )}
               </>
               ) : (
-              <FormGrid className="gap-6">
-                <div className="space-y-4">
+              <FormGrid>
+                <div className="m-editor-stack">
                   <div>
                     <label className="m-settings-label block uppercase">Name</label>
                     <input required type="text" className="m-settings-control w-full outline-none font-medium" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
@@ -1879,7 +1875,7 @@ const Services: React.FC<ServicesProps> = ({
                   </div>
                   <div>
                     <label className="m-settings-label block uppercase">Price ($)</label>
-                    <input required type="number" step="0.01" className="m-settings-control w-full outline-none font-bold text-lg" value={formData.price} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })} />
+                    <input required type="number" step="0.01" className="m-settings-control w-full outline-none font-bold" value={formData.price} onChange={e => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })} />
                   </div>
                   {formData.type === 'product' && (
                     <>
@@ -1927,7 +1923,7 @@ const Services: React.FC<ServicesProps> = ({
                 </div>
                 <div>
                   <label className="m-settings-label block uppercase">Description</label>
-                  <textarea rows={8} className="m-settings-control w-full h-full min-h-[12rem] outline-none text-sm" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
+                  <textarea rows={5} className="m-settings-control m-editor-textarea w-full outline-none" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
                 </div>
               </FormGrid>
               )}

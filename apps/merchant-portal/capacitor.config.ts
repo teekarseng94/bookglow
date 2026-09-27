@@ -6,7 +6,7 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   android: {
     allowMixedContent: false,
-    webContentsDebuggingEnabled: false,
+    webContentsDebuggingEnabled: process.env.CAP_WEB_DEBUG === '1',
     adjustMarginsForEdgeToEdge: 'auto',
   },
   server: {

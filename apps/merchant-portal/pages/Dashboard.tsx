@@ -41,6 +41,7 @@ import {
   UpcomingAppointments,
 } from '../components/dashboard';
 import type { AttentionItem } from '../components/dashboard';
+import { resolveReceiptIdentity, type OutletContact } from '../utils/receiptIdentity';
 
 interface DashboardProps {
   transactions: Transaction[];
@@ -49,6 +50,8 @@ interface DashboardProps {
   services: Service[];
   products?: Product[];
   outletSettings: OutletSettings;
+  /** Outlet phone and address the receipt fields inherit when not overridden. */
+  outletContact?: OutletContact;
   outletID?: string;
   onMarkReminderSent: (id: string) => void;
 }
@@ -81,6 +84,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   services,
   products = [],
   outletSettings,
+  outletContact,
   outletID = '',
   onMarkReminderSent,
 }) => {
@@ -554,10 +558,18 @@ const Dashboard: React.FC<DashboardProps> = ({
     ).length;
   }, [appointments]);
 
-  const profileIncomplete =
-    !(outletSettings.shopName || '').trim() ||
-    !(outletSettings.receiptPhone || '').trim() ||
-    !(outletSettings.receiptAddress || '').trim();
+  // Receipt phone and address inherit the outlet contact details, so the setup
+  // prompt must check the resolved values or it nags merchants who already
+  // filled their contact details in during onboarding.
+  const receiptIdentity = resolveReceiptIdentity({
+    shopName: outletSettings.shopName,
+    receiptCompanyName: outletSettings.receiptCompanyName,
+    receiptPhone: outletSettings.receiptPhone,
+    receiptAddress: outletSettings.receiptAddress,
+    contact: outletContact,
+  });
+
+  const profileIncomplete = !receiptIdentity.companyName || !receiptIdentity.phone || !receiptIdentity.address;
 
   // Quick Calendar: same timetable idea as Appointments page, but combined across ALL therapists (single stream).
   const quickSlots = useMemo(() => {

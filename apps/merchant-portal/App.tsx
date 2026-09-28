@@ -2,6 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Transaction, Client, Service, Product, Package, TransactionType, Reward, Staff, Appointment, RoleCommission, OutletSettings } from './types';
+import type { OutletContact } from './utils/receiptIdentity';
 import { INITIAL_SERVICES, INITIAL_PRODUCTS, INITIAL_PACKAGES, INITIAL_EXPENSE_CATEGORIES, INITIAL_REWARDS, INITIAL_STAFF, INITIAL_ROLE_COMMISSIONS } from './constants';
 import Layout from './components/Layout';
 import { useAuth } from './hooks/useAuth';
@@ -359,7 +360,10 @@ const DEFAULT_OUTLET_SETTINGS: OutletSettings = {
   reminderTiming: 24,
   reminderChannel: 'Both',
   receiptHeaderTitle: 'Tax Invoice',
-  receiptCompanyName: 'Bookglow',
+  // Left empty on purpose: the receipt company name, phone and address inherit
+  // the shop name and the outlet contact details until a merchant overrides
+  // them. A literal default here would print for every outlet instead.
+  receiptCompanyName: '',
   receiptPhone: '',
   receiptAddress: '',
   receiptFooterNote: 'Thank you for your visit!'
@@ -454,10 +458,16 @@ const AppContent: React.FC<AppContentProps> = ({
     isAdminAuthenticated: role === 'admin'
   });
 
+  // Outlet contact details, kept beside settings rather than inside them: POS
+  // receipts and the Dashboard setup check inherit these, but they belong to the
+  // outlet record and must not be copied into the settings JSON.
+  const [outletContact, setOutletContact] = useState<OutletContact>({});
+
   // Load outlet settings from Firestore when outlet is available
   useEffect(() => {
     if (!currentOutletID?.trim()) return;
     outletService.getById(currentOutletID).then((outlet) => {
+      setOutletContact({ phone: outlet?.phoneNumber || '', address: outlet?.addressDisplay || '' });
       if (outlet?.settings) {
         setOutletSettings((prev) => ({
           ...DEFAULT_OUTLET_SETTINGS,
@@ -688,9 +698,9 @@ const AppContent: React.FC<AppContentProps> = ({
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard transactions={transactions} clients={clients} appointments={appointments} services={services} products={products} outletSettings={outletSettings} outletID={currentOutletID} onMarkReminderSent={handleMarkReminderSent} />;
+        return <Dashboard transactions={transactions} clients={clients} appointments={appointments} services={services} products={products} outletSettings={outletSettings} outletContact={outletContact} outletID={currentOutletID} onMarkReminderSent={handleMarkReminderSent} />;
       case 'pos':
-        return <POS services={services} products={products} packages={packages} clients={clients} staff={staff} roleCommissions={roleCommissions} onCompleteSale={handleAddTransactionWithLogic} activeAppointmentForSale={activeAppointmentForSale} onClearActiveAppointment={() => setActiveAppointmentForSale(null)} paymentMethods={outletSettings.paymentMethods} outletSettings={outletSettings} />;
+        return <POS services={services} products={products} packages={packages} clients={clients} staff={staff} roleCommissions={roleCommissions} onCompleteSale={handleAddTransactionWithLogic} activeAppointmentForSale={activeAppointmentForSale} onClearActiveAppointment={() => setActiveAppointmentForSale(null)} paymentMethods={outletSettings.paymentMethods} outletSettings={outletSettings} outletContact={outletContact} />;
       case 'member':
         return <CRM
           clients={clients}
@@ -733,13 +743,13 @@ const AppContent: React.FC<AppContentProps> = ({
       case 'integrations':
         return <Integrations />;
       case 'settings':
-        return <Settings settings={outletSettings} onUpdateSettings={handleUpdateOutletSettings} outletId={currentOutletID} />;
+        return <Settings settings={outletSettings} onUpdateSettings={handleUpdateOutletSettings} outletId={currentOutletID} onUpdateOutlet={(updates) => setOutletContact((prev) => ({ phone: updates.phoneNumber ?? prev.phone, address: updates.addressDisplay ?? prev.address }))} />;
       case 'marketing':
         return <Marketing outletID={currentOutletID} services={services} role={role as any} />;
       case 'report':
         return <ReportPage transactions={transactions} outletID={currentOutletID} staff={staff} />;
       default:
-        return <Dashboard transactions={transactions} clients={clients} appointments={appointments} services={services} products={products} outletSettings={outletSettings} outletID={currentOutletID} onMarkReminderSent={handleMarkReminderSent} />;
+        return <Dashboard transactions={transactions} clients={clients} appointments={appointments} services={services} products={products} outletSettings={outletSettings} outletContact={outletContact} outletID={currentOutletID} onMarkReminderSent={handleMarkReminderSent} />;
     }
   };
 

@@ -1,5 +1,5 @@
 import { outletService } from '../services/databaseService';
-import { uniqueBookingSlug } from './bookingSlug';
+import { bookingSlugFromShopName, uniqueBookingSlug } from './bookingSlug';
 
 /**
  * Guarantee a public booking path is stored on the outlet.
@@ -17,7 +17,10 @@ export async function ensureOutletBookingSlug(input: {
   if (stored) return stored;
   if (!outletId) return '';
 
-  let slug = uniqueBookingSlug(input.name || '', outletId);
+  // Mirror the shop name when it yields a usable path, so the booking link reads
+  // as the business name. Names with no Latin characters fall back to a
+  // generated path; Settings then prompts for a friendlier one.
+  let slug = bookingSlugFromShopName(input.name || '') || uniqueBookingSlug(input.name || '', outletId);
   try {
     for (let attempt = 0; attempt < 6; attempt += 1) {
       const taken = await outletService.getByBookingSlug(slug);

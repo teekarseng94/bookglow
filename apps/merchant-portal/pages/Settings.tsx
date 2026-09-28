@@ -4,7 +4,16 @@ import { OutletSettings, Outlet } from '../types';
 import { Icons } from '../constants';
 import { useUserContext } from '../contexts/UserContext';
 import { outletService } from '../services/databaseService';
-import { bookingSlugForEditor, isValidBookingSlug, resolveBookingSlug, uniqueBookingSlug } from '../utils/bookingSlug';
+import {
+  bookingSlugAfterRename,
+  bookingSlugFollowsShopName,
+  bookingSlugForEditor,
+  bookingSlugFromShopName,
+  isValidBookingSlug,
+  resolveBookingSlug,
+  uniqueBookingSlug,
+} from '../utils/bookingSlug';
+import { resolveReceiptIdentity } from '../utils/receiptIdentity';
 import { ensureOutletBookingSlug } from '../utils/ensureOutletBookingSlug';
 import {
   OperatingHoursRow,
@@ -65,6 +74,8 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
   const [editingMethod, setEditingMethod] = useState<{ index: number; name: string } | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
   const [bookingSlug, setBookingSlug] = useState('');
+  /** Path currently stored on the outlet, so a rename knows whether it still has to persist one. */
+  const [savedBookingSlug, setSavedBookingSlug] = useState('');
   const [bookingSlugError, setBookingSlugError] = useState<string | null>(null);
   const [bookingInfoStatus, setBookingInfoStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [activeSection, setActiveSection] = useState<SettingsSectionId>('business-profile');
@@ -92,6 +103,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       const savedSlug = bookingSlugForEditor(outletData?.bookingSlug);
       if ((outletData?.bookingSlug || '').trim() && !savedSlug) {
         setBookingSlug('');
+        setSavedBookingSlug('');
         return;
       }
       const slug = await ensureOutletBookingSlug({
@@ -99,7 +111,9 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
         existing: savedSlug,
         name,
       });
-      setBookingSlug(bookingSlugForEditor(slug || uniqueBookingSlug(name, effectiveOutletId)));
+      const editorSlug = bookingSlugForEditor(slug || uniqueBookingSlug(name, effectiveOutletId));
+      setBookingSlug(editorSlug);
+      setSavedBookingSlug(editorSlug);
     };
 
     // If outlet prop is provided, use it
@@ -147,7 +161,11 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
 
     try {
       const slugRaw = bookingSlug.trim();
-      const slugToSave = slugRaw || uniqueBookingSlug(settings.shopName || '', effectiveOutletId);
+      // Clearing the field hands the path back to the shop name.
+      const slugToSave =
+        slugRaw ||
+        bookingSlugFromShopName(settings.shopName || '') ||
+        uniqueBookingSlug(settings.shopName || '', effectiveOutletId);
       if (!isValidBookingSlug(slugToSave)) {
         setBookingSlugError('Use a letter first, then letters, numbers, hyphens, or underscores only.');
         setBookingInfoStatus('error');
@@ -170,6 +188,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       };
 
       setBookingSlug(slugToSave);
+      setSavedBookingSlug(slugToSave);
       await outletService.update(effectiveOutletId, { ...payload, bookingSlug: slugToSave });
 
       if (onUpdateOutlet) {
@@ -191,6 +210,21 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
   const bookingPathSegment = resolveBookingSlug(bookingSlug, settings.shopName || '', effectiveOutletId);
   const bookingUrl = effectiveOutletId && BOOKING_BASE_URL ? `${BOOKING_BASE_URL}/${bookingPathSegment}` : '';
 
+  // A shop name with no Latin characters cannot form a path, so the merchant has
+  // to supply one instead of inheriting an unreadable generated path.
+  const shopNameHasNoPath = !bookingSlugFromShopName(settings.shopName || '');
+  const bookingSlugFollowingShopName = bookingSlugFollowsShopName(bookingSlug, settings.shopName || '');
+
+  // Receipt lines inherit the shop name and the contact details above until the
+  // merchant types something of their own into the receipt fields.
+  const receiptIdentity = resolveReceiptIdentity({
+    shopName: settings.shopName,
+    receiptCompanyName: settings.receiptCompanyName,
+    receiptPhone: settings.receiptPhone,
+    receiptAddress: settings.receiptAddress,
+    contact: { phone: phoneNumber, address: addressDisplay },
+  });
+
   const handleCopyLink = async () => {
     if (!bookingUrl) return;
     try {
@@ -203,7 +237,42 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
   };
 
   const handleShopNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onUpdateSettings({ ...settings, shopName: e.target.value });
+    const nextName = e.target.value;
+
+    const nextSlug = bookingSlugAfterRename(bookingSlug, settings.shopName || '', nextName);
+    if (nextSlug !== bookingSlug) {
+      setBookingSlug(nextSlug);
+      setBookingSlugError(null);
+    }
+
+    onUpdateSettings({ ...settings, shopName: nextName });
+  };
+
+  /**
+   * The shop name saves as it is typed, so the path it derives has to be stored
+   * too or the outlet keeps its old public link. Only the auto-following path is
+   * written here; a custom path stays under the Booking page Save button.
+   */
+  const handleShopNameBlur = async () => {
+    const derived = bookingSlugFromShopName(settings.shopName || '');
+    if (!effectiveOutletId || !derived) return;
+    if (derived !== bookingSlug.trim() || derived === savedBookingSlug) return;
+
+    try {
+      const taken = await outletService.getByBookingSlug(derived);
+      if (taken && taken.outletID !== effectiveOutletId) {
+        setBookingSlugError('This booking path is already used by another outlet. Choose a different one.');
+        return;
+      }
+      await outletService.update(effectiveOutletId, { bookingSlug: derived });
+      setSavedBookingSlug(derived);
+      setBookingSlugError(null);
+      if (onUpdateOutlet) {
+        await Promise.resolve(onUpdateOutlet({ bookingSlug: derived }));
+      }
+    } catch (err) {
+      console.error('Failed to save the booking path for the new shop name:', err);
+    }
   };
 
   const toggleOutletMode = () => {
@@ -346,6 +415,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
               className="m-settings-control m-settings-shop-title"
               value={settings.shopName}
               onChange={handleShopNameChange}
+              onBlur={handleShopNameBlur}
             />
           </div>
           <div className="m-settings-field">
@@ -415,11 +485,15 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                   setBookingSlug(e.target.value);
                   setBookingSlugError(null);
                 }}
-                placeholder=""
+                placeholder={shopNameHasNoPath ? 'e.g. restoranDesaPetaling' : ''}
                 className="m-settings-control"
               />
               <p className="m-settings-hint">
-                Last segment of your public link. Leave blank to use the generated outlet path.
+                {shopNameHasNoPath
+                  ? 'Your shop name has no Latin letters, so the path cannot follow it automatically. Type the path you want customers to see.'
+                  : bookingSlugFollowingShopName
+                    ? 'Last segment of your public link. Follows your shop name automatically — edit it to use a custom path.'
+                    : 'Custom path, so it no longer follows your shop name. Clear it to go back to matching the shop name.'}
               </p>
               {bookingSlugError && (
                 <p className="text-xs text-[var(--danger)]">{bookingSlugError}</p>
@@ -720,31 +794,34 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                 <label className="m-settings-label block uppercase tracking-widest">Company Name</label>
                 <input
                   type="text"
-                  value={settings.receiptCompanyName || settings.shopName || ''}
+                  value={receiptIdentity.companyName}
                   onChange={(e) => handleReceiptLayoutChange('receiptCompanyName', e.target.value)}
                   className="m-settings-control w-full"
                   placeholder="Bookglow Spa"
                 />
+                <p className="m-settings-hint">Follows your shop name. Edit to print a different company name.</p>
               </div>
               <div className="m-settings-field">
                 <label className="m-settings-label block uppercase tracking-widest">Company Phone</label>
                 <input
                   type="text"
-                  value={settings.receiptPhone || ''}
+                  value={receiptIdentity.phone}
                   onChange={(e) => handleReceiptLayoutChange('receiptPhone', e.target.value)}
                   className="m-settings-control w-full"
                   placeholder="+60 12-345 6789"
                 />
+                <p className="m-settings-hint">Follows the phone number in Booking page → Contact details.</p>
               </div>
               <div className="m-settings-field">
                 <label className="m-settings-label block uppercase tracking-widest">Company Address</label>
                 <input
                   type="text"
-                  value={settings.receiptAddress || ''}
+                  value={receiptIdentity.address}
                   onChange={(e) => handleReceiptLayoutChange('receiptAddress', e.target.value)}
                   className="m-settings-control w-full"
                   placeholder="Outlet address for receipt"
                 />
+                <p className="m-settings-hint">Follows the address in Booking page → Contact details.</p>
               </div>
               <div className="m-settings-field sm:col-span-2">
                 <label className="m-settings-label block uppercase tracking-widest">Footer Note</label>
@@ -761,10 +838,10 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
               <p className="m-settings-subhead">Live Receipt Preview</p>
               <div className="mx-auto w-full max-w-[340px] bg-[var(--bg-paper)] border border-[var(--line-strong)] rounded-ui-sm p-4 font-mono m-caption text-[var(--text-secondary)] space-y-1">
                 <div className="text-center border-b border-dashed border-[var(--line-strong)] pb-2 mb-2">
-                  <p className="font-bold text-sm">{settings.receiptCompanyName || settings.shopName || 'Bookglow Spa'}</p>
+                  <p className="font-bold text-sm">{receiptIdentity.companyName || 'Bookglow Spa'}</p>
                   <p>{settings.receiptHeaderTitle || 'Tax Invoice'}</p>
-                  {(settings.receiptPhone || '').trim() && <p>Phone: {settings.receiptPhone}</p>}
-                  {(settings.receiptAddress || '').trim() && <p>{settings.receiptAddress}</p>}
+                  {receiptIdentity.phone && <p>Phone: {receiptIdentity.phone}</p>}
+                  {receiptIdentity.address && <p>{receiptIdentity.address}</p>}
                   <p>{new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</p>
                   <p>Customer: Jane Doe</p>
                 </div>

@@ -55,6 +55,39 @@ export function uniqueBookingSlug(name: string, outletId: string): string {
   return isValidBookingSlug(slug) ? slug : `business-${suffix}`;
 }
 
+/**
+ * Public path a shop name should produce, or '' when the name has no Latin
+ * characters to build a URL from (CJK-only names, or names starting with a
+ * digit). Callers prompt for a manual path rather than inventing one.
+ */
+export function bookingSlugFromShopName(name: string): string {
+  const slug = shopNameToBookingSlug(name);
+  return isValidBookingSlug(slug) ? slug : '';
+}
+
+/**
+ * True while `slug` is still exactly what `name` derives to. The booking path
+ * mirrors the shop name until a merchant types their own, so this is what
+ * separates "still following" from "deliberately customised".
+ */
+export function bookingSlugFollowsShopName(slug: string, name: string): boolean {
+  const derived = bookingSlugFromShopName(name);
+  return derived !== '' && derived === (slug || '').trim();
+}
+
+/**
+ * Path the booking page should hold after a rename: the new name's path while the
+ * current one is still following the old name, otherwise the current path
+ * untouched so a merchant's custom path (and the links already shared for it)
+ * survives. A name that derives to nothing also leaves the path alone.
+ */
+export function bookingSlugAfterRename(current: string, previousName: string, nextName: string): string {
+  const stored = (current || '').trim();
+  const following = !stored || bookingSlugFollowsShopName(stored, previousName);
+  if (!following) return current;
+  return bookingSlugFromShopName(nextName) || current;
+}
+
 /** Prefer the saved slug; otherwise allocate a unique public path (never the raw outlet id). */
 export function resolveBookingSlug(
   existing: string | undefined | null,

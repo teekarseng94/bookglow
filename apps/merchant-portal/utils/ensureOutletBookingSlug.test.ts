@@ -37,4 +37,23 @@ describe('ensureOutletBookingSlug', () => {
     ).resolves.toBe('business-12ab34');
     expect(update).toHaveBeenCalledWith(outletId, { bookingSlug: 'business-12ab34' });
   });
+
+  it('mirrors the shop name so the path keeps following a rename', async () => {
+    const outletId = 'outlet_aaaaaaaaaaaaaaaaaaaaaaaaaa12ab34';
+    await expect(
+      ensureOutletBookingSlug({ outletId, existing: '', name: 'Harbour Spa' }),
+    ).resolves.toBe('harbourSpa');
+    expect(update).toHaveBeenCalledWith(outletId, { bookingSlug: 'harbourSpa' });
+  });
+
+  it('falls back to a suffixed path when the shop name is already taken', async () => {
+    const outletId = 'outlet_aaaaaaaaaaaaaaaaaaaaaaaaaa12ab34';
+    getByBookingSlug.mockImplementation((slug: string) =>
+      Promise.resolve(slug === 'harbourSpa' ? { outletID: 'outlet_someone_else' } : null),
+    );
+    await expect(
+      ensureOutletBookingSlug({ outletId, existing: '', name: 'Harbour Spa' }),
+    ).resolves.toBe('harbour-spa-2ab341');
+    expect(update).toHaveBeenCalledWith(outletId, { bookingSlug: 'harbour-spa-2ab341' });
+  });
 });

@@ -29,7 +29,7 @@ const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ user, onLogout, chi
   <OutletInspectorProvider>
   <div className="min-h-screen overflow-x-hidden bg-[var(--bg-canvas)] text-[var(--text-primary)]">
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-white/10 bg-[#171322] text-white lg:flex">
-      <div className="shrink-0 border-b border-white/10 px-5 py-5">
+      <div className="shrink-0 border-b border-white/10 px-5 py-3">
         <div className="flex items-center gap-3">
           <span className="inline-flex h-10 w-10 items-center justify-center rounded-ui-md bg-[var(--brand)] shadow-ui-sm">
             <ShieldCheck className="h-5 w-5" aria-hidden />
@@ -41,13 +41,13 @@ const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ user, onLogout, chi
         </div>
       </div>
 
-      <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-5" aria-label="Platform navigation">
+      <nav className="flex flex-1 flex-col justify-center gap-1 px-3 py-3" aria-label="Platform navigation">
         {navigation.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
             className={({ isActive }) =>
-              `flex min-h-11 items-center gap-3 rounded-ui-md px-3 text-sm font-semibold transition-colors ${
+              `flex min-h-8 flex-1 max-h-10 items-center gap-3 rounded-ui-md px-3 text-sm font-semibold transition-colors ${
                 isActive ? 'bg-white/12 text-white' : 'text-white/65 hover:bg-white/7 hover:text-white'
               }`
             }
@@ -58,8 +58,8 @@ const SuperAdminLayout: React.FC<SuperAdminLayoutProps> = ({ user, onLogout, chi
         ))}
       </nav>
 
-      <div className="shrink-0 border-t border-white/10 p-4">
-        <div className="mb-3 rounded-ui-md bg-white/7 p-3">
+      <div className="shrink-0 border-t border-white/10 p-3">
+        <div className="mb-2 rounded-ui-md bg-white/7 p-2">
           <div className="flex items-center gap-2 text-xs font-semibold text-white">
             <span className="h-2 w-2 rounded-full bg-[var(--success)]" aria-hidden />
             Platform administrator

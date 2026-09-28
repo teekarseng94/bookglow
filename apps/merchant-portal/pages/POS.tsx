@@ -24,6 +24,7 @@ import {
   POSTotals,
 } from '../components/pos';
 import type { POSCatalogTab, POSSortBy } from '../components/pos';
+import { resolveReceiptIdentity, type OutletContact } from '../utils/receiptIdentity';
 
 export interface SelectedMemberFromRoute {
   id: string;
@@ -43,6 +44,8 @@ interface POSProps {
   onClearActiveAppointment?: () => void;
   paymentMethods: string[];
   outletSettings: OutletSettings;
+  /** Outlet phone and address the receipt falls back to when not overridden. */
+  outletContact?: OutletContact;
 }
 
 const POS: React.FC<POSProps> = ({ 
@@ -56,9 +59,17 @@ const POS: React.FC<POSProps> = ({
   activeAppointmentForSale,
   onClearActiveAppointment,
   paymentMethods,
-  outletSettings
+  outletSettings,
+  outletContact
 }) => {
   const location = useLocation();
+  const printedReceiptIdentity = resolveReceiptIdentity({
+    shopName: outletSettings.shopName,
+    receiptCompanyName: outletSettings.receiptCompanyName,
+    receiptPhone: outletSettings.receiptPhone,
+    receiptAddress: outletSettings.receiptAddress,
+    contact: outletContact,
+  });
   const navigate = useNavigate();
   const [selectedClient, setSelectedClient] = useState<string>('');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>(paymentMethods[0] || '');
@@ -614,9 +625,11 @@ const POS: React.FC<POSProps> = ({
         receiptSettings: {
           shopName: outletSettings.shopName,
           receiptHeaderTitle: outletSettings.receiptHeaderTitle,
-          receiptCompanyName: outletSettings.receiptCompanyName,
-          receiptPhone: outletSettings.receiptPhone,
-          receiptAddress: outletSettings.receiptAddress,
+          // Resolved here so the printed receipt shows the same inherited
+          // company name, phone and address the merchant sees in Settings.
+          receiptCompanyName: printedReceiptIdentity.companyName,
+          receiptPhone: printedReceiptIdentity.phone,
+          receiptAddress: printedReceiptIdentity.address,
           receiptFooterNote: outletSettings.receiptFooterNote,
         }
       });

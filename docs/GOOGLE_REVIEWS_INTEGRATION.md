@@ -101,6 +101,10 @@ at the Edge Function, never at the browser app:
 | Hosted Supabase | `https://uecphpjymbgtttrizhgy.supabase.co/functions/v1/google-business/callback` |
 | Local Supabase | `http://127.0.0.1:55431/functions/v1/google-business/callback` |
 
+`https://uecphpjymbgtttrizhgy.supabase.co/auth/v1/callback` is the Supabase
+login callback. It does not authorize this integration. Add the Edge Function
+URI above on the same OAuth client; do not replace the login URI with it.
+
 Because the redirect target is the Supabase function rather than the frontend,
 this list does **not** change when the apps move between hosting providers, and
 Vercel preview deployments need no extra redirect URIs.
@@ -135,7 +139,7 @@ portal**, since it is where the callback sends the merchant after Google
 consent. The repo is moving to Vercel, where the customer site (`dist-booking`)
 and the merchant portal (`dist-dashboard`) need separate projects — `vercel.json`
 currently builds the customer site only. Use the merchant project's production
-domain, for example `https://bookglow-dashboard.vercel.app`, not a preview URL,
+domain, for example `https://bookglow.my`, not a preview URL,
 because preview hostnames change per deployment. Local development uses
 `http://localhost:5173`. If the value is missing or unparseable the callback
 returns a plain-text notice instead of redirecting, so authorization is never
@@ -150,7 +154,7 @@ supabase secrets set \
   GOOGLE_BUSINESS_CLIENT_SECRET="…" \
   GOOGLE_BUSINESS_REDIRECT_URI="https://uecphpjymbgtttrizhgy.supabase.co/functions/v1/google-business/callback" \
   GOOGLE_TOKEN_ENCRYPTION_KEY="…" \
-  MERCHANT_APP_URL="https://bookglow-dashboard.vercel.app" \
+  MERCHANT_APP_URL="https://bookglow.my" \
   --project-ref uecphpjymbgtttrizhgy
 
 supabase functions deploy google-business --project-ref uecphpjymbgtttrizhgy

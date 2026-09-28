@@ -1248,7 +1248,7 @@ const Services: React.FC<ServicesProps> = ({
 
       <div className="hidden md:block bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs overflow-hidden">
         <ScrollTable label="Catalog items">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full whitespace-nowrap text-left border-collapse">
             <thead>
               <tr className="bg-[var(--bg-soft)] border-b border-[var(--line)] m-settings-label text-[var(--text-muted)] uppercase tracking-widest">
                 {activeTab === 'services' && <th className="px-3 py-4 w-8"></th>}

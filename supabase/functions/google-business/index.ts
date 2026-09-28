@@ -878,15 +878,16 @@ async function handleCallback(request: Request, env: Env | null, missing: string
 
   const merchantAppUrl = Deno.env.get("MERCHANT_APP_URL") || "";
 
-  /** Sends the merchant back to Google Reviews (HashRouter) with a one-off notice. */
+  /** Sends the merchant back to Google Reviews on the portal (BrowserRouter). */
   const redirect = (status: string, detail?: string) => {
     const query = new URLSearchParams({ google: status });
     if (detail) query.set("google_detail", detail.slice(0, 140));
 
     let location: string | null = null;
     try {
-      const target = new URL(merchantAppUrl);
-      target.hash = `/integrations/google-reviews?${query.toString()}`;
+      const target = new URL("/integrations/google-reviews", merchantAppUrl);
+      target.search = query.toString();
+      target.hash = "";
       location = target.toString();
     } catch {
       location = null;

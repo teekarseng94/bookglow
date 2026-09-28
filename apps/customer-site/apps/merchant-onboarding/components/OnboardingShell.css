@@ -80,6 +80,7 @@
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
+  scroll-padding-bottom: calc(var(--onboarding-footer-height) + 1rem);
 }
 
 .merchant-onboarding__content {
@@ -401,6 +402,106 @@
   place-items: center;
   min-height: 100dvh;
   color: var(--text-muted);
+}
+
+.merchant-onboarding__personal {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 26rem;
+  margin: 0 auto;
+}
+
+.merchant-onboarding__personal-hero {
+  text-align: center;
+}
+
+.merchant-onboarding__personal-hero h1 {
+  max-width: none;
+  margin-inline: auto;
+  font-size: var(--font-page-title, 1.25rem);
+}
+
+.merchant-onboarding__personal-hero .merchant-onboarding__description {
+  margin: 0.35rem 0 0;
+  font-size: var(--font-caption, 0.75rem);
+}
+
+.merchant-onboarding__personal .merchant-onboarding__field {
+  margin-top: var(--section-gap, 1rem);
+  font-size: var(--font-label, 0.75rem);
+  font-weight: 700;
+}
+
+.merchant-onboarding__personal .merchant-onboarding__field:first-of-type {
+  margin-top: var(--section-gap, 1.25rem);
+}
+
+.merchant-onboarding__phone-row {
+  display: grid;
+  grid-template-columns: 5.25rem minmax(0, 1fr);
+  gap: var(--row-gap, 0.5rem);
+}
+
+.merchant-onboarding__phone-row select {
+  padding-inline: 0.5rem;
+  font-weight: 700;
+}
+
+.merchant-onboarding__country-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.merchant-onboarding__country-row input {
+  background: var(--bg-soft, #f7f5f8);
+}
+
+.merchant-onboarding__country-edit {
+  min-height: var(--touch-min, 44px);
+  padding: 0 0.35rem;
+  color: var(--brand);
+  font-size: var(--font-label, 0.75rem);
+  font-weight: 750;
+}
+
+.merchant-onboarding__country-edit:disabled {
+  color: var(--brand);
+  opacity: 0.55;
+}
+
+.merchant-onboarding__consent {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-top: var(--section-gap, 1.25rem);
+  font-size: var(--font-body, 0.875rem);
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.merchant-onboarding__consent input {
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.15rem;
+  accent-color: var(--brand);
+}
+
+.merchant-onboarding__consent a {
+  color: var(--brand);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.12em;
+}
+
+.merchant-onboarding__field-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: var(--font-caption, 0.75rem);
+  font-weight: 650;
+  line-height: 1.35;
 }
 
 @media (min-width: 380px) {

@@ -1,6 +1,7 @@
 import { createBrowserSupabaseClient } from '@bookglow/supabase';
 import { merchantLoginHref } from '../src/merchantPortalUrl';
 import type { MerchantOnboardingPayload, OnboardingDraft, OnboardingStepId } from '../apps/merchant-onboarding/onboardingTypes';
+import { composeFullName, isGoogleAuthProvider, namesFromAuthMetadata } from '../apps/merchant-onboarding/personalDetails';
 import { MERCHANT_PROVISION_REQUEST_KEY } from '@bookglow/auth-contracts';
 
 const client = () => createBrowserSupabaseClient(import.meta.env as unknown as Record<string, string | undefined>);
@@ -18,6 +19,52 @@ export async function ensureMerchantWorkspace(): Promise<void> {
   if (!error) return;
   const missingRpc = error.code === 'PGRST202' || /could not find the function.*ensure_merchant_workspace/i.test(error.message);
   if (!missingRpc) throw error;
+}
+
+export async function loadMerchantIdentity(): Promise<{
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  isGoogle: boolean;
+}> {
+  const session = (await client().auth.getSession()).data.session;
+  const meta = (session?.user.user_metadata || {}) as Record<string, unknown>;
+  const fromMeta = namesFromAuthMetadata(meta);
+  const identities = (session?.user.identities || []) as Array<{ provider?: string }>;
+  let firstName = fromMeta.firstName;
+  let lastName = fromMeta.lastName;
+  let phone: string | null = typeof meta.phone === 'string' ? meta.phone : null;
+  if (session) {
+    const { data } = await client().from('profiles' as never).select('full_name,phone').eq('id', session.user.id).maybeSingle();
+    const row = data as { full_name?: string | null; phone?: string | null } | null;
+    if (row?.full_name && !firstName) {
+      const split = namesFromAuthMetadata({ full_name: row.full_name });
+      firstName = split.firstName;
+      lastName = lastName || split.lastName;
+    }
+    if (row?.phone) phone = row.phone;
+  }
+  return { firstName, lastName, phone, isGoogle: isGoogleAuthProvider(identities) };
+}
+
+export async function savePersonalProfile(input: {
+  firstName: string;
+  lastName: string;
+  phoneE164: string;
+}): Promise<void> {
+  const session = (await client().auth.getSession()).data.session;
+  if (!session) throw new Error('Your session expired. Sign in again to continue.');
+  await client().rpc('ensure_identity_profiles' as never);
+  const fullName = composeFullName(input.firstName, input.lastName);
+  const { error } = await client()
+    .from('profiles' as never)
+    .update({
+      full_name: fullName,
+      phone: input.phoneE164,
+      updated_at: new Date().toISOString(),
+    } as never)
+    .eq('id', session.user.id);
+  if (error) throw error;
 }
 
 export async function loadMerchantDraft(): Promise<OnboardingDraft | null> {
@@ -48,7 +95,7 @@ export async function completeMerchantOnboarding(payload: MerchantOnboardingPayl
   let requestId = sessionStorage.getItem(requestKey);
   if (!requestId) { requestId = crypto.randomUUID(); sessionStorage.setItem(requestKey, requestId); }
   const businessType = payload.primaryBusinessCategory || payload.businessCategories?.[0] || 'other';
-  const phone = (payload as unknown as { phone?: string }).phone || null;
+  const phone = payload.phoneE164 || null;
   const { data, error } = await client().rpc('create_merchant_workspace' as never, {
     p_request_id: requestId, p_business_name: payload.businessName, p_business_type: businessType, p_phone: phone,
   } as never);

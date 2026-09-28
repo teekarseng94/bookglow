@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { emptyOnboardingPayload } from '../../apps/merchant-onboarding/onboardingTypes';
-import { canContinueOnboarding, isOnboardingStepOptional, normalizeWebsite, serializeDraft, validateStep } from '../../apps/merchant-onboarding/onboardingValidation';
+import { canContinueOnboarding, isOnboardingStepOptional, normalizeWebsite, resumeOnboardingStep, serializeDraft, validateStep } from '../../apps/merchant-onboarding/onboardingValidation';
 
 describe('merchant onboarding validation', () => {
   it('normalizes websites', () => {
@@ -45,5 +45,28 @@ describe('merchant onboarding validation', () => {
     const draft = serializeDraft(payload);
     draft.businessCategories.push('Massage');
     expect(payload.businessCategories).toEqual([]);
+  });
+
+  it('requires first name, a valid mobile number, and privacy consent', () => {
+    const payload = emptyOnboardingPayload();
+    expect(validateStep('personal-details', payload)).toMatch(/first name/i);
+    payload.firstName = 'Desa';
+    expect(validateStep('personal-details', payload)).toMatch(/valid mobile number/i);
+    payload.phoneNational = '123829709';
+    expect(validateStep('personal-details', payload)).toMatch(/Privacy Policy/i);
+    payload.legalAccepted = true;
+    expect(validateStep('personal-details', payload)).toBeNull();
+  });
+
+  it('resumes unfinished identity before business setup', () => {
+    const unfinished = emptyOnboardingPayload();
+    expect(resumeOnboardingStep('business-identity', unfinished)).toBe('personal-details');
+    const finished = emptyOnboardingPayload();
+    finished.firstName = 'Desa';
+    finished.phoneNational = '123829709';
+    finished.legalAccepted = true;
+    finished.personalDetailsCompleted = true;
+    expect(resumeOnboardingStep('categories', finished)).toBe('categories');
+    expect(resumeOnboardingStep('personal-details', finished)).toBe('account-type');
   });
 });

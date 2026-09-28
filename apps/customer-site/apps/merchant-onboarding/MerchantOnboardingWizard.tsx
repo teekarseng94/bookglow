@@ -1,9 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { acceptMerchantInvitation, completeMerchantOnboarding, ensureMerchantWorkspace, hasMerchantWorkspace, loadMerchantDraft, merchantPortalLoginUrl, saveMerchantDraft } from '../../services/merchantOnboardingService';
+import { acceptMerchantInvitation, completeMerchantOnboarding, ensureMerchantWorkspace, hasMerchantWorkspace, loadMerchantDraft, loadMerchantIdentity, merchantPortalLoginUrl, saveMerchantDraft, savePersonalProfile } from '../../services/merchantOnboardingService';
 import { activeSteps, BUSINESS_CATEGORIES, PREVIOUS_SOFTWARE, TEAM_SIZES } from './onboardingSteps';
 import { emptyOnboardingPayload, type MerchantOnboardingPayload, type OnboardingStepId } from './onboardingTypes';
-import { canContinueOnboarding, isOnboardingStepOptional, normalizeWebsite, serializeDraft, validateStep } from './onboardingValidation';
+import { canContinueOnboarding, isOnboardingStepOptional, normalizeWebsite, resumeOnboardingStep, serializeDraft, validateStep } from './onboardingValidation';
 import OnboardingShell from './components/OnboardingShell';
+import PersonalDetailsStep from './PersonalDetailsStep';
+import { DEFAULT_COUNTRY_NAME, firstInvalidPersonalSelector, nationalNumberForE164, toE164 } from './personalDetails';
 
 interface Props {
   email: string;
@@ -11,6 +13,7 @@ interface Props {
   completeHref?: string;
   saveExitHref?: string;
   onSavedExit?: () => Promise<void> | void;
+  privacyPolicyHref?: string;
 }
 const locationChoices = [
   ['physical', 'Clients come to me at a physical location'],
@@ -18,15 +21,17 @@ const locationChoices = [
   ['virtual', 'I provide virtual services online'],
 ] as const;
 
-export default function MerchantOnboardingWizard({ email, completeHref, saveExitHref, onSavedExit }: Props) {
+export default function MerchantOnboardingWizard({ email, completeHref, saveExitHref, onSavedExit, privacyPolicyHref = '/privacy' }: Props) {
   const portalHref = completeHref ?? merchantPortalLoginUrl(email);
   const [payload, setPayload] = useState<MerchantOnboardingPayload>(emptyOnboardingPayload);
-  const [step, setStep] = useState<OnboardingStepId>('account-type');
+  const [step, setStep] = useState<OnboardingStepId>('personal-details');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [submittedPersonal, setSubmittedPersonal] = useState(false);
   const [result, setResult] = useState<{ outlet_id: string; booking_slug: string } | null>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
+  const redirectedRef = useRef(false);
   const steps = useMemo(() => activeSteps(payload.serviceLocationType), [payload.serviceLocationType]);
   const stepIndex = Math.max(0, steps.indexOf(step));
   const update = (patch: Partial<MerchantOnboardingPayload>) => setPayload((current) => ({ ...current, ...patch }));
@@ -35,22 +40,71 @@ export default function MerchantOnboardingWizard({ email, completeHref, saveExit
     ensureMerchantWorkspace()
       .then(() => hasMerchantWorkspace())
       .then(async (exists) => {
-        if (exists) { window.location.replace(portalHref); return null; }
-        return loadMerchantDraft();
-      }).then((draft) => {
-      if (draft?.payload) setPayload({ ...emptyOnboardingPayload(), ...draft.payload });
-      if (draft?.currentStep) setStep(draft.currentStep);
-    }).catch((cause) => setError(cause instanceof Error ? cause.message : 'Could not load your setup progress.')).finally(() => setLoading(false));
+        if (exists) {
+          redirectedRef.current = true;
+          window.location.replace(portalHref);
+          return null;
+        }
+        const [draft, identity] = await Promise.all([loadMerchantDraft(), loadMerchantIdentity().catch(() => null)]);
+        return { draft, identity };
+      }).then((loaded) => {
+      if (!loaded) return;
+      const merged = { ...emptyOnboardingPayload(), ...(loaded.draft?.payload || {}) };
+      if (!merged.firstName && loaded.identity?.firstName) merged.firstName = loaded.identity.firstName;
+      if (!merged.lastName && loaded.identity?.lastName) merged.lastName = loaded.identity.lastName;
+      if (!merged.phoneNational && loaded.identity?.phone) {
+        merged.phoneNational = nationalNumberForE164(loaded.identity.phone);
+        merged.phoneE164 = loaded.identity.phone.startsWith('+') ? loaded.identity.phone : toE164(loaded.identity.phone) || '';
+      }
+      setPayload(merged);
+      setStep(resumeOnboardingStep(loaded.draft?.currentStep, merged));
+    }).catch((cause) => setError(cause instanceof Error ? cause.message : 'Could not load your setup progress.')).finally(() => {
+      if (!redirectedRef.current) setLoading(false);
+    });
   }, []);
   useEffect(() => { titleRef.current?.focus(); }, [step]);
 
   const persistAndMove = async () => {
     if (saving) return;
     setError('');
+    if (step === 'personal-details') setSubmittedPersonal(true);
     const validation = validateStep(step, payload);
-    if (validation) { setError(validation); return; }
+    if (validation) {
+      setError(validation);
+      window.requestAnimationFrame(() => {
+        const selector = step === 'personal-details' ? firstInvalidPersonalSelector(payload) : null;
+        const invalid = selector
+          ? document.querySelector<HTMLElement>(`.merchant-onboarding__personal ${selector}`)
+          : null;
+        invalid?.focus();
+        if (typeof invalid?.scrollIntoView === 'function') {
+          invalid.scrollIntoView({ block: 'center', inline: 'nearest' });
+        }
+      });
+      return;
+    }
     setSaving(true);
     try {
+      if (step === 'personal-details') {
+        const firstName = payload.firstName.trim();
+        const lastName = payload.lastName.trim();
+        const phoneE164 = toE164(payload.phoneNational);
+        if (!phoneE164) throw new Error('Please enter a valid mobile number.');
+        const nextPayload = {
+          ...payload,
+          firstName,
+          lastName,
+          phoneNational: nationalNumberForE164(payload.phoneNational),
+          phoneE164,
+          country: DEFAULT_COUNTRY_NAME,
+          personalDetailsCompleted: true,
+        };
+        await savePersonalProfile({ firstName, lastName, phoneE164 });
+        await saveMerchantDraft('account-type', nextPayload);
+        setPayload(nextPayload);
+        setStep('account-type');
+        return;
+      }
       const normalized = step === 'business-identity' ? { ...payload, businessName: payload.businessName.trim(), website: normalizeWebsite(payload.website) } : serializeDraft(payload);
       setPayload(normalized);
       if (step === 'account-type' && normalized.accountType === 'join') {
@@ -96,14 +150,17 @@ export default function MerchantOnboardingWizard({ email, completeHref, saveExit
 
   if (loading) return <div className="merchant-onboarding__loading" role="status">Loading your setup…</div>;
   const stepError = validateStep(step, payload);
-  const canContinue = canContinueOnboarding(step, payload) && !saving;
+  const personalStep = step === 'personal-details';
+  const canContinue = personalStep ? !saving : canContinueOnboarding(step, payload) && !saving;
   const optionalStep = isOnboardingStepOptional(step);
   const footer = step !== 'complete' ? (
     <>
       {error ? <div className="merchant-onboarding__error" role="alert">{error}</div> : null}
-      {!error && stepError ? <p className="merchant-onboarding__hint" role="status">{stepError}</p> : null}
+      {!error && stepError && !personalStep ? <p className="merchant-onboarding__hint" role="status">{stepError}</p> : null}
       {optionalStep && !stepError ? <p className="merchant-onboarding__hint">This step is optional. You can continue without choosing software.</p> : null}
-      <button type="button" className="merchant-onboarding__continue" onClick={() => void persistAndMove()} disabled={!canContinue}>{saving ? 'Saving…' : <>Continue <span aria-hidden>→</span></>}</button>
+      <button type="button" className="merchant-onboarding__continue" onClick={() => void persistAndMove()} disabled={!canContinue}>
+        {saving ? 'Saving…' : personalStep ? 'Continue' : <>Continue <span aria-hidden>→</span></>}
+      </button>
     </>
   ) : undefined;
 
@@ -113,7 +170,16 @@ export default function MerchantOnboardingWizard({ email, completeHref, saveExit
       onBack={() => setStep(steps[Math.max(0, stepIndex - 1)])} onSaveExit={saveAndExit} saving={saving} footer={footer}
     >
       <section className="merchant-onboarding__content">
-        {step !== 'complete' && <p className="merchant-onboarding__eyebrow">Account setup</p>}
+      {step !== 'complete' && step !== 'personal-details' && <p className="merchant-onboarding__eyebrow">Account setup</p>}
+        {step === 'personal-details' && (
+          <PersonalDetailsStep
+            payload={payload}
+            onChange={update}
+            submitted={submittedPersonal}
+            privacyPolicyHref={privacyPolicyHref}
+            titleRef={titleRef}
+          />
+        )}
         {step === 'account-type' && <>
           <h1 tabIndex={-1} ref={titleRef}>How would you like to set up your professional account?</h1>
           <div className="merchant-onboarding__choices" role="radiogroup" aria-label="Professional account type">

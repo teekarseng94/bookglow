@@ -277,6 +277,59 @@ test('Keyboard resize keeps the Continue bar reachable', async ({ page }) => {
   expect(inView).toBe(true);
 });
 
+test('Personal details stays one column without overflow', async ({ page }) => {
+  test.setTimeout(120_000);
+  const personalViewports = [
+    { width: 360, height: 800 },
+    { width: 375, height: 812 },
+    { width: 390, height: 844 },
+    { width: 412, height: 915 },
+    { width: 427, height: 780 },
+  ];
+  for (const viewport of personalViewports) {
+    await page.setViewportSize(viewport);
+    await openHarness(page, 'screen=onboarding&step=personal-details');
+    await expect(page.getByRole('heading', { name: /finish signing up/i })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: /first name/i })).toBeVisible();
+    await expect(page.getByRole('textbox', { name: /mobile number/i })).toBeVisible();
+    await expect(page.getByRole('combobox', { name: /country calling code/i })).toHaveValue('+60');
+    await expect(page.getByRole('link', { name: /privacy policy/i })).toBeVisible();
+    await expect(page.locator('input[type="password"]')).toHaveCount(0);
+    const geometry = await page.evaluate(() => {
+      const scroll = document.querySelector<HTMLElement>('.merchant-onboarding__scroll');
+      const footer = document.querySelector<HTMLElement>('.merchant-onboarding__footer');
+      const phone = document.querySelector<HTMLElement>('.merchant-onboarding__phone-row');
+      phone?.scrollIntoView({ block: 'center' });
+      return {
+        pageOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+        footerInScroll: Boolean(scroll && footer && scroll.contains(footer)),
+        formWidth: document.querySelector('.merchant-onboarding__personal')?.getBoundingClientRect().width || 0,
+        viewportWidth: window.innerWidth,
+      };
+    });
+    expect(geometry.pageOverflow, `personal details overflow at ${viewport.width}`).toBe(false);
+    expect(geometry.footerInScroll).toBe(false);
+    expect(geometry.formWidth).toBeLessThanOrEqual(geometry.viewportWidth);
+    await page.screenshot({ path: artifact(`onboarding-personal-${viewport.width}.png`), fullPage: false });
+  }
+});
+
+test('Personal details remain reachable when the keyboard shortens the viewport', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await openHarness(page, 'screen=onboarding&step=personal-details');
+  await page.getByRole('textbox', { name: /mobile number/i }).click();
+  await page.setViewportSize({ width: 360, height: 480 });
+  const phone = page.getByRole('textbox', { name: /mobile number/i });
+  await phone.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  const reachable = await phone.evaluate((el) => {
+    const box = el.getBoundingClientRect();
+    const footer = document.querySelector('.merchant-onboarding__footer')?.getBoundingClientRect();
+    return box.top >= 0 && (!footer || box.bottom <= footer.top + 8);
+  });
+  expect(reachable).toBe(true);
+  await expect(page.getByRole('button', { name: /continue/i })).toBeVisible();
+});
+
 test('POS shows one empty state above the cart and bottom navigation', async ({ page }) => {
   test.setTimeout(120_000);
   for (const viewport of viewports.filter((item) => item.width <= 412)) {

@@ -1,8 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import OnboardingShell from '../../../customer-site/apps/merchant-onboarding/components/OnboardingShell';
+import PersonalDetailsStep from '../../../customer-site/apps/merchant-onboarding/PersonalDetailsStep';
 import { PREVIOUS_SOFTWARE, BUSINESS_CATEGORIES } from '../../../customer-site/apps/merchant-onboarding/onboardingSteps';
+import { emptyOnboardingPayload } from '../../../customer-site/apps/merchant-onboarding/onboardingTypes';
 import Layout from '../../components/Layout';
 import { SettingsNavigation, type SettingsSectionId } from '../../components/settings/SettingsNavigation';
 import { OperatingHoursRow } from '../../components/settings/OperatingHoursRow';
@@ -19,8 +21,10 @@ const screen = new URLSearchParams(window.location.search).get('screen') || 'onb
 function OnboardingHarness() {
   const [selected, setSelected] = useState('');
   const [address, setAddress] = useState('');
+  const [personal, setPersonal] = useState(emptyOnboardingPayload);
+  const titleRef = useRef<HTMLHeadingElement>(null);
   const step = new URLSearchParams(window.location.search).get('step') || 'software';
-  const canContinue = step === 'software' || address.trim().length >= 4 || selected.length > 0;
+  const canContinue = step === 'software' || step === 'personal-details' || address.trim().length >= 4 || selected.length > 0;
   const footer = (
     <>
       {!canContinue ? <p className="merchant-onboarding__hint" role="status">Complete the required field to continue.</p> : null}
@@ -29,9 +33,18 @@ function OnboardingHarness() {
     </>
   );
   return (
-    <OnboardingShell progress={70} canGoBack onBack={() => undefined} onSaveExit={() => undefined} saving={false} footer={footer}>
+    <OnboardingShell progress={step === 'personal-details' ? 12 : 70} canGoBack={step !== 'personal-details'} onBack={() => undefined} onSaveExit={() => undefined} saving={false} footer={footer}>
       <section className="merchant-onboarding__content">
-        <p className="merchant-onboarding__eyebrow">Account setup</p>
+        {step !== 'personal-details' ? <p className="merchant-onboarding__eyebrow">Account setup</p> : null}
+        {step === 'personal-details' ? (
+          <PersonalDetailsStep
+            payload={personal}
+            onChange={(patch) => setPersonal((current) => ({ ...current, ...patch }))}
+            submitted={false}
+            privacyPolicyHref="/privacy"
+            titleRef={titleRef}
+          />
+        ) : null}
         {step === 'software' ? (
           <>
             <h1>Which software are you currently using?</h1>

@@ -4,6 +4,7 @@ import MerchantOnboardingWizard from '../../customer-site/apps/merchant-onboardi
 import { useAuth } from '../hooks/useAuth';
 import { logout } from '../services/authService';
 import { merchantBrowserDestination, resolveMerchantAccess } from '../src/auth/accessResolver';
+import { publicPrivacyPolicyUrl } from '../src/legal/publicLegalUrls';
 
 export default function MerchantOnboardingPage() {
   const { user, loading, isAuthenticated } = useAuth();
@@ -50,6 +51,7 @@ export default function MerchantOnboardingPage() {
     <MerchantOnboardingWizard
       email={user.email}
       completeHref={merchantBrowserDestination('/dashboard')}
+      privacyPolicyHref={publicPrivacyPolicyUrl()}
       onSavedExit={async () => {
         await logout();
         window.location.replace(merchantBrowserDestination('/login'));

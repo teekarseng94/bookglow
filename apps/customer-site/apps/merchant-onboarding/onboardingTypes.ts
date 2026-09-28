@@ -15,6 +15,13 @@ export interface MerchantLocation {
 export interface MerchantOnboardingPayload {
   accountType?: AccountType;
   invitationCode?: string;
+  firstName: string;
+  lastName: string;
+  phoneNational: string;
+  phoneE164: string;
+  country: string;
+  legalAccepted: boolean;
+  personalDetailsCompleted: boolean;
   businessName: string;
   website: string;
   businessCategories: string[];
@@ -27,7 +34,7 @@ export interface MerchantOnboardingPayload {
 }
 
 export type OnboardingStepId =
-  | 'account-type' | 'business-identity' | 'categories' | 'service-location'
+  | 'personal-details' | 'account-type' | 'business-identity' | 'categories' | 'service-location'
   | 'physical-location' | 'team-size' | 'software' | 'complete';
 
 export interface OnboardingDraft {
@@ -38,6 +45,8 @@ export interface OnboardingDraft {
 }
 
 export const emptyOnboardingPayload = (): MerchantOnboardingPayload => ({
+  firstName: '', lastName: '', phoneNational: '', phoneE164: '',
+  country: 'Malaysia', legalAccepted: false, personalDetailsCompleted: false,
   businessName: '', website: '', businessCategories: [], primaryBusinessCategory: '',
   location: {
     addressDisplay: '', country: 'Malaysia',

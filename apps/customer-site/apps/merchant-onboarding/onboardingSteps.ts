@@ -16,7 +16,7 @@ export const PREVIOUS_SOFTWARE = [
 ] as const;
 
 export const CREATE_STEPS: OnboardingStepId[] = [
-  'account-type', 'business-identity', 'categories', 'service-location',
+  'personal-details', 'account-type', 'business-identity', 'categories', 'service-location',
   'physical-location', 'team-size', 'software', 'complete',
 ];
 

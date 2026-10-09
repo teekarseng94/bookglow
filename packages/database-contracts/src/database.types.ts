@@ -1898,6 +1898,7 @@ export type Database = {
       }
       public_voucher_purchase: { Args: { p_voucher_id: string }; Returns: Json }
       resolve_merchant_access: { Args: never; Returns: Json }
+      resolve_public_booking_outlet: { Args: { p_segment: string }; Returns: string | null }
       set_outlet_member_status: {
         Args: { p_member_id: string; p_status: string }
         Returns: undefined

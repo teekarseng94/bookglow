@@ -9,6 +9,7 @@ import {
   bookingSlugFollowsShopName,
   bookingSlugForEditor,
   bookingSlugFromShopName,
+  bookingSlugToPersist,
   isValidBookingSlug,
   resolveBookingSlug,
   uniqueBookingSlug,
@@ -101,11 +102,6 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       setBusinessHours(outletData?.businessHours || {});
       const name = outletData?.name || settings.shopName || '';
       const savedSlug = bookingSlugForEditor(outletData?.bookingSlug);
-      if ((outletData?.bookingSlug || '').trim() && !savedSlug) {
-        setBookingSlug('');
-        setSavedBookingSlug('');
-        return;
-      }
       const slug = await ensureOutletBookingSlug({
         outletId: effectiveOutletId,
         existing: savedSlug,
@@ -160,12 +156,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
     setBookingSlugError(null);
 
     try {
-      const slugRaw = bookingSlug.trim();
-      // Clearing the field hands the path back to the shop name.
-      const slugToSave =
-        slugRaw ||
-        bookingSlugFromShopName(settings.shopName || '') ||
-        uniqueBookingSlug(settings.shopName || '', effectiveOutletId);
+      const slugToSave = bookingSlugToPersist(bookingSlug, settings.shopName || '', effectiveOutletId);
       if (!isValidBookingSlug(slugToSave)) {
         setBookingSlugError('Use a letter first, then letters, numbers, hyphens, or underscores only.');
         setBookingInfoStatus('error');
@@ -225,13 +216,37 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
     contact: { phone: phoneNumber, address: addressDisplay },
   });
 
+  const persistPublicBookingSlug = async (): Promise<string | null> => {
+    if (!effectiveOutletId) return null;
+    const slugToSave = bookingSlugToPersist(bookingSlug, settings.shopName || '', effectiveOutletId);
+    if (!isValidBookingSlug(slugToSave)) {
+      setBookingSlugError('Use a letter first, then letters, numbers, hyphens, or underscores only.');
+      return null;
+    }
+    const taken = await outletService.getByBookingSlug(slugToSave);
+    if (taken && taken.outletID !== effectiveOutletId) {
+      setBookingSlugError('This booking path is already used by another outlet.');
+      return null;
+    }
+    // Always write so Copy never advertises a path that only exists in the editor.
+    await outletService.update(effectiveOutletId, { bookingSlug: slugToSave });
+    if (onUpdateOutlet) await Promise.resolve(onUpdateOutlet({ bookingSlug: slugToSave }));
+    setBookingSlug(slugToSave);
+    setSavedBookingSlug(slugToSave);
+    setBookingSlugError(null);
+    return slugToSave;
+  };
+
   const handleCopyLink = async () => {
-    if (!bookingUrl) return;
     try {
-      await navigator.clipboard.writeText(bookingUrl);
+      const slug = await persistPublicBookingSlug();
+      if (!slug || !BOOKING_BASE_URL) return;
+      const url = `${BOOKING_BASE_URL}/${slug}`;
+      await navigator.clipboard.writeText(url);
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
     } catch {
+      setBookingSlugError('Could not save the booking path. Try Save, then copy again.');
       setCopySuccess(false);
     }
   };
@@ -514,7 +529,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                   <div className="relative w-full sm:w-auto shrink-0">
                     <button
                       type="button"
-                      disabled={!bookingUrl || !bookingSlug}
+                      disabled={!BOOKING_BASE_URL || !effectiveOutletId}
                       onClick={handleCopyLink}
                       className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[2.75rem] rounded-ui-sm m-settings-btn bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)] transition-colors"
                     >

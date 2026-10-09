@@ -88,13 +88,21 @@ export function bookingSlugAfterRename(current: string, previousName: string, ne
   return bookingSlugFromShopName(nextName) || current;
 }
 
-/** Prefer the saved slug; otherwise allocate a unique public path (never the raw outlet id). */
+/**
+ * Path written on Copy link / Save. Prefer the editor value, then the shop-name
+ * camelCase path (same as ensureOutletBookingSlug), then a unique kebab suffix.
+ * Display and persist must use this so the copied URL is a slug the public page can find.
+ */
+export function bookingSlugToPersist(editor: string, shopName: string, outletId: string): string {
+  const slugRaw = (editor || '').trim();
+  return slugRaw || bookingSlugFromShopName(shopName) || uniqueBookingSlug(shopName, outletId);
+}
+
+/** Prefer the saved slug; otherwise the same path Copy link will persist (never the raw outlet id). */
 export function resolveBookingSlug(
   existing: string | undefined | null,
   name: string,
   outletId: string,
 ): string {
-  const stored = (existing || '').trim();
-  if (stored) return stored;
-  return uniqueBookingSlug(name, outletId);
+  return bookingSlugToPersist(existing || '', name, outletId);
 }

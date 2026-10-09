@@ -7,6 +7,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { resolveOutletIdFromBookingPath } from "../../services/bookingPathResolve";
+import { normalizeBookingPathSegment } from "../../services/supabasePublicBooking";
 import type { PublicService, PublicOutlet, PublicTeamMember } from "../../services/bookingApi";
 import {
   getPublicOutletFromSupabase,
@@ -152,7 +153,7 @@ function getOpenClosedStatus(businessHours?: Record<string, { open: string; clos
 export function BookingPage() {
   const { bookingPath } = useParams<{ bookingPath: string }>();
   const navigate = useNavigate();
-  const pathSegment = (bookingPath ?? "").trim();
+  const pathSegment = normalizeBookingPathSegment(bookingPath ?? "");
   const [resolvedOutletId, setResolvedOutletId] = useState<string | null>(null);
   const [pathResolveDone, setPathResolveDone] = useState(false);
   const outletId = resolvedOutletId ?? "";

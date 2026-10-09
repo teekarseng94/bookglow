@@ -38,7 +38,7 @@ export const BookingLinkCard: React.FC<BookingLinkCardProps> = ({ outletId, clas
         if (!cancelled) setBookingSlug(slug || resolveBookingSlug(outlet?.bookingSlug, outlet?.name || '', outletId));
       })
       .catch(() => {
-        if (!cancelled) setBookingSlug(resolveBookingSlug('', '', outletId));
+        if (!cancelled) setBookingSlug('');
       });
     return () => {
       cancelled = true;

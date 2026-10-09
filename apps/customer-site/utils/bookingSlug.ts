@@ -28,3 +28,55 @@ export function isValidBookingSlug(s: string): boolean {
   const t = (s || "").trim();
   return t.length > 0 && BOOKING_SLUG_REGEX.test(t);
 }
+
+export function normalizeBookingPathSegment(segment: string): string {
+  const trimmed = (segment || "").trim().replace(/^\/+|\/+$/g, "");
+  if (!trimmed) return "";
+  try {
+    return decodeURIComponent(trimmed);
+  } catch {
+    return trimmed;
+  }
+}
+
+/** Last 6 identifier characters — same suffix onboarding SQL appends. */
+export function bookingSlugOutletSuffix(outletId: string): string {
+  const compact = (outletId || "").replace(/[^a-zA-Z0-9]/g, "");
+  const suffix = compact.slice(-6);
+  return suffix || "shop";
+}
+
+/** Matches merchant uniqueBookingSlug — kebab name or 'business' + '-' + last 6 of outlet id. */
+export function uniqueBookingSlug(name: string, outletId: string): string {
+  const suffix = bookingSlugOutletSuffix(outletId);
+  let base = slugifyBookingName(name);
+  if (!base) base = "business";
+  if (!/^[a-zA-Z]/.test(base)) base = `b-${base}`;
+  const slug = `${base}-${suffix}`;
+  return isValidBookingSlug(slug) ? slug : `business-${suffix}`;
+}
+
+/**
+ * True when /book/:segment belongs to this outlet: stored slug, camelCase shop name,
+ * kebab shop name, or the unique kebab-suffix path Settings used to advertise unsaved.
+ */
+export function matchesPublicBookingSegment(
+  segment: string,
+  bookingSlug: string | null | undefined,
+  name: string | null | undefined,
+  outletId?: string | null
+): boolean {
+  const segmentLower = normalizeBookingPathSegment(segment).toLowerCase();
+  if (!segmentLower) return false;
+  const stored = (bookingSlug || "").trim();
+  if (stored && stored.toLowerCase() === segmentLower) return true;
+  const derived = shopNameToBookingSlug(name || "");
+  if (derived && derived.toLowerCase() === segmentLower) return true;
+  const kebab = slugifyBookingName(name || "");
+  if (kebab && kebab.toLowerCase() === segmentLower) return true;
+  if (outletId) {
+    const unique = uniqueBookingSlug(name || "", outletId);
+    if (unique && unique.toLowerCase() === segmentLower) return true;
+  }
+  return false;
+}

@@ -5,6 +5,7 @@ import {
   bookingSlugFromShopName,
   bookingSlugOutletSuffix,
   bookingSlugForEditor,
+  bookingSlugToPersist,
   isValidBookingSlug,
   resolveBookingSlug,
   shopNameToBookingSlug,
@@ -49,6 +50,12 @@ describe('resolveBookingSlug', () => {
     const slug = resolveBookingSlug('', '白金卡', outletId);
     expect(slug).toBe('business-99cdef');
     expect(slug).not.toContain('outlet_');
+  });
+
+  it('uses the shop-name path when the editor is empty so Copy matches what is stored', () => {
+    const outletId = 'outlet_bbbbbbbbbbbbbbbbbbbbbbbbbb99cdef';
+    expect(resolveBookingSlug('', 'Restoran Desa Petaling', outletId)).toBe('restoranDesaPetaling');
+    expect(bookingSlugToPersist('', 'Harbour Spa', outletId)).toBe('harbourSpa');
   });
 });
 

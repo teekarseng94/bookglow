@@ -5,7 +5,10 @@
 import type { BookglowSupabaseClient } from "@bookglow/supabase";
 import { createBrowserSupabaseClient } from "@bookglow/supabase";
 import type { PublicOutlet, PublicService, PublicTeamMember } from "./bookingApi";
-import { shopNameToBookingSlug, slugifyBookingName } from "../utils/bookingSlug";
+import { customerBrowserEnv } from "../src/customerPublicEnv";
+import { matchesPublicBookingSegment, normalizeBookingPathSegment } from "../utils/bookingSlug";
+
+export { normalizeBookingPathSegment };
 
 type OutletRow = {
   outlet_id: string;
@@ -40,7 +43,7 @@ type StaffRow = {
 };
 
 function viteEnv(): Record<string, string | undefined> {
-  return import.meta.env as unknown as Record<string, string | undefined>;
+  return customerBrowserEnv();
 }
 
 function client(): BookglowSupabaseClient {
@@ -99,14 +102,18 @@ function mapStaff(row: StaffRow): PublicTeamMember {
 }
 
 /**
- * Same resolution order as Firestore bookingPathResolve.
+ * Map /book/:segment to outlet_id. Prefers the SECURITY DEFINER RPC so anon
+ * visitors are not limited by PostgREST row caps or case-sensitive slug eq.
  */
 export async function resolveOutletIdFromBookingPathSupabase(
   segment: string
 ): Promise<string | null> {
-  const s = (segment || "").trim();
+  const s = normalizeBookingPathSegment(segment);
   if (!s) return null;
   const sb = client();
+
+  const rpc = await sb.rpc("resolve_public_booking_outlet", { p_segment: s });
+  if (!rpc.error && rpc.data) return String(rpc.data);
 
   const byId = await sb
     .from("outlets")
@@ -123,11 +130,17 @@ export async function resolveOutletIdFromBookingPathSupabase(
     .maybeSingle();
   if (exact.data?.outlet_id) return exact.data.outlet_id;
 
-  const lower = s.toLowerCase();
+  const ci = await sb
+    .from("outlets")
+    .select("outlet_id")
+    .ilike("booking_slug", s.replace(/[%_]/g, "\\$&"))
+    .limit(1)
+    .maybeSingle();
+  if (ci.data?.outlet_id) return ci.data.outlet_id;
+
   const { data: rows, error } = await sb
     .from("outlets")
-    .select("outlet_id, booking_slug, name")
-    .eq("is_active", true);
+    .select("outlet_id, booking_slug, name");
 
   if (error) {
     console.error("Supabase outlet resolve failed:", error);
@@ -135,12 +148,9 @@ export async function resolveOutletIdFromBookingPathSupabase(
   }
 
   for (const row of rows || []) {
-    const stored = (row.booking_slug || "").trim();
-    if (stored && stored.toLowerCase() === lower) return row.outlet_id;
-    const derived = shopNameToBookingSlug(row.name || "");
-    if (derived && derived.toLowerCase() === lower) return row.outlet_id;
-    const kebab = slugifyBookingName(row.name || "");
-    if (kebab && kebab.toLowerCase() === lower) return row.outlet_id;
+    if (matchesPublicBookingSegment(s, row.booking_slug, row.name, row.outlet_id)) {
+      return row.outlet_id;
+    }
   }
 
   return null;

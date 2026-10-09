@@ -22,7 +22,11 @@ async function functionError(data: unknown, error: { message?: string; context?:
   } catch {
     /* ignore unreadable function error bodies */
   }
-  return new Error(error?.message || fallback);
+  const raw = error?.message || '';
+  if (!raw || /edge function|failed to (send a request|fetch)|network/i.test(raw)) {
+    return new Error(fallback);
+  }
+  return new Error(raw);
 }
 
 export async function listOutletAccounts(outletId: string): Promise<OutletAccount[]> {

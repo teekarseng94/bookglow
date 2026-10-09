@@ -55,7 +55,7 @@ const LoadingSpinner = () => (
 
 const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletId: propOutletId, outlet: propOutlet, onUpdateOutlet }) => {
   // Get outletId from context (fallback if prop is missing)
-  const { outletId, outletName, userData, loading: contextLoading } = useUserContext();
+  const { outletId, outletName, loading: contextLoading } = useUserContext();
   const effectiveOutletId = propOutletId || outletId || '';
   
 
@@ -290,21 +290,6 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
     }
   };
 
-  const toggleOutletMode = () => {
-    onUpdateSettings({ ...settings, isOutletModeEnabled: !settings.isOutletModeEnabled });
-  };
-
-  const toggleAdminAuth = () => {
-    onUpdateSettings({ ...settings, isAdminAuthenticated: !settings.isAdminAuthenticated });
-  };
-
-  const toggleFeatureLock = (featureId: string) => {
-    const newLocks = settings.lockedFeatures.includes(featureId)
-      ? settings.lockedFeatures.filter(f => f !== featureId)
-      : [...settings.lockedFeatures, featureId];
-    onUpdateSettings({ ...settings, lockedFeatures: newLocks });
-  };
-
   const addPaymentMethod = (e: React.FormEvent) => {
     e.preventDefault();
     if (newMethodName.trim()) {
@@ -340,14 +325,6 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       [key]: value
     });
   };
-
-  const permissionList = [
-    { id: 'delete-transaction', label: 'Delete/Edit Transactions', description: 'Prevent accidental or unauthorized removal of sales logs.' },
-    { id: 'edit-service', label: 'Modify Service Catalog', description: 'Restricts adding, editing, or deleting spa treatments.' },
-    { id: 'manage-staff', label: 'Manage Staff Profiles', description: 'Locks staff registration and commission rate changes.' },
-    { id: 'export-crm', label: 'Export Client Data', description: 'Restrict downloading sensitive CRM databases to CSV.' },
-    { id: 'finance-view', label: 'Expense & Profit Access', description: 'Limits access to financial charts and expense recording.' },
-  ];
 
   const scrollToSection = (id: SettingsSectionId) => {
     setActiveSection(id);
@@ -399,7 +376,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           ? 'saving'
           : 'idle';
 
-  const panel = (_visible: boolean) => 'block min-w-0 w-full md:contents';
+  const panel = (visible: boolean) => (visible ? 'block min-w-0 w-full md:contents' : 'hidden md:contents');
 
   return (
     <div className="m-page-with-bottom-nav animate-fadeIn min-w-0 overflow-x-hidden sm:pb-20">
@@ -407,6 +384,19 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
 
       <div className="mt-4 md:mt-6 flex flex-col md:flex-row gap-6 items-start min-w-0">
         <SettingsNavigation activeId={activeSection} onSelect={scrollToSection} />
+        <label className="md:hidden w-full m-settings-field">
+          <span className="m-settings-label">Section</span>
+          <select
+            aria-label="Settings sections"
+            className="m-settings-control"
+            value={activeSection}
+            onChange={(event) => scrollToSection(event.target.value as SettingsSectionId)}
+          >
+            {SETTINGS_NAV_ITEMS.map((item) => (
+              <option key={item.id} value={item.id}>{item.label}</option>
+            ))}
+          </select>
+        </label>
 
         <div className="min-w-0 flex-1 max-w-3xl w-full space-y-5 sm:space-y-6 overflow-x-hidden">
       {/* 1. Business profile */}
@@ -663,87 +653,13 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
             }}
           />
           <p className="m-settings-hint mt-2">
-            Saves booking path, address, phone, and operating hours.
+            Saves the booking path, address, phone, and operating hours. Receipt layout, team invites, and the voucher PIN are saved in their own sections.
           </p>
         </div>
       </div>
       </div>
 
-      {/* 4. Notifications */}
-      <div className={panel(activeSection === 'notifications')}>
-      <SettingsSection
-        id="settings-notifications"
-        iconWrap="bg-indigo-50 text-indigo-600"
-        title="Notifications & reminders"
-        description="Configure automated client notifications for upcoming bookings."
-        defaultOpen
-        icon={<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>}
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <div className="flex items-center justify-between p-4 bg-[var(--bg-soft)] rounded-ui-sm border border-[var(--line-soft)]">
-              <div>
-                <span className="block text-sm font-bold text-[var(--text-secondary)]">Enable Reminders</span>
-                <span className="m-settings-hint font-semibold uppercase tracking-tight">Send messages automatically</span>
-              </div>
-              <button 
-                onClick={() => onUpdateSettings({ ...settings, reminderEnabled: !settings.reminderEnabled })}
-                className={`w-12 h-6 rounded-full transition-colors relative ${settings.reminderEnabled ? 'bg-indigo-600' : 'bg-slate-300'}`}
-              >
-                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settings.reminderEnabled ? 'left-7' : 'left-1'}`}></div>
-              </button>
-            </div>
-
-            <div className={`space-y-4 ${!settings.reminderEnabled ? 'opacity-40 grayscale pointer-events-none' : ''}`}>
-              <div>
-                <label className="m-settings-label block uppercase tracking-widest">Reminder Channel</label>
-                <select 
-                  className="m-settings-control w-full"
-                  value={settings.reminderChannel}
-                  onChange={(e) => onUpdateSettings({ ...settings, reminderChannel: e.target.value as any })}
-                >
-                  <option value="Email">Email Only</option>
-                  <option value="SMS">SMS Only</option>
-                  <option value="Both">Both Email & SMS</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="m-settings-label block uppercase tracking-widest">Reminder Timing</label>
-                <div className="flex items-center gap-3">
-                  <select 
-                    className="m-settings-control flex-1"
-                    value={settings.reminderTiming}
-                    onChange={(e) => onUpdateSettings({ ...settings, reminderTiming: parseInt(e.target.value) })}
-                  >
-                    <option value={2}>2 Hours Before</option>
-                    <option value={12}>12 Hours Before</option>
-                    <option value={24}>24 Hours Before (Default)</option>
-                    <option value={48}>48 Hours Before</option>
-                    <option value={72}>72 Hours Before</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-6 bg-[var(--brand-soft)] rounded-ui-md border border-[var(--brand-border)] h-fit">
-            <h4 className="m-settings-subhead text-[var(--brand-deep)] mb-3 flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              AI Messaging
-            </h4>
-            <p className="text-xs text-indigo-800 leading-relaxed font-medium">
-              Bookglow can draft personalized, welcoming messages for each client. When reminders are triggered from the dashboard or calendar, they are simulated based on these settings.
-            </p>
-            <div className="mt-4 p-3 bg-[var(--bg-surface)]/70 rounded-ui-sm m-settings-hint text-[var(--brand)] italic border border-[var(--brand-border)]">
-              "Hi Sarah! Just a gentle reminder of your Swedish Massage tomorrow at 11:00 AM at Bookglow Spa. We can't wait to see you!"
-            </div>
-          </div>
-        </div>
-      </SettingsSection>
-      </div>
-
-      {/* 5. Receipt & payment */}
+      {/* Receipt & payment */}
       <div className={panel(activeSection === 'receipt-payment')}>
       <SettingsSection
         id="settings-receipt-payment"
@@ -850,7 +766,8 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
               </div>
             </div>
             <div className="mt-5 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-soft)] p-4">
-              <p className="m-settings-subhead">Live Receipt Preview</p>
+              <p className="m-settings-subhead">Sample receipt</p>
+              <p className="m-settings-hint mb-3">Sample lines, not a real sale.</p>
               <div className="mx-auto w-full max-w-[340px] bg-[var(--bg-paper)] border border-[var(--line-strong)] rounded-ui-sm p-4 font-mono m-caption text-[var(--text-secondary)] space-y-1">
                 <div className="text-center border-b border-dashed border-[var(--line-strong)] pb-2 mb-2">
                   <p className="font-bold text-sm">{receiptIdentity.companyName || 'Bookglow Spa'}</p>
@@ -858,7 +775,7 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
                   {receiptIdentity.phone && <p>Phone: {receiptIdentity.phone}</p>}
                   {receiptIdentity.address && <p>{receiptIdentity.address}</p>}
                   <p>{new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}</p>
-                  <p>Customer: Jane Doe</p>
+                  <p>Customer: Sample guest</p>
                 </div>
                 <div className="flex justify-between"><span>Swedish Massage</span><span>1 x RM 80.00</span></div>
                 <div className="flex justify-between"><span>Aroma Oil</span><span>1 x RM 20.00</span></div>
@@ -877,102 +794,11 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       </SettingsSection>
       </div>
 
-      <div className={panel(activeSection === 'access-permissions')}>
+      <div className={panel(activeSection === 'team-access')}>
       <TeamAccess outletId={effectiveOutletId} accountLimit={Number((propOutlet as any)?.accountLimit || 3)} />
-
-      {/* 6. Access & permissions */}
-      <div id="settings-access-permissions" className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 scroll-mt-4">
-        <SettingsSection
-          className="h-fit"
-          iconWrap="bg-[var(--brand-soft)] text-[var(--brand)]"
-          title="Outlet Environment"
-          description={'Toggle "restricted mode" for shared terminals.'}
-          icon={<Icons.Dashboard />}
-        >
-          <div className="m-settings-group">
-          <div className="grid grid-cols-1 gap-3 p-4 bg-[var(--bg-soft)] rounded-ui-sm border border-[var(--line-soft)]">
-            <div><span className="m-settings-label block">Owner email</span><span className="m-settings-value text-sm break-all">{userData?.email || 'Not available'}</span></div>
-            <div><span className="m-settings-label block">Owner role</span><span className="m-settings-value text-sm">{userData?.role === 'admin' ? 'Administrator' : userData?.role || 'Not available'}</span></div>
-          </div>
-          <div className="flex items-center justify-between p-4 bg-[var(--bg-soft)] rounded-ui-sm border border-[var(--line-soft)]">
-            <div className="flex flex-col gap-1">
-              <span className="m-settings-value text-sm">Enable Outlet Mode</span>
-              <span className="m-settings-hint font-semibold uppercase tracking-tight">Active restrictions for non-admins</span>
-            </div>
-            <button 
-              onClick={toggleOutletMode}
-              className={`w-12 h-6 rounded-full transition-colors relative ${settings.isOutletModeEnabled ? 'bg-[var(--brand)]' : 'bg-[var(--line-strong)]'}`}
-            >
-              <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settings.isOutletModeEnabled ? 'left-7' : 'left-1'}`}></div>
-            </button>
-          </div>
-
-          <div className={`p-4 rounded-ui-sm border transition-all ${settings.isAdminAuthenticated ? 'bg-[var(--brand-soft)] border-[var(--brand-border)]' : 'bg-[var(--danger-soft)] border-[var(--danger-border)]'}`}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${settings.isAdminAuthenticated ? 'bg-[var(--brand)] text-white' : 'bg-[var(--danger)] text-white'}`}>
-                  {settings.isAdminAuthenticated ? <Icons.Dashboard /> : <Icons.Lock />}
-                </div>
-                <div className="flex flex-col gap-1">
-                  <span className="m-settings-value block text-sm uppercase">
-                    {settings.isAdminAuthenticated ? 'Admin Authenticated' : 'Restricted Access'}
-                  </span>
-                  <span className="m-settings-hint font-semibold">Currently in {settings.isAdminAuthenticated ? 'Manager' : 'Staff'} View</span>
-                </div>
-              </div>
-              <button 
-                onClick={toggleAdminAuth}
-                className={`m-settings-btn text-xs uppercase tracking-widest shadow-ui-xs transition-all ${
-                  settings.isAdminAuthenticated 
-                    ? 'bg-[var(--bg-surface)] text-[var(--danger)] hover:bg-[var(--danger-soft)]'
-                    : 'bg-[var(--brand)] text-white hover:bg-[var(--brand-hover)]'
-                }`}
-              >
-                {settings.isAdminAuthenticated ? 'Logout Admin' : 'Simulate Admin'}
-              </button>
-            </div>
-          </div>
-          </div>
-        </SettingsSection>
-
-        <SettingsSection
-          className="h-fit"
-          iconWrap="bg-amber-50 text-amber-600"
-          title="Feature Permissions"
-          description="Control which features require admin elevation."
-          icon={<Icons.Lock />}
-        >
-          <div className={`m-settings-list !gap-4 ${!settings.isOutletModeEnabled ? 'opacity-30 pointer-events-none grayscale' : ''}`}>
-            {permissionList.map(perm => (
-              <div 
-                key={perm.id} 
-                onClick={() => toggleFeatureLock(perm.id)}
-                className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between group ${
-                  settings.lockedFeatures.includes(perm.id) 
-                    ? 'bg-[var(--brand-deep)] border-[var(--brand-deep)] text-white shadow-ui-md translate-x-1'
-                    : 'bg-[var(--bg-soft)] border-[var(--line-soft)] text-[var(--text-primary)] hover:bg-[var(--bg-surface)] hover:border-[var(--line-strong)]'
-                }`}
-              >
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold">{perm.label}</span>
-                    {settings.lockedFeatures.includes(perm.id) && <span className="text-amber-400"><Icons.Lock /></span>}
-                  </div>
-                  <p className="m-settings-hint mt-1">{perm.description}</p>
-                </div>
-                <div className={`w-5 h-5 rounded-full border-2 transition-all flex items-center justify-center ${
-                  settings.lockedFeatures.includes(perm.id) ? 'border-[var(--brand)] bg-[var(--brand)]' : 'border-[var(--line-strong)] bg-transparent'
-                }`}>
-                  {settings.lockedFeatures.includes(perm.id) && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>}
-                </div>
-              </div>
-            ))}
-          </div>
-        </SettingsSection>
-      </div>
       </div>
 
-      {/* 7. Advanced */}
+      {/* Advanced */}
       <div className={panel(activeSection === 'advanced')}>
       <SettingsSection
         id="settings-advanced"

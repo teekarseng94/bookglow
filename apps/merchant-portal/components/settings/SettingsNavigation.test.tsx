@@ -8,7 +8,9 @@ describe('SettingsNavigation', () => {
     render(<SettingsNavigation activeId="business-profile" onSelect={vi.fn()} />);
     expect(screen.queryByRole('combobox', { name: 'Settings sections' })).not.toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Settings sections' }).className).toMatch(/hidden md:block/);
-    expect(screen.getByRole('button', { name: 'Access & permissions' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Team & access' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Notifications & reminders' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Access & permissions' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Operating hours' })).toBeInTheDocument();
   });
 

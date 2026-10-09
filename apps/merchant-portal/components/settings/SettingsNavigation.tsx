@@ -5,9 +5,8 @@ export type SettingsSectionId =
   | 'business-profile'
   | 'booking-page'
   | 'operating-hours'
-  | 'notifications'
   | 'receipt-payment'
-  | 'access-permissions'
+  | 'team-access'
   | 'advanced'
   | 'legal';
 
@@ -15,9 +14,8 @@ export const SETTINGS_NAV_ITEMS: { id: SettingsSectionId; label: string }[] = [
   { id: 'business-profile', label: 'Business profile' },
   { id: 'booking-page', label: 'Booking page' },
   { id: 'operating-hours', label: 'Operating hours' },
-  { id: 'notifications', label: 'Notifications & reminders' },
   { id: 'receipt-payment', label: 'Receipt & payment' },
-  { id: 'access-permissions', label: 'Access & permissions' },
+  { id: 'team-access', label: 'Team & access' },
   { id: 'advanced', label: 'Advanced settings' },
   { id: 'legal', label: 'About & legal' },
 ];

@@ -15,6 +15,7 @@ import { isTabAllowed } from '../utils/permissions';
 import { NetworkStatusBanner } from './ui';
 import { publicPrivacyPolicyUrl } from '../src/legal/publicLegalUrls';
 import { installViewportProbe } from '../src/debug/viewportProbe';
+import { registerOverlayDismiss } from '../src/native/overlayDismiss';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -282,6 +283,16 @@ const Layout: React.FC<LayoutProps> = ({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [showProfileMenu]);
+
+  useEffect(() => {
+    if (!isMoreMenuOpen) return;
+    return registerOverlayDismiss(() => setIsMoreMenuOpen(false));
+  }, [isMoreMenuOpen]);
+
+  useEffect(() => {
+    if (!showMobileProfileMenu) return;
+    return registerOverlayDismiss(() => setShowMobileProfileMenu(false));
+  }, [showMobileProfileMenu]);
 
   useEffect(() => {
     setIsMoreMenuOpen(false);

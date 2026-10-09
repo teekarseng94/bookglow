@@ -1,4 +1,5 @@
 import { RefObject, useEffect, useRef } from 'react';
+import { registerOverlayDismiss } from '../../src/native/overlayDismiss';
 
 const FOCUSABLE_SELECTOR = [
   'a[href]',
@@ -86,6 +87,10 @@ export const useDialogInteraction = ({
       }
     };
 
+    const unregisterOverlay = registerOverlayDismiss(() => {
+      if (!busyRef.current) onCloseRef.current();
+    });
+
     document.addEventListener('keydown', onKeyDown);
     if (scrollLockCount === 0) {
       originalBodyOverflow = document.body.style.overflow;
@@ -95,6 +100,7 @@ export const useDialogInteraction = ({
 
     return () => {
       window.cancelAnimationFrame(focusFrame);
+      unregisterOverlay();
       document.removeEventListener('keydown', onKeyDown);
       scrollLockCount = Math.max(0, scrollLockCount - 1);
       if (scrollLockCount === 0) document.body.style.overflow = originalBodyOverflow;

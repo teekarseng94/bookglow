@@ -1,6 +1,8 @@
 import { Capacitor } from '@capacitor/core';
 import { createBrowserSupabaseClient } from '@bookglow/supabase';
 import { persistNativeOAuthCallback, createNativeAuthStorage, runNativeAuthLock } from '../auth/nativeAuthStorage';
+import { dismissTopOverlay } from './overlayDismiss';
+import { installKeyboardChrome } from './keyboardChrome';
 
 export const NATIVE_APP_ID = 'com.bookglow.merchant';
 export const NATIVE_MERCHANT_OAUTH_REDIRECT = `${NATIVE_APP_ID}://auth/callback/merchant`;
@@ -137,7 +139,10 @@ async function setupNativeChrome(): Promise<void> {
     /* Status bar is optional on some devices. */
   }
 
+  installKeyboardChrome();
+
   await App.addListener('backButton', ({ canGoBack }) => {
+    if (dismissTopOverlay()) return;
     if (canGoBack || window.history.length > 1) {
       window.history.back();
       return;

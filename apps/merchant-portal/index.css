@@ -21,7 +21,9 @@
   /* Text */
   --text-primary: #19161d;
   --text-secondary: #615a66;
-  --text-muted: #89818c;
+  /* Readable helper copy (≥4.5:1 on white). Disabled controls keep the lighter gray. */
+  --text-muted: #6f6873;
+  --text-disabled: #89818c;
   --text-on-brand: #ffffff;
   --text: var(--text-primary);
   --text-subtle: var(--text-muted);
@@ -430,7 +432,7 @@
     background: var(--text-primary);
     color: #fff;
     font-size: 0.75rem;
-    font-weight: 650;
+    font-weight: 600;
     line-height: 1.5rem;
     box-shadow: var(--shadow-sm);
     pointer-events: none;
@@ -615,7 +617,7 @@
     background: var(--text-primary);
     color: #fff;
     font-size: 0.75rem;
-    font-weight: 650;
+    font-weight: 600;
     line-height: 1.5rem;
     box-shadow: var(--shadow-sm);
     opacity: 0;
@@ -758,7 +760,7 @@
     color: var(--success);
     background: #edf8f4;
     font-size: 0.65rem;
-    font-weight: 750;
+    font-weight: 700;
   }
 
   .bookglow-utility-avatar {
@@ -843,7 +845,7 @@
     justify-content: center;
     gap: 0.22rem;
     padding: 0.45rem 0.2rem;
-    color: #8d8591;
+    color: var(--text-secondary);
     transition: 150ms ease;
   }
 
@@ -1015,7 +1017,7 @@
     border-radius: 0.75rem;
     color: #625b67;
     font-size: 0.875rem;
-    font-weight: 650;
+    font-weight: 600;
     transition: 150ms ease;
   }
 
@@ -1371,7 +1373,7 @@
 .bookglow-login__heading .bookglow-login__eyebrow { color: var(--brand-deep); opacity: 1; }
 .bookglow-login__form { display: grid; gap: 1rem; }
 .bookglow-login__field { display: grid; gap: 0.45rem; }
-.bookglow-login__field label { color: var(--ink-2); font-size: 0.78rem; font-weight: 780; }
+.bookglow-login__field label { color: var(--ink-2); font-size: 0.78rem; font-weight: 700; }
 
 .bookglow-login__field input {
   width: 100%;
@@ -1424,7 +1426,7 @@
 .bookglow-login__submit:hover:not(:disabled) { background: var(--brand-hover); transform: translateY(-1px); }
 .bookglow-login__submit:disabled { cursor: not-allowed; opacity: 0.55; }
 .bookglow-login__support { margin: 1.25rem 0 0; color: var(--muted-2); text-align: center; font-size: 0.72rem; line-height: 1.5; }
-.bookglow-login__support a, .bookglow-login__forgot { color: var(--brand-deep); font-weight: 750; text-decoration: underline; text-underline-offset: 0.18rem; }
+.bookglow-login__support a, .bookglow-login__forgot { color: var(--brand-deep); font-weight: 700; text-decoration: underline; text-underline-offset: 0.18rem; }
 .bookglow-login__forgot { width: fit-content; margin: -0.35rem 0 0 auto; font-size: 0.76rem; }
 
 .bookglow-login__google {
@@ -1441,7 +1443,7 @@
   color: var(--ink);
   background: #fff;
   font-size: 0.88rem;
-  font-weight: 750;
+  font-weight: 700;
   transition: 160ms ease;
 }
 

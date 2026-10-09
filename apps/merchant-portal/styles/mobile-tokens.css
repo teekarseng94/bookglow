@@ -154,7 +154,7 @@
   --mobile-divider: var(--line);
   --mobile-text-primary: var(--text-primary);
   --mobile-text-secondary: var(--text-secondary);
-  --mobile-text-disabled: var(--text-muted);
+  --mobile-text-disabled: var(--text-disabled, #89818c);
   --mobile-accent: var(--brand);
   --mobile-status-success: var(--success);
   --mobile-status-warning: var(--warning);
@@ -534,6 +534,9 @@ select.m-settings-control,
 
   .bookglow-mobile-header {
     height: var(--shell-header-offset);
+    background: var(--bg-surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 
   .bookglow-mobile-safe-area-top {

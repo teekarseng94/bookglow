@@ -220,12 +220,18 @@ const GoogleReviewsIntegrationPage: React.FC = () => {
     [outletId],
   );
 
+  const preferPlaces =
+    connection?.defaultProvider === "google_places" || connection?.provider === "google_places";
+
   useEffect(() => {
     if (loading || !canManage) return;
+    // Do not auto-open the GBP location picker when Places is the default —
+    // that path still needs Business Profile approval and traps merchants.
+    if (preferPlaces) return;
     if (connection?.status === "pending_location" && !selectorOpen && !autoOpened.current) {
       void openSelector();
     }
-  }, [loading, canManage, connection?.status, selectorOpen, openSelector]);
+  }, [loading, canManage, connection?.status, preferPlaces, selectorOpen, openSelector]);
 
   const handleSaveLocation = () => {
     if (!chosen || !outletId) return;
@@ -293,7 +299,8 @@ const GoogleReviewsIntegrationPage: React.FC = () => {
         </Button>
       );
     }
-    if (status === "pending_location") {
+    // Stuck GBP "pending_location" must not block Places when Places is configured.
+    if (status === "pending_location" && !preferPlaces) {
       return (
         <Button onClick={() => void openSelector(true)} disabled={busy === "locations"} fullWidth>
           {busy === "locations" ? "Loading locations…" : "Choose a location"}
@@ -301,9 +308,21 @@ const GoogleReviewsIntegrationPage: React.FC = () => {
       );
     }
     return (
-      <Button onClick={() => openPlacesSearch(false)} disabled={Boolean(busy)} fullWidth>
-        Connect Google Reviews
-      </Button>
+      <>
+        <Button onClick={() => openPlacesSearch(false)} disabled={Boolean(busy)} fullWidth>
+          Connect Google Reviews
+        </Button>
+        {status === "pending_location" && preferPlaces ? (
+          <Button
+            variant="outline"
+            onClick={() => setConfirmDisconnect(true)}
+            disabled={Boolean(busy)}
+            fullWidth
+          >
+            Cancel incomplete Business Profile setup
+          </Button>
+        ) : null}
+      </>
     );
   };
 

@@ -78,9 +78,12 @@ async function describePlacesError(response: Response): Promise<{ code: string; 
     /* non-JSON */
   }
   if (response.status === 403 || response.status === 401) {
+    const enableHint = /Places API \(New\)|places\.googleapis\.com/i.test(message);
     return {
       code: "forbidden",
-      message: "Google Places is not available for this BookGlow project yet. Check the Places API key and billing.",
+      message: enableHint
+        ? "Google Places API (New) has not been enabled for this Google Cloud project yet. Enable places.googleapis.com, confirm billing, then retry."
+        : "Google Places is not available for this BookGlow project yet. Check the Places API key, API restrictions, and billing.",
       status: response.status,
     };
   }

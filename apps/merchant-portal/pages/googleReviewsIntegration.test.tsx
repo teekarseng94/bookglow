@@ -157,8 +157,26 @@ describe("Google Reviews integration page", () => {
     expect(screen.queryByRole("button", { name: "Connect Google Reviews" })).toBeNull();
   });
 
-  it("keeps the Business Profile location selector for pending_location connections", async () => {
-    getGoogleConnection.mockResolvedValue({ ...disconnected, status: "pending_location", provider: "google_business_profile" });
+  it("uses Places Connect instead of GBP location picker when Places is the default", async () => {
+    getGoogleConnection.mockResolvedValue({
+      ...disconnected,
+      status: "pending_location",
+      provider: "google_business_profile",
+      defaultProvider: "google_places",
+    });
+    renderPage();
+    expect(await screen.findByRole("button", { name: "Connect Google Reviews" })).toBeTruthy();
+    expect(listGoogleLocations).not.toHaveBeenCalled();
+    expect(screen.queryByText("Select the business to connect")).toBeNull();
+  });
+
+  it("keeps the Business Profile location selector when Places is not the default", async () => {
+    getGoogleConnection.mockResolvedValue({
+      ...disconnected,
+      status: "pending_location",
+      provider: "google_business_profile",
+      defaultProvider: "google_business_profile",
+    });
     listGoogleLocations.mockResolvedValue([
       {
         accountName: "accounts/1",

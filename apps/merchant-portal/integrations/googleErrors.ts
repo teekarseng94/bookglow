@@ -1,10 +1,20 @@
 const UNAVAILABLE =
-  "Google Business Profile connection is currently unavailable. Please try again later.";
+  "Google Reviews could not be reached right now. Please try again in a moment.";
 
 /** Maps Google / transport failures to merchant-safe copy. Never surfaces raw API JSON. */
 export function merchantGoogleError(message: string | null | undefined, fallback = UNAVAILABLE): string {
   const raw = String(message || "").trim();
   if (!raw) return fallback;
+  if (/GOOGLE_PLACES_API_KEY|Places is not configured/i.test(raw)) {
+    return "Google Places is not configured yet. An administrator needs to add GOOGLE_PLACES_API_KEY on the BookGlow server.";
+  }
+  if (
+    /Places is not available|Places API key and billing|Places API \(New\) has not been used|places\.googleapis\.com/i.test(
+      raw,
+    )
+  ) {
+    return "Google Places API (New) is not enabled yet. Enable it in Google Cloud for this project, wait a few minutes, then try again.";
+  }
   if (
     /[{[]/.test(raw) ||
     /quota|PERMISSION_DENIED|SERVICE_DISABLED|insufficient|not configured|\b429\b|\b403\b|\b502\b|\b503\b/i.test(raw)

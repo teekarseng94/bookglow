@@ -208,4 +208,28 @@ describe("BookingGoogleReviews", () => {
     render(<BookingGoogleReviews bookingSlug="spa" fallback={<p>BookGlow reviews</p>} />);
     expect(await screen.findByText("BookGlow reviews")).toBeTruthy();
   });
+
+  it("for Places connections shows at most five samples, the Google total, and View all — never Load more", async () => {
+    const samples = Array.from({ length: 8 }, (_, index) =>
+      review({ id: `r${index}`, authorName: `Guest ${index}` }),
+    );
+    invoke.mockResolvedValue(
+      readyPage({
+        provider: "google_places",
+        source: "google_places",
+        totalReviewCount: 194,
+        reviews: samples,
+        nextCursor: "should-be-ignored",
+        supportedSorts: ["newest", "highest", "lowest"],
+      }),
+    );
+    render(<BookingGoogleReviews bookingSlug="spa" />);
+    expect(await screen.findByText("194 Google reviews")).toBeTruthy();
+    expect(screen.getAllByText(/Guest \d/)).toHaveLength(5);
+    expect(screen.queryByText("Show more reviews")).toBeNull();
+    expect(screen.queryByRole("combobox")).toBeNull();
+    expect(screen.getByText("View all reviews on Google").getAttribute("href")).toBe(
+      "https://maps.google.com/?cid=1",
+    );
+  });
 });

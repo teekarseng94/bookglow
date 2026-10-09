@@ -11,6 +11,11 @@
  * ever receives normalized review data and opaque, outlet-bound cursors.
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  fetchPlaceDetails,
+  placesConfigured,
+  searchPlacesText,
+} from "./places.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -44,6 +49,8 @@ const MERCHANT_ACTIONS = new Set([
   "oauth_start",
   "locations",
   "select_location",
+  "places_search",
+  "places_connect",
   "refresh",
   "visibility",
   "disconnect",
@@ -242,9 +249,12 @@ async function requireOutletAdmin(env: Env, request: Request, outletId: string) 
 // ---------------------------------------------------------------------------
 // Google token handling
 // ---------------------------------------------------------------------------
+type ConnectionProvider = "google_places" | "google_business_profile";
+
 type ConnectionRow = {
   outlet_id: string;
   status: string;
+  connection_provider: ConnectionProvider | null;
   google_account_name: string | null;
   google_location_name: string | null;
   location_title: string | null;
@@ -263,6 +273,16 @@ type ConnectionRow = {
   last_error_at: string | null;
   connected_email: string | null;
 };
+
+function connectionProviderOf(row: ConnectionRow | null): ConnectionProvider | null {
+  if (!row) return null;
+  if (row.connection_provider === "google_places" || row.connection_provider === "google_business_profile") {
+    return row.connection_provider;
+  }
+  if (row.refresh_token_encrypted) return "google_business_profile";
+  if (row.google_place_id && row.status === "connected") return "google_places";
+  return null;
+}
 
 async function markNeedsReauth(
   admin: ReturnType<typeof adminClient>,
@@ -543,21 +563,39 @@ async function resolveCursor(
 // Merchant-facing shapes
 // ---------------------------------------------------------------------------
 function connectionSummary(row: ConnectionRow | null, configured: boolean, missing: string[]) {
-  if (!configured) {
+  const placesReady = placesConfigured();
+  const provider = connectionProviderOf(row);
+  if (!configured && !placesReady) {
     return {
       configured: false,
-      missingConfig: missing,
+      missingConfig: missing.length ? missing : ["GOOGLE_PLACES_API_KEY"],
       status: "setup_required" as const,
       showOnBookingPage: false,
+      provider: null,
+      defaultProvider: null,
+      placeId: null,
+      supportsPagination: false,
     };
   }
   if (!row) {
-    return { configured: true, missingConfig: [], status: "disconnected" as const, showOnBookingPage: false };
+    return {
+      configured: placesReady || configured,
+      missingConfig: placesReady ? [] : missing,
+      status: placesReady || configured ? "disconnected" as const : "setup_required" as const,
+      showOnBookingPage: false,
+      provider: null,
+      defaultProvider: placesReady ? "google_places" as const : configured ? "google_business_profile" as const : null,
+      placeId: null,
+      supportsPagination: false,
+    };
   }
   return {
     configured: true,
     missingConfig: [],
     status: row.status as "pending_location" | "connected" | "needs_reauth" | "error",
+    provider,
+    defaultProvider: placesReady ? "google_places" as const : "google_business_profile" as const,
+    placeId: row.google_place_id,
     locationName: row.google_location_name,
     accountName: row.google_account_name,
     locationTitle: row.location_title,
@@ -571,6 +609,7 @@ function connectionSummary(row: ConnectionRow | null, configured: boolean, missi
     lastErrorMessage: row.last_error_message,
     lastErrorAt: row.last_error_at,
     connectedEmail: row.connected_email,
+    supportsPagination: provider === "google_business_profile",
   };
 }
 
@@ -640,14 +679,89 @@ Deno.serve(async (request) => {
       return json({ connection: connectionSummary(row, Boolean(env), missing) });
     }
 
-    if (!env) {
+    await admin.rpc("google_business_purge_expired");
+
+    // Places (New) is the default merchant flow and does not need GBP OAuth secrets.
+    if (action === "places_search" || action === "places_connect") {
+      if (!placesConfigured()) {
+        return json({
+          error: "Google Places is not configured yet. An administrator needs to add GOOGLE_PLACES_API_KEY.",
+          missingConfig: ["GOOGLE_PLACES_API_KEY"],
+          code: "setup_required",
+        }, 503);
+      }
+    }
+
+    if (action === "places_search") {
+      const query = String(body.query || "").trim();
+      const allowed = await rateLimitAllows(admin, `places_search:${outletId}`, 30, 60);
+      if (!allowed) return json({ error: "Please wait a moment before searching again." }, 429);
+      const result = await searchPlacesText(query);
+      if ("error" in result) return json({ error: result.error.message, code: result.error.code }, result.error.status);
+      return json({ results: result.results });
+    }
+
+    if (action === "places_connect") {
+      const placeId = String(body.placeId || "").trim();
+      const allowed = await rateLimitAllows(admin, `places_connect:${outletId}`, 12, 60);
+      if (!allowed) return json({ error: "Please wait a moment before connecting again." }, 429);
+      const details = await fetchPlaceDetails(placeId);
+      if ("error" in details) return json({ error: details.error.message, code: details.error.code }, details.error.status);
+
+      await clearOutletCache(admin, outletId);
+      const now = new Date().toISOString();
+      const { error: upsertError } = await admin.from("google_business_connections").upsert({
+        outlet_id: outletId,
+        status: "connected",
+        connection_provider: "google_places",
+        google_place_id: details.details.placeId,
+        google_account_name: null,
+        google_location_name: null,
+        location_title: details.details.title,
+        location_address: details.details.address,
+        maps_uri: details.details.mapsUri,
+        refresh_token_encrypted: null,
+        access_token_encrypted: null,
+        access_token_expires_at: null,
+        granted_scope: null,
+        connected_by: user.id,
+        connected_email: user.email || null,
+        show_on_booking_page: true,
+        average_rating: details.details.rating,
+        total_review_count: details.details.userRatingCount,
+        last_synced_at: now,
+        last_error_code: null,
+        last_error_message: null,
+        last_error_at: null,
+        updated_at: now,
+      }, { onConflict: "outlet_id" });
+      if (upsertError) return json({ error: "The Google listing could not be saved." }, 500);
+
+      const page = {
+        reviews: details.details.reviews,
+        averageRating: details.details.rating,
+        totalReviewCount: details.details.userRatingCount,
+        nextPageToken: null as string | null,
+      };
+      await admin.from("google_review_page_cache").upsert({
+        outlet_id: outletId,
+        order_by: "places",
+        page_key: "first",
+        payload: page,
+        fetched_at: now,
+        expires_at: new Date(Date.now() + CACHE_RETENTION_SECONDS * 1000).toISOString(),
+      }, { onConflict: "outlet_id,order_by,page_key" });
+
+      return json({ connection: connectionSummary(await loadConnection(admin, outletId), Boolean(env), missing) });
+    }
+
+    if (!env && (action === "oauth_start" || action === "locations" || action === "select_location")) {
       return json({ error: "Google Business Profile is not configured yet.", missingConfig: missing }, 503);
     }
 
-    await admin.rpc("google_business_purge_expired");
-
     switch (action) {
       case "oauth_start": {
+        if (!env) return json({ error: "Google Business Profile is not configured yet.", missingConfig: missing }, 503);
         const state = randomId();
         const returnTo = typeof body.returnTo === "string" ? body.returnTo.slice(0, 500) : null;
         const { error: stateError } = await admin.from("google_oauth_states").insert({
@@ -672,6 +786,7 @@ Deno.serve(async (request) => {
       }
 
       case "locations": {
+        if (!env) return json({ error: "Google Business Profile is not configured yet.", missingConfig: missing }, 503);
         const connection = await loadConnection(admin, outletId);
         if (!connection?.refresh_token_encrypted) {
           return json({ error: "Connect Google Business Profile first.", code: "not_connected" }, 409);
@@ -734,6 +849,7 @@ Deno.serve(async (request) => {
       }
 
       case "select_location": {
+        if (!env) return json({ error: "Google Business Profile is not configured yet.", missingConfig: missing }, 503);
         const accountName = String(body.accountName || "").trim();
         const locationName = String(body.locationName || "").trim();
         if (!/^accounts\/[\w-]+$/.test(accountName) || !/^locations\/[\w-]+$/.test(locationName)) {
@@ -770,6 +886,7 @@ Deno.serve(async (request) => {
         await clearOutletCache(admin, outletId);
         await admin.from("google_business_connections").update({
           status: "connected",
+          connection_provider: "google_business_profile",
           google_account_name: accountName,
           google_location_name: locationName,
           location_title: String(match.title || ""),
@@ -809,12 +926,64 @@ Deno.serve(async (request) => {
 
       case "refresh": {
         const connection = await loadConnection(admin, outletId);
-        if (!connection?.google_location_name) {
-          return json({ error: "Select a Google location first.", code: "not_connected" }, 409);
+        const provider = connectionProviderOf(connection);
+        if (!connection || connection.status !== "connected") {
+          return json({ error: "Connect a Google listing first.", code: "not_connected" }, 409);
         }
         const allowed = await rateLimitAllows(admin, `google_refresh:${outletId}`, 6, 60);
         if (!allowed) return json({ error: "Please wait a moment before refreshing again." }, 429);
 
+        if (provider === "google_places") {
+          if (!connection.google_place_id) {
+            return json({ error: "Connect a Google listing first.", code: "not_connected" }, 409);
+          }
+          await admin.from("google_review_page_cache").delete().eq("outlet_id", outletId);
+          const details = await fetchPlaceDetails(connection.google_place_id);
+          if ("error" in details) {
+            await admin.from("google_business_connections").update({
+              last_error_code: details.error.code,
+              last_error_message: details.error.message,
+              last_error_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            }).eq("outlet_id", outletId);
+            return json({
+              connection: connectionSummary(await loadConnection(admin, outletId), Boolean(env), missing),
+              error: details.error.message,
+              code: details.error.code,
+            }, details.error.status);
+          }
+          const now = new Date().toISOString();
+          await admin.from("google_business_connections").update({
+            location_title: details.details.title,
+            location_address: details.details.address,
+            maps_uri: details.details.mapsUri,
+            average_rating: details.details.rating,
+            total_review_count: details.details.userRatingCount,
+            last_synced_at: now,
+            last_error_code: null,
+            last_error_message: null,
+            last_error_at: null,
+            updated_at: now,
+          }).eq("outlet_id", outletId);
+          await admin.from("google_review_page_cache").upsert({
+            outlet_id: outletId,
+            order_by: "places",
+            page_key: "first",
+            payload: {
+              reviews: details.details.reviews,
+              averageRating: details.details.rating,
+              totalReviewCount: details.details.userRatingCount,
+              nextPageToken: null,
+            },
+            fetched_at: now,
+            expires_at: new Date(Date.now() + CACHE_RETENTION_SECONDS * 1000).toISOString(),
+          }, { onConflict: "outlet_id,order_by,page_key" });
+          return json({ connection: connectionSummary(await loadConnection(admin, outletId), Boolean(env), missing) });
+        }
+
+        if (!env || !connection.google_location_name) {
+          return json({ error: "Select a Google location first.", code: "not_connected" }, 409);
+        }
         await admin.from("google_review_page_cache").delete().eq("outlet_id", outletId);
         const page = await fetchReviewPage(env, admin, connection, "newest", null, PUBLIC_PAGE_SIZE);
         const after = await loadConnection(admin, outletId);
@@ -831,20 +1000,20 @@ Deno.serve(async (request) => {
       case "visibility": {
         const enabled = body.enabled === true;
         const connection = await loadConnection(admin, outletId);
-        if (!connection) return json({ error: "Connect Google Business Profile first." }, 409);
+        if (!connection) return json({ error: "Connect Google Reviews first." }, 409);
         if (enabled && connection.status !== "connected") {
-          return json({ error: "Select a verified Google location before showing reviews." }, 409);
+          return json({ error: "Connect a Google listing before showing reviews on the Booking Page." }, 409);
         }
         await admin
           .from("google_business_connections")
           .update({ show_on_booking_page: enabled, updated_at: new Date().toISOString() })
           .eq("outlet_id", outletId);
-        return json({ connection: connectionSummary(await loadConnection(admin, outletId), true, []) });
+        return json({ connection: connectionSummary(await loadConnection(admin, outletId), Boolean(env), missing) });
       }
 
       case "disconnect": {
         const connection = await loadConnection(admin, outletId);
-        if (connection?.refresh_token_encrypted) {
+        if (connection?.refresh_token_encrypted && env) {
           try {
             const refreshToken = await decryptSecret(connection.refresh_token_encrypted, env.encryptionKey);
             await googleFetch(`${OAUTH_REVOKE_URL}?token=${encodeURIComponent(refreshToken)}`, { method: "POST" }, 1);
@@ -855,7 +1024,7 @@ Deno.serve(async (request) => {
         await clearOutletCache(admin, outletId);
         await admin.from("google_oauth_states").delete().eq("outlet_id", outletId);
         await admin.from("google_business_connections").delete().eq("outlet_id", outletId);
-        return json({ connection: connectionSummary(null, true, []) });
+        return json({ connection: connectionSummary(null, Boolean(env), missing) });
       }
 
       default:
@@ -978,6 +1147,7 @@ async function handleCallback(request: Request, env: Env | null, missing: string
   await admin.from("google_business_connections").upsert({
     outlet_id: stateRow.outlet_id,
     status: "pending_location",
+    connection_provider: "google_business_profile",
     refresh_token_encrypted: await encryptSecret(tokens.refresh_token, env.encryptionKey),
     access_token_encrypted: tokens.access_token
       ? await encryptSecret(tokens.access_token, env.encryptionKey)
@@ -990,6 +1160,7 @@ async function handleCallback(request: Request, env: Env | null, missing: string
     connected_email: email,
     google_account_name: null,
     google_location_name: null,
+    google_place_id: null,
     location_title: null,
     location_address: null,
     maps_uri: null,
@@ -1036,6 +1207,85 @@ async function handlePublicReviews(
   if (!connection || connection.show_on_booking_page !== true || connection.status === "pending_location") {
     return json({ enabled: false, reason: "disabled" });
   }
+
+  const provider = connectionProviderOf(connection);
+  const allowed = await rateLimitAllows(admin, `google_public:${outletId}`, 120, 60);
+  if (!allowed) return json({ error: "Reviews are busy right now. Try again shortly." }, 429);
+
+  if (provider === "google_places") {
+    if (!placesConfigured() || !connection.google_place_id) {
+      return await servePlacesPublicFallback(admin, connection);
+    }
+    // Places API has no review pagination; ignore cursors and do not invent more pages.
+    const pageKey = "first";
+    const { data: cached } = await admin
+      .from("google_review_page_cache")
+      .select("payload, fetched_at")
+      .eq("outlet_id", outletId)
+      .eq("order_by", "places")
+      .eq("page_key", pageKey)
+      .maybeSingle();
+    if (cached?.payload && cached.fetched_at && Date.parse(cached.fetched_at) + FIRST_PAGE_TTL_SECONDS * 1000 > Date.now()) {
+      const page = cached.payload as ReviewPage;
+      return json({
+        enabled: true,
+        source: "google_places",
+        provider: "google_places",
+        locationTitle: connection.location_title,
+        mapsUri: connection.maps_uri,
+        averageRating: page.averageRating ?? connection.average_rating,
+        totalReviewCount: page.totalReviewCount ?? connection.total_review_count,
+        reviews: Array.isArray(page.reviews) ? page.reviews.slice(0, 5) : [],
+        nextCursor: null,
+        supportedSorts: [],
+        lastSyncedAt: connection.last_synced_at,
+      });
+    }
+
+    const details = await fetchPlaceDetails(connection.google_place_id);
+    if ("error" in details) {
+      return await servePlacesPublicFallback(admin, connection);
+    }
+    const now = new Date().toISOString();
+    const page: ReviewPage = {
+      reviews: details.details.reviews,
+      averageRating: details.details.rating,
+      totalReviewCount: details.details.userRatingCount,
+      nextPageToken: null,
+    };
+    await admin.from("google_business_connections").update({
+      location_title: details.details.title,
+      location_address: details.details.address,
+      maps_uri: details.details.mapsUri,
+      average_rating: details.details.rating,
+      total_review_count: details.details.userRatingCount,
+      last_synced_at: now,
+      updated_at: now,
+    }).eq("outlet_id", outletId);
+    await admin.from("google_review_page_cache").upsert({
+      outlet_id: outletId,
+      order_by: "places",
+      page_key: pageKey,
+      payload: page,
+      fetched_at: now,
+      expires_at: new Date(Date.now() + CACHE_RETENTION_SECONDS * 1000).toISOString(),
+    }, { onConflict: "outlet_id,order_by,page_key" });
+
+    return json({
+      enabled: true,
+      source: "google_places",
+      provider: "google_places",
+      locationTitle: details.details.title,
+      mapsUri: details.details.mapsUri,
+      averageRating: details.details.rating,
+      totalReviewCount: details.details.userRatingCount,
+      reviews: details.details.reviews,
+      nextCursor: null,
+      supportedSorts: [],
+      lastSyncedAt: now,
+    });
+  }
+
   if (!env) return json({ enabled: false, reason: "disabled" });
 
   const orderKey = typeof body.orderBy === "string" && ORDER_BY[body.orderBy] ? body.orderBy : "newest";
@@ -1049,9 +1299,6 @@ async function handlePublicReviews(
     pageToken = await resolveCursor(admin, outletId, orderKey, cursorInput);
     if (!pageToken) return json({ error: "This page of reviews expired. Reload to continue." }, 410);
   }
-
-  const allowed = await rateLimitAllows(admin, `google_public:${outletId}`, 120, 60);
-  if (!allowed) return json({ error: "Reviews are busy right now. Try again shortly." }, 429);
 
   if (connection.status === "needs_reauth") {
     return await servePublicFallback(admin, connection, orderKey, pageToken);
@@ -1069,6 +1316,7 @@ async function handlePublicReviews(
   return json({
     enabled: true,
     source: "google",
+    provider: "google_business_profile",
     locationTitle: connection.location_title,
     mapsUri: connection.maps_uri,
     averageRating: result.page.averageRating,
@@ -1077,6 +1325,45 @@ async function handlePublicReviews(
     nextCursor,
     supportedSorts: Object.keys(ORDER_BY),
     lastSyncedAt: connection.last_synced_at,
+  });
+}
+
+async function servePlacesPublicFallback(
+  admin: ReturnType<typeof adminClient>,
+  connection: ConnectionRow,
+): Promise<Response> {
+  const { data: cached } = await admin
+    .from("google_review_page_cache")
+    .select("payload, expires_at")
+    .eq("outlet_id", connection.outlet_id)
+    .eq("order_by", "places")
+    .eq("page_key", "first")
+    .maybeSingle();
+  if (cached?.payload && cached.expires_at && Date.parse(cached.expires_at) > Date.now()) {
+    const page = cached.payload as ReviewPage;
+    return json({
+      enabled: true,
+      source: "google_places_cached",
+      provider: "google_places",
+      stale: true,
+      locationTitle: connection.location_title,
+      mapsUri: connection.maps_uri,
+      averageRating: page.averageRating ?? connection.average_rating,
+      totalReviewCount: page.totalReviewCount ?? connection.total_review_count,
+      reviews: Array.isArray(page.reviews) ? page.reviews.slice(0, 5) : [],
+      nextCursor: null,
+      supportedSorts: [],
+      lastSyncedAt: connection.last_synced_at,
+    });
+  }
+  return json({
+    enabled: true,
+    source: "unavailable",
+    provider: "google_places",
+    unavailable: true,
+    locationTitle: connection.location_title,
+    mapsUri: connection.maps_uri,
+    supportedSorts: [],
   });
 }
 

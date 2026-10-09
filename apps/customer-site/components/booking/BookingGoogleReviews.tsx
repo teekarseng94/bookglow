@@ -329,6 +329,14 @@ export function BookingGoogleReviews({ bookingSlug, fallback = null }: BookingGo
         </button>
       ) : null}
 
+      {!cursor && page.mapsUri && (page.provider === "google_places" || !page.supportedSorts.length) ? (
+        <p className="booking-google__message">
+          <a href={page.mapsUri} target="_blank" rel="noopener noreferrer" className="booking-google__link">
+            View all reviews on Google
+          </a>
+        </p>
+      ) : null}
+
       {failed && reviews.length > 0 ? (
         <p className="booking-google__message booking-google__message--soft">
           More Google reviews could not be loaded right now.

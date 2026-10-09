@@ -20,6 +20,7 @@ export type GoogleReviewsPage =
   | {
       state: "ready";
       stale: boolean;
+      provider: "google_places" | "google_business_profile" | null;
       locationTitle: string | null;
       mapsUri: string | null;
       /** Google's own aggregate values for the whole collection. */
@@ -34,6 +35,7 @@ type RawResponse = {
   enabled?: boolean;
   reason?: string;
   source?: string;
+  provider?: string;
   stale?: boolean;
   unavailable?: boolean;
   locationTitle?: string | null;
@@ -83,15 +85,32 @@ export async function fetchGoogleReviews(input: {
     (KNOWN_SORTS as string[]).includes(sort),
   );
 
+  const provider =
+    payload.provider === "google_places" || payload.provider === "google_business_profile"
+      ? payload.provider
+      : payload.source?.includes("places")
+        ? "google_places"
+        : "google_business_profile";
+
   return {
     state: "ready",
     stale: payload.stale === true,
+    provider,
     locationTitle: payload.locationTitle ?? null,
     mapsUri: payload.mapsUri ?? null,
     averageRating: typeof payload.averageRating === "number" ? payload.averageRating : null,
     totalReviewCount: typeof payload.totalReviewCount === "number" ? payload.totalReviewCount : null,
-    reviews: Array.isArray(payload.reviews) ? payload.reviews : [],
-    nextCursor: payload.nextCursor || null,
-    supportedSorts: supportedSorts.length > 0 ? supportedSorts : KNOWN_SORTS,
+    reviews: Array.isArray(payload.reviews)
+      ? provider === "google_places"
+        ? payload.reviews.slice(0, 5)
+        : payload.reviews
+      : [],
+    nextCursor: provider === "google_places" ? null : payload.nextCursor || null,
+    supportedSorts:
+      provider === "google_places"
+        ? []
+        : supportedSorts.length > 0
+          ? supportedSorts
+          : KNOWN_SORTS,
   };
 }

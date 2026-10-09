@@ -7,10 +7,12 @@ vi.mock('@bookglow/supabase', () => ({
 }));
 
 import {
+  connectGooglePlace,
   disconnectGoogleReviews,
   getGoogleConnection,
   listGoogleLocations,
   refreshGoogleReviews,
+  searchGooglePlaces,
   selectGoogleLocation,
   setGoogleReviewsVisibility,
   startGoogleAuthorization,
@@ -45,6 +47,48 @@ describe('google reviews merchant service', () => {
     const connection = await getGoogleConnection('outlet_002');
     expect(connection.status).toBe('setup_required');
     expect(connection.missingConfig).toEqual(['clientId', 'clientSecret']);
+  });
+
+  it('searches Google Places with only the outlet id and query', async () => {
+    invoke.mockResolvedValue(ok({
+      results: [{
+        placeId: 'ChIJBali',
+        title: 'Bali Wellness',
+        address: 'Kuala Lumpur',
+        rating: 4.9,
+        userRatingCount: 194,
+        mapsUri: 'https://maps.google.com/?cid=1',
+      }],
+    }));
+    const results = await searchGooglePlaces('outlet_002', 'Bali Wellness');
+    expect(results).toHaveLength(1);
+    expect(invoke.mock.calls[0][1].body).toEqual({
+      action: 'places_search',
+      outletId: 'outlet_002',
+      query: 'Bali Wellness',
+    });
+    const body = JSON.stringify(invoke.mock.calls[0][1].body).toLowerCase();
+    expect(body).not.toContain('api_key');
+    expect(body).not.toContain('secret');
+  });
+
+  it('connects a Place ID without OAuth tokens in the request', async () => {
+    invoke.mockResolvedValue(ok({
+      connection: {
+        configured: true,
+        status: 'connected',
+        provider: 'google_places',
+        placeId: 'ChIJBali',
+        showOnBookingPage: true,
+      },
+    }));
+    const connection = await connectGooglePlace('outlet_002', 'ChIJBali');
+    expect(connection.provider).toBe('google_places');
+    expect(invoke.mock.calls[0][1].body).toEqual({
+      action: 'places_connect',
+      outletId: 'outlet_002',
+      placeId: 'ChIJBali',
+    });
   });
 
   it('returns a Google authorization URL rather than performing the redirect itself', async () => {

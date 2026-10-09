@@ -1,10 +1,9 @@
 /**
- * Merchant side of the Google Business Profile integration.
+ * Merchant side of the Google Reviews integration.
  *
- * Everything privileged lives in the `google-business` Edge Function: this
- * module only forwards the merchant's Supabase session and returns the
- * connection summary. No client id, client secret or Google token is ever
- * handled here.
+ * Default provider is Google Places API (New) via Place ID selection.
+ * Google Business Profile OAuth remains available as an advanced path.
+ * Privileged work stays in the `google-business` Edge Function.
  */
 import { createBrowserSupabaseClient } from "@bookglow/supabase";
 
@@ -19,10 +18,15 @@ export type GoogleConnectionStatus =
   | "needs_reauth"
   | "error";
 
+export type GoogleConnectionProvider = "google_places" | "google_business_profile";
+
 export interface GoogleReviewsConnection {
   configured: boolean;
   missingConfig: string[];
   status: GoogleConnectionStatus;
+  provider?: GoogleConnectionProvider | null;
+  defaultProvider?: GoogleConnectionProvider | null;
+  placeId?: string | null;
   accountName?: string | null;
   locationName?: string | null;
   locationTitle?: string | null;
@@ -36,6 +40,7 @@ export interface GoogleReviewsConnection {
   lastErrorMessage?: string | null;
   lastErrorAt?: string | null;
   connectedEmail?: string | null;
+  supportsPagination?: boolean;
 }
 
 export interface GoogleBusinessLocation {
@@ -44,6 +49,15 @@ export interface GoogleBusinessLocation {
   locationName: string;
   title: string;
   address: string;
+  mapsUri: string | null;
+}
+
+export interface GooglePlaceSearchResult {
+  placeId: string;
+  title: string;
+  address: string;
+  rating: number | null;
+  userRatingCount: number | null;
   mapsUri: string | null;
 }
 
@@ -71,6 +85,28 @@ export async function getGoogleConnection(outletId: string): Promise<GoogleRevie
   const data = await invoke<{ connection: GoogleReviewsConnection }>(
     { action: "status", outletId },
     "The Google Reviews connection could not be loaded.",
+  );
+  return data.connection;
+}
+
+export async function searchGooglePlaces(
+  outletId: string,
+  query: string,
+): Promise<GooglePlaceSearchResult[]> {
+  const data = await invoke<{ results: GooglePlaceSearchResult[] }>(
+    { action: "places_search", outletId, query },
+    "Google business search could not be completed.",
+  );
+  return data.results || [];
+}
+
+export async function connectGooglePlace(
+  outletId: string,
+  placeId: string,
+): Promise<GoogleReviewsConnection> {
+  const data = await invoke<{ connection: GoogleReviewsConnection }>(
+    { action: "places_connect", outletId, placeId },
+    "The Google listing could not be connected.",
   );
   return data.connection;
 }
@@ -124,7 +160,7 @@ export async function setGoogleReviewsVisibility(
 export async function disconnectGoogleReviews(outletId: string): Promise<GoogleReviewsConnection> {
   const data = await invoke<{ connection: GoogleReviewsConnection }>(
     { action: "disconnect", outletId },
-    "Google Business Profile could not be disconnected.",
+    "Google Reviews could not be disconnected.",
   );
   return data.connection;
 }

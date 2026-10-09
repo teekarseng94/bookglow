@@ -33,9 +33,9 @@ Deno.serve(async (request) => {
   if (authError || !authData.user) return json(401, { error: "Authentication required" });
 
   const admin = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
-  const { data: portalUser } = await admin.from("users").select("role,outlet_id,email").eq("uid", authData.user.id).maybeSingle();
-  const isPlatformAdmin = portalUser?.role === "platform_admin" || (portalUser?.role === "admin" && !portalUser?.outlet_id);
-  if (!isPlatformAdmin) return json(403, { error: "Platform administrator access required" });
+  const { data: platformAdmin } = await admin.from("platform_admins").select("status").eq("user_id", authData.user.id).maybeSingle();
+  const { data: portalUser } = await admin.from("users").select("email").eq("uid", authData.user.id).maybeSingle();
+  if (platformAdmin?.status !== "active") return json(403, { error: "Platform administrator access required" });
 
   const body = await request.json().catch(() => ({}));
   const action = String(body.action || "");

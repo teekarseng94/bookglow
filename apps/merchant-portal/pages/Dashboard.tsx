@@ -42,6 +42,8 @@ import {
 } from '../components/dashboard';
 import type { AttentionItem } from '../components/dashboard';
 import { resolveReceiptIdentity, type OutletContact } from '../utils/receiptIdentity';
+import { clientService } from '../services/databaseService';
+import { formatLocalDate, localMonthBounds, resolveDisplayedClientCount } from '../utils/localCalendar';
 
 interface DashboardProps {
   transactions: Transaction[];
@@ -59,13 +61,6 @@ interface DashboardProps {
 type TopSellingTab = 'service' | 'product' | 'package' | 'discount';
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-function formatLocalDate(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
 
 function formatDisplayTime(hhmm: string): string {
   const compact = hhmm.includes(':') ? hhmm : `${hhmm.slice(0, 2)}:${hhmm.slice(2)}`;
@@ -92,6 +87,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [topSellingTab, setTopSellingTab] = useState<TopSellingTab>('service');
   const [salesPeriod, setSalesPeriod] = useState<'today' | 'week' | 'month'>('week');
   const [rpcAggregates, setRpcAggregates] = useState<DashboardAggregates | null>(null);
+  const [exactClientCount, setExactClientCount] = useState<number | null>(null);
   const navigate = useNavigate();
   const { user, userData } = useUserContext();
 
@@ -102,11 +98,12 @@ const Dashboard: React.FC<DashboardProps> = ({
     return firstName ? `${prefix}, ${firstName}` : prefix;
   }, [user?.displayName, userData?.displayName]);
 
-  // Date bounds for RPC — preserve existing Dashboard window rules (UTC month / local week-day).
+  // Date bounds for RPC. Month edges use the local calendar (Asia/Kuala_Lumpur in production).
   const aggregateBounds = useMemo(() => {
     const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+    const month = localMonthBounds(now);
+    const monthStart = month.start;
+    const monthEnd = month.end;
     const today = formatLocalDate(now);
     const yesterdayDate = new Date(now);
     yesterdayDate.setDate(now.getDate() - 1);
@@ -155,6 +152,19 @@ const Dashboard: React.FC<DashboardProps> = ({
       cancelled = true;
     };
   }, [outletID, aggregateBounds]);
+
+  useEffect(() => {
+    if (!outletID?.trim() || rpcAggregates) return;
+    let cancelled = false;
+    void clientService.count(outletID).then((count) => {
+      if (!cancelled) setExactClientCount(count);
+    }).catch(() => {
+      if (!cancelled) setExactClientCount(null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [outletID, rpcAggregates]);
 
   // Prefer RPC aggregates; fall back to in-memory transactions when RPC is not deployed.
   const dashboardData = useMemo(() => {
@@ -212,8 +222,9 @@ const Dashboard: React.FC<DashboardProps> = ({
     }
 
     const now = new Date();
-    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-    const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+    const currentMonth = localMonthBounds(now);
+    const currentMonthStart = currentMonth.start;
+    const currentMonthEnd = currentMonth.end;
 
     // 1. Global sales filter: SALE only, exclude void/voided, optional outletID
     const salesOnly = transactions.filter((t) => {
@@ -250,7 +261,11 @@ const Dashboard: React.FC<DashboardProps> = ({
       expenses: monthExpenses,
       expenseTxnCount: monthExpenseTxns.length,
       profit: revenue - monthExpenses,
-      clientCount: clients.length,
+      clientCount: resolveDisplayedClientCount({
+        rpcCount: null,
+        exactCount: exactClientCount,
+        loadedPageLength: clients.length,
+      }),
     };
 
     // 3. Total Sales bar chart: group by day of week (Mon–Sun), sum totalAmount this week
@@ -265,7 +280,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     const chartData = DAY_LABELS.map((label, i) => {
       const d = new Date(weekMon);
       d.setDate(weekMon.getDate() + i);
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = formatLocalDate(d);
       const dayTxns = salesOnly.filter(
         (t) => (t.date || '').startsWith(dateStr) && t.category !== 'Voucher' && t.category !== 'Redemption'
       );
@@ -488,7 +503,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         chart: chartByDay(formatLocalDate(monthStart), formatLocalDate(monthEnd)),
       },
     };
-  }, [rpcAggregates, transactions, outletID]);
+  }, [rpcAggregates, transactions, outletID, clients, exactClientCount]);
 
   // Top Selling per tab: filter by type, sort by quantity, top 5
   const topSellingByType = useMemo(() => {
@@ -506,8 +521,9 @@ const Dashboard: React.FC<DashboardProps> = ({
     const yesterday = new Date(now);
     yesterday.setDate(now.getDate() - 1);
     const yesterdayIso = formatLocalDate(yesterday);
-    const monthStartIso = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-    const monthEndIso = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+    const monthBounds = localMonthBounds(now);
+    const monthStartIso = monthBounds.start;
+    const monthEndIso = monthBounds.end;
 
     const newClientsToday = clients.filter((c) => (c.createdAt || '').slice(0, 10) === todayIso).length;
     const newClientsYesterday = clients.filter((c) => (c.createdAt || '').slice(0, 10) === yesterdayIso).length;

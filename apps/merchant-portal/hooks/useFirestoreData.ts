@@ -36,6 +36,9 @@ import {
 } from '../types';
 import { domainsForRoute, tableToDomain, type OutletDataDomain } from './outletDataDomains';
 import { normalizeLoadedCategories } from '../src/inventory/categories';
+import { collectPages } from '../utils/collectPages';
+import { formatLocalDate } from '../utils/localCalendar';
+import { earnedLoyaltyPoints, shouldAwardLoyaltyPoints } from '../utils/saleFollowUp';
 
 export type { OutletDataDomain } from './outletDataDomains';
 export { domainsForRoute } from './outletDataDomains';
@@ -195,8 +198,8 @@ export const useFirestoreData = (
         start.setDate(start.getDate() - 7);
         const end = new Date(today);
         end.setDate(end.getDate() + 53);
-        const startDate = start.toISOString().slice(0, 10);
-        const endDate = end.toISOString().slice(0, 10);
+        const startDate = formatLocalDate(start);
+        const endDate = formatLocalDate(end);
         const appointmentsData = await appointmentService.getInDateRange(startDate, endDate, outletID);
         setAppointments(appointmentsData.filter((a) => !a.id.startsWith('app_onduty_')));
       } else if (domain === 'transactions') {
@@ -210,11 +213,11 @@ export const useFirestoreData = (
           const end = new Date();
           const start = new Date();
           start.setDate(start.getDate() - 62);
-          transactionsData = await transactionService.getInDateRange(
-            start.toISOString(),
-            end.toISOString(),
-            outletID,
-            { limit: 500, offset: 0 },
+          transactionsData = await collectPages((offset, limit) =>
+            transactionService.getInDateRange(start.toISOString(), end.toISOString(), outletID, {
+              limit,
+              offset,
+            }),
           );
         }
         setTransactions(transactionsData);
@@ -896,23 +899,25 @@ export const useFirestoreData = (
 
       // Exactly ONE commission expense per sale, only after sale is saved. Created only when
       // there is at least one line item with assigned staff; description always includes staff details.
+      // Commission skips must not return before loyalty points.
       if (transactionWithOutlet.type === TransactionType.SALE && transactionWithOutlet.items?.length) {
-        if (commissionCreatedForSaleIds.has(id)) {
-          console.log('Commission already created for this sale (in-memory guard), skipping.');
-          return id;
-        }
-
         const listCommissionsForSale = async () => {
           const children = await transactionService.listByParentSaleId(id, outletID);
           return children.filter((t) => t.category === 'Commission');
         };
 
+        let skipCommissionWrite = commissionCreatedForSaleIds.has(id);
+        if (skipCommissionWrite) {
+          console.log('Commission already created for this sale (in-memory guard), skipping.');
+        }
+
+        if (!skipCommissionWrite) {
         const existing = await listCommissionsForSale();
         if (existing.length > 0) {
           commissionCreatedForSaleIds.add(id);
           console.log('Commission already recorded for this sale, skipping duplicate.');
-          return id;
-        }
+          skipCommissionWrite = true;
+        } else {
         // Claim this sale id before building commission so concurrent runs don't both create
         commissionCreatedForSaleIds.add(id);
 
@@ -937,7 +942,9 @@ export const useFirestoreData = (
             amount
           });
         }
-        if (commissionByKey.size === 0) return id;
+        if (commissionByKey.size === 0) {
+          skipCommissionWrite = true;
+        } else {
 
         // Single commission doc: total amount + description with staff name for each line (e.g. "Commission: Neneng - Foot")
         let totalCommission = 0;
@@ -974,8 +981,7 @@ export const useFirestoreData = (
         const recheck = await listCommissionsForSale();
         if (recheck.length > 0) {
           console.log('Commission already recorded for this sale (re-check), skipping.');
-          return id;
-        }
+        } else {
         await transactionService.add(commissionTxn, outletID);
         console.log('Commission transaction added (single doc per sale, with staff details)');
 
@@ -997,27 +1003,26 @@ export const useFirestoreData = (
             }
           }
         }
-
+        }
+        }
+        }
+        }
       }
 
       // Update client points if it's a sale (single place — idempotent by saleId to prevent double-counting).
       // Skip for Redemption (points used) and Voucher (no payment, no points earned).
+      // Redeemed lines are excluded even when the rest of a mixed cart is a paid Sales row.
       if (
-        transactionWithOutlet.type === TransactionType.SALE &&
-        transactionWithOutlet.clientId &&
-        transactionWithOutlet.clientId !== 'guest' &&
-        transactionWithOutlet.category !== 'Redemption' &&
-        transactionWithOutlet.category !== 'Voucher'
+        shouldAwardLoyaltyPoints({
+          type: transactionWithOutlet.type,
+          clientId: transactionWithOutlet.clientId,
+          category: transactionWithOutlet.category,
+        })
       ) {
-        let earnedPoints = 0;
-        if (transactionWithOutlet.items && transactionWithOutlet.items.length > 0) {
-          earnedPoints = transactionWithOutlet.items.reduce((sum, item) => {
-            const itemPoints = item.points !== undefined ? item.points : Math.floor(item.price);
-            return sum + (itemPoints * item.quantity);
-          }, 0);
-        } else {
-          earnedPoints = Math.floor(transactionWithOutlet.amount);
-        }
+        const earnedPoints = earnedLoyaltyPoints(
+          transactionWithOutlet.items,
+          transactionWithOutlet.amount,
+        );
 
         if (earnedPoints > 0) {
           const clientId = transactionWithOutlet.clientId;

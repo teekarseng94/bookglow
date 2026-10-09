@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Transaction, TransactionType, Staff, Client } from '../types';
 import TransactionDetailModal from '../components/TransactionDetailModal';
 import { transactionService, MEMBERSHIP_RENEWAL_CATEGORY } from '../services/databaseService';
+import { collectPages } from '../utils/collectPages';
 import {
   ReportDateRangeBar,
   ReportEmptyState,
@@ -120,11 +121,13 @@ const SalesReports: React.FC<SalesReportsProps> = ({
     let cancelled = false;
     const load = async () => {
       try {
-        const inRange = await transactionService.getInDateRange(
-          startOfRange.toISOString(),
-          endOfRange.toISOString(),
-          outletID,
-          { limit: 500, offset: 0, type: TransactionType.SALE, includeItems: true },
+        const inRange = await collectPages((offset, limit) =>
+          transactionService.getInDateRange(
+            startOfRange.toISOString(),
+            endOfRange.toISOString(),
+            outletID,
+            { limit, offset, type: TransactionType.SALE, includeItems: true },
+          ),
         );
         if (cancelled) return;
         setDailySales(filterNonVoidedSales(inRange));

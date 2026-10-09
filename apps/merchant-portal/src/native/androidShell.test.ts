@@ -65,9 +65,9 @@ describe('androidShell native OAuth callback mapping', () => {
 
     expect(nativeApp.addListener).toHaveBeenCalledWith('appUrlOpen', expect.any(Function));
     expect(nativeApp.getLaunchUrl).toHaveBeenCalledOnce();
-    expect(nativeApp.addListener.mock.invocationCallOrder[0]).toBeLessThan(
-      nativeApp.getLaunchUrl.mock.invocationCallOrder[0],
-    );
+    const listenerOrder = nativeApp.addListener.mock.invocationCallOrder as number[];
+    const launchOrder = nativeApp.getLaunchUrl.mock.invocationCallOrder as number[];
+    expect(listenerOrder[0]).toBeLessThan(launchOrder[0]);
   });
 
   it('closes the top overlay on hardware back before leaving the screen', async () => {
@@ -78,7 +78,8 @@ describe('androidShell native OAuth callback mapping', () => {
     const back = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
 
     await initAndroidShell();
-    const backHandlers = nativeApp.addListener.mock.calls.filter((call) => call[0] === 'backButton');
+    const calls = nativeApp.addListener.mock.calls as unknown as [string, (event: { canGoBack: boolean }) => void][];
+    const backHandlers = calls.filter((call) => call[0] === 'backButton');
     const onBack = backHandlers[backHandlers.length - 1]?.[1] as (event: { canGoBack: boolean }) => void;
 
     onBack({ canGoBack: true });

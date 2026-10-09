@@ -25,6 +25,7 @@ import {
 } from '../components/pos';
 import type { POSCatalogTab, POSSortBy } from '../components/pos';
 import { resolveReceiptIdentity, type OutletContact } from '../utils/receiptIdentity';
+import { cartFingerprint, cartNetCents, checkoutAttempt, persistCartLine, saleCategory } from '../utils/posMoney';
 
 export interface SelectedMemberFromRoute {
   id: string;
@@ -97,6 +98,7 @@ const POS: React.FC<POSProps> = ({
   const [customDate, setCustomDate] = useState<string>('');
   const [customTime, setCustomTime] = useState<string>('');
   const loadedAppointmentIdRef = useRef<string | null>(null);
+  const checkoutAttemptRef = useRef<{ fingerprint: string; id: string } | null>(null);
   useEffect(() => {
     const state = location.state as { selectedMember?: SelectedMemberFromRoute; redeemVoucher?: boolean } | null;
     if (state?.selectedMember?.id) {
@@ -224,15 +226,9 @@ const POS: React.FC<POSProps> = ({
     return sortCatalog(list, posSortBy);
   }, [packages, posCategory, globalSearch, posSortBy]);
 
-  // Net total: voucher redemption and point-redemption lines contribute 0; others use price × quantity
-  const total = useMemo(
-    () =>
-      cart.reduce((sum, item) => {
-        if (item.voucherRedemption || item.redeemedWithPoints) return sum;
-        return sum + item.price * item.quantity;
-      }, 0),
-    [cart]
-  );
+  // Net total in integer cents. Voucher and point-redemption lines contribute 0.
+  const netCents = useMemo(() => cartNetCents(cart), [cart]);
+  const total = netCents / 100;
 
   const hasRedemptionsInCart = useMemo(() => cart.some((i) => i.redeemedWithPoints), [cart]);
 
@@ -511,6 +507,7 @@ const POS: React.FC<POSProps> = ({
     setLastSaleData(null);
     setIsVoucherRedemptionMode(false);
     loadedAppointmentIdRef.current = null;
+    checkoutAttemptRef.current = null;
     onClearActiveAppointment?.();
   };
 
@@ -573,6 +570,14 @@ const POS: React.FC<POSProps> = ({
       }
     }
 
+    const fingerprint = cartFingerprint({
+      clientId: selectedClient || '',
+      paymentMethod: isVoucherRedemptionMode ? 'Voucher' : selectedPaymentMethod,
+      lines: cart,
+    });
+    const attempt = checkoutAttempt(checkoutAttemptRef.current, fingerprint, Date.now());
+    checkoutAttemptRef.current = attempt;
+
     setIsProcessing(true);
     try {
       const isVoucherSale = isVoucherRedemptionMode;
@@ -585,24 +590,27 @@ const POS: React.FC<POSProps> = ({
           saleDate = candidate;
         }
       }
-      const itemsToSave = cart.map((i) =>
-        i.voucherRedemption ? { ...i, price: 0 } : i
-      );
+      const itemsToSave = cart.map((item) => persistCartLine(item));
       const newTxn: Transaction = {
-        id: `txn_${Date.now()}`,
+        id: attempt.id,
         outletID: '', // Will be set by handleAddTransactionWithLogic in App.tsx
         date: saleDate.toISOString(),
         type: TransactionType.SALE,
         clientId: selectedClient || undefined,
         items: itemsToSave,
         amount: isVoucherSale ? 0 : total,
-        category: isVoucherSale ? 'Redemption' : (hasRedemptions ? 'Redemption' : 'Sales'),
+        category: saleCategory({
+          voucherRedemption: isVoucherSale,
+          hasPointRedemptions: hasRedemptions,
+          netCents,
+        }),
         description: isVoucherSale ? `Voucher redemption: ${cart.map(i => i.name).join(', ')}` : `Sale: ${cart.map(i => i.name).join(', ')}`,
         paymentMethod: isVoucherSale ? 'Voucher' : (selectedPaymentMethod.startsWith('Member Credit') ? 'Member Credit' : selectedPaymentMethod),
         appointmentId: activeAppointmentForSale?.id,
         paymentStatus: 'paid',
       };
       await onCompleteSale(newTxn);
+      checkoutAttemptRef.current = null;
       loadedAppointmentIdRef.current = null;
       onClearActiveAppointment?.();
 
@@ -651,6 +659,7 @@ const POS: React.FC<POSProps> = ({
   };
 
   const handleNewSale = () => {
+    checkoutAttemptRef.current = null;
     setCart([]);
     setSaleComplete(false);
     setLastSaleData(null);

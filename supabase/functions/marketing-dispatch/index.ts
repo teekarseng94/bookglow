@@ -321,7 +321,13 @@ Deno.serve(async (request) => {
     .select("role,outlet_id")
     .eq("uid", authData.user.id)
     .maybeSingle();
-  if (!portalUser || !["admin", "platform_admin"].includes(String(portalUser.role))) {
+  const { data: platformAdmin } = await admin
+    .from("platform_admins")
+    .select("status")
+    .eq("user_id", authData.user.id)
+    .maybeSingle();
+  const isPlatformAdmin = platformAdmin?.status === "active";
+  if (!isPlatformAdmin && portalUser?.role !== "admin") {
     return json(403, { error: "Administrator access required" });
   }
 
@@ -333,8 +339,7 @@ Deno.serve(async (request) => {
     .eq("id", campaignId)
     .maybeSingle();
   if (campaignError || !campaign) return json(404, { error: "Campaign not found" });
-  const platformAdmin = portalUser.role === "platform_admin";
-  if (!platformAdmin && campaign.outlet_id !== portalUser.outlet_id) {
+  if (!isPlatformAdmin && campaign.outlet_id !== portalUser?.outlet_id) {
     return json(403, { error: "Campaign belongs to another outlet" });
   }
   const { data: allowed, error: permissionError } = await admin.rpc("can_manage_outlet_integrations", {

@@ -1,8 +1,12 @@
 
 import React, { useState, useMemo, useEffect, useRef, useLayoutEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Appointment, Staff, Client, Service, RoleCommission, OutletSettings } from '../types';
+import { Appointment, Staff, Client, Service, RoleCommission, OutletSettings, TransactionType } from '../types';
 import { appointmentMatchesStaffColumn, buildScheduleStaffColumns, UNASSIGNED_STAFF_ID } from './scheduleLayout';
+import { formatMinutes, staffBookingConflicts } from '../utils/appointmentOverlap';
+import { formatLocalDate } from '../utils/localCalendar';
+import { getCurrentOutletID, transactionService } from '../services/databaseService';
+import { collectPages } from '../utils/collectPages';
 import { Icons } from '../constants';
 import { generateReminderMessage } from '../services/geminiService';
 import {
@@ -59,6 +63,10 @@ const formatDisplayTime = (time?: string): string => {
 // ---- Mobile calendar helpers (UTC-based to stay consistent with ISO `selectedDate`) ----
 const MON_INITIALS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'] as const;
 
+const parseLocalIso = (iso: string): Date => {
+  const [year, month, day] = iso.split('-').map(Number);
+  return new Date(year, (month || 1) - 1, day || 1);
+};
 const toISO = (d: Date): string => d.toISOString().split('T')[0];
 const addDays = (iso: string, n: number): string => {
   const d = new Date(iso);
@@ -121,7 +129,7 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
   const [routeParams] = useSearchParams();
   const selectedRecordId = routeParams.get('record');
   const [viewMode, setViewMode] = useState<ViewMode>('day');
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(formatLocalDate(new Date()));
   const [selectedStaffId, setSelectedStaffId] = useState<string>(staff[0]?.id || '');
   
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -148,7 +156,7 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
   const [desktopDetailTab, setDesktopDetailTab] = useState<ScheduleDesktopTab>('details');
   const [now, setNow] = useState(() => new Date());
   const agendaContainerRef = useRef<HTMLDivElement | null>(null);
-  const todayIso = new Date().toISOString().split('T')[0];
+  const todayIso = formatLocalDate(new Date());
 
   useEffect(() => {
     if (!selectedRecordId) return;
@@ -270,43 +278,42 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
   }, []);
 
   const navigate = (direction: 'prev' | 'next') => {
-    const date = new Date(selectedDate);
+    const date = parseLocalIso(selectedDate);
     if (viewMode === 'day') date.setDate(date.getDate() + (direction === 'next' ? 1 : -1));
     else if (viewMode === 'week') date.setDate(date.getDate() + (direction === 'next' ? 7 : -7));
     else date.setMonth(date.getMonth() + (direction === 'next' ? 1 : -1));
-    setSelectedDate(date.toISOString().split('T')[0]);
+    setSelectedDate(formatLocalDate(date));
   };
 
-  const setToday = () => setSelectedDate(new Date().toISOString().split('T')[0]);
+  const setToday = () => setSelectedDate(formatLocalDate(new Date()));
 
   const weekDates = useMemo(() => {
-    const start = new Date(selectedDate);
+    const start = parseLocalIso(selectedDate);
     const day = start.getDay();
     const diff = start.getDate() - day + (day === 0 ? -6 : 1);
     start.setDate(diff);
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(start);
       d.setDate(start.getDate() + i);
-      return d.toISOString().split('T')[0];
+      return formatLocalDate(d);
     });
   }, [selectedDate]);
 
   const dateStripDates = useMemo(() => {
-    const center = new Date(selectedDate);
+    const center = parseLocalIso(selectedDate);
     return Array.from({ length: dateStripPastDays + dateStripFutureDays + 1 }, (_, i) => {
       const d = new Date(center);
       d.setDate(center.getDate() - dateStripPastDays + i);
-      return d.toISOString().split('T')[0];
+      return formatLocalDate(d);
     });
   }, [selectedDate, dateStripPastDays, dateStripFutureDays]);
 
   const mobileAgendaDates = useMemo(() => {
-    const start = new Date(selectedDate);
-    // Agenda list always starts from the selected date.
+    const start = parseLocalIso(selectedDate);
     return Array.from({ length: mobileAgendaWeeks * 7 }, (_, i) => {
       const d = new Date(start);
       d.setDate(start.getDate() + i);
-      return d.toISOString().split('T')[0];
+      return formatLocalDate(d);
     });
   }, [selectedDate, mobileAgendaWeeks]);
 
@@ -498,14 +505,40 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
     if (app) openMobileDetail(app);
   };
 
-  const thisWeekIncome = useMemo(() => {
-    const weekSet = new Set(weekDates);
-    return activeAppointments.reduce((sum, app) => {
-      if (!weekSet.has(app.date)) return sum;
-      const service = services.find((s) => s.id === app.serviceId);
-      return sum + (service?.price || 0);
-    }, 0);
-  }, [weekDates, activeAppointments, services]);
+  const scheduleOutletID = getCurrentOutletID();
+  const [weekCollected, setWeekCollected] = useState<number | null>(null);
+  useEffect(() => {
+    if (!scheduleOutletID || weekDates.length < 7) {
+      setWeekCollected(null);
+      return;
+    }
+    const start = new Date(`${weekDates[0]}T00:00:00`);
+    const end = new Date(`${weekDates[6]}T23:59:59.999`);
+    let cancelled = false;
+    void collectPages((offset, limit) =>
+      transactionService.getInDateRange(start.toISOString(), end.toISOString(), scheduleOutletID, {
+        limit,
+        offset,
+        type: TransactionType.SALE,
+      }),
+    )
+      .then((rows) => {
+        if (cancelled) return;
+        const total = rows.reduce((sum, txn) => {
+          const status = String(txn.status || '').toLowerCase();
+          const voided = status === 'void' || status === 'voided' || (txn as { voided?: boolean }).voided === true;
+          if (voided || txn.category === 'Voucher' || txn.category === 'Redemption') return sum;
+          return sum + (Number(txn.amount) || 0);
+        }, 0);
+        setWeekCollected(Math.round(total * 100) / 100);
+      })
+      .catch(() => {
+        if (!cancelled) setWeekCollected(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [weekDates, scheduleOutletID]);
 
   const monthDays = useMemo(() => {
     const date = new Date(selectedDate);
@@ -555,6 +588,36 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
       alert('Error: Unable to determine outlet. Please refresh the page.');
       return;
     }
+    const service = services.find((item) => item.id === bookingData.serviceId);
+    const durationMinutes = service?.duration && service.duration > 0 ? service.duration : 30;
+    const startMinutes = bookingData.time.split(':').reduce((hours, part, index) => {
+      const value = Number(part);
+      if (!Number.isFinite(value)) return hours;
+      return index === 0 ? value * 60 : hours + value;
+    }, 0);
+    const endTime = formatMinutes(startMinutes + durationMinutes);
+    const conflict = staffBookingConflicts(
+      {
+        staffId: bookingData.staffId,
+        date: bookingData.date,
+        time: bookingData.time,
+        endTime,
+        durationMinutes,
+      },
+      activeAppointments.map((appointment) => ({
+        id: appointment.id,
+        staffId: appointment.staffId,
+        date: appointment.date,
+        time: appointment.time,
+        endTime: appointment.endTime,
+        status: appointment.status,
+        durationMinutes: services.find((item) => item.id === appointment.serviceId)?.duration,
+      })),
+    );
+    if (conflict) {
+      alert('This staff member already has an appointment at that time.');
+      return;
+    }
     const newApp: Appointment = {
       id: '', // Firestore will assign doc id; listener uses doc.id so UI never uses a client id
       outletID,
@@ -563,6 +626,7 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
       staffId: bookingData.staffId,
       date: bookingData.date,
       time: bookingData.time,
+      endTime,
       status: 'scheduled'
     };
     onAddAppointment(newApp);
@@ -806,7 +870,7 @@ const AppointmentsCalendar: React.FC<AppointmentsCalendarProps> = ({
         <>
           <div className="m-schedule-income-bar md:hidden fixed left-0 right-0 bottom-[calc(var(--mobile-bottom-nav-height)+var(--mobile-safe-area-bottom))] z-40 border-t border-[var(--line)] bg-[var(--bg-surface)] flex items-center justify-between">
             <span className="m-schedule-income-label">This week&apos;s income</span>
-            <span className="m-schedule-income-value">RM{thisWeekIncome.toFixed(0)}</span>
+            <span className="m-schedule-income-value">{weekCollected == null ? '—' : `RM${weekCollected.toFixed(0)}`}</span>
           </div>
           <button
             type="button"

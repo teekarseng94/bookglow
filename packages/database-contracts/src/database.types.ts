@@ -1898,6 +1898,22 @@ export type Database = {
       }
       public_voucher_purchase: { Args: { p_voucher_id: string }; Returns: Json }
       resolve_merchant_access: { Args: never; Returns: Json }
+      get_public_outlet: {
+        Args: { p_outlet_id: string }
+        Returns: {
+          address_display: string | null
+          booking_slug: string | null
+          business_hours: Json | null
+          is_active: boolean | null
+          name: string
+          outlet_id: string
+          phone: string | null
+          phone_number: string | null
+          reviews: Json | null
+          service_categories: Json | null
+          timezone: string | null
+        }[]
+      }
       resolve_public_booking_outlet: { Args: { p_segment: string }; Returns: string | null }
       set_outlet_member_status: {
         Args: { p_member_id: string; p_status: string }

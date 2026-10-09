@@ -168,12 +168,15 @@ export async function getPublicOutletFromSupabase(
     .eq("outlet_id", outletId)
     .maybeSingle();
 
-  if (error) {
-    console.error("Supabase outlet fetch failed:", error);
-    return null;
-  }
-  if (!data) return null;
-  return mapOutlet(data as OutletRow);
+  if (!error && data) return mapOutlet(data as OutletRow);
+
+  const rpc = await sb.rpc("get_public_outlet", { p_outlet_id: outletId });
+  const row = Array.isArray(rpc.data) ? rpc.data[0] : rpc.data;
+  if (!rpc.error && row) return mapOutlet(row as OutletRow);
+
+  if (error) console.error("Supabase outlet fetch failed:", error);
+  if (rpc.error) console.error("Supabase get_public_outlet failed:", rpc.error);
+  return null;
 }
 
 export async function listVisibleServicesFromSupabase(

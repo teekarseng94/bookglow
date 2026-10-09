@@ -10,6 +10,18 @@
       "target": "booking-site",
       "public": "dist-booking",
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "redirects": [
+        {
+          "source": "/book",
+          "destination": "https://bookglow.my/book",
+          "type": 301
+        },
+        {
+          "source": "/book/:path*",
+          "destination": "https://bookglow.my/book/:path",
+          "type": 301
+        }
+      ],
       "rewrites": [
         { "source": "**", "destination": "/index.html" }
       ],

@@ -4,6 +4,7 @@ import { MERCHANT_RETURN_PATH_KEY, validatedMerchantReturnPath } from '@bookglow
 import { login, loginWithOAuth, isMerchantOAuthEnabled, resetPassword, LoginCredentials } from '../services/authService';
 import { merchantAccessDestination, merchantBrowserDestination, resolveMerchantAccess } from '../src/auth/accessResolver';
 import { publicPrivacyPolicyUrl } from '../src/legal/publicLegalUrls';
+import { customerSiteOrigin } from '../utils/customerSiteUrl';
 
 const GoogleIcon = () => (
   <svg className="bookglow-login__google-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -23,7 +24,7 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const googleEnabled = isMerchantOAuthEnabled('google');
-  const customerSiteUrl = ((import.meta.env as unknown as Record<string, string | undefined>).VITE_CUSTOMER_SITE_URL || 'http://localhost:5174').replace(/\/$/, '');
+  const customerSiteUrl = customerSiteOrigin();
 
   useEffect(() => {
     const oauthError = query.get('oauth_error');

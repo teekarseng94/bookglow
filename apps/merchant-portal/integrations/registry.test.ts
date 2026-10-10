@@ -13,8 +13,10 @@ describe("integration registry", () => {
 
 describe("merchant Google errors", () => {
   it("never returns raw API JSON", () => {
-    expect(merchantGoogleError('{"error":{"code":403}}')).toMatch(/currently unavailable/i);
-    expect(merchantGoogleError("PERMISSION_DENIED SERVICE_DISABLED")).toMatch(/currently unavailable/i);
+    const fromJson = merchantGoogleError('{"error":{"code":403}}');
+    expect(fromJson).not.toMatch(/[{[]|403/);
+    expect(fromJson).toMatch(/could not be reached/i);
+    expect(merchantGoogleError("PERMISSION_DENIED SERVICE_DISABLED")).toMatch(/could not be reached/i);
   });
 
   it("maps OAuth cancellation", () => {

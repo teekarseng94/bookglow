@@ -79,6 +79,7 @@ beforeEach(() => {
   disconnectGoogleReviews.mockReset();
   refreshGoogleReviews.mockReset();
   setGoogleReviewsVisibility.mockReset();
+  localStorage.clear();
   getGoogleConnection.mockResolvedValue(disconnected);
   searchGooglePlaces.mockResolvedValue([
     {
@@ -202,6 +203,18 @@ describe("Google Reviews integration page", () => {
     expect(connect).toBeDisabled();
     fireEvent.click(screen.getByText("Sohokaki Reflexology"));
     expect(connect).not.toBeDisabled();
+  });
+
+  it("keeps the saved connection when the status check fails after login", async () => {
+    localStorage.setItem(
+      "bookglow.googleReviews.connection.outlet_002",
+      JSON.stringify(connected),
+    );
+    getGoogleConnection.mockRejectedValue(new Error("Authentication required."));
+    renderPage();
+    expect(await screen.findByText("Sohokaki Wellness Center")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Connect Google Reviews" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Disconnect" })).toBeTruthy();
   });
 
   it("shows connected business details, sync, change, and disconnect controls", async () => {

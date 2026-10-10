@@ -305,6 +305,79 @@ export async function createPublicBookingFromSupabase(
   return { success: row?.success !== false, appointmentId };
 }
 
+export type PublicBookingItem = {
+  serviceId: string;
+  /** Null or omitted books whichever qualified therapist is actually free. */
+  staffId?: string | null;
+};
+
+export type BookedAppointment = {
+  appointmentId: string;
+  serviceId: string;
+  serviceName: string;
+  staffId: string;
+  time: string;
+  endTime: string;
+};
+
+export type CreatePublicBookingBatchInput = {
+  outletId: string;
+  date: string;
+  time: string;
+  customerName: string;
+  phone: string;
+  email?: string;
+  items: PublicBookingItem[];
+};
+
+/**
+ * Books a whole visit in one transaction. Several services used to be sent as
+ * parallel calls, so a rejected second service left the first one committed
+ * behind an error message. The server also moves same-therapist services to
+ * run back to back, so the returned times can differ from the one requested.
+ */
+export async function createPublicBookingBatchFromSupabase(
+  input: CreatePublicBookingBatchInput
+): Promise<BookedAppointment[]> {
+  const sb = client();
+
+  const { data, error } = await sb.rpc("create_public_booking_batch", {
+    p_outlet_id: input.outletId,
+    p_date: input.date,
+    p_time: input.time,
+    p_customer_name: input.customerName,
+    p_phone: input.phone,
+    p_items: input.items.map((item) => ({
+      service_id: item.serviceId,
+      staff_id: item.staffId && item.staffId.trim().length > 0 ? item.staffId.trim() : null,
+    })),
+    p_email: input.email?.trim() ? input.email.trim() : null,
+  });
+
+  if (error) {
+    console.error("Supabase create_public_booking_batch failed:", error);
+    throw error;
+  }
+
+  const row = data as { appointments?: unknown[] } | null;
+  const rows = Array.isArray(row?.appointments) ? row.appointments : [];
+  if (rows.length === 0) {
+    throw new Error("Booking succeeded but no appointment was returned.");
+  }
+
+  return rows.map((raw) => {
+    const r = raw as Record<string, unknown>;
+    return {
+      appointmentId: String(r.appointment_id || ""),
+      serviceId: String(r.service_id || ""),
+      serviceName: String(r.service_name || ""),
+      staffId: String(r.staff_id || ""),
+      time: String(r.time || ""),
+      endTime: String(r.end_time || ""),
+    };
+  });
+}
+
 export type SubmitPublicReviewInput = {
   outletId: string;
   author?: string;

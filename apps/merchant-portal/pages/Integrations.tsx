@@ -6,6 +6,11 @@ import { GoogleMark } from "../components/integrations/GoogleMark";
 import { INTEGRATION_REGISTRY, type IntegrationStatus } from "../integrations/registry";
 import { useUserContext } from "../contexts/UserContext";
 import { getGoogleConnection } from "../services/googleReviewsService";
+import {
+  forgetGoogleConnection,
+  readRememberedGoogleConnection,
+  rememberGoogleConnection,
+} from "../services/googleConnectionMemory";
 import { apiIntegrationService } from "../services/databaseService";
 
 function ApiIcon() {
@@ -18,13 +23,19 @@ function ApiIcon() {
 
 const IntegrationsPage: React.FC = () => {
   const { outletId } = useUserContext();
-  const [googleStatus, setGoogleStatus] = useState<IntegrationStatus>("disconnected");
+  const [googleStatus, setGoogleStatus] = useState<IntegrationStatus | undefined>(undefined);
   const [chatbotStatus, setChatbotStatus] = useState<IntegrationStatus>("disconnected");
 
   const loadStatuses = useCallback(async () => {
     if (!outletId) return;
+    const remembered = readRememberedGoogleConnection(outletId);
+    if (remembered?.status === "connected" || remembered?.status === "error") {
+      setGoogleStatus(remembered.status === "error" ? "error" : "connected");
+    }
     try {
       const connection = await getGoogleConnection(outletId);
+      if (connection.status === "disconnected") forgetGoogleConnection(outletId);
+      else rememberGoogleConnection(outletId, connection);
       if (connection.status === "connected") setGoogleStatus("connected");
       else if (connection.status === "needs_reauth") setGoogleStatus("needs_reauth");
       else if (connection.status === "pending_location") setGoogleStatus("pending");
@@ -32,7 +43,8 @@ const IntegrationsPage: React.FC = () => {
       else if (connection.status === "error") setGoogleStatus("error");
       else setGoogleStatus("disconnected");
     } catch {
-      setGoogleStatus("disconnected");
+      // Keep the remembered Connected badge. A failed check is not a disconnect.
+      if (!remembered) setGoogleStatus("disconnected");
     }
     try {
       const api = await apiIntegrationService.get(outletId);

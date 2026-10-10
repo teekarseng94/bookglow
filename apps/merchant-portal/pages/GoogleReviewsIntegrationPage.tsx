@@ -24,6 +24,11 @@ import {
   type GoogleReviewsConnection,
 } from "../services/googleReviewsService";
 import { outletService } from "../services/databaseService";
+import {
+  forgetGoogleConnection,
+  readRememberedGoogleConnection,
+  rememberGoogleConnection,
+} from "../services/googleConnectionMemory";
 import { openExternalUrl } from "../src/native/androidShell";
 
 type TabId = "about" | "instructions";
@@ -82,17 +87,32 @@ const GoogleReviewsIntegrationPage: React.FC = () => {
     return [outletName, outletAddress].filter((part) => part && part.trim()).join(" ").trim();
   }, [outletName, outletAddress]);
 
+  const applyConnection = useCallback((outlet: string, next: GoogleReviewsConnection) => {
+    setConnection(next);
+    if (next.status === "disconnected") forgetGoogleConnection(outlet);
+    else rememberGoogleConnection(outlet, next);
+  }, []);
+
   const load = useCallback(async () => {
     if (!outletId) return;
-    setLoading(true);
+    const cached = readRememberedGoogleConnection(outletId);
+    if (cached) setConnection(cached);
+    // Keep the saved connection on screen. A status failure must not flip it
+    // back to the Connect button — that is what made merchants reconnect
+    // after every login.
+    if (!cached) setLoading(true);
     try {
-      setConnection(await getGoogleConnection(outletId));
+      const next = await getGoogleConnection(outletId);
+      applyConnection(outletId, next);
+      setError(null);
     } catch (err) {
-      setError(merchantGoogleError(err instanceof Error ? err.message : null));
+      if (!cached) {
+        setError(merchantGoogleError(err instanceof Error ? err.message : null));
+      }
     } finally {
       setLoading(false);
     }
-  }, [outletId]);
+  }, [outletId, applyConnection]);
 
   useEffect(() => {
     void load();
@@ -181,12 +201,12 @@ const GoogleReviewsIntegrationPage: React.FC = () => {
     if (!chosenPlace || !outletId) return;
     return run("connect-place", async () => {
       const next = await connectGooglePlace(outletId, chosenPlace.placeId);
-      setConnection(next);
+      applyConnection(outletId, next);
       setPlacesOpen(false);
       setConfirmChange(false);
       setSearchResults([]);
       setChosenPlace(null);
-      setNotice("Google Reviews connected via Google Places.");
+      setNotice("Saved for this outlet. It stays connected until you disconnect it.");
     });
   };
 
@@ -237,7 +257,7 @@ const GoogleReviewsIntegrationPage: React.FC = () => {
     if (!chosen || !outletId) return;
     return run("save", async () => {
       const result = await selectGoogleLocation(outletId, chosen.accountName, chosen.locationName);
-      setConnection(result.connection);
+      applyConnection(outletId, result.connection);
       setSelectorOpen(false);
       setLocations([]);
       setChosen(null);
@@ -248,21 +268,23 @@ const GoogleReviewsIntegrationPage: React.FC = () => {
   const handleSync = () =>
     run("refresh", async () => {
       if (!outletId) return;
-      setConnection(await refreshGoogleReviews(outletId));
+      applyConnection(outletId, await refreshGoogleReviews(outletId));
       setNotice("Google rating and reviews refreshed.");
     });
 
   const handleVisibility = (enabled: boolean) =>
     run("visibility", async () => {
       if (!outletId) return;
-      setConnection(await setGoogleReviewsVisibility(outletId, enabled));
+      applyConnection(outletId, await setGoogleReviewsVisibility(outletId, enabled));
       setNotice(enabled ? "Google Reviews will show on the Booking Page." : "Google Reviews hidden from the Booking Page.");
     });
 
   const handleDisconnect = () =>
     run("disconnect", async () => {
       if (!outletId) return;
-      setConnection(await disconnectGoogleReviews(outletId));
+      const next = await disconnectGoogleReviews(outletId);
+      forgetGoogleConnection(outletId);
+      setConnection(next);
       setSelectorOpen(false);
       setPlacesOpen(false);
       setLocations([]);

@@ -27,6 +27,7 @@ vi.mock("../services/databaseService", () => ({
 import IntegrationsPage from "./Integrations";
 
 beforeEach(() => {
+  localStorage.clear();
   getGoogleConnection.mockReset();
   getApi.mockReset();
   getGoogleConnection.mockResolvedValue({ status: "disconnected", showOnBookingPage: false });
@@ -50,6 +51,20 @@ describe("Integrations page", () => {
 
   it("shows a Connected badge when Google Reviews is connected", async () => {
     getGoogleConnection.mockResolvedValue({ status: "connected", showOnBookingPage: true });
+    render(
+      <MemoryRouter>
+        <IntegrationsPage />
+      </MemoryRouter>,
+    );
+    expect(await screen.findByText("Connected")).toBeTruthy();
+  });
+
+  it("does not drop a saved connection to Disconnected when the status check fails", async () => {
+    localStorage.setItem(
+      "bookglow.googleReviews.connection.outlet_002",
+      JSON.stringify({ status: "connected", showOnBookingPage: true, locationTitle: "Sohokaki" }),
+    );
+    getGoogleConnection.mockRejectedValue(new Error("Authentication required."));
     render(
       <MemoryRouter>
         <IntegrationsPage />

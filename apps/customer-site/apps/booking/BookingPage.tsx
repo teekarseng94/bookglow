@@ -8,13 +8,14 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { resolveOutletIdFromBookingPath } from "../../services/bookingPathResolve";
 import { normalizeBookingPathSegment } from "../../services/supabasePublicBooking";
+import type { BookedAppointment } from "../../services/supabasePublicBooking";
 import type { PublicService, PublicOutlet, PublicTeamMember } from "../../services/bookingApi";
 import {
   getPublicOutletFromSupabase,
   listVisibleServicesFromSupabase,
   listStaffFromSupabase,
   getAvailableSlotsFromSupabase,
-  createPublicBookingFromSupabase,
+  createPublicBookingBatchFromSupabase,
   submitPublicReviewFromSupabase,
   upsertFrontendCustomerProfileFromSupabase,
 } from "../../services/supabasePublicBooking";
@@ -177,6 +178,7 @@ export function BookingPage() {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [bookingId, setBookingId] = useState<string | null>(null);
+  const [bookedAppointments, setBookedAppointments] = useState<BookedAppointment[]>([]);
   const [showHours, setShowHours] = useState(false);
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
@@ -671,40 +673,35 @@ export function BookingPage() {
     setSubmitLoading(true);
     setSubmitError(null);
     try {
-      const bookingPromises = [];
+      const items = [];
       for (const sel of selectedServices) {
-        const service = sel.service;
         const teamMemberId = serviceTeamMembers[sel.selectionId] || null;
         if (!teamMemberId) continue;
 
-        const basePayload = {
-          outletId,
-          serviceId: service.id,
-          date: selectedDate,
-          time: selectedTime,
-          customerName: customerName.trim(),
-          phone: phone.trim(),
-          email: email.trim() || undefined,
-        };
-
-        if (teamMemberId === ANY_AVAILABLE_STAFF) {
-          bookingPromises.push(createPublicBookingFromSupabase(basePayload));
-          continue;
-        }
-
-        const teamMember = team.find((t) => t.id === teamMemberId);
-        if (!teamMember) {
+        if (teamMemberId !== ANY_AVAILABLE_STAFF && !team.some((t) => t.id === teamMemberId)) {
           setSubmitError("Invalid therapist selected. Please try again.");
           setSubmitLoading(false);
           return;
         }
 
-        bookingPromises.push(
-          createPublicBookingFromSupabase({ ...basePayload, staffId: teamMemberId })
-        );
+        items.push({
+          serviceId: sel.service.id,
+          staffId: teamMemberId === ANY_AVAILABLE_STAFF ? null : teamMemberId,
+        });
       }
-      const results = await Promise.all(bookingPromises);
-      setBookingId(results[0]?.appointmentId || "confirmed");
+
+      // One call for the whole visit: either every service is booked or none is.
+      const booked = await createPublicBookingBatchFromSupabase({
+        outletId,
+        date: selectedDate,
+        time: selectedTime,
+        customerName: customerName.trim(),
+        phone: phone.trim(),
+        email: email.trim() || undefined,
+        items,
+      });
+      setBookedAppointments(booked);
+      setBookingId(booked[0]?.appointmentId || "confirmed");
     } catch (e: unknown) {
       console.error("[Booking] Error creating booking:", e);
       setSubmitError(friendlyBookingError(e, "Booking failed. Please try again."));
@@ -793,10 +790,31 @@ export function BookingPage() {
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Booking confirmed</h1>
           <p className="mt-2 text-slate-600">We look forward to seeing you at {outlet?.name}.</p>
           <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <p className="font-semibold text-slate-900">{selectedServices.map((s) => s.service.name).join(", ")}</p>
-            <p className="mt-1 text-sm text-slate-500">
-              {selectedDate} at {formatTimeToCompact(selectedTime)}
-            </p>
+            {bookedAppointments.length > 1 ? (
+              <>
+                <p className="text-sm text-slate-500">{selectedDate}</p>
+                <ul className="mt-2 space-y-1">
+                  {bookedAppointments.map((appt) => (
+                    <li key={appt.appointmentId} className="flex justify-between gap-3 text-sm">
+                      <span className="font-semibold text-slate-900">{appt.serviceName}</span>
+                      <span className="whitespace-nowrap text-slate-500">
+                        {formatTimeToCompact(appt.time)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <>
+                <p className="font-semibold text-slate-900">
+                  {bookedAppointments[0]?.serviceName ||
+                    selectedServices.map((s) => s.service.name).join(", ")}
+                </p>
+                <p className="mt-1 text-sm text-slate-500">
+                  {selectedDate} at {formatTimeToCompact(bookedAppointments[0]?.time || selectedTime)}
+                </p>
+              </>
+            )}
           </div>
           <p className="mt-4 text-xs text-slate-400">Keep this page for your appointment details.</p>
         </div>

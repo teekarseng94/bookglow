@@ -201,4 +201,24 @@ The pair query from section 1 was run again against production, read-only, about
 
 One appointment was created in between: a POS row at Bali Wellness (`outlet_002`), dated 2026-10-10, 14:23 to 15:23, status `completed`, staff `dzufsn2WKRZmMno0DKbo`. It is the first row in the table dated today, so the "Today: 0 appointments" line in section 2 is now one row out of date. It does not overlap anything, so the conflict counts are unchanged and there is still nothing double-booked today or in the future.
 
-Both triggers are still attached and enabled: `appointments_reject_staff_overlap` is `BEFORE INSERT`, and `appointments_track_lifecycle` is `BEFORE UPDATE`. Reschedules are still not covered, as described in section 9.
+Both triggers are still attached and enabled: `appointments_reject_staff_overlap` is `BEFORE INSERT`, and `appointments_track_lifecycle` is `BEFORE UPDATE`. Reschedules were still not covered at this point; that was closed later the same day, below.
+
+## Reschedule guard added, 10 October 2026, 15:36 Malaysia time
+
+Recommended fix 3 is done. `appointments_reject_staff_overlap_update` now runs `BEFORE UPDATE` on `public.appointments`, using the same function as the insert trigger — its `a.id IS DISTINCT FROM NEW.id` clause already excluded the row being written, so the overlap logic needed no change.
+
+The function now returns early on an update unless the booking actually moved (`staff_id`, `date`, `time` or `end_time` changed) or a non-blocking row was revived into a blocking status. That narrowing is what section 9 warned was necessary, and it is load-bearing: `complete_pos_sale` updates `status`, `payment_status` and `sale_id` without moving the booking, and 1,017 appointments sit inside the 776 historical pairs. Re-checking those on any status change would have failed every POS checkout at Sohokaki and Bali Wellness.
+
+Verified against production inside a transaction that was deliberately aborted, so no appointment was modified:
+
+| Case | Expected | Result |
+| --- | --- | --- |
+| POS completion on a row inside a historical pair | allowed | allowed |
+| Reminder-flag edit on a row inside a historical pair | allowed | allowed |
+| Reschedule onto an occupied slot | rejected | rejected |
+| Insert into an occupied slot | rejected | rejected |
+| Reschedule to a free slot | allowed | allowed |
+
+Migration: `migration/supabase/migrations/20261010153600_appointments_overlap_on_reschedule.sql`.
+
+Still open from section 9: the public slot list is not locked, a multi-service public booking sends every service at the same start time in parallel, and "any available" picks the first staff member by name rather than a free one.

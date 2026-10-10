@@ -3,7 +3,9 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const nativeApp = vi.hoisted(() => ({
-  addListener: vi.fn(async () => ({ remove: vi.fn() })),
+  addListener: vi.fn(async (_event: string, _handler: (payload: never) => void) => ({
+    remove: vi.fn(),
+  })),
   exitApp: vi.fn(),
   getLaunchUrl: vi.fn(async () => undefined),
 }));

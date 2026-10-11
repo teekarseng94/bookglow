@@ -35,14 +35,14 @@ export const SettingsSaveBar: React.FC<SettingsSaveBarProps> = ({
   return (
     <div
       className={cx(
-        'm-settings-body flex flex-wrap items-center justify-between gap-3',
+        'm-settings-body m-sheet-footer flex w-full flex-col items-center gap-3 sm:flex-row sm:items-center sm:justify-between',
         className,
       )}
     >
-      <div className="min-w-0">
+      <div className="min-w-0 sm:flex-1 sm:text-left text-center">
         <SettingsSaveStatus status={normalized} />
       </div>
-      <Button variant="primary" onClick={onSave} disabled={disabled || saving}>
+      <Button variant="primary" onClick={onSave} disabled={disabled || saving} className="w-full sm:w-auto">
         {saving ? 'Saving…' : normalized === 'saved' ? 'Saved' : saveLabel}
       </Button>
     </div>

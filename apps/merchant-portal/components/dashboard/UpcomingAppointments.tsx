@@ -21,6 +21,7 @@ export interface UpcomingAppointmentRow {
 
 export interface UpcomingAppointmentsProps {
   title?: string;
+  emptyTitle?: string;
   rows: UpcomingAppointmentRow[];
   onAddBooking?: () => void;
   onViewSchedule?: () => void;
@@ -30,6 +31,7 @@ export interface UpcomingAppointmentsProps {
 
 export const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
   title = "Today's Appointments",
+  emptyTitle = 'No appointments scheduled today.',
   rows,
   onAddBooking,
   onViewSchedule,
@@ -50,7 +52,7 @@ export const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
       {rows.length === 0 ? (
         <DashboardEmptyState
           icon={<Calendar className="w-6 h-6" />}
-          title="No appointments scheduled today."
+          title={emptyTitle}
           action={
             onAddBooking ? (
               <Button type="button" variant="primary" size="sm" onClick={onAddBooking}>
@@ -64,41 +66,34 @@ export const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
           {rows.map((row) => (
             <div
               key={row.id}
-              className={cx(
-                'm-appointment-row grid grid-cols-[auto_minmax(0,1fr)_auto] gap-x-2 gap-y-1 rounded-none border-0 px-3 py-2.5 sm:flex sm:items-center sm:gap-3 sm:px-4 sm:py-3',
-              )}
+              className="m-list-row m-appointment-row flex items-center gap-3 rounded-none border-0 px-3 py-2 sm:px-4"
             >
-              <div className="w-auto shrink-0 sm:w-24">
+              <div className="w-12 shrink-0 sm:w-24">
                 <p className="m-appointment-row-title text-sm font-bold tabular-nums text-[var(--text-primary)]">{row.timeLabel}</p>
                 {row.timeRangeLabel ? (
-                  <p className="text-xs tabular-nums text-[var(--text-secondary)]">{row.timeRangeLabel}</p>
+                  <p className="hidden text-xs tabular-nums text-[var(--text-secondary)] sm:block">{row.timeRangeLabel}</p>
                 ) : null}
               </div>
               <div className="min-w-0 flex-1">
                 <ExpandableText
                   text={row.title}
+                  lines={1}
                   className="m-appointment-row-title text-sm font-semibold text-[var(--text-primary)]"
                 />
-                {row.metaLabel ? (
+                <div className="mt-0.5 flex min-w-0 items-center gap-1">
                   <ExpandableText
-                    text={row.metaLabel}
-                    className="m-appointment-row-meta text-xs text-[var(--text-secondary)]"
+                    text={row.customerName}
+                    lines={1}
+                    className="m-appointment-row-meta min-w-0 text-xs text-[var(--text-secondary)]"
                   />
-                ) : null}
-              </div>
-              <div className="col-start-2 flex min-w-0 items-center gap-2 sm:max-w-[10rem]">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--brand-soft)] text-xs font-bold text-[var(--brand-deep)]">
-                  {row.customerName.charAt(0).toUpperCase()}
+                  {row.metaLabel ? (
+                    <span className="truncate text-xs text-[var(--text-secondary)]"> · {row.metaLabel}</span>
+                  ) : null}
                 </div>
-                <ExpandableText
-                  text={row.customerName}
-                  lines={1}
-                  className="text-sm text-[var(--text-secondary)]"
-                />
               </div>
               {row.statusLabel ? (
                 <StatusBadge
-                  className={cx('col-start-3 row-start-1 max-w-[7rem] shrink-0 whitespace-nowrap', row.statusClassName)}
+                  className={cx('max-w-[7rem] shrink-0 whitespace-nowrap', row.statusClassName)}
                   label={row.statusLabel}
                 >
                   {row.statusLabel}
@@ -109,7 +104,7 @@ export const UpcomingAppointments: React.FC<UpcomingAppointmentsProps> = ({
                   onClick={() => onRowAction(row.id)}
                   label={`Open ${row.title} on the schedule`}
                   size="md"
-                  className="col-start-3 row-start-2 shrink-0 justify-self-end text-[var(--text-secondary)]"
+                  className="shrink-0 text-[var(--text-secondary)]"
                 >
                   <MoreVertical className="w-4 h-4" />
                 </IconButton>

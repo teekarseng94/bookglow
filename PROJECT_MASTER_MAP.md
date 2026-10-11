@@ -1,5 +1,7 @@
 # ZenFlow Project Master Map (Routes)
 
+> **Historical names.** Prefer `docs/UNIFIED_DOMAIN.md` and `design-system/bookglow/MASTER.md`. Paths like `zenspa Frontend` / `zenspa backend` are not the live folders.
+
 Single source of truth for all active routes after migration.
 
 ## Domains

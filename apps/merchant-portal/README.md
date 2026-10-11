@@ -1,6 +1,8 @@
 # Bookglow Merchant Portal
 
-A comprehensive CRM, POS, and financial tracking system for service businesses with Firebase/Firestore backend, multi-tenant (outlet) support, and AI-powered insights.
+> Runtime data is **Supabase**. Production frontend is Vercel project `bookglow-merchant`. See the repository root `README.md` and `design-system/bookglow/MASTER.md`. Ignore Firestore schema docs in `_archive/`.
+
+A comprehensive CRM, POS, and financial tracking system for service businesses with multi-tenant (outlet) support.
 
 ---
 
@@ -139,42 +141,6 @@ Then deploy the merchant frontend on Vercel. Full options (Cloud Functions vs CO
 
 ---
 
-### Config & Misc (root)
+### Config & docs (root)
 
-| File | Purpose |
-|------|--------|
-| **.gitignore** | Ignores logs, node_modules, dist, *.local, .vscode, .idea, common editor/OS files. |
-| **.npmrc** | NPM config (if present; e.g. registry or engine settings). |
-| **LOCALHOST_CREDENTIALS.txt** | Local/dev credentials reference (keep out of version control in production). |
-| **AUTHENTICATION_SETUP.md** | Docs: how to set up Firebase Authentication. |
-| **BLANK_PAGE_FIX.md** | Docs: troubleshooting blank page issues. |
-| **DEFAULT_USER_CREDENTIALS.md** | Docs: default test user for development. |
-| **DEPLOY_FIRESTORE.md** | How to deploy Firestore (rules/indexes). |
-| **DEPLOY_FIX.md** | Deployment troubleshooting. |
-| **DEPLOYMENT_GUIDE.md** | Full deployment steps (hosting + Firestore). |
-| **FIRESTORE_*.md** | Firestore setup, integration, rules fixes, schema overview, setup completion notes. |
-| **LOGIN_FIX_CHECKLIST.md** | Login troubleshooting checklist. |
-| **QUICK_START.md** | Short quick-start instructions. |
-| **SETUP_USER_EXAMPLE.md** | Example for creating/setup users. |
-| **TROUBLESHOOTING_LOGIN.md** | Login-specific troubleshooting. |
-| **USER_SETUP_GUIDE.md** | User account and outlet assignment guide. |
-
----
-
-### Nested Project
-
-| Path | Purpose |
-|------|--------|
-| **Spa-system-2026/** | Separate smaller app (own package.json, Vite, App, types): likely an earlier or alternate build; not part of the main Bookglow app runtime. |
-
----
-
-## Summary
-
-- **Entry:** `index.html` → `index.tsx` → `App.tsx` (with ProtectedRoute and Firestore data).
-- **Auth:** Firebase Auth + `authService` + `useAuth`; user profile and outlet from Firestore via **UserContext**.
-- **Data:** All business data lives in Firestore; **firestoreService** does CRUD; **useFirestoreData** exposes state and handlers to the app.
-- **UI:** **Layout** (sidebar + header) and **pages/** for each section; **ErrorBoundary** and **Toast** for robustness and feedback.
-- **Config:** `firebase.ts`, `firebase.json`, `.firebaserc`, `firestore.rules`, `firestore.indexes.json` define backend and security; `constants.tsx` and `types.ts` centralize shared data and types.
-
-For first-time setup, use **QUICK_START.md**, **AUTHENTICATION_SETUP.md**, and **USER_SETUP_GUIDE.md**. For deployment, use **DEPLOYMENT_GUIDE.md** and **DEPLOY_FIRESTORE.md**.
+Use the repository root `README.md`, `docs/UNIFIED_DOMAIN.md`, `docs/SUPABASE_AUTH_SETUP.md`, and `design-system/bookglow/MASTER.md`. Playwright notes: `VISUAL_TESTING.md`. Old Firebase Hosting / Firestore how-tos are in `_archive/docs/`.

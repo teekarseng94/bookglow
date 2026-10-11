@@ -41,7 +41,7 @@ export const POSMemberSummary: React.FC<POSMemberSummaryProps> = ({
         <button
           type="button"
           onClick={onNewCustomer}
-          className="text-[13px] font-semibold text-[var(--brand)] min-h-11 px-1 hover:underline"
+          className="m-pos-new-customer text-[13px] font-semibold leading-none text-[var(--brand)] px-1 py-1 hover:underline"
         >
           + New Customer
         </button>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { AttentionList } from './dashboard/AttentionList';
 import { InventoryToolbar } from './inventory/InventoryToolbar';
 import { ReportFilterToolbar } from './reports/ReportFilterToolbar';
 import { ReportTxnCard } from './reports/ReportTxnCard';
@@ -44,7 +45,7 @@ describe('Step 4 mobile patterns', () => {
 
   it('shares interactive entity-card structure across staff and transactions', () => {
     const { rerender } = render(<StaffCard name="Aisha" role="Stylist" onSelect={vi.fn()} />);
-    expect(screen.getByRole('button')).toHaveClass('m-card', 'm-entity-row', 'm-card-interactive');
+    expect(screen.getByRole('button')).toHaveClass('m-list-row', 'm-entity-row', 'm-card-interactive');
 
     rerender(
       <ReportTxnCard
@@ -56,7 +57,17 @@ describe('Step 4 mobile patterns', () => {
         onClick={vi.fn()}
       />,
     );
-    expect(screen.getByRole('button')).toHaveClass('m-card', 'm-entity-row', 'm-card-interactive');
+    expect(screen.getByRole('button')).toHaveClass('m-list-row', 'm-entity-row', 'm-card-interactive');
+  });
+
+  it('uses compact list rows for dashboard attention items', () => {
+    render(
+      <AttentionList
+        items={[{ id: 'low-stock', title: 'Low stock', description: 'Shampoo', actionLabel: 'Restock', onAction: vi.fn() }]}
+      />,
+    );
+    expect(screen.getByText('Low stock').closest('.m-attention-row')).toHaveClass('m-list-row');
+    expect(screen.getByRole('button', { name: 'Restock' })).toBeInTheDocument();
   });
 
   it('uses the shared card boundary for settings accordions', () => {

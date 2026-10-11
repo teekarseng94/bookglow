@@ -839,56 +839,25 @@ const POS: React.FC<POSProps> = ({
           saleComplete ? (
             <POSSaleCompleteActions onPrint={handlePrint} onNewSale={handleNewSale} />
           ) : (
-            <>
-              <POSPaymentSection
-                useCustomDateTime={useCustomDateTime}
-                onCustomDateTimeChange={setUseCustomDateTime}
-                customDate={customDate}
-                onCustomDateChange={setCustomDate}
-                customTime={customTime}
-                onCustomTimeChange={setCustomTime}
-                currentDateTimeLabel={currentTime.toLocaleString('en-GB', {
-                  year: 'numeric',
-                  month: '2-digit',
-                  day: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
-                  hour12: false,
-                })}
-                paymentMethod={selectedPaymentMethod}
-                onPaymentMethodChange={setSelectedPaymentMethod}
-                paymentMethods={paymentMethodsWithCredit}
-                paymentDisabled={isVoucherRedemptionMode}
-                paymentHint={
-                  isVoucherRedemptionMode ? (
-                    <p className="m-caption text-[var(--text-secondary)] mt-0.5">
-                      Payment is fixed to <span className="font-semibold text-[var(--brand)]">Voucher (RM 0)</span>{' '}
-                      for this redemption.
-                    </p>
-                  ) : null
-                }
-              />
-              <POSTotals
-                totalLabel={`RM ${total.toFixed(2)}`}
-                subtotalLabel={`RM ${total.toFixed(2)}`}
-                discountLabel="RM 0.00"
-                warning={
-                  cart.some((i) => i.type === 'package') && !selectedClient ? (
-                    <p className="text-xs text-[var(--warning)] font-medium">
-                      Select a member to purchase bundle packages.
-                    </p>
-                  ) : null
-                }
-                checkoutLabel="Proceed to Payment"
-                onCheckout={handleCheckout}
-                checkoutDisabled={
-                  cart.length === 0 || (cart.some((i) => i.type === 'package') && !selectedClient)
-                }
-                isProcessing={isProcessing}
-                hasRedemptions={hasRedemptionsInCart}
-              />
-            </>
+            <POSTotals
+              totalLabel={`RM ${total.toFixed(2)}`}
+              subtotalLabel={`RM ${total.toFixed(2)}`}
+              discountLabel="RM 0.00"
+              warning={
+                cart.some((i) => i.type === 'package') && !selectedClient ? (
+                  <p className="text-xs text-[var(--warning)] font-medium">
+                    Select a member to purchase bundle packages.
+                  </p>
+                ) : null
+              }
+              checkoutLabel="Proceed to Payment"
+              onCheckout={handleCheckout}
+              checkoutDisabled={
+                cart.length === 0 || (cart.some((i) => i.type === 'package') && !selectedClient)
+              }
+              isProcessing={isProcessing}
+              hasRedemptions={hasRedemptionsInCart}
+            />
           )
         }
       >
@@ -922,7 +891,7 @@ const POS: React.FC<POSProps> = ({
                 type="text"
                 placeholder="Search by name or phone..."
                 autoComplete="off"
-                className="m-pos-control m-pos-customer-search box-border w-full min-h-[44px] rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] py-2 pl-9 pr-3 text-sm font-medium outline-none focus-visible:shadow-ui-focus-strong"
+                className="m-pos-control m-pos-customer-search box-border h-9 w-full min-h-9 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] py-0 pl-9 pr-3 text-[13px] font-medium outline-none focus-visible:shadow-ui-focus-strong post:h-11 post:min-h-[44px] post:text-sm"
                 value={selectedClientData ? selectedClientData.name : customerSearchQuery}
                 onChange={(e) => {
                   setCustomerSearchQuery(e.target.value);
@@ -1107,6 +1076,36 @@ const POS: React.FC<POSProps> = ({
                   <p className="mt-1 text-xs text-[var(--text-muted)]">Tap a service or product to start a sale.</p>
                 </div>
               )}
+              <POSPaymentSection
+                className="m-pos-order-details pt-2"
+                useCustomDateTime={useCustomDateTime}
+                onCustomDateTimeChange={setUseCustomDateTime}
+                customDate={customDate}
+                onCustomDateChange={setCustomDate}
+                customTime={customTime}
+                onCustomTimeChange={setCustomTime}
+                currentDateTimeLabel={currentTime.toLocaleString('en-GB', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                  hour12: false,
+                })}
+                paymentMethod={selectedPaymentMethod}
+                onPaymentMethodChange={setSelectedPaymentMethod}
+                paymentMethods={paymentMethodsWithCredit}
+                paymentDisabled={isVoucherRedemptionMode}
+                paymentHint={
+                  isVoucherRedemptionMode ? (
+                    <p className="m-caption text-[var(--text-secondary)] mt-0.5">
+                      Payment is fixed to <span className="font-semibold text-[var(--brand)]">Voucher (RM 0)</span>{' '}
+                      for this redemption.
+                    </p>
+                  ) : null
+                }
+              />
             </>
           )}
         </div>

@@ -26,7 +26,7 @@ export const DenseEntityRow: React.FC<DenseEntityRowProps> = ({
 }) => {
   const interactive = typeof onClick === 'function';
   const classNames = cx(
-    'm-entity-row flex w-full items-center gap-3 px-3 py-2.5 text-left',
+    'm-list-row m-entity-row flex w-full items-center gap-3 px-3 py-2.5 text-left',
     'border-b border-[var(--line)] last:border-b-0',
     'bg-[var(--bg-surface)]',
     interactive && 'hover:bg-[var(--bg-soft)] focus-visible:shadow-ui-focus-strong',

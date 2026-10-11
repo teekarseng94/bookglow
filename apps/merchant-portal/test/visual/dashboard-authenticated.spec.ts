@@ -113,9 +113,9 @@ test.describe('authenticated merchant Dashboard', () => {
   test('quick actions and navigation stay on authorized routes', async ({ page }, testInfo) => {
     await openLiveDashboard(page);
 
-    const newBooking = page.getByRole('button', { name: /New Booking/i });
-    await expect(newBooking).toBeVisible();
-    await newBooking.click();
+    const booking = page.getByRole('button', { name: 'Booking' }).locator('visible=true').first();
+    await expect(booking).toBeVisible();
+    await booking.click();
     await expect(page).toHaveURL(/\/schedule/);
     await page.goto('/dashboard');
     await expect(page.getByRole('region', { name: 'Business performance' })).toBeVisible({ timeout: 45_000 });

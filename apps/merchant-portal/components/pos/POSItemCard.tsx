@@ -120,22 +120,22 @@ export const POSItemCard: React.FC<POSItemCardProps> = ({
     <div className={cx('relative min-w-0', className)}>
       {badge ? <div className="absolute right-2 top-2 z-[1]">{badge}</div> : null}
 
-      {/* Phone (<720): horizontal row */}
+      {/* Phone (<720): compact operational row (56–64px) */}
       <div
         className={cx(
-          'm-pos-mobile-card m-card m-card-interactive flex h-full items-center gap-3 border border-[var(--line)] bg-[var(--bg-surface)]',
-          'rounded-ui-md p-3 min-h-[96px]',
+          'm-pos-mobile-card m-list-row m-card-interactive flex h-full items-center border border-[var(--line)] bg-[var(--bg-surface)]',
+          'rounded-ui-md',
           'post:hidden',
         )}
       >
         <div className="relative shrink-0">
           {qtyBadge}
-          <div className="m-pos-mobile-card__thumb flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl bg-[var(--bg-soft)]">
+          <div className="m-pos-mobile-card__thumb flex items-center justify-center overflow-hidden rounded-lg bg-[var(--bg-soft)]">
             {thumb}
           </div>
         </div>
         <div className="min-w-0 flex-1">
-          <p className="m-pos-mobile-card__title whitespace-normal break-words text-[15px] font-semibold leading-snug text-[var(--text-primary)]">
+          <p className="m-pos-mobile-card__title truncate font-semibold leading-tight text-[var(--text-primary)]">
             {displayName}
           </p>
           {metaLeft || metaRight ? (
@@ -152,9 +152,8 @@ export const POSItemCard: React.FC<POSItemCardProps> = ({
               ) : null}
             </div>
           ) : null}
-          {chips}
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-1.5 pl-1">
+        <div className="flex shrink-0 items-center gap-2 pl-1">
           <MoneyAmount
             value={priceLabel}
             className="m-pos-mobile-card__price text-[14px] font-semibold text-[var(--text-primary)]"

@@ -1,7 +1,9 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { Filter } from 'lucide-react';
 import { Staff, Transaction, TransactionType, RoleCommission, Service } from '../types';
 import { uploadImage, getStaffProfileImagePath } from '../services/storageService';
 import { Icons } from '../constants';
+import { Button, cx, FilterChip, FilterChipRow, IconButton, MobileFilterSheet } from '../components/ui';
 import { ConfirmationDialog } from '../components/ui/ConfirmationDialog';
 import {
   defaultStaffPermissions,
@@ -114,6 +116,7 @@ const StaffPage: React.FC<StaffProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState<'all' | StaffStatusKind>('all');
+  const [staffFiltersOpen, setStaffFiltersOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(8);
   const [detailTab, setDetailTab] = useState<StaffDetailTab>('overview');
@@ -649,17 +652,15 @@ const StaffPage: React.FC<StaffProps> = ({
   const editorLabelClass =
     'block m-settings-label uppercase tracking-widest text-[var(--text-muted)] mb-1.5';
 
-  const chipClass = (active: boolean, tone: 'brand' | 'success' | 'neutral' = 'brand') => {
-    if (!active) {
-      return 'bg-[var(--bg-surface)] border-[var(--line)] text-[var(--text-secondary)]';
-    }
-    if (tone === 'success') return 'bg-[var(--success-soft)] border-[var(--success-border)] text-[var(--success)]';
-    if (tone === 'neutral') return 'bg-[var(--bg-soft)] border-[var(--line)] text-[var(--text-secondary)]';
-    return 'bg-[var(--brand)] border-[var(--brand)] text-white';
-  };
+  const staffStatusOptions = [
+    { id: 'all' as const, label: 'All statuses' },
+    { id: 'earning' as const, label: 'Earning' },
+    { id: 'active' as const, label: 'Active' },
+    { id: 'idle' as const, label: 'No sales' },
+  ];
 
   return (
-    <div className="m-page-with-bottom-nav min-w-0 overflow-x-hidden space-y-4 xl:space-y-5 animate-fadeIn">
+    <div className="m-page-with-bottom-nav min-w-0 overflow-x-hidden space-y-3 xl:space-y-5 animate-fadeIn">
       {successMessage && (
         <div className="fixed top-16 lg:top-6 left-1/2 -translate-x-1/2 z-[80] flex items-center gap-2 px-4 py-2.5 rounded-ui-md bg-[var(--brand)] text-white text-sm font-bold shadow-ui-lg animate-fadeIn">
           <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -703,9 +704,9 @@ const StaffPage: React.FC<StaffProps> = ({
                 : 'Try adjusting search or filters.'
             }
             toolbar={
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 gap-2 xl:grid-cols-[minmax(196px,1fr)_150px_150px] xl:gap-3">
-                  <div className="relative min-w-0">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 xl:grid xl:grid-cols-[minmax(196px,1fr)_150px_150px] xl:gap-3">
+                  <div className="relative min-w-0 flex-1">
                       <svg
                         className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]"
                         fill="none"
@@ -724,9 +725,21 @@ const StaffPage: React.FC<StaffProps> = ({
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search staff by name or role..."
-                        className="w-full pl-9 pr-3 py-2.5 min-h-[44px] xl:min-h-[40px] bg-[var(--bg-surface)] xl:bg-[var(--bg-soft)] border border-[var(--line)] rounded-ui-md xl:rounded-ui-sm outline-none focus:ring-2 focus:ring-[var(--brand)] text-sm"
+                        className="w-full h-10 pl-9 pr-3 bg-[var(--bg-surface)] xl:bg-[var(--bg-soft)] border border-[var(--line)] rounded-ui-md xl:rounded-ui-sm outline-none focus:ring-2 focus:ring-[var(--brand)] text-sm"
                       />
                   </div>
+                  <IconButton
+                    label="Filter staff status"
+                    variant="outline"
+                    size="md"
+                    className={cx(
+                      'xl:hidden shrink-0',
+                      statusFilter !== 'all' && 'border-[var(--brand)] bg-[var(--brand-soft)] text-[var(--brand)]',
+                    )}
+                    onClick={() => setStaffFiltersOpen(true)}
+                  >
+                    <Filter className="h-5 w-5" aria-hidden />
+                  </IconButton>
                       <select
                         value={roleFilter}
                         onChange={(e) => setRoleFilter(e.target.value)}
@@ -753,50 +766,55 @@ const StaffPage: React.FC<StaffProps> = ({
                       </select>
                 </div>
 
-                {/* Mobile filter chips */}
-                <div className="xl:hidden space-y-2">
-                  <div className="flex gap-2 overflow-x-auto pb-0.5 -mx-0.5 px-0.5">
-                    <button
-                      type="button"
-                      onClick={() => setRoleFilter('all')}
-                      className={`m-staff-chip shrink-0 border ${chipClass(roleFilter === 'all')}`}
-                    >
-                      All ({staff.length})
-                    </button>
-                    {roleOptions.map((role) => {
-                      const count = staff.filter((s) => s.role === role).length;
-                      return (
-                        <button
-                          key={role}
-                          type="button"
-                          onClick={() => setRoleFilter(role)}
-                          className={`m-staff-chip shrink-0 border ${chipClass(roleFilter === role)}`}
-                        >
-                          {role} ({count})
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <div className="flex gap-2 overflow-x-auto pb-0.5 -mx-0.5 px-0.5">
-                    {(
-                      [
-                        { id: 'all', label: 'All', tone: 'brand' as const },
-                        { id: 'earning', label: 'Earning', tone: 'success' as const },
-                        { id: 'active', label: 'Active', tone: 'brand' as const },
-                        { id: 'idle', label: 'No sales', tone: 'neutral' as const },
-                      ] as const
-                    ).map((s) => (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => setStatusFilter(s.id)}
-                        className={`m-staff-chip shrink-0 border ${chipClass(statusFilter === s.id, s.tone)}`}
+                <FilterChipRow ariaLabel="Filter by role" className="xl:hidden">
+                  <FilterChip selected={roleFilter === 'all'} onClick={() => setRoleFilter('all')}>
+                    All ({staff.length})
+                  </FilterChip>
+                  {roleOptions.map((role) => {
+                    const count = staff.filter((s) => s.role === role).length;
+                    return (
+                      <FilterChip
+                        key={role}
+                        selected={roleFilter === role}
+                        onClick={() => setRoleFilter(role)}
                       >
-                        {s.label}
+                        {role} ({count})
+                      </FilterChip>
+                    );
+                  })}
+                </FilterChipRow>
+
+                <MobileFilterSheet
+                  open={staffFiltersOpen}
+                  onClose={() => setStaffFiltersOpen(false)}
+                  title="Staff status"
+                  footer={
+                    <Button fullWidth variant="primary" onClick={() => setStaffFiltersOpen(false)}>
+                      Apply
+                    </Button>
+                  }
+                >
+                  <div className="space-y-1">
+                    {staffStatusOptions.map((option) => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => setStatusFilter(option.id)}
+                        className={cx(
+                          'flex min-h-11 w-full items-center justify-between rounded-ui-sm px-3 text-left text-sm font-medium',
+                          statusFilter === option.id
+                            ? 'bg-[var(--brand-soft)] text-[var(--brand)]'
+                            : 'text-[var(--text-primary)] hover:bg-[var(--bg-soft)]',
+                        )}
+                      >
+                        <span>{option.label}</span>
+                        {statusFilter === option.id ? (
+                          <span aria-hidden>✓</span>
+                        ) : null}
                       </button>
                     ))}
                   </div>
-                </div>
+                </MobileFilterSheet>
               </div>
             }
             footer={

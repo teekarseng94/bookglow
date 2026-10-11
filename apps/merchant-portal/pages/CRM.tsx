@@ -18,10 +18,11 @@ import {
   EmptyState,
   Field,
   fieldControlClassName,
+  FilterChip,
+  FilterChipRow,
   FormSection,
   IconButton,
   ModalFooterActions,
-  OverlayTabs,
 } from '../components/ui';
 
 type SortFilter = 'Recent' | 'New' | 'Birthday' | 'Name';
@@ -702,9 +703,11 @@ const CRM: React.FC<CRMProps> = ({
 
   return (
     <div className="m-page-with-bottom-nav min-w-0 overflow-x-hidden space-y-3 sm:space-y-5 md:space-y-6 animate-fadeIn m-body md:text-base m-member-page sm:pb-6">
-      <div className="hidden sm:block">
-        <MemberPageHeader clientCount={clientTotalCount} />
-      </div>
+      <MemberPageHeader
+        clientCount={clientTotalCount}
+        onAddMember={() => setShowAddClientModal(true)}
+        addLabel="Add Client"
+      />
       {/* Recent import toast: show last import count + Undo button */}
       {lastImportToast && (
           <div className="fixed bottom-[calc(var(--mobile-bottom-nav-height)+var(--mobile-safe-area-bottom)+0.75rem)] inset-x-4 z-[70] max-w-full animate-fadeIn sm:inset-x-auto sm:right-6 sm:left-auto sm:max-w-sm">
@@ -713,7 +716,7 @@ const CRM: React.FC<CRMProps> = ({
               Recent activity
             </p>
             <p className="text-[var(--text-secondary)] text-sm">
-              Imported <span className="font-bold text-teal-600">{lastImportToast.count}</span> member{lastImportToast.count !== 1 ? 's' : ''}.
+              Imported <span className="font-bold text-[var(--brand)]">{lastImportToast.count}</span> member{lastImportToast.count !== 1 ? 's' : ''}.
             </p>
             <div className="flex gap-2">
               <button
@@ -765,7 +768,7 @@ const CRM: React.FC<CRMProps> = ({
                 disabled={isImporting}
                 className="px-3 md:px-4 py-2.5 md:py-3 text-[var(--text-secondary)] hover:bg-[var(--bg-soft)] transition-colors flex items-center gap-2 disabled:opacity-50"
               >
-                {isImporting ? <div className="w-4 h-4 border-2 border-teal-500 border-t-transparent rounded-full animate-spin"></div> : <Icons.Import />}
+                {isImporting ? <div className="w-4 h-4 border-2 border-[var(--brand)] border-t-transparent rounded-full animate-spin"></div> : <Icons.Import />}
                 <span className="hidden lg:inline text-sm font-semibold">Import</span>
               </button>
             </div>
@@ -775,29 +778,20 @@ const CRM: React.FC<CRMProps> = ({
             >
               <Icons.Settings /> <span className="hidden sm:inline">Loyalty Program</span>
             </button>
-            <button 
-              onClick={() => setShowAddClientModal(true)}
-              className="bg-teal-600 hover:bg-teal-700 text-white px-4 md:px-5 py-2.5 md:py-3 rounded-xl font-semibold text-sm md:text-base flex items-center justify-center gap-2 transition-colors shadow-sm"
-            >
-              <Icons.Add /> <span className="hidden sm:inline">Add Client</span>
-            </button>
           </>
         }
         sortTabs={
-          <OverlayTabs<SortFilter>
-            variant="segmented"
-            layout="equal"
-            ariaLabel="Sort members"
-            className="m-member-sort-tabs w-full"
-            value={sortFilter}
-            onChange={setSortFilter}
-            items={[
-              { id: 'Recent', label: 'Recent' },
-              { id: 'New', label: 'New' },
-              { id: 'Birthday', label: 'Birthday' },
-              { id: 'Name', label: 'Name' },
-            ]}
-          />
+          <FilterChipRow ariaLabel="Sort members">
+            {(['Recent', 'New', 'Birthday', 'Name'] as const).map((sort) => (
+              <FilterChip
+                key={sort}
+                selected={sortFilter === sort}
+                onClick={() => setSortFilter(sort)}
+              >
+                {sort}
+              </FilterChip>
+            ))}
+          </FilterChipRow>
         }
       />
 
@@ -888,15 +882,6 @@ const CRM: React.FC<CRMProps> = ({
         </button>
       </div>
 
-      <button
-        type="button"
-        onClick={() => setShowAddClientModal(true)}
-        className="m-fab m-member-fab sm:hidden"
-        aria-label="Add member"
-      >
-        <Icons.Add />
-      </button>
-
       <MemberFilterSheet open={showMobileActions} onClose={() => setShowMobileActions(false)}>
         <div className="space-y-1.5">
           <button
@@ -905,7 +890,7 @@ const CRM: React.FC<CRMProps> = ({
             onClick={() => { setShowMobileActions(false); fileInputRef.current?.click(); }}
             className="w-full flex items-center gap-3 p-3.5 rounded-ui-md bg-[var(--bg-soft)] hover:bg-[var(--bg-selection)] text-[var(--text-secondary)] font-semibold text-sm transition-colors disabled:opacity-50"
           >
-            <span className="text-teal-600"><Icons.Import /></span> Import Members
+            <span className="text-[var(--brand)]"><Icons.Import /></span> Import Members
           </button>
           <button
             type="button"
@@ -915,14 +900,14 @@ const CRM: React.FC<CRMProps> = ({
             }}
             className="w-full flex items-center gap-3 p-3.5 rounded-ui-md bg-[var(--bg-soft)] hover:bg-[var(--bg-selection)] text-[var(--text-secondary)] font-semibold text-sm transition-colors"
           >
-            <span className="text-teal-600">{isExportLocked ? <Icons.Lock /> : <Icons.Export />}</span> Export Members
+            <span className="text-[var(--brand)]">{isExportLocked ? <Icons.Lock /> : <Icons.Export />}</span> Export Members
           </button>
           <button
             type="button"
             onClick={() => { setShowMobileActions(false); setShowRewardsModal(true); }}
             className="w-full flex items-center gap-3 p-3.5 rounded-ui-md bg-[var(--bg-soft)] hover:bg-[var(--bg-selection)] text-[var(--text-secondary)] font-semibold text-sm transition-colors"
           >
-            <span className="text-teal-600"><Icons.Settings /></span> Loyalty Program
+            <span className="text-[var(--brand)]"><Icons.Settings /></span> Loyalty Program
           </button>
           <button
             type="button"

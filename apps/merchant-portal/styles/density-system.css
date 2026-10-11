@@ -4,7 +4,7 @@
 
 :root {
   --density-mode: comfortable;
-  --density-version: v4;
+  --density-version: v5;
 
   --font-page-title: 1.5rem;
   --font-section-title: 1rem;
@@ -12,9 +12,13 @@
   --font-label: 0.6875rem;
   --font-caption: 0.75rem;
 
+  /* Visual control size. Hit area is --touch-min (may be larger than the paint). */
   --control-height: 40px;
   --control-height-sm: 32px;
+  --control-visual-height: var(--control-height);
   --button-height: 40px;
+  --touch-min: 44px;
+  --mobile-min-touch-target: 44px;
 
   --page-padding-x: var(--space-4, 16px);
   --page-padding-y: var(--space-4, 16px);
@@ -59,6 +63,7 @@
 
     --control-height: 40px;
     --control-height-sm: 36px;
+    --control-visual-height: 40px;
     --button-height: 40px;
 
     --page-padding-x: 12px;
@@ -69,8 +74,8 @@
 
     --shell-header-height: 48px;
     --bottom-nav-height: 56px;
-    --touch-min: 48px;
-    --mobile-min-touch-target: 48px;
+    --touch-min: 44px;
+    --mobile-min-touch-target: 44px;
     --icon-size: 20px;
     --icon-size-sm: 16px;
 
@@ -82,6 +87,17 @@
     --mobile-text-list-title: 15px;
     --mobile-text-secondary: 13px;
     --mobile-text-nav: 11px;
+    --mobile-list-row: 56px;
+    --mobile-list-row-compact: 56px;
+    --mobile-pos-card-min-height: 56px;
+    --mobile-pos-thumbnail-size: 40px;
+    --mobile-pos-card-padding: 8px;
+    --mobile-pos-card-gap: 8px;
+    --mobile-pos-title-size: 14px;
+    --mobile-pos-add-size: 44px;
+    --mobile-inventory-card-min-height: 64px;
+    --mobile-inventory-media-size: 40px;
+    --mobile-inventory-thumbnail: 40px;
 
     --editor-title-size: 16px;
     --editor-tab-height: 40px;
@@ -114,7 +130,10 @@
 
     --control-height: 44px;
     --control-height-sm: 36px;
+    --control-visual-height: 44px;
     --button-height: 44px;
+    --touch-min: 44px;
+    --mobile-min-touch-target: 44px;
 
     --page-padding-x: var(--space-5, 20px);
     --page-padding-y: var(--space-5, 20px);
@@ -136,21 +155,42 @@
     --mobile-text-list-title: 16px;
     --mobile-text-secondary: 14px;
     --mobile-text-nav: 11px;
-    --mobile-list-row: 72px;
-    --mobile-list-row-compact: 64px;
-    --mobile-pos-card-min-height: 96px;
-    --mobile-pos-thumbnail-size: 56px;
-    --mobile-pos-card-padding: 12px;
-    --mobile-pos-card-gap: 12px;
-    --mobile-pos-title-size: 15px;
+    --mobile-list-row: 64px;
+    --mobile-list-row-compact: 56px;
+    --mobile-pos-card-min-height: 56px;
+    --mobile-pos-thumbnail-size: 40px;
+    --mobile-pos-card-padding: 8px;
+    --mobile-pos-card-gap: 8px;
+    --mobile-pos-title-size: 14px;
     --mobile-pos-add-size: 44px;
-    --mobile-inventory-card-height: 96px;
-    --mobile-inventory-thumbnail: 56px;
+    --mobile-inventory-card-height: 64px;
+    --mobile-inventory-card-min-height: 64px;
+    --mobile-inventory-thumbnail: 40px;
+    --mobile-inventory-media-size: 40px;
 
     --editor-tab-height: 44px;
     --editor-header-padding-y: 10px;
     --editor-footer-padding-y: 10px;
     --form-gap: var(--row-gap);
+  }
+}
+
+@media (min-width: 600px) and (max-width: 1023.98px) {
+  .m-btn--md {
+    height: var(--control-height);
+    min-height: var(--control-height);
+  }
+
+  .bookglow-mobile-header__title {
+    font-size: var(--mobile-text-header-title, 17px);
+  }
+
+  .bookglow-more-sheet {
+    padding: var(--space-3, 12px) var(--page-padding-x, 20px) calc(var(--bottom-nav-height) + var(--safe-bottom, 0px) + 8px);
+  }
+
+  .bookglow-more-link {
+    min-height: 56px;
   }
 }
 
@@ -194,6 +234,24 @@
   height: var(--touch-min, 44px);
 }
 
+/* Visual size != touch target. sm/md stay compact; ::after expands the hit box. */
+.m-btn {
+  position: relative;
+  overflow: visible;
+}
+
+.m-btn--sm::after,
+.m-btn--md::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  min-width: var(--touch-min, 44px);
+  height: var(--touch-min, 44px);
+  transform: translate(-50%, -50%);
+}
+
 .bookglow-mobile-nav-item__icon,
 .bookglow-mobile-nav-item__icon svg {
   width: var(--icon-size);
@@ -207,7 +265,7 @@
   }
 
   .bookglow-mobile-header__title {
-    font-size: 15px;
+    font-size: var(--mobile-text-header-title, 15px);
     line-height: 1.2;
     font-weight: 600;
   }
@@ -226,10 +284,19 @@
     font-size: 11px;
   }
 
-  .m-btn--md,
+  .m-btn--sm {
+    height: var(--control-height-sm);
+    min-height: var(--control-height-sm);
+  }
+
+  .m-btn--md {
+    height: var(--control-height);
+    min-height: var(--control-height);
+  }
+
   .m-btn--lg {
-    height: 48px;
-    min-height: 48px;
+    height: var(--touch-min, 44px);
+    min-height: var(--touch-min, 44px);
   }
 
   .bookglow-icon-button svg {
@@ -259,13 +326,13 @@
   }
 
   .bookglow-more-sheet {
-    padding: 8px 12px calc(var(--bottom-nav-height) + var(--safe-bottom, 0px) + 8px);
+    padding: var(--space-2, 8px) var(--page-padding-x, 12px) calc(var(--bottom-nav-height) + var(--safe-bottom, 0px) + 8px);
   }
 
   .bookglow-more-link {
-    min-height: 52px;
-    padding: 8px 10px;
-    font-size: 13px;
+    min-height: 56px;
+    padding: var(--space-3, 12px);
+    font-size: var(--font-body, 14px);
   }
 
   /* Shell already clears the nav. Do not stack a second nav-height spacer. */
@@ -322,10 +389,6 @@
     font-size: 1rem;
   }
 
-  .m-btn--lg {
-    min-height: var(--touch-min, 44px);
-    height: var(--touch-min, 44px);
-  }
 }
 
 /* Shared BookGlow mobile chrome — one layout for F12 and Android WebView. */

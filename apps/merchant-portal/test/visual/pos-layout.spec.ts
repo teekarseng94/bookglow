@@ -82,6 +82,8 @@ test('POS layout stays within the viewport at required widths', async ({ page })
     if (isPhone(viewport.width)) {
       await expect(page.locator('.m-pos-mobile-card').first()).toBeVisible();
       await expect(page.locator('.m-pos-sticky-cart')).toBeVisible();
+      const phoneCard = await page.locator('.m-pos-mobile-card').first().boundingBox();
+      expect(phoneCard?.height, `tall catalogue row at ${viewport.width}`).toBeLessThanOrEqual(68);
     }
 
     if (isTablet(viewport.width)) {
@@ -222,6 +224,56 @@ test('POS iPad Mini portrait remains usable at 24px root font', async ({ page })
   await expect(page.getByRole('heading', { name: 'Order Summary' }).locator('visible=true')).toBeVisible();
   await page.screenshot({
     path: artifact('pos-layout-768x1024-font-24.png'),
+    fullPage: false,
+    animations: 'disabled',
+  });
+});
+
+test('POS phone catalogue stays compact and checkout stays pinned with five line items', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  await openPOS(page);
+  await page.evaluate(() => {
+    document.documentElement.style.setProperty('--safe-top', '28px');
+    document.documentElement.style.setProperty('--safe-bottom', '24px');
+  });
+
+  const addButtons = page.locator('.m-pos-mobile-card .m-pos-add-btn');
+  await expect(addButtons.first()).toBeVisible();
+  for (let i = 0; i < 5; i += 1) {
+    await addButtons.nth(i).click();
+  }
+
+  await page.getByRole('button', { name: /View order/i }).click();
+  await expect(page.getByRole('heading', { name: 'Order Summary' }).locator('visible=true')).toBeVisible();
+  await expect(page.locator('.m-pos-cart-item__name').locator('visible=true')).toHaveCount(5);
+  await expect(page.getByRole('button', { name: /Proceed to Payment/i })).toBeVisible();
+
+  const geometry = await page.evaluate(() => {
+    const visible = (el: Element | null) => {
+      if (!(el instanceof HTMLElement)) return false;
+      const style = getComputedStyle(el);
+      if (style.display === 'none' || style.visibility === 'hidden') return false;
+      return el.getClientRects().length > 0 && el.getBoundingClientRect().width > 0;
+    };
+    const checkout = [...document.querySelectorAll<HTMLElement>('.m-pos-checkout-btn')].find(visible);
+    const nav = document.querySelector<HTMLElement>('.bookglow-mobile-nav');
+    const footer = document.querySelector<HTMLElement>('.m-sheet-footer');
+    const card = document.querySelector<HTMLElement>('.m-pos-mobile-card');
+    return {
+      checkoutBottom: checkout?.getBoundingClientRect().bottom ?? 0,
+      navTop: nav && visible(nav) ? nav.getBoundingClientRect().top : 0,
+      footerHeight: footer?.getBoundingClientRect().height ?? 0,
+      cardHeight: card?.getBoundingClientRect().height ?? 0,
+    };
+  });
+  expect(geometry.cardHeight).toBeLessThanOrEqual(68);
+  expect(geometry.checkoutBottom).toBeGreaterThan(0);
+  expect(geometry.checkoutBottom).toBeLessThanOrEqual(geometry.navTop + 1);
+  expect(geometry.footerHeight).toBeGreaterThan(40);
+  expect(geometry.footerHeight).toBeLessThan(220);
+
+  await page.screenshot({
+    path: artifact('pos-layout-360x800-five-items.png'),
     fullPage: false,
     animations: 'disabled',
   });

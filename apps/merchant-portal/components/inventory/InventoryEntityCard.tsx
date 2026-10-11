@@ -91,18 +91,21 @@ export const InventoryEntityCard: React.FC<InventoryEntityCardProps> = ({
   })();
 
   return (
-    <article className={cx('m-inventory-card', className)}>
+    <article className={cx('m-inventory-card m-list-row', className)}>
       <div className="m-inventory-thumb" aria-hidden={media ? undefined : true}>
         {media}
       </div>
 
       <div className="m-inventory-card__body">
         <h3 className="m-inventory-card__title">{name}</h3>
-        {metaLabel ? <p className="m-inventory-card__meta">{metaLabel}</p> : null}
-        <span className={statusClass}>
-          <span className="m-inventory-card__status-dot" aria-hidden />
-          {statusLabel}
-        </span>
+        <p className="m-inventory-card__meta">
+          {metaLabel ? <span>{metaLabel}</span> : null}
+          {metaLabel ? <span aria-hidden> · </span> : null}
+          <span className={statusClass}>
+            <span className="m-inventory-card__status-dot" aria-hidden />
+            {statusLabel}
+          </span>
+        </p>
       </div>
 
       <div className="m-inventory-card__price-col">

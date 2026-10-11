@@ -45,14 +45,14 @@ export const MemberHistorySection: React.FC<MemberHistorySectionProps> = ({
       type="button"
       onClick={onOpen}
       className={cx(
-        'm-member-history-row w-full flex items-center text-left hover:bg-[var(--bg-soft)] transition-colors',
+        'm-list-row m-member-history-row w-full flex items-center text-left hover:bg-[var(--bg-soft)] transition-colors',
         'bg-[var(--bg-surface)] border border-[var(--line)] rounded-ui-md shadow-ui-xs',
-        'gap-3 p-3 sm:gap-4 sm:p-4',
+        'gap-3 p-3 sm:gap-4',
         className,
       )}
     >
       {icon ? (
-        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-ui-sm bg-[var(--bg-soft)] text-[var(--text-secondary)] flex items-center justify-center shrink-0">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-ui-sm bg-[var(--bg-soft)] text-[var(--text-secondary)]">
           {icon}
         </div>
       ) : null}

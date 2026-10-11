@@ -25,7 +25,7 @@ export const StaffSaveBar: React.FC<StaffSaveBarProps> = ({
   formId,
   className,
 }) => (
-  <div className={cx('space-y-2', className)}>
+  <div className={cx('m-sheet-footer space-y-2', className)}>
     {status !== 'idle' || saving ? (
       <div className="flex justify-center sm:justify-start">
         <SaveStatus status={saving ? 'saving' : status} />

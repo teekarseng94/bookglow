@@ -6,13 +6,22 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Menu, MoreHorizontal, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Icons } from '../constants';
 import type { UserRole } from '../contexts/UserContext';
 import type { PortalAuthUser } from '../services/authService';
-import { isTabAllowed } from '../utils/permissions';
 import { NetworkStatusBanner } from './ui';
+import { MerchantMoreSheet } from './shell/MerchantMoreSheet';
+import {
+  allowedNavCatalog,
+  groupedNavCatalog,
+  moreNavCatalog,
+  mobilePrimaryNav,
+  resolveMerchantPageTitle,
+  type MerchantNavDefinition,
+  type MerchantNavIcon,
+} from './shell/merchantNav';
 import { publicPrivacyPolicyUrl } from '../src/legal/publicLegalUrls';
 import { installViewportProbe } from '../src/debug/viewportProbe';
 import { registerOverlayDismiss } from '../src/native/overlayDismiss';
@@ -39,41 +48,35 @@ type NavItem = {
   icon: React.ReactNode;
 };
 
-type NavGroup = {
-  label: string;
-  ids: string[];
+const NAV_ICONS: Record<MerchantNavIcon, React.ReactNode> = {
+  Dashboard: <Icons.Dashboard />,
+  Calendar: <Icons.Calendar />,
+  POS: <Icons.POS />,
+  Clients: <Icons.Clients />,
+  Services: <Icons.Services />,
+  Reports: <Icons.Reports />,
+  Finance: <Icons.Finance />,
+  Marketing: <Icons.Marketing />,
+  Staff: <Icons.Staff />,
+  Integrations: <Icons.Integrations />,
+  Settings: <Icons.Settings />,
+  Flag: <Icons.Flag />,
 };
 
-const MoreHorizontalIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-    <circle cx="5" cy="12" r="1.75" />
-    <circle cx="12" cy="12" r="1.75" />
-    <circle cx="19" cy="12" r="1.75" />
-  </svg>
-);
+function toNavItem(item: MerchantNavDefinition): NavItem {
+  return {
+    id: item.id,
+    label: item.label,
+    shortLabel: item.shortLabel,
+    icon: NAV_ICONS[item.icon],
+  };
+}
 
 const LogoutIcon = () => (
   <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
   </svg>
 );
-
-const pageTitles: Record<string, string> = {
-  dashboard: 'Today',
-  pos: 'Point of Sale',
-  schedule: 'Schedule',
-  appointments: 'Schedule',
-  member: 'Members',
-  menu: 'Menu & Inventory',
-  'sales-reports': 'Sales Reports',
-  transactions: 'Sales History',
-  finance: 'Finance',
-  marketing: 'Marketing',
-  staff: 'Staff & Team',
-  integrations: 'Integrations',
-  settings: 'Settings',
-  report: 'Report',
-};
 
 const LS_COLLAPSED_KEY = 'bookglow_sidebar_collapsed';
 
@@ -155,7 +158,9 @@ const TooltipNavLink: React.FC<{
         onBlur={hideTooltip}
         onClick={() => { hideTooltip(); onClick?.(); }}
       >
-        <span className="bookglow-nav-link__icon">{item.icon}</span>
+                <span className="bookglow-nav-link__icon" aria-hidden>
+                  {item.icon}
+                </span>
         {!collapsed && <span className="bookglow-nav-link__label truncate">{item.label}</span>}
       </NavLink>
 
@@ -328,67 +333,22 @@ const Layout: React.FC<LayoutProps> = ({
   const roleTitle =
     role === 'admin' ? 'Administrator' : role === 'manager' ? 'Manager' : 'Cashier';
 
-  // ── Navigation data ───────────────────────────────────────────────────────
-  const allNavItems: NavItem[] = [
-    { id: 'dashboard', label: 'Today', icon: <Icons.Dashboard /> },
-    { id: 'schedule', label: 'Schedule', icon: <Icons.Calendar /> },
-    { id: 'pos', label: 'Point of Sale', shortLabel: 'POS', icon: <Icons.POS /> },
-    { id: 'member', label: 'Members', icon: <Icons.Clients /> },
-    { id: 'menu', label: 'Menu & Inventory', shortLabel: 'Menu', icon: <Icons.Services /> },
-    { id: 'sales-reports', label: 'Sales Reports', shortLabel: 'Reports', icon: <Icons.Reports /> },
-    { id: 'transactions', label: 'Sales History', icon: <Icons.Finance /> },
-    { id: 'finance', label: 'Finance', icon: <Icons.Finance /> },
-    { id: 'marketing', label: 'Marketing', icon: <Icons.Marketing /> },
-    { id: 'staff', label: 'Staff & Team', icon: <Icons.Staff /> },
-    { id: 'integrations', label: 'Integrations', icon: <Icons.Integrations /> },
-    { id: 'settings', label: 'Settings', icon: <Icons.Settings /> },
-    { id: 'report', label: 'Report', icon: <Icons.Flag /> },
-  ];
+  // ── Navigation data (shared catalog) ─────────────────────────────────────
+  const allowedItems = useMemo(() => allowedNavCatalog(role), [role]);
+  const groupedNavItems = useMemo(
+    () => groupedNavCatalog(allowedItems).map((group) => ({ ...group, items: group.items.map(toNavItem) })),
+    [allowedItems],
+  );
+  const mobileBottomNavItems = useMemo(() => mobilePrimaryNav(role).map(toNavItem), [role]);
+  const moreNavItems = useMemo(() => moreNavCatalog(role, allowedItems).map(toNavItem), [role, allowedItems]);
 
-  const navGroupsConfig: NavGroup[] = [
-    { label: 'Workday', ids: ['dashboard', 'schedule', 'pos'] },
-    { label: 'Customers', ids: ['member', 'marketing'] },
-    { label: 'Business', ids: ['menu', 'sales-reports', 'transactions', 'finance', 'staff'] },
-    { label: 'Workspace', ids: ['integrations', 'settings', 'report'] },
-  ];
-
-  const navItems = allNavItems.filter((item) => isTabAllowed(role, item.id));
-
-  const navGroups = navGroupsConfig
-    .map((group) => ({
-      ...group,
-      ids: group.ids.filter((id) => isTabAllowed(role, id)),
-    }))
-    .filter((group) => group.ids.length > 0);
-
-  const groupedNavItems = navGroups
-    .map((group) => ({
-      ...group,
-      items: group.ids
-        .map((id) => navItems.find((item) => item.id === id))
-        .filter(Boolean) as NavItem[],
-    }))
-    .filter((group) => group.items.length > 0);
-
-  const mobileBottomNavItems =
-    role === 'admin'
-      ? allNavItems.filter((item) => ['dashboard', 'schedule', 'pos', 'member'].includes(item.id))
-      : role === 'manager'
-      ? allNavItems.filter((item) => ['schedule', 'pos', 'member', 'staff'].includes(item.id))
-      : allNavItems.filter((item) => ['pos', 'member', 'menu', 'sales-reports'].includes(item.id));
-
-  const mobilePrimaryIds = new Set(mobileBottomNavItems.map((item) => item.id));
+  const mobilePrimaryIds = useMemo(
+    () => new Set(mobileBottomNavItems.map((item) => item.id)),
+    [mobileBottomNavItems],
+  );
   const tabForBottomNav = location.pathname.startsWith('/member-details/') ? 'member' : activeTab;
   const moreTabActive = !mobilePrimaryIds.has(tabForBottomNav);
-  const moreNavItems = navItems.filter((item) => !mobilePrimaryIds.has(item.id));
-
-  const currentPageTitle = location.pathname.startsWith('/member-details/')
-    ? 'Member details'
-    : location.pathname.startsWith('/integrations/google-reviews')
-      ? 'Google Reviews'
-      : location.pathname.startsWith('/integrations/chatbot-api')
-        ? 'Chatbot API'
-        : pageTitles[activeTab] || activeTab.replaceAll('-', ' ');
+  const currentPageTitle = resolveMerchantPageTitle(location.pathname, activeTab);
 
   const resolvedOutletName = outletName || shopName || outletId || 'Bookglow';
   const todayLabel = useMemo(
@@ -712,9 +672,7 @@ const Layout: React.FC<LayoutProps> = ({
                 aria-label="Open navigation"
                 aria-expanded={isMoreMenuOpen}
               >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
+                <Menu className="h-5 w-5" aria-hidden />
               </button>
             ) : (
               <div className="h-11 w-11" aria-hidden />
@@ -746,14 +704,12 @@ const Layout: React.FC<LayoutProps> = ({
           </div>
         </header>
 
-        {/* Desktop utility header */}
+        {/* Desktop utility header — outlet context only; the page owns its title. */}
         <header className="bookglow-desktop-utility hidden lg:flex">
           <div className="min-w-0">
-            <p className="bookglow-eyebrow">{resolvedOutletName}</p>
+            <p className="bookglow-eyebrow">Bookglow workspace</p>
             <div className="flex items-center gap-2">
-              <h2 className="truncate text-base font-semibold tracking-tight text-[var(--text-primary)]">
-                {currentPageTitle}
-              </h2>
+              <h2 className="bookglow-desktop-utility__outlet truncate">{resolvedOutletName}</h2>
               {outletId && (
                 <span
                   className="bookglow-outlet-pill"
@@ -764,7 +720,7 @@ const Layout: React.FC<LayoutProps> = ({
               )}
             </div>
           </div>
-          <div className="flex items-center gap-3 text-right">
+          <div className="bookglow-desktop-utility__user flex items-center gap-3 text-right">
             <div>
               <p className="text-sm font-semibold text-[var(--text-secondary)]">{roleTitle}</p>
               <p className="m-shell-meta">{user?.email || 'Secure session'}</p>
@@ -834,7 +790,9 @@ const Layout: React.FC<LayoutProps> = ({
                   )
                 }
               >
-                <span className="bookglow-mobile-nav-item__icon">{item.icon}</span>
+                <span className="bookglow-mobile-nav-item__icon" aria-hidden>
+                  {item.icon}
+                </span>
                 <span className="bookglow-mobile-nav-item__label">
                   {item.shortLabel || item.label}
                 </span>
@@ -850,7 +808,7 @@ const Layout: React.FC<LayoutProps> = ({
                 aria-expanded={isMoreMenuOpen}
               >
                 <span className="bookglow-mobile-nav-item__icon">
-                  <MoreHorizontalIcon />
+                  <MoreHorizontal className="h-5 w-5" aria-hidden />
                 </span>
                 <span className="bookglow-mobile-nav-item__label">More</span>
               </button>
@@ -860,55 +818,17 @@ const Layout: React.FC<LayoutProps> = ({
 
         {/* Mobile more-sheet */}
         {isMoreMenuOpen && moreNavItems.length > 0 && (
-          <>
-            <button
-              type="button"
-              className="bookglow-more-backdrop lg:hidden"
-              aria-label="Close navigation"
-              onClick={() => setIsMoreMenuOpen(false)}
-            />
-            <div
-              ref={moreMenuRef}
-              className="bookglow-more-sheet lg:hidden"
-              role="dialog"
-              aria-modal="true"
-              aria-label="More pages"
-            >
-              <div className="bookglow-more-sheet__handle" aria-hidden />
-              <div className="bookglow-more-sheet__header">
-                <div>
-                  <p className="bookglow-eyebrow">Bookglow workspace</p>
-                  <h2 className="text-base font-semibold text-[var(--text-primary)]">More pages</h2>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsMoreMenuOpen(false)}
-                  className="bookglow-icon-button"
-                  aria-label="Close navigation"
-                >
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <div className="bookglow-more-sheet__grid">
-                {moreNavItems.map((item) => (
-                  <NavLink
-                    key={item.id}
-                    to={`/${item.id}`}
-                    end={item.id !== 'integrations'}
-                    onClick={() => setIsMoreMenuOpen(false)}
-                    className={({ isActive: routeActive }) =>
-                      `bookglow-more-link ${routeActive ? 'bookglow-more-link--active' : ''}`
-                    }
-                  >
-                    <span className="bookglow-more-link__icon">{item.icon}</span>
-                    <span>{item.label}</span>
-                  </NavLink>
-                ))}
-              </div>
-            </div>
-          </>
+          <MerchantMoreSheet
+            sheetRef={moreMenuRef}
+            onClose={() => setIsMoreMenuOpen(false)}
+            items={moreNavItems.map((item) => ({
+              id: item.id,
+              label: item.label,
+              icon: item.icon,
+              to: `/${item.id}`,
+              end: item.id !== 'integrations',
+            }))}
+          />
         )}
       </div>
     </div>

@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  CalendarClock,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -182,24 +181,24 @@ export const MarketingGrowthWorkspace: React.FC<MarketingGrowthWorkspaceProps> =
               {audiences.map((audience) => (
                 <article
                   key={audience.id}
-                  className="rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] p-5"
+                  className="m-list-row m-marketing-row flex items-center gap-3 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] p-3 sm:flex-col sm:items-stretch sm:p-5"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <span className="rounded-ui-md bg-[var(--brand-soft)] p-2 text-[var(--brand)]">
-                      <Users size={18} />
-                    </span>
-                    <StatusBadge tone="brand">
-                      {audienceCounts.get(audience.id) || 0} customers
-                    </StatusBadge>
+                  <span className="shrink-0 rounded-ui-md bg-[var(--brand-soft)] p-2 text-[var(--brand)]">
+                    <Users size={18} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate font-semibold text-[var(--text-primary)]">{audience.name}</h3>
+                    <p className="mt-0.5 truncate text-xs text-[var(--text-muted)] sm:mt-1 sm:min-h-10 sm:text-sm">
+                      {audience.description || criteriaLabels[audience.criteria.type]}
+                    </p>
+                    <div className="mt-1 hidden truncate border-t border-[var(--line)] pt-3 text-xs text-[var(--text-secondary)] sm:mt-4 sm:block">
+                      Rule: {criteriaLabels[audience.criteria.type]}
+                      {audience.criteria.value ? ` · ${audience.criteria.value}` : ''}
+                    </div>
                   </div>
-                  <h3 className="mt-4 font-semibold text-[var(--text-primary)]">{audience.name}</h3>
-                  <p className="mt-1 min-h-10 text-sm text-[var(--text-muted)]">
-                    {audience.description || criteriaLabels[audience.criteria.type]}
-                  </p>
-                  <div className="mt-4 border-t border-[var(--line)] pt-3 text-xs text-[var(--text-secondary)]">
-                    Rule: {criteriaLabels[audience.criteria.type]}
-                    {audience.criteria.value ? ` · ${audience.criteria.value}` : ''}
-                  </div>
+                  <StatusBadge tone="brand">
+                    {audienceCounts.get(audience.id) || 0} customers
+                  </StatusBadge>
                 </article>
               ))}
             </div>
@@ -239,43 +238,30 @@ export const MarketingGrowthWorkspace: React.FC<MarketingGrowthWorkspaceProps> =
                 return (
                   <article
                     key={campaign.id}
-                    className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center"
+                    className="m-list-row m-marketing-row flex items-center gap-3 px-3 py-2 sm:grid sm:gap-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center"
                   >
-                    <div className="flex min-w-0 gap-3">
-                      <span className="h-fit rounded-ui-md bg-[var(--brand-soft)] p-2.5 text-[var(--brand)]">
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      <span className="shrink-0 rounded-ui-md bg-[var(--brand-soft)] p-2 text-[var(--brand)]">
                         <Icon size={18} />
                       </span>
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="font-semibold text-[var(--text-primary)]">{campaign.name}</h3>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <h3 className="truncate font-semibold text-[var(--text-primary)]">{campaign.name}</h3>
                           <StatusBadge tone={campaign.status === 'scheduled' ? 'info' : 'neutral'}>
                             {campaign.status}
                           </StatusBadge>
                         </div>
-                        <p className="mt-1 truncate text-sm text-[var(--text-secondary)]">
-                          {campaign.message}
-                        </p>
-                        <p className="mt-1 text-xs text-[var(--text-muted)]">
-                          {audience?.name || 'Audience removed'} ·{' '}
-                          {audienceCounts.get(campaign.audienceID || '') || 0} customers
+                        <p className="mt-0.5 truncate text-xs text-[var(--text-muted)] sm:text-sm">
+                          {audience?.name || 'Audience removed'} · {audienceCounts.get(campaign.audienceID || '') || 0} customers
+                          {campaign.scheduledAt
+                            ? ` · ${new Date(campaign.scheduledAt).toLocaleString()}`
+                            : delivery
+                              ? ` · ${delivery.sent} sent`
+                              : ' · Not launched'}
                         </p>
                       </div>
                     </div>
-                    <div className="flex flex-wrap items-center gap-3 lg:justify-end">
-                      <div className="text-right text-xs text-[var(--text-muted)]">
-                        {campaign.scheduledAt ? (
-                          <span className="inline-flex items-center gap-2">
-                            <CalendarClock size={15} />
-                            {new Date(campaign.scheduledAt).toLocaleString()}
-                          </span>
-                        ) : (
-                          <span>
-                            {delivery
-                              ? `${delivery.sent} sent · ${delivery.failed} failed`
-                              : 'Not launched'}
-                          </span>
-                        )}
-                      </div>
+                    <div className="flex shrink-0 items-center gap-2 lg:justify-end">
                       {campaign.status === 'draft' || campaign.status === 'paused' ? (
                         <Button
                           size="sm"
@@ -597,7 +583,7 @@ const CampaignBuilder: React.FC<CampaignBuilderProps> = ({
             {audiences.map((audience) => (
               <label
                 key={audience.id}
-                className={`flex cursor-pointer items-center gap-3 rounded-ui-md border p-4 ${
+                className={`m-list-row flex cursor-pointer items-center gap-3 rounded-ui-md border px-3 py-2 ${
                   audienceID === audience.id
                     ? 'border-[var(--brand)] bg-[var(--brand-soft)]'
                     : 'border-[var(--line)]'

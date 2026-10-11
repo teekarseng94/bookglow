@@ -10,10 +10,15 @@ import { SettingsNavigation, type SettingsSectionId } from '../../components/set
 import { OperatingHoursRow } from '../../components/settings/OperatingHoursRow';
 import { EmptyState } from '../../components/ui/EmptyState';
 import { Button } from '../../components/ui/Button';
+import { FilterChip, FilterChipRow } from '../../components/ui/FilterChipRow';
+import { MetricRail } from '../../components/ui/MetricRail';
+import { MobilePageActions } from '../../components/ui/MobilePageActions';
+import { PageHeader } from '../../components/ui/PageHeader';
 import { InventoryTypeTabs } from '../../components/inventory/InventoryTypeTabs';
 import { InventoryEmptyState } from '../../components/inventory/InventoryEmptyState';
 import { POSCatalogueEmptyState, POSCatalogueToolbar } from '../../components/pos';
 import { POSStickyCartAction } from '../../components/pos/POSStickyCartAction';
+import { StaffCard, StaffPageHeader, StaffSummaryCards } from '../../components/staff';
 import '../../src/loadStyles';
 
 const screen = new URLSearchParams(window.location.search).get('screen') || 'onboarding';
@@ -110,7 +115,7 @@ function SettingsHarness() {
   const [active, setActive] = useState<SettingsSectionId>('business-profile');
   const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   return (
-    <Layout activeTab="settings" setActiveTab={() => undefined} isAdmin shopName="Fiola" outletName="Fiola" role="admin">
+    <Layout activeTab="settings" setActiveTab={() => undefined} isAdmin shopName="Fiola" outletName="Fiola" outletId="outlet_001" role="admin">
       <div className="m-page-with-bottom-nav min-w-0 overflow-x-hidden">
         <SettingsNavigation activeId={active} onSelect={setActive} />
         <section className="m-card mt-4 p-4 min-w-0">
@@ -224,6 +229,90 @@ function InventoryHarness() {
   );
 }
 
+function StaffHarness() {
+  const [role, setRole] = useState('all');
+  return (
+    <Layout activeTab="staff" setActiveTab={() => undefined} isAdmin shopName="Fiola" outletName="Fiola" outletId="outlet_001" role="admin">
+      <div className="m-page-with-bottom-nav min-w-0 overflow-x-hidden space-y-3">
+        <StaffPageHeader onAddStaff={() => undefined} onOpenRoleRates={() => undefined} />
+        <StaffSummaryCards
+          cards={[
+            { id: 'total', label: 'Total Staff', value: '8', hint: '8 shown', icon: null },
+            { id: 'active', label: 'Active Today', value: '4', hint: '50%', icon: null },
+            { id: 'services', label: 'Services', value: '70', hint: 'Covered', icon: null },
+            { id: 'commission', label: 'Commission', value: 'RM3,932', hint: 'This month', icon: null },
+            { id: 'rating', label: 'Avg. Rating', value: '—', hint: 'Not tracked', icon: null },
+          ]}
+        />
+        <div className="flex items-center gap-2">
+          <input
+            type="search"
+            placeholder="Search staff by name or role..."
+            className="h-10 min-w-0 flex-1 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] pl-3 text-sm"
+            aria-label="Search staff"
+          />
+          <button type="button" className="m-icon-btn m-icon-btn--md grid h-11 w-11 place-items-center rounded-ui-sm border border-[var(--line)]" aria-label="Filter staff status">
+            ☰
+          </button>
+        </div>
+        <FilterChipRow ariaLabel="Filter by role">
+          <FilterChip selected={role === 'all'} onClick={() => setRole('all')}>
+            All (3)
+          </FilterChip>
+          <FilterChip selected={role === 'lead'} onClick={() => setRole('lead')}>
+            Lead Therapist
+          </FilterChip>
+          <FilterChip selected={role === 'manager'} onClick={() => setRole('manager')}>
+            Manager
+          </FilterChip>
+        </FilterChipRow>
+        <StaffCard name="Rida" role="Lead Therapist" metaSecondary="48 services" status="earning" commissionLabel="RM1,240" />
+        <StaffCard name="Mei" role="Therapist" metaSecondary="22 services" status="active" commissionLabel="RM860" />
+        <StaffCard name="Aisha" role="Manager" metaSecondary="70 services" status="idle" />
+      </div>
+    </Layout>
+  );
+}
+
+function SystemHarness() {
+  const [role, setRole] = useState('all');
+  return (
+    <Layout activeTab="staff" setActiveTab={() => undefined} isAdmin shopName="Fiola" outletName="Fiola" outletId="outlet_001" role="admin">
+      <div className="m-page-with-bottom-nav min-w-0 overflow-x-hidden space-y-3">
+        <PageHeader title="Staff & Team" description="Manage your team, roles, permissions, and performance." />
+        <MobilePageActions
+          hideOnDesktop={false}
+          primary={<Button size="sm">Add Staff</Button>}
+          secondary={<Button variant="secondary" size="sm">Roles</Button>}
+        />
+        <MetricRail
+          items={[
+            { id: 'total', label: 'Total Staff', value: '8' },
+            { id: 'active', label: 'Active Today', value: '4' },
+            { id: 'services', label: 'Services', value: '70' },
+            { id: 'commission', label: 'Commission', value: 'RM3,932' },
+          ]}
+        />
+        <FilterChipRow ariaLabel="Role filter">
+          <FilterChip selected={role === 'all'} onClick={() => setRole('all')}>
+            All
+          </FilterChip>
+          <FilterChip selected={role === 'lead'} onClick={() => setRole('lead')}>
+            Lead Therapist
+          </FilterChip>
+          <FilterChip selected={role === 'manager'} onClick={() => setRole('manager')}>
+            Manager
+          </FilterChip>
+        </FilterChipRow>
+        <div className="m-list-row m-entity-row">
+          <p className="m-list-title">Rida</p>
+          <p className="m-entity-row-meta">Lead Therapist · 48 services</p>
+        </div>
+      </div>
+    </Layout>
+  );
+}
+
 function Harness() {
   const view = useMemo(() => screen, []);
   const initial =
@@ -235,7 +324,9 @@ function Harness() {
           ? '/pos'
           : view === 'inventory'
             ? '/menu'
-            : '/onboarding';
+            : view === 'system' || view === 'staff'
+              ? '/staff'
+              : '/onboarding';
   return (
     <MemoryRouter initialEntries={[initial]}>
       {view === 'settings' ? (
@@ -246,6 +337,10 @@ function Harness() {
         <PosHarness />
       ) : view === 'inventory' ? (
         <InventoryHarness />
+      ) : view === 'system' ? (
+        <SystemHarness />
+      ) : view === 'staff' ? (
+        <StaffHarness />
       ) : (
         <OnboardingHarness />
       )}

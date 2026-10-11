@@ -12,7 +12,7 @@ export interface POSPageHeaderProps {
 
 /**
  * Phone/tablet page intro only.
- * Desktop shell already shows "Point of Sale" + Live outlet — do not duplicate.
+ * Desktop sidebar marks POS active; the utility header is outlet context — do not duplicate a page H1.
  */
 export const POSPageHeader: React.FC<POSPageHeaderProps> = ({
   title = 'Point of Sale',

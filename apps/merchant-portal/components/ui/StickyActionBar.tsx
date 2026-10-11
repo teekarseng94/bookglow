@@ -17,7 +17,7 @@ export const StickyActionBar: React.FC<StickyActionBarProps> = ({
 }) => (
   <div
     className={cx(
-      'm-sticky-bar sticky bottom-0 z-20',
+      'm-sticky-bar m-sheet-footer sticky bottom-0 z-20',
       'flex items-center justify-between gap-3',
       'px-4 py-3 border-t border-[var(--line)]',
       'bg-[var(--bg-surface)]/95 backdrop-blur-sm shadow-[0_-6px_18px_rgba(39,25,42,0.06)]',

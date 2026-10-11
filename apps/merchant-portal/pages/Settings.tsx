@@ -5,8 +5,6 @@ import { Icons } from '../constants';
 import { useUserContext } from '../contexts/UserContext';
 import { outletService } from '../services/databaseService';
 import {
-  bookingSlugAfterRename,
-  bookingSlugFollowsShopName,
   bookingSlugForEditor,
   bookingSlugFromShopName,
   bookingSlugToPersist,
@@ -80,6 +78,20 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
   const [bookingSlugError, setBookingSlugError] = useState<string | null>(null);
   const [bookingInfoStatus, setBookingInfoStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   const [activeSection, setActiveSection] = useState<SettingsSectionId>('business-profile');
+  const [profileSaveStatus, setProfileSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const [profileSaveError, setProfileSaveError] = useState<string | null>(null);
+  const [profileDirty, setProfileDirty] = useState(false);
+  const [phoneLayout, setPhoneLayout] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia('(max-width: 767.98px)').matches,
+  );
+  const [shopNameDraft, setShopNameDraft] = useState(settings.shopName || '');
+  const [categoryDraft, setCategoryDraft] = useState(settings.primaryBusinessCategory || '');
+  const [teamSizeDraft, setTeamSizeDraft] = useState(settings.teamSize || '');
+  const [categoriesDraft, setCategoriesDraft] = useState((settings.businessCategories || []).join(', '));
+  const [locationDraft, setLocationDraft] = useState(settings.serviceLocationType || '');
+  const [softwareDraft, setSoftwareDraft] = useState(
+    settings.previousSoftware === 'Other' ? settings.previousSoftwareOther || 'Other' : settings.previousSoftware || '',
+  );
 
   // Load outlet data using outletId
   useEffect(() => {
@@ -144,6 +156,32 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
     };
   }, [effectiveOutletId, propOutlet]);
 
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 767.98px)');
+    const apply = () => setPhoneLayout(media.matches);
+    apply();
+    media.addEventListener('change', apply);
+    return () => media.removeEventListener('change', apply);
+  }, []);
+
+  useEffect(() => {
+    if (profileDirty) return;
+    setShopNameDraft(settings.shopName || '');
+    setCategoryDraft(settings.primaryBusinessCategory || '');
+    setTeamSizeDraft(settings.teamSize || '');
+    setCategoriesDraft((settings.businessCategories || []).join(', '));
+    setLocationDraft(settings.serviceLocationType || '');
+    setSoftwareDraft(
+      settings.previousSoftware === 'Other' ? settings.previousSoftwareOther || 'Other' : settings.previousSoftware || '',
+    );
+  }, [settings, profileDirty]);
+
+  useEffect(() => {
+    const derived = bookingSlugFromShopName(settings.shopName || '');
+    if (!derived) return;
+    setBookingSlug((current) => (current.trim() === derived ? current : derived));
+  }, [settings.shopName]);
+
   // Permanent save to Firestore: writes to document outlets/{outletId} (e.g. outlets/outlet_002).
   // Network tab will show a write to the outlets collection when successful.
   const handleSaveBookingInfo = async () => {
@@ -156,7 +194,11 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
     setBookingSlugError(null);
 
     try {
-      const slugToSave = bookingSlugToPersist(bookingSlug, settings.shopName || '', effectiveOutletId);
+      const slugToSave = bookingSlugToPersist(
+        bookingSlugFromShopName(settings.shopName || '') || bookingSlug,
+        settings.shopName || '',
+        effectiveOutletId,
+      );
       if (!isValidBookingSlug(slugToSave)) {
         setBookingSlugError('Use a letter first, then letters, numbers, hyphens, or underscores only.');
         setBookingInfoStatus('error');
@@ -198,13 +240,13 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
     }
   };
 
-  const bookingPathSegment = resolveBookingSlug(bookingSlug, settings.shopName || '', effectiveOutletId);
-  const bookingUrl = effectiveOutletId && BOOKING_BASE_URL ? `${BOOKING_BASE_URL}/${bookingPathSegment}` : '';
-
   // A shop name with no Latin characters cannot form a path, so the merchant has
   // to supply one instead of inheriting an unreadable generated path.
-  const shopNameHasNoPath = !bookingSlugFromShopName(settings.shopName || '');
-  const bookingSlugFollowingShopName = bookingSlugFollowsShopName(bookingSlug, settings.shopName || '');
+  const derivedBookingPath = bookingSlugFromShopName(settings.shopName || '');
+  const shopNameHasNoPath = !derivedBookingPath;
+  const bookingPathValue = derivedBookingPath || bookingSlug;
+  const bookingPathSegment = resolveBookingSlug(bookingPathValue, settings.shopName || '', effectiveOutletId);
+  const bookingUrl = effectiveOutletId && BOOKING_BASE_URL ? `${BOOKING_BASE_URL}/${bookingPathSegment}` : '';
 
   // Receipt lines inherit the shop name and the contact details above until the
   // merchant types something of their own into the receipt fields.
@@ -218,7 +260,11 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
 
   const persistPublicBookingSlug = async (): Promise<string | null> => {
     if (!effectiveOutletId) return null;
-    const slugToSave = bookingSlugToPersist(bookingSlug, settings.shopName || '', effectiveOutletId);
+    const slugToSave = bookingSlugToPersist(
+      bookingSlugFromShopName(settings.shopName || '') || bookingSlug,
+      settings.shopName || '',
+      effectiveOutletId,
+    );
     if (!isValidBookingSlug(slugToSave)) {
       setBookingSlugError('Use a letter first, then letters, numbers, hyphens, or underscores only.');
       return null;
@@ -253,32 +299,26 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
 
   const handleShopNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const nextName = e.target.value;
-
-    const nextSlug = bookingSlugAfterRename(bookingSlug, settings.shopName || '', nextName);
-    if (nextSlug !== bookingSlug) {
-      setBookingSlug(nextSlug);
+    const derived = bookingSlugFromShopName(nextName);
+    if (derived && derived !== bookingSlug) {
+      setBookingSlug(derived);
       setBookingSlugError(null);
     }
-
     onUpdateSettings({ ...settings, shopName: nextName });
   };
 
-  /**
-   * The shop name saves as it is typed, so the path it derives has to be stored
-   * too or the outlet keeps its old public link. Only the auto-following path is
-   * written here; a custom path stays under the Booking page Save button.
-   */
+  /** Desktop shop name writes immediately, so the public path has to follow it. */
   const handleShopNameBlur = async () => {
     const derived = bookingSlugFromShopName(settings.shopName || '');
-    if (!effectiveOutletId || !derived) return;
-    if (derived !== bookingSlug.trim() || derived === savedBookingSlug) return;
+    if (!effectiveOutletId || !derived || derived === savedBookingSlug) return;
 
     try {
       const taken = await outletService.getByBookingSlug(derived);
       if (taken && taken.outletID !== effectiveOutletId) {
-        setBookingSlugError('This booking path is already used by another outlet. Choose a different one.');
+        setBookingSlugError('This booking path is already used by another outlet.');
         return;
       }
+      setBookingSlug(derived);
       await outletService.update(effectiveOutletId, { bookingSlug: derived });
       setSavedBookingSlug(derived);
       setBookingSlugError(null);
@@ -287,6 +327,67 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       }
     } catch (err) {
       console.error('Failed to save the booking path for the new shop name:', err);
+    }
+  };
+
+  const handleSaveBusinessProfile = async () => {
+    if (!effectiveOutletId || profileSaveStatus === 'saving') return;
+    const nextName = shopNameDraft.trim();
+    if (!nextName) {
+      setProfileSaveError('Enter a shop name.');
+      setProfileSaveStatus('error');
+      setTimeout(() => setProfileSaveStatus('idle'), 3000);
+      return;
+    }
+
+    setProfileSaveStatus('saving');
+    setProfileSaveError(null);
+
+    try {
+      const categories = categoriesDraft.split(',').map((value) => value.trim()).filter(Boolean).slice(0, 4);
+      const nextSettings: OutletSettings = {
+        ...settings,
+        shopName: nextName,
+        primaryBusinessCategory: categoryDraft.trim(),
+        teamSize: (teamSizeDraft || undefined) as OutletSettings['teamSize'],
+        businessCategories: categories,
+        serviceLocationType: (locationDraft || undefined) as OutletSettings['serviceLocationType'],
+        previousSoftware: softwareDraft.trim(),
+      };
+      await Promise.resolve(onUpdateSettings(nextSettings));
+
+      const derived = bookingSlugFromShopName(nextName);
+      const websiteValue = website.trim();
+      await outletService.update(effectiveOutletId, { website: websiteValue });
+
+      if (derived) {
+        const taken = await outletService.getByBookingSlug(derived);
+        if (taken && taken.outletID !== effectiveOutletId) {
+          setBookingSlugError('This booking path is already used by another outlet.');
+          setProfileSaveError('Profile saved, but that booking path is already used by another outlet.');
+          setProfileDirty(false);
+          setProfileSaveStatus('error');
+          setTimeout(() => setProfileSaveStatus('idle'), 3000);
+          return;
+        }
+        await outletService.update(effectiveOutletId, { bookingSlug: derived });
+        setBookingSlug(derived);
+        setSavedBookingSlug(derived);
+        setBookingSlugError(null);
+        if (onUpdateOutlet) {
+          await Promise.resolve(onUpdateOutlet({ bookingSlug: derived, website: websiteValue }));
+        }
+      }
+
+      setShopNameDraft(nextName);
+      setProfileDirty(false);
+      setProfileSaveStatus('success');
+      setTimeout(() => setProfileSaveStatus('idle'), 2500);
+    } catch (err) {
+      console.error('Failed to save business profile:', err);
+      setProfileSaveError('Could not save the business profile.');
+      setProfileSaveStatus('error');
+      setTimeout(() => setProfileSaveStatus('idle'), 3000);
     }
   };
 
@@ -376,10 +477,21 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
           ? 'saving'
           : 'idle';
 
+  const profileBarStatus =
+    profileSaveStatus === 'success'
+      ? 'success'
+      : profileSaveStatus === 'error'
+        ? 'error'
+        : profileSaveStatus === 'saving'
+          ? 'saving'
+          : profileDirty
+            ? 'unsaved'
+            : 'idle';
+
   const panel = (visible: boolean) => (visible ? 'block min-w-0 w-full md:contents' : 'hidden md:contents');
 
   return (
-    <div className="m-page-with-bottom-nav animate-fadeIn min-w-0 overflow-x-hidden sm:pb-20">
+    <div className="m-page-with-sticky-action animate-fadeIn min-w-0 overflow-x-hidden sm:pb-20">
       <SettingsPageHeader />
 
       <div className="mt-4 md:mt-6 flex flex-col md:flex-row gap-6 items-start min-w-0">
@@ -418,9 +530,19 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
               type="text"
               placeholder="e.g. Bookglow Spa"
               className="m-settings-control m-settings-shop-title"
-              value={settings.shopName}
-              onChange={handleShopNameChange}
-              onBlur={handleShopNameBlur}
+              value={phoneLayout ? shopNameDraft : settings.shopName}
+              onChange={(event) => {
+                if (phoneLayout) {
+                  setShopNameDraft(event.target.value);
+                  setProfileDirty(true);
+                  return;
+                }
+                handleShopNameChange(event);
+              }}
+              onBlur={() => {
+                if (phoneLayout) return;
+                void handleShopNameBlur();
+              }}
             />
           </div>
           <div className="m-settings-field">
@@ -431,37 +553,124 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
               placeholder="https://www.example.com"
               className="m-settings-control"
               value={website}
-              onChange={(event) => setWebsite(event.target.value)}
-              onBlur={(event) =>
+              onChange={(event) => {
+                setWebsite(event.target.value);
+                if (phoneLayout) setProfileDirty(true);
+              }}
+              onBlur={(event) => {
+                if (phoneLayout) return;
                 outletService
                   .update(effectiveOutletId, { website: event.currentTarget.value.trim() })
-                  .catch((saveError) => console.error('Failed to save website:', saveError))
-              }
+                  .catch((saveError) => console.error('Failed to save website:', saveError));
+              }}
             />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="m-settings-field">
               <label htmlFor="settings-primary-category" className="m-settings-label block">Primary business category</label>
-              <input id="settings-primary-category" className="m-settings-control" value={settings.primaryBusinessCategory || ''} onChange={(event) => onUpdateSettings({ ...settings, primaryBusinessCategory: event.target.value })} />
+              <input
+                id="settings-primary-category"
+                className="m-settings-control"
+                value={phoneLayout ? categoryDraft : settings.primaryBusinessCategory || ''}
+                onChange={(event) => {
+                  if (phoneLayout) {
+                    setCategoryDraft(event.target.value);
+                    setProfileDirty(true);
+                    return;
+                  }
+                  onUpdateSettings({ ...settings, primaryBusinessCategory: event.target.value });
+                }}
+              />
             </div>
             <div className="m-settings-field">
               <label htmlFor="settings-team-size" className="m-settings-label block">Team size</label>
-              <select id="settings-team-size" className="m-settings-control" value={settings.teamSize || ''} onChange={(event) => onUpdateSettings({ ...settings, teamSize: event.target.value as OutletSettings['teamSize'] })}>
+              <select
+                id="settings-team-size"
+                className="m-settings-control"
+                value={phoneLayout ? teamSizeDraft : settings.teamSize || ''}
+                onChange={(event) => {
+                  if (phoneLayout) {
+                    setTeamSizeDraft(event.target.value as OutletSettings['teamSize'] | '');
+                    setProfileDirty(true);
+                    return;
+                  }
+                  onUpdateSettings({ ...settings, teamSize: event.target.value as OutletSettings['teamSize'] });
+                }}
+              >
                 <option value="">Not set</option><option value="independent">Independent</option><option value="2-5">2–5 people</option><option value="6-10">6–10 people</option><option value="11-20">11–20 people</option><option value="20-plus">20+ people</option>
               </select>
             </div>
           </div>
           <div className="m-settings-field">
             <label htmlFor="settings-related-categories" className="m-settings-label block">Business categories</label>
-            <input id="settings-related-categories" className="m-settings-control" value={(settings.businessCategories || []).join(', ')} onChange={(event) => onUpdateSettings({ ...settings, businessCategories: event.target.value.split(',').map((value) => value.trim()).filter(Boolean).slice(0, 4) })} />
+            <input
+              id="settings-related-categories"
+              className="m-settings-control"
+              value={phoneLayout ? categoriesDraft : (settings.businessCategories || []).join(', ')}
+              onChange={(event) => {
+                if (phoneLayout) {
+                  setCategoriesDraft(event.target.value);
+                  setProfileDirty(true);
+                  return;
+                }
+                onUpdateSettings({ ...settings, businessCategories: event.target.value.split(',').map((value) => value.trim()).filter(Boolean).slice(0, 4) });
+              }}
+            />
             <p className="m-settings-hint">Up to four categories, separated by commas.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="m-settings-field"><label htmlFor="settings-location-type" className="m-settings-label block">Service location type</label><select id="settings-location-type" className="m-settings-control" value={settings.serviceLocationType || ''} onChange={(event) => onUpdateSettings({ ...settings, serviceLocationType: event.target.value as OutletSettings['serviceLocationType'] })}><option value="">Not set</option><option value="physical">Physical location</option><option value="mobile">Mobile operator</option><option value="virtual">Virtual services</option></select></div>
-            <div className="m-settings-field"><label htmlFor="settings-previous-software" className="m-settings-label block">Previous software</label><input id="settings-previous-software" className="m-settings-control" value={settings.previousSoftware === 'Other' ? settings.previousSoftwareOther || 'Other' : settings.previousSoftware || ''} onChange={(event) => onUpdateSettings({ ...settings, previousSoftware: event.target.value })} /></div>
+            <div className="m-settings-field">
+              <label htmlFor="settings-location-type" className="m-settings-label block">Service location type</label>
+              <select
+                id="settings-location-type"
+                className="m-settings-control"
+                value={phoneLayout ? locationDraft : settings.serviceLocationType || ''}
+                onChange={(event) => {
+                  if (phoneLayout) {
+                    setLocationDraft(event.target.value as OutletSettings['serviceLocationType'] | '');
+                    setProfileDirty(true);
+                    return;
+                  }
+                  onUpdateSettings({ ...settings, serviceLocationType: event.target.value as OutletSettings['serviceLocationType'] });
+                }}
+              >
+                <option value="">Not set</option><option value="physical">Physical location</option><option value="mobile">Mobile operator</option><option value="virtual">Virtual services</option>
+              </select>
+            </div>
+            <div className="m-settings-field">
+              <label htmlFor="settings-previous-software" className="m-settings-label block">Previous software</label>
+              <input
+                id="settings-previous-software"
+                className="m-settings-control"
+                value={phoneLayout ? softwareDraft : settings.previousSoftware === 'Other' ? settings.previousSoftwareOther || 'Other' : settings.previousSoftware || ''}
+                onChange={(event) => {
+                  if (phoneLayout) {
+                    setSoftwareDraft(event.target.value);
+                    setProfileDirty(true);
+                    return;
+                  }
+                  onUpdateSettings({ ...settings, previousSoftware: event.target.value });
+                }}
+              />
+            </div>
           </div>
         </div>
       </SettingsSection>
+      <div className="m-sticky-bar m-sheet-footer sticky bottom-0 z-20 mt-4 rounded-ui-md border border-[var(--line-strong,var(--line))] bg-[var(--bg-surface)]/95 px-4 py-3 shadow-ui-md backdrop-blur-sm pb-[calc(var(--space-3)+var(--safe-bottom))] md:hidden">
+        {profileSaveError ? (
+          <p className="mb-2 text-center text-xs text-[var(--danger)]" role="alert">{profileSaveError}</p>
+        ) : null}
+        <SettingsSaveBar
+          status={profileBarStatus}
+          disabled={!effectiveOutletId}
+          saveLabel="Save"
+          className="w-full"
+          onSave={() => {
+            if (profileSaveStatus === 'saving') return;
+            void handleSaveBusinessProfile();
+          }}
+        />
+      </div>
       </div>
 
       {/* Booking + hours share one Save */}
@@ -485,20 +694,20 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
               <input
                 id="settings-booking-slug"
                 type="text"
-                value={bookingSlug}
-                onChange={(e) => {
+                value={bookingPathValue}
+                readOnly={!shopNameHasNoPath}
+                aria-readonly={!shopNameHasNoPath}
+                onChange={shopNameHasNoPath ? (e) => {
                   setBookingSlug(e.target.value);
                   setBookingSlugError(null);
-                }}
+                } : undefined}
                 placeholder={shopNameHasNoPath ? 'e.g. restoranDesaPetaling' : ''}
                 className="m-settings-control"
               />
               <p className="m-settings-hint">
                 {shopNameHasNoPath
                   ? 'Your shop name has no Latin letters, so the path cannot follow it automatically. Type the path you want customers to see.'
-                  : bookingSlugFollowingShopName
-                    ? 'Last segment of your public link. Follows your shop name automatically — edit it to use a custom path.'
-                    : 'Custom path, so it no longer follows your shop name. Clear it to go back to matching the shop name.'}
+                  : 'Follows your shop name. Change the name in Business profile to update this link.'}
               </p>
               {bookingSlugError && (
                 <p className="text-xs text-[var(--danger)]">{bookingSlugError}</p>
@@ -641,22 +850,21 @@ const Settings: React.FC<SettingsProps> = ({ settings, onUpdateSettings, outletI
       </SettingsSection>
       </div>
 
-      <div className="sticky z-20 bottom-3 md:bottom-4 max-md:static max-md:mt-4">
-        <div className="rounded-ui-md border border-[var(--line-strong,var(--line))] bg-[var(--bg-surface)]/95 backdrop-blur-sm shadow-ui-md px-4 py-3">
-          <SettingsSaveBar
-            status={bookingSaveStatus}
-            disabled={!effectiveOutletId}
-            saveLabel="Save outlet details"
-            onSave={() => {
-              if (bookingInfoStatus === 'saving' || !effectiveOutletId) return;
-              handleSaveBookingInfo();
-            }}
-          />
-          <p className="m-settings-hint mt-2">
-            Saves the booking path, address, phone, and operating hours. Receipt layout, team invites, and the voucher PIN are saved in their own sections.
-          </p>
-        </div>
+      <div className="m-sticky-bar m-sheet-footer sticky bottom-0 z-20 rounded-ui-md border border-[var(--line-strong,var(--line))] bg-[var(--bg-surface)]/95 px-4 py-3 shadow-ui-md backdrop-blur-sm pb-[calc(var(--space-3)+var(--safe-bottom))]">
+        <SettingsSaveBar
+          status={bookingSaveStatus}
+          disabled={!effectiveOutletId}
+          saveLabel="Save outlet details"
+          className="w-full"
+          onSave={() => {
+            if (bookingInfoStatus === 'saving' || !effectiveOutletId) return;
+            handleSaveBookingInfo();
+          }}
+        />
       </div>
+      <p className="m-settings-hint mt-2 hidden sm:block">
+        Saves the booking path, address, phone, and operating hours. Receipt layout, team invites, and the voucher PIN are saved in their own sections.
+      </p>
       </div>
 
       {/* Receipt & payment */}

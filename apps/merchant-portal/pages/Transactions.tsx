@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Info, Search, SlidersHorizontal } from 'lucide-react';
+import { Search, SlidersHorizontal } from 'lucide-react';
 import { Transaction, TransactionType, Client } from '../types';
 import { Icons } from '../constants';
 import {
@@ -30,7 +30,10 @@ import {
   Button,
   Field,
   fieldControlClassName,
+  FilterChip,
+  FilterChipRow,
   FormSection,
+  IconButton,
   ModalFooterActions,
   ConfirmationDialog,
 } from '../components/ui';
@@ -205,37 +208,30 @@ const Transactions: React.FC<TransactionsProps> = ({
   };
 
   return (
-    <div className="m-page-with-bottom-nav min-w-0 overflow-x-hidden space-y-4 animate-fadeIn">
+    <div className="m-page-with-bottom-nav min-w-0 overflow-x-hidden space-y-2 animate-fadeIn md:space-y-4">
       <div className="hidden md:block">
         <ReportPageHeader title="Sales History" description="Review, edit, or filter past transactions." />
       </div>
 
-      <div className="hidden md:flex items-center gap-2 rounded-ui-md border border-[var(--brand-border)] bg-[var(--brand-soft)] px-3 py-2.5">
-        <svg className="h-4 w-4 flex-shrink-0 text-[var(--brand)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-        <p className="text-[var(--brand-deep)] text-xs font-medium">
-          Management Console: Review, edit, or remove historical records to maintain data accuracy.
-        </p>
-      </div>
-      <div className="flex items-start gap-3 rounded-ui-md border border-[var(--brand-border)] bg-[var(--brand-soft)] px-3.5 py-3 text-xs font-medium leading-5 text-[var(--brand-deep)] md:hidden">
-        <Info className="mt-0.5 h-5 w-5 shrink-0 text-[var(--brand)]" />
-        <span>Management mode: review, edit, or remove records to maintain data accuracy.</span>
-      </div>
-
-      <div className="space-y-3 md:hidden">
+      <div className="space-y-2 md:hidden">
         <div className="flex min-w-0 items-center gap-2 max-[339px]:flex-col max-[339px]:items-stretch">
           <label className="relative min-w-0 flex-1 w-full">
             <span className="sr-only">Search transactions</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" />
-            <input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setVisibleCount(12); }} placeholder="Search transactions" className="h-12 w-full max-w-full rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] pl-10 pr-3 text-sm outline-none focus-visible:shadow-ui-focus-strong" />
+            <input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setVisibleCount(12); }} placeholder="Search transactions" className="h-10 w-full max-w-full rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] pl-10 pr-3 text-sm outline-none focus-visible:shadow-ui-focus-strong" />
           </label>
-          <button type="button" onClick={() => setShowSortSheet(true)} className={`relative grid h-12 w-12 max-[339px]:w-full shrink-0 place-items-center rounded-ui-md border bg-[var(--bg-surface)] text-[var(--brand)] ${hasActiveFilters ? 'border-[var(--brand)]' : 'border-[var(--line)]'}`} aria-label="Sort and filter transactions">
+          <IconButton type="button" label="Sort and filter transactions" variant="outline" size="md" onClick={() => setShowSortSheet(true)} className={`relative shrink-0 max-[339px]:w-full ${hasActiveFilters ? 'border-[var(--brand)] text-[var(--brand)] bg-[var(--brand-soft)]' : ''}`}>
             <SlidersHorizontal className="h-5 w-5" />
             {hasActiveFilters ? <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--brand)]" /> : null}
-          </button>
+          </IconButton>
         </div>
-        <div className="no-scrollbar -mx-1 flex min-w-0 max-w-full gap-2 overflow-x-auto px-1 pb-1" role="toolbar" aria-label="Transaction type filters">
-            {filterChips.map((chip) => <button key={chip.key} type="button" aria-pressed={filterType === chip.key} onClick={() => { setFilterType(chip.key); setVisibleCount(12); }} className={`min-h-11 shrink-0 rounded-full border px-4 text-xs font-bold ${filterType === chip.key ? 'border-[var(--brand)] bg-[var(--brand)] text-white' : 'border-[var(--line)] bg-[var(--bg-surface)] text-[var(--text-secondary)]'}`}>{chip.label}</button>)}
-        </div>
+        <FilterChipRow ariaLabel="Transaction type filters">
+            {filterChips.map((chip) => (
+              <FilterChip key={chip.key} selected={filterType === chip.key} onClick={() => { setFilterType(chip.key); setVisibleCount(12); }}>
+                {chip.label}
+              </FilterChip>
+            ))}
+        </FilterChipRow>
         {datePeriod === 'CUSTOM' ? <div className="grid grid-cols-2 gap-2"><label className="text-[11px] font-semibold text-[var(--text-muted)]">From<input type="date" value={customStart} onChange={(event) => setCustomStart(event.target.value)} className={`${fieldControlClassName} mt-1`} /></label><label className="text-[11px] font-semibold text-[var(--text-muted)]">To<input type="date" value={customEnd} onChange={(event) => setCustomEnd(event.target.value)} className={`${fieldControlClassName} mt-1`} /></label></div> : null}
       </div>
 
@@ -247,18 +243,14 @@ const Transactions: React.FC<TransactionsProps> = ({
         filtersLabel="Sort"
         onOpenFilters={() => setShowSortSheet(true)}
         chips={filterChips.map((chip) => (
-          <button
+          <FilterChip
             key={chip.key}
-            type="button"
+            selected={filterType === chip.key}
             onClick={() => setFilterType(chip.key)}
-            className={`flex-shrink-0 px-3.5 sm:px-4 min-h-[38px] sm:min-h-[40px] rounded-full text-xs font-bold whitespace-nowrap border transition-all ${
-              filterType === chip.key
-                ? 'm-txn-filter-chip bg-[var(--brand)] text-white border-[var(--brand)] shadow-ui-xs'
-                : 'm-txn-filter-chip bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--line)] hover:border-[var(--brand)]'
-            }`}
+            className="m-txn-filter-chip"
           >
             {chip.label}
-          </button>
+          </FilterChip>
         ))}
         desktopSort={
           <>

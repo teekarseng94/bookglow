@@ -11,8 +11,7 @@ import { OperationalStatus } from '../../components/dashboard/OperationalStatus'
 import { SalesSnapshot } from '../../components/dashboard/SalesSnapshot';
 import { TodayHeader } from '../../components/dashboard/TodayHeader';
 import { UpcomingAppointments } from '../../components/dashboard/UpcomingAppointments';
-import { Button } from '../../components/ui/Button';
-import { Calendar, CreditCard, Plus, Users, BarChart3 } from 'lucide-react';
+import { Calendar, CreditCard, Users, BarChart3 } from 'lucide-react';
 import '../../src/loadStyles';
 
 const weekChart = [
@@ -45,9 +44,6 @@ createRoot(document.getElementById('root')!).render(
                 <Calendar className="h-4 w-4" aria-hidden />
                 Sun, 20 Sep
               </span>
-              <Button type="button" variant="primary" size="md">
-                <Plus className="h-4 w-4" aria-hidden /> New Booking
-              </Button>
             </>
           }
         />

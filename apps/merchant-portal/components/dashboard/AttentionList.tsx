@@ -48,39 +48,42 @@ export const AttentionList: React.FC<AttentionListProps> = ({
 }) => (
   <section className={cx('space-y-2 sm:space-y-3', className)}>
     <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">{title}</h2>
-    <div className="bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs p-4 space-y-2">
+    <div className="overflow-hidden rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] shadow-ui-xs">
       {items.length === 0 ? (
-        <p className="text-sm text-[var(--text-secondary)] text-center py-4">{emptyMessage}</p>
+        <p className="px-3 py-4 text-center text-sm text-[var(--text-secondary)]">{emptyMessage}</p>
       ) : (
-        items.map((item) => (
-          <div
-            key={item.id}
-            className={cx('flex flex-wrap items-center justify-between gap-2 rounded-ui-md border px-3 py-2.5 sm:flex-nowrap sm:gap-3', toneClass[item.tone || 'neutral'])}
-          >
-            <div className="flex items-center gap-3 min-w-0">
+        <div className="divide-y divide-[var(--line)]">
+          {items.map((item) => (
+            <div
+              key={item.id}
+              className={cx(
+                'm-list-row m-attention-row flex items-center gap-3 px-3',
+                toneClass[item.tone || 'neutral'],
+              )}
+            >
               {item.icon ? (
-                <span className={cx('flex h-8 w-8 shrink-0 items-center justify-center rounded-full', iconWrapClass[item.tone || 'neutral'])}>
+                <span className={cx('flex h-10 w-10 shrink-0 items-center justify-center rounded-full', iconWrapClass[item.tone || 'neutral'])}>
                   {item.icon}
                 </span>
               ) : null}
-              <div className="min-w-0">
-                <ExpandableText text={item.title} className="text-sm font-semibold text-[var(--text-primary)]" />
+              <div className="min-w-0 flex-1">
+                <ExpandableText text={item.title} lines={1} className="text-sm font-semibold text-[var(--text-primary)]" />
                 {item.description ? (
-                  <ExpandableText text={item.description} className="mt-0.5 text-xs text-[var(--text-secondary)]" />
+                  <ExpandableText text={item.description} lines={1} className="mt-0.5 text-xs text-[var(--text-secondary)]" />
                 ) : null}
               </div>
+              {item.onAction && item.actionLabel ? (
+                <button
+                  type="button"
+                  onClick={item.onAction}
+                  className="inline-flex h-11 min-h-[44px] min-w-11 shrink-0 items-center justify-center rounded-ui-sm border border-[var(--line-strong)] bg-[var(--bg-surface)] px-3 text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-soft)] focus-visible:shadow-ui-focus-strong"
+                >
+                  {item.actionLabel}
+                </button>
+              ) : null}
             </div>
-            {item.onAction && item.actionLabel ? (
-              <button
-                type="button"
-                onClick={item.onAction}
-                className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-ui-sm border border-[var(--line-strong)] bg-[var(--bg-surface)] px-3 text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-soft)] focus-visible:shadow-ui-focus-strong"
-              >
-                {item.actionLabel}
-              </button>
-            ) : null}
-          </div>
-        ))
+          ))}
+        </div>
       )}
     </div>
     {items.length > 0 && footerLabel && onFooterAction ? (

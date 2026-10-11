@@ -16,7 +16,6 @@ import {
   Tag,
   CreditCard,
   Download,
-  Plus,
   Users,
 } from 'lucide-react';
 import { Transaction, TransactionType, Client, Appointment, Service, Product, OutletSettings } from '../types';
@@ -59,6 +58,14 @@ interface DashboardProps {
 type TopSellingTab = 'service' | 'product' | 'package' | 'discount';
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+function weekBars(rows: Array<{ day: string; sales: number }>) {
+  const salesByDay = new Map(rows.map((row) => [row.day, row.sales]));
+  return DAY_LABELS.map((day) => ({
+    day,
+    sales: Math.round((salesByDay.get(day) ?? 0) * 100) / 100,
+  }));
+}
 
 function formatLocalDate(d: Date): string {
   const y = d.getFullYear();
@@ -183,10 +190,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           profit: rpcAggregates.profit,
           clientCount: rpcAggregates.client_count,
         },
-        chartData: rpcAggregates.week_chart.map((d) => ({
-          day: d.day,
-          sales: Math.round(d.sales * 100) / 100,
-        })),
+        chartData: weekBars(rpcAggregates.week_chart),
         totalSalesThisWeek: rpcAggregates.week_sales,
         weekTxnCount: rpcAggregates.week_txn_count,
         weekTopItem: topSellingAll[0]?.name ?? null,
@@ -265,7 +269,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     const chartData = DAY_LABELS.map((label, i) => {
       const d = new Date(weekMon);
       d.setDate(weekMon.getDate() + i);
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = formatLocalDate(d);
       const dayTxns = salesOnly.filter(
         (t) => (t.date || '').startsWith(dateStr) && t.category !== 'Voucher' && t.category !== 'Redemption'
       );
@@ -400,7 +404,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       prev > 0 ? ((curr - prev) / prev) * 100 : null;
 
     if (rpcAggregates) {
-      const chart = rpcAggregates.week_chart.map((d) => ({ label: d.day, value: d.sales }));
+      const chart = weekBars(rpcAggregates.week_chart).map((d) => ({ label: d.day, value: d.sales }));
       return {
         today: {
           total: rpcAggregates.periods.today.total,
@@ -618,10 +622,10 @@ const Dashboard: React.FC<DashboardProps> = ({
   void onMarkReminderSent;
 
   const todayStr = formatLocalDate(new Date());
-  const todayApps = appointments
+  const selectedDayApps = appointments
     .filter(
       (a) =>
-        a.date === todayStr &&
+        a.date === quickDateStr &&
         a.status !== 'cancelled' &&
         a.status !== 'no-show' &&
         typeof a.id === 'string' &&
@@ -700,7 +704,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       tone: 'warning',
     });
   }
-  if (todayApps.length === 0) {
+  if (appointments.filter((a) => a.date === todayStr && a.status !== 'cancelled' && a.status !== 'no-show' && typeof a.id === 'string' && !a.id.startsWith('app_onduty_')).length === 0) {
     attentionItems.push({
       id: 'no-appts',
       title: 'No appointments today',
@@ -712,17 +716,21 @@ const Dashboard: React.FC<DashboardProps> = ({
   }
   const visibleAttentionItems = attentionItems.slice(0, 4);
 
-  const dateLabel = new Date().toLocaleDateString('en-GB', {
+  const viewingToday = quickDateStr === todayStr;
+  const dateLabel = currentDate.toLocaleDateString('en-GB', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
     year: 'numeric',
   });
-  const compactDateLabel = new Date().toLocaleDateString('en-GB', {
+  const compactDateLabel = currentDate.toLocaleDateString('en-GB', {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
   });
+  const selectedDayTitle = viewingToday
+    ? "Today's Appointments"
+    : currentDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
 
   const maxDay = Math.max(...dashboardData.chartData.map((d) => d.sales), 0);
   const todayIdx = (new Date().getDay() + 6) % 7;
@@ -744,16 +752,27 @@ const Dashboard: React.FC<DashboardProps> = ({
         titleClassName="text-app-page sm:text-app-page-lg"
         actions={
           <>
-            <span className="dashboard-date-chip inline-flex items-center gap-1.5 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)] px-3 text-sm font-semibold text-[var(--text-secondary)]">
+            <label className="dashboard-date-chip relative inline-flex cursor-pointer items-center gap-1.5 rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)] px-3 text-sm font-semibold text-[var(--text-secondary)]">
               <Calendar className="h-4 w-4 shrink-0" aria-hidden />
               <span className="sm:hidden">{compactDateLabel}</span>
               <span className="hidden sm:inline">{dateLabel}</span>
-            </span>
+              <input
+                type="date"
+                value={quickDateStr}
+                aria-label="Choose day"
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (!value) {
+                    setCurrentDate(new Date());
+                    return;
+                  }
+                  setCurrentDate(new Date(`${value}T00:00:00`));
+                }}
+              />
+            </label>
             <Button type="button" className="hidden lg:inline-flex" variant="secondary" size="sm" onClick={() => navigate('/sales-reports')}>
               <Download className="h-4 w-4" aria-hidden /> Export
-            </Button>
-            <Button type="button" variant="primary" size="md" onClick={() => navigate('/schedule')}>
-              <Plus className="h-4 w-4" aria-hidden /> New Booking
             </Button>
           </>
         }
@@ -812,7 +831,9 @@ const Dashboard: React.FC<DashboardProps> = ({
       {/* 3. Main row: Today's Appointments | Needs Attention | Sales Snapshot */}
       <div className="dashboard-primary grid grid-cols-1 items-start gap-3 xl:grid-cols-[1.5fr_1.1fr_1fr] xl:gap-5">
         <UpcomingAppointments
-          rows={todayApps.map((app) => {
+          title={selectedDayTitle}
+          emptyTitle={viewingToday ? 'No appointments scheduled today.' : 'No appointments on this day.'}
+          rows={selectedDayApps.map((app) => {
             const clientName = clients.find((c) => c.id === app.clientId)?.name || 'Guest';
             const serviceName = services.find((s) => s.id === app.serviceId)?.name || '—';
             return {

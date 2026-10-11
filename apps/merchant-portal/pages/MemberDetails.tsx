@@ -452,9 +452,9 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
                   {items.map((item, idx) => (
                     <div
                       key={`${date}-${item.transactionId}-${idx}`}
-                      className="m-member-detail-row bg-[var(--bg-surface)] border border-[var(--line)] shadow-ui-xs flex items-center"
+                      className="m-list-row m-member-detail-row bg-[var(--bg-surface)] border border-[var(--line)] shadow-ui-xs flex items-center"
                     >
-                      <PlaceholderIcon className="w-12 h-12 flex-shrink-0" />
+                      <PlaceholderIcon className="h-10 w-10 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="m-list-title text-[var(--text-primary)] truncate">{item.name}</p>
                         <p className="m-secondary font-medium text-[var(--brand)]">
@@ -579,25 +579,20 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
                           setSelectedSale(tx);
                         }}
                         style={{ touchAction: 'manipulation' }}
-                        className="m-member-detail-row w-full text-left bg-[var(--bg-surface)] border border-[var(--line)] shadow-ui-xs hover:border-[var(--brand)] hover:shadow-ui-sm active:bg-[var(--bg-soft)] transition-all cursor-pointer"
+                        className="m-list-row m-member-detail-row w-full text-left bg-[var(--bg-surface)] border border-[var(--line)] shadow-ui-xs hover:border-[var(--brand)] hover:shadow-ui-sm active:bg-[var(--bg-soft)] transition-all cursor-pointer"
                       >
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-center gap-2">
-                            <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            <span className="font-mono text-sm text-slate-600">{receiptNumber(tx, idx)}</span>
-                          </div>
-                          <span className="text-lg font-bold text-[var(--brand)]">{tx.amount.toFixed(2)}</span>
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="truncate font-mono text-sm text-[var(--text-secondary)]">{receiptNumber(tx, idx)}</span>
+                          <span className="shrink-0 text-sm font-bold tabular-nums text-[var(--brand)]">{tx.amount.toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between items-center mt-2 text-sm text-slate-500">
-                          <span>
-                            {new Date(tx.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })},{' '}
-                            {formatDateHeader(tx.date.split('T')[0] || tx.date)}
-                          </span>
-                          <span>{tx.items?.length || 0} Items</span>
-                        </div>
-                        <p className="text-xs text-slate-400 mt-1">{memberLabel}</p>
+                        <p className="mt-0.5 truncate text-xs text-[var(--text-muted)]">
+                          {new Date(tx.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {' · '}
+                          {formatDateHeader(tx.date.split('T')[0] || tx.date)}
+                          {' · '}
+                          {tx.items?.length || 0} items
+                          {memberLabel ? ` · ${memberLabel}` : ''}
+                        </p>
                       </button>
                     ))}
                   </div>
@@ -678,33 +673,21 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
                       {list.map((apt) => (
                         <div
                           key={apt.id}
-                          className="m-member-detail-row border-2 border-red-200 shadow-ui-xs bg-red-50/30"
+                          className="m-list-row m-member-detail-row border-2 border-red-200 shadow-ui-xs bg-red-50/30"
                         >
-                          <div className="flex justify-between items-start">
-                            <p className="m-list-title text-[var(--text-primary)]">{client.name}</p>
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="m-list-title truncate text-[var(--text-primary)]">{client.name}</p>
                             {apt.status === 'completed' && (
-                              <div className="w-6 h-6 rounded-full bg-[var(--success)] flex items-center justify-center flex-shrink-0">
-                                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
+                              <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[var(--success)]">
+                                <svg className="h-4 w-4 text-white" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
                                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                 </svg>
                               </div>
                             )}
                           </div>
-                          <p className="text-sm text-slate-600 mt-1">{getServiceName(apt.serviceId)}</p>
-                          <div className="flex items-center gap-2 mt-2 text-sm text-slate-500">
-                            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span>
-                              {apt.time || '—'} - {apt.endTime || '—'}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 mt-1 text-sm text-slate-500">
-                            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            <span>{getStaffName(apt.staffId)}</span>
-                          </div>
+                          <p className="mt-0.5 truncate text-xs text-[var(--text-muted)]">
+                            {getServiceName(apt.serviceId)} · {apt.time || '—'}–{apt.endTime || '—'} · {getStaffName(apt.staffId)}
+                          </p>
                         </div>
                       ))}
                     </div>
@@ -955,7 +938,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
 
       {/* Secondary tools — collapsed on mobile to reduce scroll */}
       <details className="sm:hidden m-member-more rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)]">
-        <summary className="m-member-history-row cursor-pointer list-none flex items-center justify-between gap-3 p-3 font-semibold text-[15px] text-[var(--text-primary)]">
+        <summary className="m-list-row m-member-history-row cursor-pointer list-none flex items-center justify-between gap-3 p-3 font-semibold text-[15px] text-[var(--text-primary)]">
           More
           <svg className="w-5 h-5 text-[var(--text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />

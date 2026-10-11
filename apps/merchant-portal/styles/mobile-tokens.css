@@ -67,11 +67,11 @@
   --mobile-thumb: 44px;
 
   /* Menu & Inventory mobile cards (not list-row) */
-  --mobile-inventory-card-height: 88px;
-  --mobile-inventory-card-min-height: 84px;
-  --mobile-inventory-card-padding: 10px;
-  --mobile-inventory-media-size: 48px;
-  --mobile-inventory-thumbnail: 48px;
+  --mobile-inventory-card-height: 64px;
+  --mobile-inventory-card-min-height: 64px;
+  --mobile-inventory-card-padding: 8px;
+  --mobile-inventory-media-size: 40px;
+  --mobile-inventory-thumbnail: 40px;
   --mobile-inventory-title-size: 14px;
   --mobile-inventory-meta-size: 12px;
   --mobile-inventory-price-size: 14px;
@@ -82,13 +82,13 @@
   --mobile-inventory-fab-height: 48px;
 
   /* POS mobile catalogue card (full-width row layout, below 640px) */
-  --mobile-pos-card-min-height: 84px;
-  --mobile-pos-thumbnail-size: 48px;
-  --mobile-pos-card-padding: 10px;
-  --mobile-pos-card-gap: 10px;
+  --mobile-pos-card-min-height: 56px;
+  --mobile-pos-thumbnail-size: 40px;
+  --mobile-pos-card-padding: 8px;
+  --mobile-pos-card-gap: 8px;
   --mobile-pos-title-size: 14px;
   --mobile-pos-meta-size: 12px;
-  --mobile-pos-price-size: 15px;
+  --mobile-pos-price-size: 14px;
   --mobile-pos-add-size: 44px;
 
   /* POS desktop catalogue list row (1200px+) */
@@ -103,6 +103,7 @@
   --mobile-section-gap-compact: var(--row-gap, 8px);
   --mobile-list-row-gap: var(--mobile-space-2);
   --mobile-card-padding: var(--card-padding, 12px);
+  --mobile-card-padding-compact: 10px;
   --mobile-sheet-content-padding: var(--mobile-page-padding-compact);
   --mobile-sticky-footer-height: 68px;
   --mobile-safe-area-top: var(--safe-top, env(safe-area-inset-top, 0px));
@@ -317,6 +318,165 @@ select.m-settings-control,
   height: env(safe-area-inset-bottom, 0px);
 }
 
+/* V5 primitives — all widths. Phone/tablet chrome still owns the title until 1024. */
+@media (max-width: 1023.98px) {
+  .m-page-header--app-owned .m-page-header-main {
+    display: none;
+  }
+
+  .m-page-header--app-owned:not(:has(.m-page-header-actions)) {
+    display: none;
+  }
+
+  .m-page-header--app-owned .m-page-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+.m-page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-2, 8px);
+  min-height: var(--touch-min, 44px);
+}
+
+.m-page-actions__primary,
+.m-page-actions__secondary,
+.m-page-actions__overflow {
+  flex: 0 0 auto;
+  width: auto;
+  max-width: 100%;
+}
+
+.m-page-actions .m-btn,
+.m-page-actions .flex-1 {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.m-page-actions__overflow-item {
+  min-height: var(--touch-min, 44px);
+}
+
+.m-metric-rail--grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2, 8px) var(--space-3, 12px);
+}
+
+.m-metric-rail--rail {
+  display: flex;
+  gap: var(--space-2, 8px);
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: none;
+}
+
+.m-metric-rail--rail::-webkit-scrollbar {
+  display: none;
+}
+
+.m-metric-item {
+  min-width: 0;
+  padding: var(--mobile-card-padding-compact, 10px) var(--space-3, 12px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm, 10px);
+  background: var(--bg-surface);
+}
+
+.m-metric-rail--rail .m-metric-item {
+  flex: 0 0 auto;
+  min-width: 7.5rem;
+}
+
+.m-metric-item__label {
+  display: block;
+  font-size: var(--font-label, 11px);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  color: var(--text-secondary);
+}
+
+.m-metric-item__value {
+  display: block;
+  margin-top: 4px;
+  font-size: var(--font-section-title, 16px);
+  font-weight: 700;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+.m-metric-item__hint {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--font-caption, 12px);
+  line-height: 1.3;
+  color: var(--text-secondary);
+}
+
+@media (min-width: 600px) {
+  .m-metric-rail--grid {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
+}
+
+.m-filter-chip-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  min-height: var(--touch-min, 44px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: none;
+}
+
+.m-filter-chip-row::-webkit-scrollbar {
+  display: none;
+}
+
+.m-filter-chip {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--mobile-chip-height, 36px);
+  min-height: var(--mobile-chip-height, 36px);
+  padding: 0 var(--space-3, 12px);
+  border: 1px solid var(--line);
+  border-radius: var(--mobile-chip-radius, 9999px);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: var(--font-caption, 12px);
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.m-filter-chip::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  min-width: var(--touch-min, 44px);
+  height: var(--touch-min, 44px);
+  transform: translate(-50%, -50%);
+}
+
+.m-filter-chip--active {
+  background: var(--brand-soft);
+  border-color: var(--brand-border);
+  color: var(--brand-deep);
+}
 
 @media (max-width: 767.98px) {
 
@@ -332,19 +492,6 @@ select.m-settings-control,
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  /* The app shell owns the mobile page title; local headers keep only contextual actions. */
-  .m-page-header--app-owned .m-page-header-main {
-    display: none;
-  }
-
-  .m-page-header--app-owned:not(:has(.m-page-header-actions)) {
-    display: none;
-  }
-
-  .m-page-header--app-owned .m-page-header-actions {
-    width: 100%;
   }
 
   /* ——— Utility classes ——— */
@@ -554,7 +701,7 @@ select.m-settings-control,
   }
 
   .bookglow-mobile-header__title {
-    font-size: 15px;
+    font-size: var(--mobile-text-header-title, 15px);
     line-height: 1.2;
   }
 
@@ -620,8 +767,9 @@ select.m-settings-control,
   }
 
   .m-member-row {
-    min-height: 68px;
-    padding: 10px 14px;
+    min-height: var(--mobile-list-row);
+    max-height: 64px;
+    padding: 8px 12px;
     border-radius: var(--mobile-radius-md);
     gap: var(--mobile-space-3);
   }
@@ -659,8 +807,8 @@ select.m-settings-control,
   }
 
   .m-member-search {
-    height: 44px;
-    min-height: 44px;
+    height: var(--mobile-control-md);
+    min-height: var(--mobile-control-md);
     font-size: var(--mobile-text-body);
     border-radius: var(--mobile-radius-md);
     padding-left: 2.75rem;
@@ -819,7 +967,9 @@ select.m-settings-control,
 
   .m-booking-card {
     min-height: var(--mobile-booking-card);
-    padding: var(--mobile-space-3) !important;
+    max-height: 64px;
+    overflow: hidden;
+    padding: 8px 12px !important;
     border-radius: var(--mobile-radius-md) !important;
   }
 
@@ -1011,7 +1161,9 @@ select.m-settings-control,
     align-items: center;
     column-gap: var(--mobile-inventory-card-gap);
     min-height: var(--mobile-inventory-card-min-height);
+    max-height: 64px;
     height: auto;
+    overflow: hidden;
     padding: var(--mobile-inventory-card-padding) var(--mobile-space-4);
     border-radius: var(--mobile-radius-lg);
     background: var(--bg-surface);
@@ -1044,7 +1196,7 @@ select.m-settings-control,
     min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
   }
 
   .m-inventory-card__title {
@@ -1053,11 +1205,9 @@ select.m-settings-control,
     font-weight: var(--mobile-font-semibold) !important;
     line-height: 1.3 !important;
     color: var(--text-primary);
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
     overflow: hidden;
-    word-break: break-word;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .m-inventory-card__meta {
@@ -1552,6 +1702,7 @@ select.m-settings-control,
   }
 
   .m-sheet-panel--bottom {
+    max-height: calc(100dvh - var(--mobile-bottom-nav-height) - var(--mobile-safe-area-bottom));
     border-top-left-radius: var(--mobile-sheet-radius);
     border-top-right-radius: var(--mobile-sheet-radius);
   }
@@ -1701,23 +1852,33 @@ select.m-settings-control,
   }
 
   .m-pos-add-btn {
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-    min-height: 40px;
+    width: var(--mobile-pos-add-size);
+    height: var(--mobile-pos-add-size);
+    min-width: var(--mobile-pos-add-size);
+    min-height: var(--mobile-pos-add-size);
   }
 
   /* POS mobile catalogue card (full-width row: media | details | price/action) */
   .m-pos-mobile-card {
-    min-height: 82px;
-    padding: 10px;
-    gap: 10px;
-    border-radius: var(--mobile-radius-lg);
+    min-height: var(--mobile-pos-card-min-height);
+    max-height: 64px;
+    padding: var(--mobile-pos-card-padding) 10px;
+    gap: var(--mobile-pos-card-gap);
+    border-radius: var(--mobile-radius-md);
+  }
+
+  .m-list-row {
+    min-height: var(--mobile-list-row-compact, 56px);
+  }
+
+  .m-sheet-footer {
+    flex-shrink: 0;
+    background: var(--bg-surface);
   }
 
   .m-pos-mobile-card__thumb {
-    width: 50px;
-    height: 50px;
+    width: var(--mobile-pos-thumbnail-size);
+    height: var(--mobile-pos-thumbnail-size);
     border-radius: var(--mobile-radius-md);
   }
 
@@ -2092,15 +2253,17 @@ select.m-settings-control,
 
   /* Members detail */
   .m-member-summary {
-    min-height: 76px;
-    padding: 12px 14px;
+    min-height: var(--mobile-list-row);
+    max-height: 72px;
+    padding: 8px 12px;
     border-radius: var(--mobile-radius-lg);
     gap: var(--mobile-space-3);
+    overflow: hidden;
   }
 
   .m-member-summary__avatar {
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     font-size: var(--mobile-text-body);
     font-weight: var(--mobile-font-bold);
   }
@@ -2166,10 +2329,12 @@ select.m-settings-control,
   }
 
   .m-member-history-row {
-    min-height: 56px;
-    padding: 12px 14px;
+    min-height: var(--mobile-list-row-compact);
+    max-height: 64px;
+    padding: 8px 12px;
     gap: var(--mobile-space-3);
     border-radius: var(--mobile-radius-md);
+    overflow: hidden;
   }
 
   .m-member-points {
@@ -2216,7 +2381,9 @@ select.m-settings-control,
 
   .m-member-detail-row {
     min-height: var(--mobile-list-row-compact);
-    padding: var(--mobile-space-4);
+    max-height: 64px;
+    overflow: hidden;
+    padding: 8px 12px;
     border-radius: var(--mobile-radius-lg);
     gap: var(--mobile-space-3);
   }
@@ -2423,14 +2590,17 @@ select.m-settings-control,
   }
 
   .m-staff-card {
+    min-height: var(--mobile-list-row-compact, 56px);
+    max-height: 64px;
     padding: var(--mobile-space-3) var(--mobile-space-4);
     border-radius: var(--mobile-radius-md);
     gap: var(--mobile-space-3);
+    overflow: hidden;
   }
 
   .m-staff-avatar {
-    width: var(--mobile-avatar);
-    height: var(--mobile-avatar);
+    width: 40px;
+    height: 40px;
     font-size: var(--mobile-text-secondary);
     font-weight: var(--mobile-font-bold);
   }
@@ -2446,8 +2616,6 @@ select.m-settings-control,
     font-weight: var(--mobile-font-semibold) !important;
     letter-spacing: 0.02em;
     text-transform: uppercase;
-    padding: 2px var(--mobile-space-2);
-    border-radius: var(--mobile-radius-pill);
   }
 
   .m-staff-card__meta {
@@ -2564,8 +2732,21 @@ select.m-settings-control,
   }
 
   .m-txn-card {
-    padding: var(--mobile-space-3);
+    min-height: var(--mobile-list-row);
+    max-height: 64px;
+    padding: 8px 12px;
     border-radius: var(--mobile-radius-md);
+    overflow: hidden;
+  }
+
+  .m-attention-row {
+    min-height: var(--mobile-list-row-compact, 56px);
+    max-height: 64px;
+    overflow: hidden;
+  }
+
+  .m-marketing-row {
+    min-height: var(--mobile-list-row-compact, 56px);
   }
 
   .m-txn-amount {
@@ -2634,6 +2815,44 @@ select.m-settings-control,
     font-size: var(--mobile-text-caption) !important;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     line-height: var(--mobile-leading-caption);
+  }
+}
+
+/* Phone Order Summary: one compact control row. Tablet (720+) keeps 44px targets. */
+@media (max-width: 719.98px) {
+  .m-pos-cart-item__qty {
+    height: 36px !important;
+    min-height: 36px !important;
+  }
+
+  .m-pos-cart-item__qty-btn {
+    width: 32px !important;
+    min-width: 32px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+  }
+
+  .m-pos-cart-item__controls select.m-pos-control {
+    height: 36px !important;
+    min-height: 36px !important;
+    padding-top: 0;
+    padding-bottom: 0;
+    font-size: 13px !important;
+  }
+
+  .m-pos-customer-search {
+    height: 36px !important;
+    min-height: 36px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    font-size: 13px !important;
+  }
+
+  .m-pos-cart-item__remove {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
   }
 }
 

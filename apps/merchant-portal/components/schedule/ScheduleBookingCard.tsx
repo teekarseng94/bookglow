@@ -33,8 +33,8 @@ export const ScheduleBookingCard: React.FC<ScheduleBookingCardProps> = ({
     onClick={onClick}
     style={{ borderLeftColor: 'var(--brand)' }}
     className={cx(
-      'm-appointment-row m-card-interactive w-full text-left border border-[var(--line)] border-l-4',
-      'bg-[var(--brand-soft)] space-y-1',
+      'm-list-row m-appointment-row m-card-interactive w-full text-left border border-[var(--line)] border-l-4',
+      'bg-[var(--brand-soft)]',
       'm-booking-card',
       'md:rounded-ui-sm md:px-3 md:py-2.5 md:min-h-0',
       'transition-transform',
@@ -47,13 +47,15 @@ export const ScheduleBookingCard: React.FC<ScheduleBookingCardProps> = ({
       </span>
       <StatusBadge tone={statusTone(status)}>{status}</StatusBadge>
     </div>
-    <div className="flex items-baseline gap-1.5 min-w-0">
-      <span className="m-booking-name md:text-sm md:font-semibold text-[var(--text-primary)] truncate">
+    <p className="mt-0.5 min-w-0 truncate">
+      <span className="m-booking-name md:text-sm md:font-semibold text-[var(--text-primary)]">
         {customerName}
       </span>
-      <span className="m-secondary md:text-sm text-[var(--text-secondary)] truncate">{serviceName}</span>
-    </div>
-    <p className="m-caption md:text-xs text-[var(--text-muted)] truncate">{staffName}</p>
+      <span aria-hidden> · </span>
+      <span className="m-secondary md:text-sm text-[var(--text-secondary)]">{serviceName}</span>
+      <span aria-hidden> · </span>
+      <span className="m-caption md:text-xs text-[var(--text-muted)]">{staffName}</span>
+    </p>
   </button>
 );
 

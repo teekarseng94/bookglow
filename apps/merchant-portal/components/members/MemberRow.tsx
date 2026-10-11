@@ -41,7 +41,7 @@ export const MemberRow: React.FC<MemberRowProps> = ({
       }
     }}
     className={cx(
-      'm-entity-row m-card-interactive w-full flex items-center text-left cursor-pointer transition-colors',
+      'm-list-row m-entity-row m-card-interactive w-full flex items-center text-left cursor-pointer transition-colors',
       'focus-visible:shadow-ui-focus-strong',
       'm-member-row',
       'md:rounded-ui-md md:border md:shadow-ui-xs md:p-3 md:gap-3 md:min-h-0',

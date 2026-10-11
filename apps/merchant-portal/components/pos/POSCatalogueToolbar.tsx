@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Button } from '../ui/Button';
+import { FilterChip, FilterChipRow } from '../ui/FilterChipRow';
+import { IconButton } from '../ui/IconButton';
 import { MobileFilterSheet } from '../ui/MobileShell';
 import { cx } from '../ui/cx';
 
@@ -135,18 +137,15 @@ const FilterSortControl: React.FC<{
 
   return (
     <div ref={rootRef} className="relative shrink-0">
-      <button
-        type="button"
-        aria-label="Catalogue filters and sort"
+      <IconButton
+        label="Catalogue filters and sort"
+        variant="outline"
+        size="md"
         aria-expanded={open}
         aria-haspopup="dialog"
         onClick={() => flushSync(() => setOpen((value) => !value))}
         className={cx(
-          'inline-flex h-11 w-11 min-h-[44px] min-w-[44px] items-center justify-center rounded-ui-md border transition-colors',
-          'focus-visible:shadow-ui-focus-strong',
-          open || filtersActive
-            ? 'border-[var(--brand)] bg-[var(--brand-soft)] text-[var(--brand)]'
-            : 'border-[var(--line)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]',
+          (open || filtersActive) && 'border-[var(--brand)] bg-[var(--brand-soft)] text-[var(--brand)]',
         )}
       >
         <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -157,7 +156,7 @@ const FilterSortControl: React.FC<{
             d="M3 4h18M6 12h12M10 20h4"
           />
         </svg>
-      </button>
+      </IconButton>
 
       {open && presentation === 'popover' ? (
         <div
@@ -204,24 +203,18 @@ export const POSCatalogueToolbar: React.FC<POSCatalogueToolbarProps> = ({
     activeCatalog !== 'all' || selectedCategory !== 'All' || sortBy !== 'a-z';
 
   const renderCategoryChips = (keyPrefix: string) => (
-    <div className="m-filter-chips flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pb-0.5 scrollbar-thin">
+    <FilterChipRow ariaLabel="Service categories" className="min-w-0 flex-1">
       {categories.map((cat) => (
-        <button
+        <FilterChip
           key={`${keyPrefix}-${cat}`}
-          type="button"
+          selected={selectedCategory === cat}
           onClick={() => onCategoryChange(cat)}
-          className={cx(
-            'm-pos-category-chip shrink-0 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-all whitespace-nowrap',
-            'min-h-9',
-            selectedCategory === cat
-              ? 'bg-[var(--brand)] text-white shadow-ui-xs'
-              : 'border border-[var(--line)] bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]',
-          )}
+          className="m-pos-category-chip"
         >
           {categoryChipLabel(cat)}
-        </button>
+        </FilterChip>
       ))}
-    </div>
+    </FilterChipRow>
   );
 
   const renderSearchField = (wide = false) => (
@@ -230,7 +223,7 @@ export const POSCatalogueToolbar: React.FC<POSCatalogueToolbarProps> = ({
         type="search"
         placeholder="Search services"
         aria-label="Search services"
-        className="m-pos-search h-11 w-full min-h-[44px] rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] py-2 pl-9 pr-3 text-sm outline-none focus-visible:shadow-ui-focus-strong"
+        className="m-pos-search h-10 w-full rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] py-2 pl-9 pr-3 text-sm outline-none focus-visible:shadow-ui-focus-strong"
         value={search}
         onChange={(e) => onSearchChange(e.target.value)}
       />

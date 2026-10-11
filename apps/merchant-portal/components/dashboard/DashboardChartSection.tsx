@@ -74,11 +74,13 @@ export const DashboardChartSection: React.FC<DashboardChartSectionProps> = ({
             <div key={d.day} className="flex-1 min-w-0 h-full flex flex-col items-center gap-1.5">
               <div className="w-full flex-1 flex items-end">
                 <div
-                  className={cx(
-                    'w-full rounded-t-md transition-all',
-                    d.isToday ? 'bg-[var(--brand)]' : 'bg-[var(--info)]/40',
-                  )}
-                  style={{ height: `${d.heightPct}%` }}
+                  className="w-full rounded-t-md transition-all"
+                  style={{
+                    height: `${d.heightPct}%`,
+                    background: d.isToday
+                      ? 'var(--brand)'
+                      : 'color-mix(in srgb, var(--brand) 38%, white)',
+                  }}
                   title={d.title}
                 />
               </div>

@@ -30,7 +30,7 @@ export const StaffRoster: React.FC<StaffRosterProps> = ({
     )}
   >
     {toolbar ? (
-      <div className="pb-3 xl:p-4 xl:border-b xl:border-[var(--line)] space-y-3 shrink-0">
+      <div className="pb-2 xl:p-4 xl:border-b xl:border-[var(--line)] space-y-2 xl:space-y-3 shrink-0">
         {toolbar}
       </div>
     ) : null}

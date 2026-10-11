@@ -1,0 +1,15 @@
+---
+description: BookGlow UI identity and doc authority — skills must not replace the live product
+alwaysApply: true
+---
+
+# BookGlow UI
+
+Live identity is `design-system/bookglow/MASTER.md` (page files under `design-system/bookglow/pages/` override Master for that page).
+
+- Keep brand `#7656d6` / `#6244bd` / rose `#c84d78` (logo gradient only), Inter, `lucide-react`.
+- Reuse `apps/merchant-portal/components/ui/` and existing CSS variables.
+- Do not add shadcn, Radix, Phosphor, GSAP, Lora/Raleway, spa-pink, or product-wide dark mode.
+- Do not change auth, routing, payments, tenant isolation, or data unless the user asked for that work.
+- Ignore `_archive/` and skill defaults (pink luxury, Phosphor, shadcn) when they conflict with Master.
+- Hosting truth: `docs/UNIFIED_DOMAIN.md`. Apps are `apps/merchant-portal` and `apps/customer-site`, not `zenspa backend` / `zenspa Frontend`.

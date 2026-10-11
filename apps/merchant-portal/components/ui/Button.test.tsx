@@ -10,6 +10,8 @@ describe('Button', () => {
 
     const button = screen.getByRole('button', { name: 'Save' });
     expect(button).toHaveAttribute('type', 'button');
+    expect(button).toHaveClass('m-btn', 'm-btn--md');
+    expect(button).not.toHaveClass('w-full');
     fireEvent.click(button);
     expect(onClick).toHaveBeenCalledOnce();
   });

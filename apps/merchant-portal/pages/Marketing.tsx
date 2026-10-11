@@ -327,28 +327,28 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
               {visibleVouchers.map((voucher) => (
                 <article
                   key={voucher.id}
-                  className="min-w-0 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] p-4"
+                  className="min-w-0 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] p-3"
                 >
-                  <div className="flex min-w-0 items-start gap-3">
+                  <div className="m-list-row flex min-w-0 items-center gap-3">
                     <span className="shrink-0 rounded-ui-md bg-[var(--brand-soft)] p-2.5 text-[var(--brand)]">
                       <Gift size={18} aria-hidden="true" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <h3 className="truncate font-semibold text-[var(--text-primary)]">{voucher.name}</h3>
                         {statusBadge(voucher)}
-                        {isExpiringSoon(voucher) ? <StatusBadge tone="warning">Expiring soon</StatusBadge> : null}
+                        {isExpiringSoon(voucher) ? <StatusBadge tone="warning">Soon</StatusBadge> : null}
                       </div>
-                      <h3 className="mt-2 break-words font-semibold text-[var(--text-primary)]">{voucher.name}</h3>
-                      <p className="mt-1 break-words text-sm text-[var(--text-secondary)]">
-                        {voucher.serviceIds.map((id) => serviceNameMap.get(id) || id).join(', ')}
-                      </p>
-                      <p className="mt-1 text-xs font-medium text-[var(--text-muted)]">
+                      <p className="mt-0.5 truncate text-xs text-[var(--text-muted)]">
                         {currency.format(voucher.price)} · Expires {voucher.expiryDate}
+                        {voucher.serviceIds.length
+                          ? ` · ${voucher.serviceIds.map((id) => serviceNameMap.get(id) || id).join(', ')}`
+                          : ''}
                       </p>
                     </div>
                   </div>
 
-                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
                     <Button
                       type="button"
                       size="sm"

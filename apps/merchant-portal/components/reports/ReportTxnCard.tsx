@@ -52,30 +52,34 @@ export const ReportTxnCard: React.FC<ReportTxnCardProps> = ({
         : undefined
     }
     className={cx(
-      'm-txn-card m-card m-entity-row !p-3 bg-[var(--bg-surface)] border border-[var(--line)] shadow-ui-xs',
+      'm-txn-card m-list-row m-entity-row bg-[var(--bg-surface)] border border-[var(--line)] shadow-ui-xs',
       onClick && 'm-card-interactive cursor-pointer active:scale-[0.99] transition-transform',
       className,
     )}
+    title={description}
   >
-    <div className="flex items-start justify-between gap-3">
+    <div className="flex min-w-0 items-center justify-between gap-3">
       <div className="min-w-0">
         <p className={cx('m-txn-amount tabular-nums leading-tight', amountClass[amountTone])}>
           {amountLabel}
         </p>
-        <p className="text-sm font-bold text-[var(--text-primary)] mt-1 truncate">{customer}</p>
+        <p className="mt-0.5 truncate text-sm font-semibold text-[var(--text-primary)]">{customer}</p>
       </div>
       <StatusBadge tone={statusTone} className="shrink-0">
         {statusLabel}
       </StatusBadge>
     </div>
-    <div className="m-txn-meta mt-2 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-      <span>{dateTimeLabel}</span>
-      <span aria-hidden>·</span>
-      <span>{paymentMethod || '—'}</span>
-    </div>
-    {description ? (
-      <p className="text-xs text-[var(--text-muted)] mt-1 line-clamp-1">{description}</p>
-    ) : null}
+    <p className="m-txn-meta mt-0.5 truncate">
+      {dateTimeLabel}
+      <span aria-hidden> · </span>
+      {paymentMethod || '—'}
+      {description ? (
+        <>
+          <span aria-hidden> · </span>
+          {description}
+        </>
+      ) : null}
+    </p>
   </div>
 );
 

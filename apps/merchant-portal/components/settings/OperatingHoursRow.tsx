@@ -73,7 +73,7 @@ export const OperatingHoursRow: React.FC<OperatingHoursRowProps> = ({
   const statusLabel = isOpen ? 'Open' : 'Closed';
 
   return (
-    <div className={cx('m-hours-row', className)}>
+    <div className={cx('m-list-row m-hours-row', className)}>
       <span className="m-hours-row__day" title={dayLabel} aria-label={dayLabel}>
         <span className="m-hours-row__day-short" aria-hidden>
           {compactDayLabel}

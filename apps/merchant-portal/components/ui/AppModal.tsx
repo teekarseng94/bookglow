@@ -132,7 +132,7 @@ export const AppModal: React.FC<AppModalProps> = ({
           {children}
         </ModalBody>
 
-        {footer ? <ModalFooter>{footer}</ModalFooter> : null}
+        {footer ? <ModalFooter className="m-sheet-footer">{footer}</ModalFooter> : null}
       </div>
     </div>,
     document.body,

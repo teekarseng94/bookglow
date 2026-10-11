@@ -4,8 +4,8 @@ import { PageHeader } from '../ui/PageHeader';
 import { cx } from '../ui/cx';
 
 export interface InventoryPageHeaderProps {
-  title?: string;
-  description?: string;
+  title?: React.ReactNode;
+  description?: React.ReactNode;
   primaryLabel: string;
   onPrimaryAction: () => void;
   primaryDisabled?: boolean;
@@ -15,7 +15,7 @@ export interface InventoryPageHeaderProps {
 
 export const InventoryPageHeader: React.FC<InventoryPageHeaderProps> = ({
   title = 'Menu & Inventory',
-  description = 'Manage treatments, retail inventory, and bundled packages.',
+  description,
   primaryLabel,
   onPrimaryAction,
   primaryDisabled,
@@ -29,7 +29,7 @@ export const InventoryPageHeader: React.FC<InventoryPageHeaderProps> = ({
     actions={
       <div className="flex flex-wrap items-center gap-2">
         {secondaryActions}
-        <Button variant="primary" onClick={onPrimaryAction} disabled={primaryDisabled}>
+        <Button variant="primary" size="sm" onClick={onPrimaryAction} disabled={primaryDisabled}>
           {primaryLabel}
         </Button>
       </div>

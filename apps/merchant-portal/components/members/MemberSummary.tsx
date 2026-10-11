@@ -32,7 +32,7 @@ export const MemberSummary: React.FC<MemberSummaryProps> = ({
       className,
     )}
   >
-    <div className="m-member-summary__avatar rounded-full bg-[var(--brand-soft)] text-[var(--brand-deep)] flex items-center justify-center font-bold border-2 border-white shadow-sm shrink-0 w-11 h-11 text-base sm:w-16 sm:h-16 sm:text-2xl">
+    <div className="m-member-summary__avatar rounded-full bg-[var(--brand-soft)] text-[var(--brand-deep)] flex items-center justify-center font-bold border-2 border-white shadow-sm shrink-0 h-10 w-10 text-sm sm:h-16 sm:w-16 sm:text-2xl">
       {avatarInitial || (name || '?').charAt(0)}
     </div>
     <div className="flex-1 min-w-0">
@@ -41,18 +41,10 @@ export const MemberSummary: React.FC<MemberSummaryProps> = ({
       </h3>
       <p className="m-member-summary__meta text-[var(--text-secondary)] truncate text-[13px] sm:text-sm">
         {phone || '—'}
+        {joinDateLabel ? <span className="sm:hidden">{` · Joined ${joinDateLabel}`}</span> : null}
+        {lastRenewedLabel ? <span className="sm:hidden">{` · Renewed ${lastRenewedLabel}`}</span> : null}
+        {lastRenewalAmountLabel ? <span className="sm:hidden">{` · ${lastRenewalAmountLabel}`}</span> : null}
       </p>
-      {joinDateLabel ? (
-        <p className="m-member-summary__join text-[var(--text-muted)] mt-0.5 text-[11px] sm:hidden">
-          Joined {joinDateLabel}
-        </p>
-      ) : null}
-      {lastRenewedLabel ? (
-        <p className="m-member-summary__renew text-[var(--text-muted)] mt-0.5 text-[11px] sm:hidden">
-          Last renewed {lastRenewedLabel}
-          {lastRenewalAmountLabel ? ` · ${lastRenewalAmountLabel}` : ''}
-        </p>
-      ) : null}
     </div>
     <div className="text-right shrink-0 hidden sm:flex sm:flex-col sm:items-end sm:gap-2">
       {joinDateLabel ? (

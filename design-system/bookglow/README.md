@@ -23,6 +23,7 @@ When building or reviewing a page:
 | `pages/customer-booking.md` | Public site and booking journey |
 | `pages/superadmin.md` | Platform operations console |
 | `pages/android-webview.md` | Merchant Android WebView, status bar, safe areas |
+| `pages/phone-patterns.md` | Shared phone list-row, sheet footer, sticky CTA |
 | `pages/pos.md` | POS density and checkout actions |
 | `pages/responsive.md` | Merchant drawers, tabs, forms, tables |
 | `pages/schedule.md` | Calendar and appointment cards |

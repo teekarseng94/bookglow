@@ -45,13 +45,13 @@ export const POSCartSheet: React.FC<POSCartSheetProps> = ({
       className={cx(
         'm-pos-cart-sheet relative flex h-full w-full flex-col overflow-hidden border border-[var(--line)] bg-[var(--bg-surface)] shadow-ui-sm',
         'rounded-t-ui-lg post:rounded-[16px]',
-        'max-h-[92vh] post:h-full post:max-h-full',
+        'max-h-[calc(100dvh-var(--mobile-bottom-nav-height)-var(--mobile-safe-area-bottom))] post:h-full post:max-h-full',
         'mb-[calc(var(--mobile-bottom-nav-height)+var(--mobile-safe-area-bottom))] post:mb-0',
       )}
     >
       {/* —— Phone sheet chrome; tablet uses the compact banner + trash only —— */}
       <div className="m-pos-cart-header m-pos-cart-header--compact shrink-0 border-b border-[var(--line)] px-3 pt-2 pb-2.5">
-        <div className="m-pos-cart-phone-chrome mb-2 flex items-center justify-between gap-2">
+        <div className="m-pos-cart-phone-chrome mb-1.5 flex items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-1.5">
             <span className="bookglow-brand-mark shrink-0 text-[var(--brand)]" aria-hidden>
               ✦
@@ -70,9 +70,9 @@ export const POSCartSheet: React.FC<POSCartSheetProps> = ({
           {headerRight}
         </div>
 
-        <div className="m-pos-cart-header-banner flex items-center gap-2.5 rounded-ui-md bg-[var(--brand-soft)] px-3 py-2">
+        <div className="m-pos-cart-header-banner flex items-center gap-2 rounded-ui-md bg-[var(--brand-soft)] px-2.5 py-1.5 post:gap-2.5 post:px-3 post:py-2">
           <div
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-ui-sm bg-[var(--brand)] text-white"
+            className="m-pos-cart-header-mark flex h-7 w-7 shrink-0 items-center justify-center rounded-ui-sm bg-[var(--brand)] text-white post:h-9 post:w-9"
             aria-hidden
           >
             <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -116,7 +116,7 @@ export const POSCartSheet: React.FC<POSCartSheetProps> = ({
       <div className="m-pos-cart-body min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3 py-2.5 scrollbar-thin posd:space-y-2 posd:px-4 posd:py-3">
         {children}
       </div>
-      <div className="m-pos-cart-footer flex shrink-0 flex-col gap-2.5 border-t border-[var(--line)] bg-[var(--bg-surface)] p-3 pb-[max(0.75rem,var(--safe-bottom))] posd:gap-3 posd:p-4 posd:pb-[max(1rem,var(--safe-bottom))]">
+      <div className="m-sheet-footer m-pos-cart-footer flex shrink-0 flex-col gap-2 border-t border-[var(--line)] bg-[var(--bg-surface)] p-3 pb-[max(0.75rem,var(--safe-bottom))] posd:gap-3 posd:p-4 posd:pb-[max(1rem,var(--safe-bottom))]">
         {footer}
       </div>
     </div>

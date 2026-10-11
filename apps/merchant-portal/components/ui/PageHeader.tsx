@@ -8,8 +8,10 @@ export interface PageHeaderProps {
   leading?: React.ReactNode;
   actions?: React.ReactNode;
   overflowAction?: React.ReactNode;
-  /** Mobile title scale: page (26px) or compact header (20px). Desktop unchanged. */
+  /** Local title scale when the heading is visible. Shell-owned headers hide the title on phone/tablet. */
   titleSize?: 'page' | 'compact';
+  /** When true (default), the app shell owns the phone/tablet title. */
+  appOwned?: boolean;
   className?: string;
 }
 
@@ -21,6 +23,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   actions,
   overflowAction,
   titleSize = 'page',
+  appOwned = true,
   className,
 }) => (
   <header
@@ -28,6 +31,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
       'm-page-header flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between',
       'pb-3 border-b border-[var(--line)]',
       titleSize === 'compact' && 'm-page-header--compact',
+      appOwned && 'm-page-header--app-owned',
       className,
     )}
   >

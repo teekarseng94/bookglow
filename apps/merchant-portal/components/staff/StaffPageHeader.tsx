@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button } from '../ui/Button';
+import { MobilePageActions } from '../ui/MobilePageActions';
 import { PageHeader } from '../ui/PageHeader';
 import { cx } from '../ui/cx';
 
@@ -27,16 +28,20 @@ export const StaffPageHeader: React.FC<StaffPageHeaderProps> = ({
   className,
 }) => (
   <div className={cx(className)}>
-    <div className="md:hidden flex gap-2">
-      <Button variant="secondary" size="md" onClick={onOpenRoleRates} disabled={ratesDisabled} className="flex-1">
-        {locked ? 'Locked' : 'Roles'}
-      </Button>
-      <Button variant="primary" size="md" onClick={onAddStaff} disabled={addDisabled} className="flex-1">
-        {locked ? 'Locked' : 'Add Staff'}
-      </Button>
-    </div>
+    <MobilePageActions
+      secondary={
+        <Button variant="secondary" size="sm" onClick={onOpenRoleRates} disabled={ratesDisabled}>
+          {locked ? 'Locked' : 'Roles'}
+        </Button>
+      }
+      primary={
+        <Button size="sm" onClick={onAddStaff} disabled={addDisabled}>
+          {locked ? 'Locked' : '+ Add Staff'}
+        </Button>
+      }
+    />
     <PageHeader
-      className="m-page-header--compact hidden md:flex !pb-4"
+      className="m-page-header--compact hidden lg:flex !pb-4"
       title={
         <span className="inline-flex flex-wrap items-center gap-2">
           <span>{title}</span>

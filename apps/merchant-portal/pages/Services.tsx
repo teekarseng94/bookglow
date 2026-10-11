@@ -37,6 +37,7 @@ import {
   InventoryFiltersSheet,
   InventorySortSheet,
   InventoryOutletCard,
+  InventoryPageHeader,
   InventoryToolbar,
   InventoryTypeTabs,
   InventoryEditPanel,
@@ -997,18 +998,22 @@ const Services: React.FC<ServicesProps> = ({
 
       {/* ——— Desktop header + toolbar ——— */}
       <div className="hidden md:block space-y-4">
-        {/* Row 1: title + live badge | Categories / Rearrange / New X */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <h1 className="m-page-header--compact ui-page-title truncate">Menu &amp; Inventory</h1>
-            {outletId ? (
-              <span className="m-pos-live-badge inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[var(--success-soft)] text-[var(--success)] border border-[var(--success-border)] shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)]" aria-hidden />
-                Live outlet
-              </span>
-            ) : null}
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
+        <InventoryPageHeader
+          title={
+            <span className="inline-flex items-center gap-2.5">
+              <span>Menu &amp; Inventory</span>
+              {outletId ? (
+                <span className="m-pos-live-badge inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[var(--success-soft)] text-[var(--success)] border border-[var(--success-border)] shrink-0 text-xs font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)]" aria-hidden />
+                  Live outlet
+                </span>
+              ) : null}
+            </span>
+          }
+          primaryLabel={fabLabel}
+          onPrimaryAction={handleOpenAddModal}
+          primaryDisabled={Boolean(isLocked)}
+          secondaryActions={
             <Button
               variant="secondary"
               size="sm"
@@ -1017,11 +1022,8 @@ const Services: React.FC<ServicesProps> = ({
             >
               {isLocked ? <Icons.Lock /> : <Icons.Settings />} Categories
             </Button>
-            <Button variant="primary" size="sm" onClick={handleOpenAddModal} disabled={Boolean(isLocked)}>
-              {fabLabel}
-            </Button>
-          </div>
-        </div>
+          }
+        />
 
         {/* Row 2: search + type tabs */}
         <div className="flex flex-wrap items-center gap-3">

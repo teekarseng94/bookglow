@@ -22,6 +22,7 @@ describe('Step 3 mobile patterns', () => {
 
     expect(screen.getByRole('heading', { name: "Today's Appointments" })).toBeInTheDocument();
     expect(screen.getByText('1')).toHaveClass('m-section-header-count');
+    expect(document.querySelector('.m-appointment-row')).toHaveClass('m-list-row');
   });
 
   it('keeps member search visible with one square mobile actions control', () => {

@@ -8,6 +8,12 @@ import { StickyActionBar, type StickyActionBarProps } from './StickyActionBar';
 export { EmptyState } from './EmptyState';
 export { ErrorState } from './ErrorState';
 export { LoadingSkeleton as LoadingState } from './LoadingSkeleton';
+export { MobilePageActions } from './MobilePageActions';
+export type { MobilePageActionsProps, MobilePageOverflowItem } from './MobilePageActions';
+export { MetricRail } from './MetricRail';
+export type { MetricRailProps, MetricRailItem } from './MetricRail';
+export { FilterChipRow, FilterChip } from './FilterChipRow';
+export type { FilterChipRowProps, FilterChipProps } from './FilterChipRow';
 
 export type MobilePageShellProps = {
   children: React.ReactNode;

@@ -712,6 +712,12 @@
     padding: 0.45rem max(0.75rem, var(--safe-right)) 0.45rem max(0.75rem, var(--safe-left));
   }
 
+  .bookglow-mobile-header__title {
+    font-size: var(--mobile-text-header-title, 15px);
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
   .bookglow-icon-button {
     display: grid;
     width: var(--touch-min, 44px);
@@ -740,14 +746,20 @@
   }
 
   .bookglow-desktop-utility {
-    min-height: 4.5rem;
+    min-height: 3.5rem;
     align-items: center;
     justify-content: space-between;
-    gap: 1.5rem;
-    padding: 0.85rem 2rem;
+    gap: var(--space-6, 24px);
+    padding: 0.75rem var(--space-8, 32px);
     border-bottom: 1px solid var(--line);
-    background: rgba(255, 255, 255, 0.88);
-    backdrop-filter: blur(14px);
+    background: var(--bg-surface);
+  }
+
+  .bookglow-desktop-utility__outlet {
+    font-size: var(--font-section-title, 1rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
   }
 
   .bookglow-outlet-pill {
@@ -755,11 +767,11 @@
     align-items: center;
     min-height: 1.5rem;
     padding: 0.2rem 0.55rem;
-    border: 1px solid #d5e9e2;
+    border: 1px solid var(--success-border);
     border-radius: 999px;
     color: var(--success);
-    background: #edf8f4;
-    font-size: 0.65rem;
+    background: var(--success-soft);
+    font-size: var(--font-caption, 0.75rem);
     font-weight: 700;
   }
 
@@ -878,7 +890,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     text-align: center;
-    font-size: 0.75rem;
+    font-size: var(--mobile-text-nav, 11px);
     font-weight: 600;
     line-height: 1rem;
   }
@@ -897,58 +909,74 @@
     z-index: 60;
     max-height: min(75dvh, 38rem);
     overflow-y: auto;
-    padding: 0.55rem 1rem calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 8px);
+    padding: var(--space-2, 8px) var(--page-padding-x, 12px) calc(var(--bottom-nav-height) + var(--safe-bottom, env(safe-area-inset-bottom, 0px)) + 8px);
     border-radius: 1.5rem 1.5rem 0 0;
-    background: white;
+    background: var(--bg-surface);
     box-shadow: var(--shadow-md);
   }
 
   .bookglow-more-sheet__handle {
     width: 2.75rem;
     height: 0.25rem;
-    margin: 0 auto 0.7rem;
+    margin: 0 auto var(--space-3, 12px);
     border-radius: 999px;
-    background: #d7d0d8;
+    background: var(--line-strong);
   }
 
   .bookglow-more-sheet__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 0.7rem;
+    gap: var(--space-4, 16px);
+    margin-bottom: var(--space-3, 12px);
+  }
+
+  .bookglow-more-sheet__title {
+    margin: 0;
+    font-size: var(--font-section-title, 16px);
+    font-weight: 600;
+    color: var(--text-primary);
   }
 
   .bookglow-more-sheet__grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.65rem;
+    grid-auto-rows: 1fr;
+    gap: var(--space-2, 8px);
   }
 
   .bookglow-more-link {
     display: flex;
-    min-height: 4.35rem;
+    min-height: 56px;
+    height: 100%;
     align-items: center;
-    gap: 0.7rem;
-    padding: 0.75rem;
+    gap: var(--space-3, 12px);
+    padding: var(--space-3, 12px);
     border: 1px solid var(--line);
-    border-radius: 1rem;
-    color: #5f5864;
+    border-radius: var(--radius-md, 12px);
+    color: var(--text-secondary);
     background: var(--bg-soft);
-    font-size: 0.8rem;
-    font-weight: 700;
+    font-size: var(--font-body, 14px);
+    font-weight: 600;
   }
 
   .bookglow-more-link--active {
-    border-color: #d7cafa;
+    border-color: var(--brand-border);
     color: var(--brand-deep);
     background: var(--brand-soft);
   }
 
   .bookglow-more-link__icon {
-    width: 1.3rem;
-    height: 1.3rem;
+    width: var(--icon-size, 20px);
+    height: var(--icon-size, 20px);
     color: var(--brand);
+  }
+
+  .bookglow-more-link__label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   /* ---- Desktop profile popup — fixed positioned, anchored via JS ---- */
@@ -1484,6 +1512,24 @@
   white-space: nowrap;
 }
 
+
+/* Qty + staff stay on one row. A Tailwind arbitrary grid with a comma is not emitted. */
+.m-pos-cart-item__controls {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  min-width: 0;
+}
+
+.m-pos-cart-item__staff:only-child {
+  grid-column: 1 / -1;
+}
+
+.m-pos-cart-item__controls select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
 
 /* POS split pane: lock height so the catalogue list can scroll inside the shell. */
 @media (min-width: 720px) {

@@ -49,7 +49,7 @@ export const AppSheet: React.FC<AppSheetProps> = ({
   const panelClass =
     side === 'right'
       ? 'm-sheet-panel--right fixed inset-y-0 right-0 w-full max-w-md rounded-l-ui-lg'
-      : 'm-sheet-panel--bottom fixed inset-x-0 bottom-0 max-h-[90dvh] rounded-t-ui-lg';
+      : 'm-sheet-panel--bottom fixed inset-x-0 bottom-0 max-h-[calc(100dvh-var(--mobile-bottom-nav-height)-var(--mobile-safe-area-bottom))] rounded-t-ui-lg';
 
   return createPortal(
     <div className={cx('fixed inset-0', zIndexClass)} role="presentation">
@@ -91,7 +91,7 @@ export const AppSheet: React.FC<AppSheetProps> = ({
           />
         ) : null}
         <ModalBody className="flex-1">{children}</ModalBody>
-        {footer ? <ModalFooter>{footer}</ModalFooter> : null}
+        {footer ? <ModalFooter className="m-sheet-footer">{footer}</ModalFooter> : null}
       </div>
     </div>,
     document.body,

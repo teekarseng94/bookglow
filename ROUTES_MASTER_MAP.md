@@ -1,5 +1,7 @@
 # ZenFlow Routes Master Map
 
+> **Historical names.** Prefer `docs/UNIFIED_DOMAIN.md`. Live apps are `apps/customer-site` and `apps/merchant-portal`.
+
 Canonical route reference for customer booking flow and merchant flow.
 
 ## Domains

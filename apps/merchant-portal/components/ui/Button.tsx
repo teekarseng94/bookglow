@@ -29,6 +29,8 @@ const sizeClass: Record<ButtonSize, string> = {
 
 /**
  * Presentational button. Receives labels and callbacks only — no business logic.
+ * sm/md keep compact visual height; CSS expands the hit box to --touch-min.
+ * Use lg + fullWidth only for checkout, save, confirm, or sticky CTAs.
  */
 export const Button: React.FC<ButtonProps> = ({
   variant = 'primary',

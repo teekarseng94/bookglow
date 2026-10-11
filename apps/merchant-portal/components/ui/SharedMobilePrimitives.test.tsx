@@ -21,6 +21,9 @@ describe('shared mobile primitives', () => {
     );
 
     expect(screen.getByRole('heading', { level: 1, name: 'Members' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Members' }).closest('header')).toHaveClass(
+      'm-page-header--app-owned',
+    );
     expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'More' })).toBeInTheDocument();
   });

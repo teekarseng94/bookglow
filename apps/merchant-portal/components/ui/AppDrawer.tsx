@@ -96,7 +96,7 @@ export const AppDrawer: React.FC<AppDrawerProps> = ({
           actions={headerActions}
         />
         <ModalBody>{children}</ModalBody>
-        {footer ? <ModalFooter>{footer}</ModalFooter> : null}
+        {footer ? <ModalFooter className="m-sheet-footer">{footer}</ModalFooter> : null}
       </div>
     </div>,
     document.body,

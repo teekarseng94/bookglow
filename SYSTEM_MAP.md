@@ -1,6 +1,8 @@
 # SYSTEM MAP
 
-Production hosting: `https://bookglow.my` serves the public site and reverse-proxies merchant paths (`/login`, `/dashboard`, `/pos`, …) to Vercel project `bookglow-merchant`. See `docs/UNIFIED_DOMAIN.md`. The route tables below retain historical names (`zenspa Frontend` / `zenspa backend`).
+> **Historical.** Folder names and HashRouter notes below are stale. Current apps are `apps/customer-site` and `apps/merchant-portal`. Hosting: `docs/UNIFIED_DOMAIN.md`. UI: `design-system/bookglow/MASTER.md`. Do not implement from this file.
+
+Production hosting: `https://bookglow.my` serves the public site and reverse-proxies merchant paths (`/login`, `/dashboard`, `/pos`, …) to Vercel project `bookglow-merchant`. The route tables below retain historical names (`zenspa Frontend` / `zenspa backend`).
 
 ## 1) Frontend Route Manifest
 

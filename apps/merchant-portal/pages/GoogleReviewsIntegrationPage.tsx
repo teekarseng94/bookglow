@@ -309,7 +309,7 @@ const GoogleReviewsIntegrationPage: React.FC = () => {
     if (setupRequired) return null;
     if (connected) {
       return (
-        <Button variant="outline" onClick={() => setConfirmDisconnect(true)} disabled={Boolean(busy)} fullWidth>
+        <Button variant="outline" size="sm" onClick={() => setConfirmDisconnect(true)} disabled={Boolean(busy)}>
           Disconnect
         </Button>
       );
@@ -337,9 +337,9 @@ const GoogleReviewsIntegrationPage: React.FC = () => {
         {status === "pending_location" && preferPlaces ? (
           <Button
             variant="outline"
+            size="sm"
             onClick={() => setConfirmDisconnect(true)}
             disabled={Boolean(busy)}
-            fullWidth
           >
             Cancel incomplete Business Profile setup
           </Button>
@@ -351,7 +351,7 @@ const GoogleReviewsIntegrationPage: React.FC = () => {
   return (
     <div className="m-page-with-bottom-nav min-w-0 overflow-x-hidden animate-fadeIn flex flex-col min-h-[calc(100dvh-8rem)]">
       <div className="max-w-xl mx-auto w-full flex-1 flex flex-col">
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-3">
           <Link
             to="/integrations"
             className="p-2 -ml-2 rounded-ui-sm text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]"
@@ -361,7 +361,6 @@ const GoogleReviewsIntegrationPage: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
             </svg>
           </Link>
-          <h1 className="ui-page-title text-lg sm:text-xl">Google Reviews</h1>
         </div>
 
         <div className="flex border-b border-[var(--line)]" role="tablist" aria-label="Google Reviews">
@@ -440,7 +439,7 @@ const GoogleReviewsIntegrationPage: React.FC = () => {
           ) : null}
 
           {setupRequired && connection?.missingConfig?.length ? (
-            <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-ui-md p-3">
+            <p className="text-sm text-[var(--warning)] bg-[var(--warning-soft)] border border-[var(--warning-border)] rounded-ui-md p-3">
               Google Places connection is currently unavailable. An administrator needs to add{" "}
               <code className="text-xs">GOOGLE_PLACES_API_KEY</code> on the BookGlow server first.
             </p>
@@ -452,7 +451,7 @@ const GoogleReviewsIntegrationPage: React.FC = () => {
             </p>
           ) : null}
           {notice ? (
-            <p role="status" className="text-sm text-emerald-700 break-words">
+            <p role="status" className="text-sm text-[var(--success)] break-words">
               {notice}
             </p>
           ) : null}
@@ -462,21 +461,23 @@ const GoogleReviewsIntegrationPage: React.FC = () => {
           <div className="sticky bottom-0 z-20 mt-auto pt-4 pb-[calc(0.75rem+var(--safe-bottom,0px))] bg-[var(--bg-canvas)] space-y-2">
             {connected ? (
               <>
-                {connection?.mapsUri ? (
-                  <Button variant="outline" onClick={() => void openExternalUrl(connection.mapsUri!)} fullWidth>
-                    View Google Listing
-                  </Button>
-                ) : null}
-                <Button variant="secondary" onClick={handleSync} disabled={busy === "refresh"} fullWidth>
+                <Button onClick={handleSync} disabled={busy === "refresh"} fullWidth>
                   {busy === "refresh" ? "Syncing…" : "Sync Now"}
                 </Button>
-                <Button variant="outline" onClick={() => openPlacesSearch(false)} disabled={Boolean(busy)} fullWidth>
-                  Change Business
-                </Button>
+                <div className="flex flex-wrap items-center gap-2">
+                  {connection?.mapsUri ? (
+                    <Button variant="outline" size="sm" onClick={() => void openExternalUrl(connection.mapsUri!)}>
+                      View Google Listing
+                    </Button>
+                  ) : null}
+                  <Button variant="outline" size="sm" onClick={() => openPlacesSearch(false)} disabled={Boolean(busy)}>
+                    Change Business
+                  </Button>
+                </div>
               </>
             ) : null}
             {primaryAction()}
-            <Button variant="outline" onClick={() => setTab("instructions")} fullWidth>
+            <Button variant="ghost" size="sm" onClick={() => setTab("instructions")}>
               Support article
             </Button>
           </div>

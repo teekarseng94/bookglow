@@ -1,7 +1,7 @@
 # BookGlow UX System V5
 
 **App:** `apps/merchant-portal`  
-**Status:** Phase 3 operational pages landed (Staff proof, Members, POS, Menu, Sales History). Phase 4 is management pages.  
+**Status:** Phase 4 management pages landed (Settings rows, Marketing, Finance, Integrations, Member details, Reports). Phase 5 is QA.  
 **Identity:** `design-system/bookglow/MASTER.md` (page files under `design-system/bookglow/pages/` override Master).  
 **Tokens:** extend `styles/density-system.css`, `styles/mobile-tokens.css`, `styles/responsive-system.css`. Do **not** add a second palette or token family.
 
@@ -297,7 +297,7 @@ Keep the 2-column icon + title grid. Uniform height. No descriptions. Shared sec
 
 ## Settings
 
-Target native-settings **rows** (56–68px), not giant accordion cards with helper novels. Phase 4 migration. Hours already use `OperatingHoursRow`.
+Target native-settings **rows** (56–68px), not giant accordion cards with helper novels. Hours already use `OperatingHoursRow`. Phone hides section helper copy; section body padding is compact.
 
 ---
 

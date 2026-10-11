@@ -46,7 +46,7 @@ export const MemberRow: React.FC<MemberRowProps> = ({
       'm-member-row',
       'md:rounded-ui-md md:border md:shadow-ui-xs md:p-3 md:gap-3 md:min-h-0',
       highlighted
-        ? 'bg-amber-50/80 border border-amber-300 hover:bg-amber-100/80'
+        ? 'bg-[var(--warning-soft)] border border-[var(--warning-border)] hover:brightness-95'
         : 'bg-[var(--bg-surface)] border border-[var(--line)] hover:bg-[var(--bg-soft)]',
       className,
     )}
@@ -55,7 +55,7 @@ export const MemberRow: React.FC<MemberRowProps> = ({
       className={cx(
         'm-member-avatar rounded-full flex items-center justify-center font-semibold border-2 border-white shadow-sm shrink-0',
         'md:w-10 md:h-10 md:text-sm md:font-bold',
-        highlighted ? 'bg-amber-200 text-amber-800' : 'bg-[var(--brand-soft)] text-[var(--brand)]',
+        highlighted ? 'bg-[var(--warning-soft)] text-[var(--warning)]' : 'bg-[var(--brand-soft)] text-[var(--brand)]',
       )}
     >
       {(name || '?').charAt(0)}

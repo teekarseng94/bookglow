@@ -11,6 +11,7 @@ import {
   ReportTxnCard,
 } from '../components/reports';
 import { Button } from '../components/ui/Button';
+import { MetricRail } from '../components/ui/MetricRail';
 
 interface SalesReportsProps {
   transactions: Transaction[];
@@ -252,7 +253,7 @@ const SalesReports: React.FC<SalesReportsProps> = ({
         }
       `}</style>
       <div className="m-page-with-bottom-nav m-sales-report-page min-w-0 overflow-x-hidden space-y-3 sm:space-y-4 sales-report-print-area">
-      <div className="no-print hidden sm:block">
+      <div className="no-print hidden lg:block">
         <ReportPageHeader
           title="Sales Reports"
           description="Collection totals and daily breakdown."
@@ -337,19 +338,15 @@ const SalesReports: React.FC<SalesReportsProps> = ({
             { label: 'Staff', value: String(collectionSummary.staffCount), tone: 'neutral' },
           ]}
         />
-        <div className="m-sales-metrics md:hidden">
-          {[
-            ['Orders', collectionSummary.orderCount],
-            ['Items', collectionSummary.itemCount],
-            ['Customers', collectionSummary.customerCount],
-            ['Staff', collectionSummary.staffCount],
-          ].map(([label, value]) => (
-            <div key={String(label)} className="m-sales-metric">
-              <span className="m-sales-metric__label">{label}</span>
-              <span className="m-sales-metric__value tabular-nums">{value}</span>
-            </div>
-          ))}
-        </div>
+        <MetricRail
+          className="md:hidden"
+          items={[
+            { id: 'orders', label: 'Orders', value: String(collectionSummary.orderCount) },
+            { id: 'items', label: 'Items', value: String(collectionSummary.itemCount) },
+            { id: 'customers', label: 'Customers', value: String(collectionSummary.customerCount) },
+            { id: 'staff', label: 'Staff', value: String(collectionSummary.staffCount) },
+          ]}
+        />
         <div className="m-sales-asof flex items-center gap-2 sm:hidden">
           <svg className="h-4 w-4 shrink-0 text-[var(--brand)]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />

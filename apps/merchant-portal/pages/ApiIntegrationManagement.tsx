@@ -178,7 +178,7 @@ const ApiIntegrationManagement: React.FC = () => {
         Back to Settings
       </Link>
       <PageHeader
-        className="hidden md:flex"
+        className="hidden lg:flex"
         title="API Integration Management"
         description="Connect your chatbot to this POS. Manage API key and webhook. Key generation and hashing behavior is unchanged."
         actions={

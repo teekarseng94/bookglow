@@ -62,7 +62,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
             {title}
           </h3>
           {description ? (
-            <p className="m-settings-desc text-xs text-[var(--text-muted)] font-medium mt-1 whitespace-normal break-words">
+            <p className="m-settings-desc hidden md:block text-xs text-[var(--text-muted)] font-medium mt-1 whitespace-normal break-words">
               {description}
             </p>
           ) : null}
@@ -83,7 +83,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
       </button>
       <div
         className={cx(
-          'm-settings-section-body px-4 py-4 sm:px-5 sm:py-5',
+          'm-settings-section-body px-3 py-3 sm:px-5 sm:py-5',
           open ? 'block' : 'hidden',
           desktopAlwaysOpen && 'md:block',
         )}

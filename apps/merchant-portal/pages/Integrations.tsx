@@ -73,7 +73,7 @@ const IntegrationsPage: React.FC = () => {
     <div className="m-page-with-bottom-nav min-w-0 overflow-x-hidden animate-fadeIn">
       <div className="max-w-2xl mx-auto">
         <PageHeader
-          className="hidden md:flex"
+          className="hidden lg:flex"
           title="Integrations"
           description="Connect BookGlow with the services you use to run your business."
         />

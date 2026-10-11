@@ -2,7 +2,7 @@
 
 **Scope:** `apps/merchant-portal` only.  
 **Date:** 2026-10-11  
-**Status:** Phase 0–3 landed. Staff is the Phase 3 proof (`MobilePageActions` + `MetricRail` + one role chip row). Members, POS, Menu, and Sales History use the same V5 primitives. Phase 4 is management pages.  
+**Status:** Phase 0–4 landed. Management pages use V5 primitives (Settings compact rows, Marketing/Finance `MobilePageActions`, Integrations compact CTAs, Member details tokens). Phase 5 is QA.  
 **Proposed next system name:** BookGlow UX System V5 (documentation + primitive consolidation on the existing v4 density tokens — not a new palette or token family).
 
 ---

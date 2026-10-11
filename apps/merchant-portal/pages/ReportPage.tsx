@@ -860,7 +860,7 @@ const ReportPage: React.FC<ReportPageProps> = ({ transactions, outletID, staff }
 
       {/* Main content */}
       <main className="m-page-with-bottom-nav flex-1 flex flex-col min-w-0 overflow-x-hidden">
-        <div className="hidden md:block flex-shrink-0 px-4 sm:px-6 py-4 bg-[var(--bg-surface)] border-b border-[var(--line)]">
+        <div className="hidden lg:block flex-shrink-0 px-4 sm:px-6 py-4 bg-[var(--bg-surface)] border-b border-[var(--line)]">
           <ReportPageHeader
             title="Monthly Summary"
             description="Outlet collection and monthly performance."

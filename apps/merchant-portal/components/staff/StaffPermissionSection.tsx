@@ -72,7 +72,7 @@ export const StaffPermissionSection: React.FC<StaffPermissionSectionProps> = ({
               <span
                 className={cx(
                   'm-staff-chip shrink-0',
-                  allowed ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600',
+                  allowed ? 'bg-[var(--success-soft)] text-[var(--success)]' : 'bg-[var(--bg-soft)] text-[var(--text-secondary)]',
                 )}
               >
                 {allowed ? 'Allowed' : 'No'}

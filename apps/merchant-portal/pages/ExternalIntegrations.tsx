@@ -118,7 +118,7 @@ const ExternalIntegrations: React.FC<ExternalIntegrationsProps> = ({
         Back to Settings
       </Link>
       <PageHeader
-        className="hidden md:flex"
+        className="hidden lg:flex"
         title="External Integrations"
         description="Sync appointments from Setmore (ICS/iCal feed). Only real integrations are shown."
         actions={

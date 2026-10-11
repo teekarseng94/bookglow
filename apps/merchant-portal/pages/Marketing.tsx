@@ -15,7 +15,10 @@ import {
   Button,
   ConfirmationDialog,
   EmptyState,
+  FilterChip,
+  FilterChipRow,
   LoadingSkeleton,
+  MobilePageActions,
   PageHeader,
   StatusBadge,
 } from '../components/ui';
@@ -234,18 +237,20 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
 
   return (
     <div className="m-page-with-bottom-nav mx-auto max-w-5xl min-w-0 overflow-x-hidden space-y-4 animate-fadeIn">
-      <div className="md:hidden">
-        <Button type="button" fullWidth onClick={() => setIsEditorOpen(true)}>
-          <Plus size={16} aria-hidden="true" />
-          Create voucher
-        </Button>
-      </div>
+      <MobilePageActions
+        primary={
+          <Button type="button" size="sm" onClick={() => setIsEditorOpen(true)}>
+            <Plus size={16} aria-hidden="true" />
+            Create voucher
+          </Button>
+        }
+      />
       <PageHeader
-        className="hidden md:flex"
+        className="hidden lg:flex"
         title="Marketing"
         description="Create and manage customer vouchers."
         actions={
-          <Button type="button" onClick={() => setIsEditorOpen(true)}>
+          <Button type="button" size="sm" onClick={() => setIsEditorOpen(true)}>
             <Plus size={16} aria-hidden="true" />
             Create voucher
           </Button>
@@ -278,7 +283,7 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-base font-semibold text-[var(--text-primary)]">Vouchers</h2>
-                <p className="text-sm text-[var(--text-muted)]">Manage every customer voucher.</p>
+                <p className="hidden sm:block text-sm text-[var(--text-muted)]">Manage every customer voucher.</p>
               </div>
               <label className="relative block w-full sm:max-w-sm">
                 <Search
@@ -292,11 +297,11 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
                   placeholder="Search vouchers..."
-                  className="min-h-11 w-full rounded-ui-md border border-[var(--line)] bg-[var(--bg-soft)] pl-10 pr-3 text-sm outline-none focus-visible:shadow-ui-focus-strong"
+                  className="h-10 w-full rounded-ui-md border border-[var(--line)] bg-[var(--bg-soft)] pl-10 pr-3 text-sm outline-none focus-visible:shadow-ui-focus-strong"
                 />
               </label>
             </div>
-            <div className="-mx-1 mt-3 flex gap-2 overflow-x-auto px-1 pb-1">
+            <FilterChipRow ariaLabel="Filter vouchers" className="mt-3">
               {(
                 [
                   ['all', 'All', metrics.total],
@@ -305,29 +310,23 @@ const Marketing: React.FC<MarketingProps> = ({ outletID, services, role }) => {
                   ['redeemed', 'Redeemed', metrics.redeemed],
                 ] as const
               ).map(([id, label, count]) => (
-                <button
+                <FilterChip
                   key={id}
-                  type="button"
+                  selected={filter === id}
                   onClick={() => setFilter(id)}
-                  aria-pressed={filter === id}
-                  className={`min-h-9 shrink-0 rounded-full border px-3 text-xs font-semibold ${
-                    filter === id
-                      ? 'border-[var(--brand)] bg-[var(--brand-soft)] text-[var(--brand)]'
-                      : 'border-[var(--line)] text-[var(--text-secondary)] hover:bg-[var(--bg-soft)]'
-                  }`}
                 >
                   {label} · {count}
-                </button>
+                </FilterChip>
               ))}
-            </div>
+            </FilterChipRow>
           </div>
 
           {visibleVouchers.length ? (
-            <div className="grid gap-3 p-3 sm:p-4 lg:grid-cols-2">
+            <div className="divide-y divide-[var(--line)]">
               {visibleVouchers.map((voucher) => (
                 <article
                   key={voucher.id}
-                  className="min-w-0 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] p-3"
+                  className="min-w-0 bg-[var(--bg-surface)] p-3"
                 >
                   <div className="m-list-row flex min-w-0 items-center gap-3">
                     <span className="shrink-0 rounded-ui-md bg-[var(--brand-soft)] p-2.5 text-[var(--brand)]">

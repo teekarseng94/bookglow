@@ -441,11 +441,11 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
       >
         <div className="space-y-5">
           {recentByDate.length === 0 ? (
-            <p className="text-slate-500 text-center py-8">No {recentTab.toLowerCase()} items.</p>
+            <p className="text-[var(--text-muted)] text-center py-8">No {recentTab.toLowerCase()} items.</p>
           ) : (
             recentByDate.map(([date, items]) => (
               <div key={date}>
-                <p className="text-sm font-medium text-slate-500 mb-2">{formatActivityGroupDate(date)}</p>
+                <p className="text-sm font-medium text-[var(--text-muted)] mb-2">{formatActivityGroupDate(date)}</p>
 
                 {/* Mobile cards */}
                 <div className="space-y-2 lg:hidden">
@@ -461,7 +461,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
                           {item.price.toFixed(2)} {item.quantity > 1 ? `× ${item.quantity}` : ''}
                         </p>
                       </div>
-                      <svg className="w-5 h-5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                      <svg className="w-5 h-5 text-[var(--text-muted)] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </div>
@@ -488,7 +488,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
                           RM{item.price.toFixed(2)}
                           {item.quantity > 1 ? ` × ${item.quantity}` : ''}
                         </p>
-                        <svg className="w-4 h-4 text-slate-400 justify-self-end" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                        <svg className="w-4 h-4 text-[var(--text-muted)] justify-self-end" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                       </div>
@@ -555,7 +555,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
       >
         <div className="space-y-5">
           {salesByMonth.length === 0 ? (
-            <p className="text-slate-500 text-center py-8">No sales in this period.</p>
+            <p className="text-[var(--text-muted)] text-center py-8">No sales in this period.</p>
           ) : (
             salesByMonth.map(([monthKey, txs]) => {
               const [y, m] = monthKey.split('-');
@@ -565,7 +565,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
               });
               return (
                 <div key={monthKey}>
-                  <p className="text-sm font-medium text-slate-500 mb-2">{monthLabel}</p>
+                  <p className="text-sm font-medium text-[var(--text-muted)] mb-2">{monthLabel}</p>
 
                   {/* Mobile card list — unchanged */}
                   <div className="space-y-2 lg:hidden">
@@ -654,7 +654,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
       >
         <div className="space-y-5">
           {appointmentsFiltered.length === 0 ? (
-            <p className="text-slate-500 text-center py-8">No {appointmentsFilter.toLowerCase()} appointments.</p>
+            <p className="text-[var(--text-muted)] text-center py-8">No {appointmentsFilter.toLowerCase()} appointments.</p>
           ) : (
             (() => {
               const byDate: Record<string, typeof appointmentsFiltered> = {};
@@ -666,7 +666,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
                 .sort(([a], [b]) => b.localeCompare(a))
                 .map(([date, list]) => (
                   <div key={date}>
-                    <p className="text-sm font-medium text-slate-500 mb-2">{formatActivityGroupDate(date)}</p>
+                    <p className="text-sm font-medium text-[var(--text-muted)] mb-2">{formatActivityGroupDate(date)}</p>
 
                     {/* Mobile cards — preserve existing stacked layout */}
                     <div className="space-y-3 lg:hidden">
@@ -739,9 +739,9 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
   return (
     <div className={`m-member-details-page m-page-with-bottom-nav min-w-0 overflow-x-hidden space-y-3 sm:space-y-6 animate-fadeIn max-w-2xl mx-auto ${bgClass} p-3 sm:p-4 sm:pb-8`}>
       {memberDataError && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+        <div className="bg-[var(--warning-soft)] border border-[var(--warning-border)] rounded-xl p-4 text-sm text-[var(--warning)]">
           <p className="font-medium">Could not load member activity in real time.</p>
-          <p className="mt-1 text-amber-700 break-all">{memberDataError}</p>
+          <p className="mt-1 break-all">{memberDataError}</p>
           <p className="mt-2 text-xs">If the error mentions a missing index, open the link in the message in your browser to create it in Firebase Console, then redeploy with: firebase deploy --only firestore:indexes</p>
         </div>
       )}
@@ -755,7 +755,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
           <button onClick={() => navigate(-1)} className="m-member-details-back grid place-items-center hover:bg-[var(--bg-surface)]/80 text-[var(--text-secondary)] transition-colors shrink-0" aria-label="Back">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           </button>
-          <h2 className="m-member-details-title text-[var(--text-primary)] truncate">Member Details</h2>
+          <h2 className="m-member-details-title hidden lg:block text-[var(--text-primary)] truncate">Member Details</h2>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {onRenewMember ? (
@@ -853,7 +853,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
             id: 'credit',
             label: 'Credit',
             value: credit.toFixed(2),
-            toneClass: 'bg-blue-100 text-blue-600',
+            toneClass: 'bg-[var(--brand-soft)] text-[var(--brand)]',
             icon: <span className="text-sm font-bold">$</span>,
             onClick: () => setShowCreditModal(true),
           },
@@ -873,7 +873,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
             id: 'voucher',
             label: 'Voucher',
             value: String(vouchers),
-            toneClass: 'bg-sky-100 text-sky-600',
+            toneClass: 'bg-[var(--info-soft,var(--brand-soft))] text-[var(--info,var(--brand))]',
             icon: (
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
@@ -895,7 +895,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
             id: 'outstanding',
             label: 'Outstanding',
             value: currentOutstandingBalance.toFixed(2),
-            toneClass: 'bg-[#ffedeb] text-[#f44336]',
+            toneClass: 'bg-[var(--danger-soft)] text-[var(--danger)]',
             icon: <span className="text-sm font-bold">$</span>,
             onClick: () => setShowOutstandingModal(true),
           },
@@ -955,10 +955,10 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
           <div className="bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] p-3">
             <div className="grid grid-cols-4 gap-2">
               {[
-                { label: 'Breakdown', icon: '⏱', color: 'bg-pink-100 text-pink-600' },
-                { label: 'Remarks', icon: '📋', color: 'bg-amber-100 text-amber-600' },
-                { label: 'Checklist', icon: '✓', color: 'bg-[var(--brand-soft)] text-[var(--brand)]' },
-                { label: 'Referral', icon: '👥', color: 'bg-amber-200/80 text-amber-800' }
+                { label: 'Breakdown', icon: '⏱', color: 'bg-[var(--brand-soft)] text-[var(--brand)]' },
+                { label: 'Remarks', icon: '📋', color: 'bg-[var(--warning-soft)] text-[var(--warning)]' },
+                { label: 'Checklist', icon: '✓', color: 'bg-[var(--success-soft)] text-[var(--success)]' },
+                { label: 'Referral', icon: '👥', color: 'bg-[var(--bg-soft)] text-[var(--text-secondary)]' }
               ].map((item) => (
                 <button key={item.label} type="button" className="flex flex-col items-center gap-1 p-2 rounded-xl hover:bg-[var(--bg-soft)] transition-colors">
                   <div className={`w-9 h-9 rounded-full flex items-center justify-center text-base font-bold ${item.color}`}>{item.icon}</div>
@@ -982,10 +982,10 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
         <div className="bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs p-6">
           <div className="grid grid-cols-4 gap-4">
             {[
-              { label: 'Breakdown', icon: '⏱', color: 'bg-pink-100 text-pink-600' },
-              { label: 'Remarks', icon: '📋', color: 'bg-amber-100 text-amber-600' },
-              { label: 'Checklist', icon: '✓', color: 'bg-[var(--brand-soft)] text-[var(--brand)]' },
-              { label: 'Referral', icon: '👥', color: 'bg-amber-200/80 text-amber-800' }
+              { label: 'Breakdown', icon: '⏱', color: 'bg-[var(--brand-soft)] text-[var(--brand)]' },
+              { label: 'Remarks', icon: '📋', color: 'bg-[var(--warning-soft)] text-[var(--warning)]' },
+              { label: 'Checklist', icon: '✓', color: 'bg-[var(--success-soft)] text-[var(--success)]' },
+              { label: 'Referral', icon: '👥', color: 'bg-[var(--bg-soft)] text-[var(--text-secondary)]' }
             ].map((item) => (
               <button key={item.label} type="button" className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-[var(--bg-soft)] transition-colors">
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold ${item.color}`}>{item.icon}</div>

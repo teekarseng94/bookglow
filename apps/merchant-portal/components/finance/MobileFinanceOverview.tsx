@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { ArrowDown, BarChart3, CalendarDays, ChevronDown, HandCoins, Package, ReceiptText, Search, SlidersHorizontal, Trash2, UsersRound, WalletCards } from 'lucide-react';
 import type { Transaction } from '../../types';
-import { AppSheet, Button, ConfirmationDialog, Field, fieldControlClassName, ModalFooterActions } from '../ui';
+import { AppSheet, Button, ConfirmationDialog, Field, fieldControlClassName, MobilePageActions, ModalFooterActions } from '../ui';
 import { cx } from '../ui/cx';
 import ExpenseDetailsSheet from './ExpenseDetailsSheet';
 import {
@@ -28,7 +28,7 @@ const money = (value: number) => `RM ${value.toLocaleString('en-MY', { minimumFr
 const periodLabels: Record<FinancePeriod, string> = { 'this-month': 'This Month', 'last-month': 'Last Month', 'this-quarter': 'This Quarter', 'this-year': 'This Year' };
 
 const ChangeBadge: React.FC<{ value: number | null }> = ({ value }) => value == null ? null : (
-  <span className={cx('inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold', value > 0 ? 'bg-[var(--danger-soft)] text-[var(--danger)]' : 'bg-[var(--success-soft)] text-[var(--success)]')}>
+  <span className={cx('m-caption inline-flex rounded-full px-2 py-0.5 font-bold', value > 0 ? 'bg-[var(--danger-soft)] text-[var(--danger)]' : 'bg-[var(--success-soft)] text-[var(--success)]')}>
     {value > 0 ? '↑' : '↓'} {Math.abs(value).toFixed(1)}%
   </span>
 );
@@ -37,8 +37,8 @@ const PeriodCard: React.FC<{ label: string; amount: number; icon: React.ReactNod
   <article className="min-w-0 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] p-3 shadow-ui-xs sm:flex sm:items-center sm:gap-3 sm:p-4">
     <div className={cx('mb-2 grid h-9 w-9 shrink-0 place-items-center rounded-ui-sm sm:mb-0', tone)}>{icon}</div>
     <div className="min-w-0">
-      <p className="truncate text-[11px] font-semibold text-[var(--text-muted)] sm:text-xs">{label}</p>
-      <p className="mt-0.5 whitespace-nowrap text-[clamp(10px,2.8vw,16px)] font-bold leading-4 tabular-nums text-[var(--danger)]">-{money(amount)}</p>
+      <p className="m-caption truncate font-semibold text-[var(--text-muted)]">{label}</p>
+      <p className="mt-0.5 whitespace-nowrap text-sm font-bold leading-4 tabular-nums text-[var(--danger)] sm:text-base">-{money(amount)}</p>
     </div>
   </article>
 );
@@ -69,8 +69,8 @@ const ExpenseTrendChart: React.FC<{ data: Array<{ label: string; amount: number 
 
   return (
     <div className="relative h-full min-w-0" role="img" aria-label={`Expense trend from ${data[0]?.label} to ${data[data.length - 1]?.label}`}>
-      <span className="absolute left-0 top-0 text-[9px] tabular-nums text-[var(--text-muted)]">{compact(maximum)}</span>
-      <span className="absolute bottom-5 left-0 text-[9px] tabular-nums text-[var(--text-muted)]">0</span>
+      <span className="absolute left-0 top-0 text-[var(--font-caption,12px)] tabular-nums text-[var(--text-muted)]">{compact(maximum)}</span>
+      <span className="absolute bottom-5 left-0 text-[var(--font-caption,12px)] tabular-nums text-[var(--text-muted)]">0</span>
       <svg className="absolute left-9 top-1 h-[calc(100%-1.75rem)] w-[calc(100%-2.75rem)] overflow-visible" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
         <line x1="0" y1="8" x2="100" y2="8" stroke="var(--line-soft)" strokeDasharray="3 4" vectorEffect="non-scaling-stroke" />
         <line x1="0" y1="50" x2="100" y2="50" stroke="var(--line-soft)" strokeDasharray="3 4" vectorEffect="non-scaling-stroke" />
@@ -83,7 +83,7 @@ const ExpenseTrendChart: React.FC<{ data: Array<{ label: string; amount: number 
           </circle>
         ))}
       </svg>
-      <div className="absolute inset-x-9 bottom-0 flex justify-between gap-2 text-[9px] text-[var(--text-muted)]">
+      <div className="absolute inset-x-9 bottom-0 flex justify-between gap-2 text-[var(--font-caption,12px)] text-[var(--text-muted)]">
         {labels.map((point, index) => <span key={`${point.label}-${index}`} className="whitespace-nowrap">{point.label}</span>)}
       </div>
     </div>
@@ -123,17 +123,25 @@ export const MobileFinanceOverview: React.FC<MobileFinanceOverviewProps> = ({ ex
 
   return (
     <div className="m-page-with-bottom-nav mx-auto w-full max-w-[1440px] space-y-4 bg-[var(--bg-canvas)] pb-[calc(var(--mobile-bottom-nav-height)+var(--mobile-safe-area-bottom)+0.75rem)] sm:space-y-5 sm:pb-8 lg:space-y-6">
-      <div className="grid grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] gap-2.5 sm:ml-auto sm:w-full sm:max-w-md">
-        <Button variant="outline" className="h-11 min-w-0 px-3" onClick={onOpenCategories}>Categories</Button>
-        <Button className="h-11 min-w-0 px-3" onClick={onRecordExpense}>Record Expense</Button>
+      <MobilePageActions
+        secondary={
+          <Button variant="secondary" size="sm" onClick={onOpenCategories}>Categories</Button>
+        }
+        primary={
+          <Button size="sm" onClick={onRecordExpense}>Record Expense</Button>
+        }
+      />
+      <div className="hidden lg:flex justify-end gap-2">
+        <Button variant="secondary" size="sm" onClick={onOpenCategories}>Categories</Button>
+        <Button size="sm" onClick={onRecordExpense}>Record Expense</Button>
       </div>
 
-      <section className="rounded-ui-lg border border-[#ded5f5] bg-gradient-to-br from-white via-[#fbf9ff] to-[#f4efff] p-4 text-[var(--text-primary)] shadow-ui-sm sm:p-5 lg:p-6">
+      <section className="rounded-ui-lg border border-[var(--brand-border)] bg-[var(--bg-surface)] p-4 text-[var(--text-primary)] shadow-ui-sm sm:p-5 lg:p-6">
         <div className="flex items-center justify-between gap-3">
           <h2 className="flex min-w-0 items-center gap-2 text-base font-bold sm:text-xl"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-ui-sm bg-[var(--brand-soft)] text-[var(--brand)]"><BarChart3 className="h-5 w-5" /></span> Cashflow Overview</h2>
           <label className="relative shrink-0">
             <span className="sr-only">Overview period</span>
-            <select value={period} onChange={(event) => setPeriod(event.target.value as FinancePeriod)} className="h-10 appearance-none rounded-ui-sm border border-[#d5c8f3] bg-white pl-3 pr-8 text-xs font-bold text-[var(--brand)] shadow-ui-xs outline-none focus-visible:shadow-ui-focus-strong sm:min-w-36">
+            <select value={period} onChange={(event) => setPeriod(event.target.value as FinancePeriod)} className="h-10 appearance-none rounded-ui-sm border border-[var(--brand-border)] bg-[var(--bg-surface)] pl-3 pr-8 text-xs font-bold text-[var(--brand)] shadow-ui-xs outline-none focus-visible:shadow-ui-focus-strong sm:min-w-36">
               {Object.entries(periodLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select>
             <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2" aria-hidden />
@@ -145,12 +153,12 @@ export const MobileFinanceOverview: React.FC<MobileFinanceOverviewProps> = ({ ex
           <div className="min-w-0 pr-3">
             <p className="text-xs font-semibold text-[var(--text-muted)]">Total Expenses</p>
             <p className="mt-1 whitespace-nowrap text-[clamp(20px,6vw,30px)] font-bold leading-[1.1] tabular-nums text-[var(--danger)]">-{money(summary.total)}</p>
-            <div className="mt-2 flex flex-col items-start gap-1 text-[11px] text-[var(--text-muted)] sm:flex-row sm:items-center sm:gap-2"><ChangeBadge value={summary.amountChangePercent} /><span>vs previous</span></div>
+            <div className="mt-2 flex flex-col items-start gap-1 m-caption text-[var(--text-muted)] sm:flex-row sm:items-center sm:gap-2"><ChangeBadge value={summary.amountChangePercent} /><span>vs previous</span></div>
           </div>
           <div className="min-w-0 pl-3">
             <p className="text-xs font-semibold text-[var(--text-muted)]">Transactions</p>
             <p className="mt-1 text-xl font-bold tabular-nums text-[var(--text-primary)] sm:text-2xl">{summary.current.length}</p>
-            <div className="mt-2 flex flex-col items-start gap-1 text-[11px] text-[var(--text-muted)] sm:flex-row sm:items-center sm:gap-2"><ChangeBadge value={summary.transactionChangePercent} /><span>vs previous</span></div>
+            <div className="mt-2 flex flex-col items-start gap-1 m-caption text-[var(--text-muted)] sm:flex-row sm:items-center sm:gap-2"><ChangeBadge value={summary.transactionChangePercent} /><span>vs previous</span></div>
           </div>
           </div>
 
@@ -179,9 +187,9 @@ export const MobileFinanceOverview: React.FC<MobileFinanceOverviewProps> = ({ ex
           <label className="relative min-w-0 flex-1">
             <span className="sr-only">Search expenses</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-muted)]" aria-hidden />
-            <input type="search" value={filters.query} onChange={(event) => { setFilters((current) => ({ ...current, query: event.target.value })); setShowAll(false); }} placeholder="Search expenses…" className="h-11 w-full rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)] pl-9 pr-3 text-sm outline-none focus-visible:shadow-ui-focus-strong" />
+            <input type="search" value={filters.query} onChange={(event) => { setFilters((current) => ({ ...current, query: event.target.value })); setShowAll(false); }} placeholder="Search expenses…" className="h-10 w-full rounded-ui-sm border border-[var(--line)] bg-[var(--bg-surface)] pl-9 pr-3 text-sm outline-none focus-visible:shadow-ui-focus-strong" />
           </label>
-          <Button variant="outline" className={cx('relative h-11 shrink-0 px-3', activeFilterCount > 0 && 'border-[var(--brand)] text-[var(--brand)]')} onClick={() => setFilterOpen(true)}>
+          <Button variant="outline" size="sm" className={cx('relative shrink-0 px-3', activeFilterCount > 0 && 'border-[var(--brand)] text-[var(--brand)]')} onClick={() => setFilterOpen(true)}>
             <SlidersHorizontal className="h-4 w-4" /> Filter
             {activeFilterCount > 0 ? <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-[var(--brand)] px-1 text-[10px] text-white">{activeFilterCount}</span> : null}
           </Button>
@@ -202,13 +210,13 @@ export const MobileFinanceOverview: React.FC<MobileFinanceOverviewProps> = ({ ex
                   setSelectedExpense(expense);
                 }
               }}
-              className="grid min-h-[82px] min-w-0 cursor-pointer grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-3 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] p-3 transition-colors hover:bg-[var(--bg-soft)] focus-visible:outline-none focus-visible:shadow-ui-focus-strong"
+              className="m-list-row grid min-h-[56px] min-w-0 cursor-pointer grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-3 rounded-ui-md border border-[var(--line)] bg-[var(--bg-surface)] px-3 py-2 transition-colors hover:bg-[var(--bg-soft)] focus-visible:outline-none focus-visible:shadow-ui-focus-strong"
             >
               <ExpenseIcon transaction={expense} />
               <div className="min-w-0 flex-1">
                 <h3 className="line-clamp-2 text-sm font-semibold leading-5 text-[var(--text-primary)]">{expense.description}</h3>
-                <p className="mt-1 text-[11px] leading-4 text-[var(--text-muted)]">{new Date(expense.date).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })} · {new Date(expense.date).toLocaleTimeString('en-MY', { hour: 'numeric', minute: '2-digit' })}</p>
-                <p className="text-[11px] leading-4 text-[var(--text-muted)]">{expense.category || 'Expense'}</p>
+                <p className="m-caption mt-0.5 leading-4 text-[var(--text-muted)]">{new Date(expense.date).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })} · {new Date(expense.date).toLocaleTimeString('en-MY', { hour: 'numeric', minute: '2-digit' })}</p>
+                <p className="m-caption leading-4 text-[var(--text-muted)]">{expense.category || 'Expense'}</p>
               </div>
               <div className="flex h-full shrink-0 flex-col items-end justify-between text-right">
                 <p className="whitespace-nowrap text-sm font-bold tabular-nums text-[var(--danger)]">-{money(expense.amount)}</p>

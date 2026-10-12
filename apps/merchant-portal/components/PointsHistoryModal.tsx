@@ -324,7 +324,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
                         <p className={`text-sm font-bold ${
                           tx.type === 'Topup' ? 'text-[var(--success)]' :
                           tx.type === 'Redeem' ? 'text-[var(--danger)]' :
-                          'text-amber-600'
+                          'text-[var(--warning)]'
                         }`}>
                           {tx.type === 'Topup' ? '+' : '−'}{tx.amount.toLocaleString('en-US', { minimumFractionDigits: 0 })}
                         </p>

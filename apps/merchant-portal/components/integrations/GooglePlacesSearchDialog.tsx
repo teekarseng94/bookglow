@@ -21,7 +21,7 @@ function useDesktop(): boolean {
 
 function Stars({ rating }: { rating: number }) {
   return (
-    <span className="text-amber-500" aria-label={`${rating.toFixed(1)} out of 5 stars`}>
+    <span className="text-[var(--warning)]" aria-label={`${rating.toFixed(1)} out of 5 stars`}>
       ★ {rating.toFixed(1)}
     </span>
   );

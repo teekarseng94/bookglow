@@ -96,12 +96,12 @@ const BuyVoucher: React.FC = () => {
               <p className="text-[var(--text-secondary)] mt-1">Price: ${voucher.price.toFixed(2)}</p>
               <p className="text-sm text-[var(--text-muted)] mt-1">Expiry: {voucher.expiryDate}</p>
               {voucher.status === 'active' && voucher.secretCode && (
-                <p className="text-xs font-semibold text-amber-700 mt-2">
+                <p className="text-xs font-semibold text-[var(--warning)] mt-2">
                   Code generated - pending staff confirmation in Marketing.
                 </p>
               )}
               {isExpired && (
-                <p className="text-xs font-semibold text-rose-600 mt-2">This voucher is expired.</p>
+                <p className="text-xs font-semibold text-[var(--danger)] mt-2">This voucher is expired.</p>
               )}
             </div>
 
@@ -126,17 +126,17 @@ const BuyVoucher: React.FC = () => {
             </Button>
 
             {redemptionLink && (
-              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-ui-md">
-                <p className="text-sm font-semibold text-emerald-700">Secret code generated.</p>
-                <p className="text-xs font-mono text-emerald-800 mt-1">{redemptionLink}</p>
-                <p className="text-sm font-semibold text-emerald-700 mt-3">Secret Code</p>
+              <div className="p-4 bg-[var(--success-soft)] border border-[var(--success-border)] rounded-ui-md">
+                <p className="text-sm font-semibold text-[var(--success)]">Secret code generated.</p>
+                <p className="text-xs font-mono text-[var(--success)] mt-1">{redemptionLink}</p>
+                <p className="text-sm font-semibold text-[var(--success)] mt-3">Secret Code</p>
                 <div className="flex items-center gap-2 mt-1">
-                  <p className="m-voucher-code text-emerald-900">{secretCode}</p>
+                  <p className="m-voucher-code text-[var(--text-primary)]">{secretCode}</p>
                   <Button type="button" size="sm" variant="secondary" onClick={onCopySecretCode}>
                     {copiedCode ? 'Copied' : 'Copy'}
                   </Button>
                 </div>
-                <p className="m-voucher-hint text-emerald-800 mt-1">
+                <p className="m-voucher-hint text-[var(--success)] mt-1">
                   Show this code to staff. Voucher is considered sold only after staff confirms this code in Marketing.
                 </p>
               </div>

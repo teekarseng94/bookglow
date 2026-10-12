@@ -110,7 +110,7 @@ const RedeemVoucher: React.FC = () => {
                     />
                   </Field>
                 ) : (
-                  <p className="text-xs text-amber-700">
+                  <p className="text-xs text-[var(--warning)]">
                     No staff PIN is configured for this outlet. Only manual confirmation is required.
                   </p>
                 )}

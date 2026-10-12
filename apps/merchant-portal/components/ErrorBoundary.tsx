@@ -32,7 +32,7 @@ class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-[var(--bg-canvas)] p-4">
           <div className="max-w-md w-full bg-[var(--bg-surface)] rounded-ui-md shadow-ui-md p-6 border border-[var(--danger-border)]">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-[var(--danger-soft)] rounded-full flex items-center justify-center">
@@ -48,14 +48,14 @@ class ErrorBoundary extends Component<Props, State> {
             {this.state.error && (
               <details className="mb-4">
                 <summary className="text-sm text-[var(--text-muted)] cursor-pointer mb-2">Error details</summary>
-                <pre className="text-xs bg-slate-100 p-3 rounded overflow-auto max-h-40">
+                <pre className="text-xs bg-[var(--bg-soft)] p-3 rounded overflow-auto max-h-40">
                   {this.state.error.toString()}
                 </pre>
               </details>
             )}
             <button
               onClick={() => window.location.reload()}
-              className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+              className="w-full bg-[var(--brand)] hover:bg-[var(--brand-hover)] text-white font-semibold py-2.5 px-4 rounded-ui-md transition-colors"
             >
               Refresh Page
             </button>

@@ -10,8 +10,8 @@ import { BrowserRouter } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
 
 const LoadingSpinner = () => (
-  <div className="min-h-screen flex items-center justify-center bg-slate-50">
-    <div className="inline-block w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
+  <div className="min-h-screen flex items-center justify-center bg-[var(--bg-canvas)]">
+    <div className="inline-block w-12 h-12 border-4 border-[var(--brand)] border-t-transparent rounded-full animate-spin" />
   </div>
 );
 

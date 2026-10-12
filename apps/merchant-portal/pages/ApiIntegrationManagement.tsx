@@ -311,7 +311,7 @@ const ApiIntegrationManagement: React.FC = () => {
               {API_DOCS.map((row, i) => (
                 <tr key={i} className="border-b border-[var(--line)] last:border-0">
                   <td className="py-3 px-4">
-                    <span className={`font-mono font-medium ${row.method === 'GET' ? 'text-emerald-600' : 'text-sky-600'}`}>
+                    <span className={`font-mono font-medium ${row.method === 'GET' ? 'text-[var(--success)]' : 'text-[var(--info)]'}`}>
                       {row.method}
                     </span>
                   </td>

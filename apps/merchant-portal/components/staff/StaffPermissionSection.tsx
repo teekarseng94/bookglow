@@ -59,7 +59,7 @@ export const StaffPermissionSection: React.FC<StaffPermissionSectionProps> = ({
               className={cx(
                 'w-full flex items-center justify-between gap-3 rounded-ui-sm border px-3 py-2.5 text-left transition-colors',
                 allowed
-                  ? 'border-emerald-200 bg-emerald-50/60'
+                  ? 'border-[var(--success-border)] bg-[var(--success-soft)]'
                   : 'border-[var(--line)] bg-[var(--bg-soft)]',
                 editable && 'hover:border-[var(--brand-border)] cursor-pointer',
                 !editable && 'cursor-default',

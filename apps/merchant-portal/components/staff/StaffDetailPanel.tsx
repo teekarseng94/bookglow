@@ -83,7 +83,7 @@ function HistoryTable({ history }: { history: StaffHistoryLine[] }) {
                 </p>
               </div>
               <div className="text-right shrink-0">
-                <p className="m-staff-stat-value text-emerald-600 tabular-nums">
+                <p className="m-staff-stat-value text-[var(--success)] tabular-nums">
                   {formatMYR(item.commissionEarned ?? 0)}
                 </p>
                 <p className="m-staff-card__meta tabular-nums">
@@ -121,7 +121,7 @@ function HistoryTable({ history }: { history: StaffHistoryLine[] }) {
                 <td className="py-3 text-sm font-bold text-[var(--text-secondary)] text-right tabular-nums">
                   {formatMYR(item.price)}
                 </td>
-                <td className="py-3 m-staff-stat-value text-emerald-600 text-right tabular-nums">
+                <td className="py-3 m-staff-stat-value text-[var(--success)] text-right tabular-nums">
                   {formatMYR(item.commissionEarned ?? 0)}
                   {item.type === 'product' && item.commissionEarned ? (
                     <span className="ml-2 inline-flex items-center rounded-full bg-[var(--bg-soft)] m-staff-card__role text-[var(--text-muted)]">
@@ -343,7 +343,7 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
                   <p className="m-staff-kpi-label text-[var(--brand)] truncate" title="Commission">
                     Commission
                   </p>
-                  <p className="m-staff-kpi-value tabular-nums text-emerald-600 mt-0.5 whitespace-nowrap">
+                  <p className="m-staff-kpi-value tabular-nums text-[var(--success)] mt-0.5 whitespace-nowrap">
                     {formatMYR(member.totalCommission)}
                   </p>
                 </div>
@@ -388,7 +388,7 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
                 </span>
                 {' · '}
                 Period earnings{' '}
-                <span className="font-bold text-emerald-600 tabular-nums">
+                <span className="font-bold text-[var(--success)] tabular-nums">
                   {formatMYR(member.totalCommission)}
                 </span>
               </p>
@@ -476,7 +476,7 @@ export const StaffDetailPanel: React.FC<StaffDetailPanelProps> = ({
                 <h4 className="m-staff-section-title">
                   Commission earned
                 </h4>
-                <p className="m-staff-kpi-value text-emerald-600 tabular-nums">
+                <p className="m-staff-kpi-value text-[var(--success)] tabular-nums">
                   {formatMYR(member.totalCommission)}
                 </p>
               </div>

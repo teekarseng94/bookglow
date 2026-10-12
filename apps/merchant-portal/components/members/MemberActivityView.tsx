@@ -26,7 +26,7 @@ export function MemberActivitySegmented<T extends string>({
   return (
     <div
       className={cx(
-        'grid w-full gap-1 p-1 rounded-xl bg-slate-200',
+        'grid w-full gap-1 p-1 rounded-xl bg-[var(--bg-soft)]',
         className,
       )}
       style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}

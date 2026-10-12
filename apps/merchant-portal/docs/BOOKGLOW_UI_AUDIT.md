@@ -1,8 +1,8 @@
 # BookGlow UI audit (Phase 0)
 
 **Scope:** `apps/merchant-portal` only.  
-**Date:** 2026-10-11  
-**Status:** Phase 0–4 landed. Management pages use V5 primitives (Settings compact rows, Marketing/Finance `MobilePageActions`, Integrations compact CTAs, Member details tokens). Phase 5 is QA.  
+**Date:** 2026-10-12  
+**Status:** Phase 0–5 complete. V5 primitives are in use on operational and management pages. Phase 5 QA lives in `test/visual/merchant-v5-qa.spec.ts` (viewport matrix, overflow, duplicate header, 44px hit).  
 **Proposed next system name:** BookGlow UX System V5 (documentation + primitive consolidation on the existing v4 density tokens — not a new palette or token family).
 
 ---
@@ -235,27 +235,26 @@ Do **not** edit these until Phase 0 is approved:
 
 ---
 
-## 11. Test plan (expand in Phase 5; smoke in Phase 1–3)
+## 11. Test plan (Phase 5)
 
-Existing: `test/visual/` harnesses for dashboard, POS, density, editor, finance, responsive, f12, mobile-ux; `merchant-pages.spec.ts` screenshot matrix (auth) at Playwright project viewports.
+Harness specs run in the Playwright `layout-harness` project (no auth). Auth screenshot matrix remains `merchant-pages.spec.ts`.
 
-**Gaps vs requested matrix**
+| Requested | Coverage |
+|-----------|----------|
+| 390×844 | `merchant-v5-qa.spec.ts`, density, mobile-ux, finance |
+| 375×667 | `merchant-v5-qa.spec.ts` |
+| 412×915 | `merchant-v5-qa.spec.ts`, density |
+| 768×1024 | `merchant-v5-qa.spec.ts`, density, tablet-768 (auth) |
+| 820×1180 | `merchant-v5-qa.spec.ts` (overflow); POS layout still owns POS split |
+| 1366×768 | `merchant-v5-qa.spec.ts` |
+| 1440×900 | `merchant-v5-qa.spec.ts` desktop utility |
+| Finance | `finance.spec.ts` + v5 QA finance harness (not live `/finance`) |
+| Overflow / duplicate-header / 44px hit | `merchant-v5-qa.spec.ts` on staff, settings, POS, finance |
 
-| Requested | Today |
-|-----------|--------|
-| 390×844 | mobile project (~iPhone 13) |
-| 375×667 | not a dedicated project (375 used in some specs) |
-| 412×915 | density spec includes 412; pages spec does not |
-| 768×1024 | tablet-768 project |
-| 820×1180 | POS layout only |
-| 1366×768 | not dedicated (1280/1440 used) |
-| 1440×900 | 1440×1000 desktop |
-| `/finance` in page screenshots | finance harness, not `merchant-pages.spec.ts` |
-| Overflow / duplicate-header / 44px hit assertions | POS/dashboard/density only |
+**Kept exceptions (do not “fix” without a new phase):** Today KPI 2×2 cards (`.dashboard-kpi-value` visual tests), Settings accordion structure, Menu phone FAB, Superadmin shell.
 
-Phase 1: unit tests for new primitives + existing vitest.  
-Phase 3 Staff: 390×844 harness — first staff row in view, actions not `flex-1` heroes, KPI rail height cap.  
-Do not advance phases if visual regression for that phase fails.
+Phase 1: unit tests for primitives.  
+Phase 3 Staff: 390×844 — first row in view, no `flex-1` heroes, KPI rail height cap.
 
 ---
 

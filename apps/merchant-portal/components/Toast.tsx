@@ -79,7 +79,7 @@ const Toast: React.FC<ToastProps> = ({
         <p className="flex-1 text-sm font-medium">{message}</p>
         <button
           onClick={onClose}
-          className="flex-shrink-0 text-slate-400 hover:text-slate-600 transition-colors"
+          className="flex-shrink-0 text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
           aria-label="Close"
         >
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">

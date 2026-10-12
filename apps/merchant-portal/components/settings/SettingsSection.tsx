@@ -62,7 +62,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
             {title}
           </h3>
           {description ? (
-            <p className="m-settings-desc hidden md:block text-xs text-[var(--text-muted)] font-medium mt-1 whitespace-normal break-words">
+            <p className="m-settings-desc hidden lg:block text-xs text-[var(--text-muted)] font-medium mt-1 whitespace-normal break-words">
               {description}
             </p>
           ) : null}

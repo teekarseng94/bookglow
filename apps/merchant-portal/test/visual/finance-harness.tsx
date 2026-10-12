@@ -14,11 +14,12 @@ const currentDescriptions = [
   'Commission: Wellness Package',
 ];
 const currentAmounts = [35, 39, 31.2, 29, 39, ...Array.from({ length: 55 }, () => 46), 48.3];
+const now = new Date();
 
 const currentExpenses: Transaction[] = currentAmounts.map((amount, index) => ({
   id: `commission-${index + 1}`,
   outletID: 'visual-outlet',
-  date: new Date(2026, 8, 10 - (index % 10), 15, 18 - (index % 12)).toISOString(),
+  date: new Date(now.getFullYear(), now.getMonth(), Math.max(1, now.getDate() - (index % 10)), 15, 18 - (index % 12)).toISOString(),
   type: TransactionType.EXPENSE,
   amount,
   category: index < 5 ? 'Commission' : index % 3 === 0 ? 'Supplies' : 'Utilities',
@@ -26,13 +27,13 @@ const currentExpenses: Transaction[] = currentAmounts.map((amount, index) => ({
   parentSaleId: index < 5 ? `sale-${index + 1}` : undefined,
   paymentMethod: index < 5 ? undefined : 'Cash',
   remarks: index === 7 ? 'Weekly linen and treatment-room supplies.' : undefined,
-  createdAt: new Date(2026, 8, 10 - (index % 10), 15, 20 - (index % 12)).toISOString(),
+  createdAt: new Date(now.getFullYear(), now.getMonth(), Math.max(1, now.getDate() - (index % 10)), 15, 20 - (index % 12)).toISOString(),
 }));
 
 const previousExpenses: Transaction[] = Array.from({ length: 170 }, (_, index) => ({
   id: `previous-${index + 1}`,
   outletID: 'visual-outlet',
-  date: new Date(2026, 7, 1 + (index % 28), 12, index % 60).toISOString(),
+  date: new Date(now.getFullYear(), now.getMonth() - 1, 1 + (index % 28), 12, index % 60).toISOString(),
   type: TransactionType.EXPENSE,
   amount: index === 169 ? 44.82 : 45.34,
   category: 'Supplies',

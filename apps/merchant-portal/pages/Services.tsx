@@ -1224,7 +1224,7 @@ const Services: React.FC<ServicesProps> = ({
                 secondaryLabel={`${itemCount} items`}
                 visible
                 fallback={
-                  <div className="w-full h-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                  <div className="w-full h-full bg-[var(--brand-soft)] text-[var(--brand)] flex items-center justify-center">
                     <Icons.Package />
                   </div>
                 }
@@ -1338,7 +1338,7 @@ const Services: React.FC<ServicesProps> = ({
                 <tr key={pkg.id} className="hover:bg-[var(--bg-soft)] transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-indigo-50 text-indigo-600"><Icons.Package /></div>
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-[var(--brand-soft)] text-[var(--brand)]"><Icons.Package /></div>
                       <span className="text-sm font-bold text-[var(--text-primary)]">{pkg.name}</span>
                     </div>
                   </td>

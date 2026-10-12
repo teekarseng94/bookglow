@@ -1,7 +1,7 @@
 # BookGlow UX System V5
 
 **App:** `apps/merchant-portal`  
-**Status:** Phase 4 management pages landed (Settings rows, Marketing, Finance, Integrations, Member details, Reports). Phase 5 is QA.  
+**Status:** Phase 0–5 complete. QA matrix: `test/visual/merchant-v5-qa.spec.ts`. Remaining exceptions: Today KPI 2×2 cards (dashboard layout tests), Settings accordion (not flattened to iOS rows), Menu FAB (allowed create pattern), Superadmin out of merchant V5.  
 **Identity:** `design-system/bookglow/MASTER.md` (page files under `design-system/bookglow/pages/` override Master).  
 **Tokens:** extend `styles/density-system.css`, `styles/mobile-tokens.css`, `styles/responsive-system.css`. Do **not** add a second palette or token family.
 

@@ -34,11 +34,11 @@ const AppBootstrap: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-canvas)]">
         <div className="text-center">
-          <div className="inline-block w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-sm text-slate-600">Initializing...</p>
-          <p className="mt-2 text-xs text-slate-400">{ANDROID_APP_VERSION}</p>
+          <div className="inline-block w-12 h-12 border-4 border-[var(--brand)] border-t-transparent rounded-full animate-spin mb-4" />
+          <p className="text-sm text-[var(--text-secondary)]">Initializing...</p>
+          <p className="mt-2 text-xs text-[var(--text-muted)]">{ANDROID_APP_VERSION}</p>
         </div>
       </div>
     );
@@ -48,8 +48,8 @@ const AppBootstrap: React.FC = () => {
     <UserContextProvider firebaseUser={authUser}>
       <React.Suspense
         fallback={
-          <div className="min-h-screen flex items-center justify-center bg-slate-50">
-            <div className="inline-block w-12 h-12 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
+          <div className="min-h-screen flex items-center justify-center bg-[var(--bg-canvas)]">
+            <div className="inline-block w-12 h-12 border-4 border-[var(--brand)] border-t-transparent rounded-full animate-spin" />
           </div>
         }
       >

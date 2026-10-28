@@ -700,7 +700,7 @@ const AppContent: React.FC<AppContentProps> = ({
       case 'dashboard':
         return <Dashboard transactions={transactions} clients={clients} appointments={appointments} services={services} products={products} outletSettings={outletSettings} outletContact={outletContact} outletID={currentOutletID} onMarkReminderSent={handleMarkReminderSent} />;
       case 'pos':
-        return <POS services={services} products={products} packages={packages} clients={clients} staff={staff} roleCommissions={roleCommissions} onCompleteSale={handleAddTransactionWithLogic} activeAppointmentForSale={activeAppointmentForSale} onClearActiveAppointment={() => setActiveAppointmentForSale(null)} paymentMethods={outletSettings.paymentMethods} outletSettings={outletSettings} outletContact={outletContact} />;
+        return <POS services={services} products={products} packages={packages} clients={clients} staff={staff} roleCommissions={roleCommissions} onCompleteSale={handleAddTransactionWithLogic} activeAppointmentForSale={activeAppointmentForSale} onClearActiveAppointment={() => setActiveAppointmentForSale(null)} paymentMethods={outletSettings.paymentMethods} outletSettings={outletSettings} outletContact={outletContact} operatorName={user?.displayName || user?.email || 'Staff'} onRenewMember={handleRenewMember} />;
       case 'member':
         return <CRM
           clients={clients}

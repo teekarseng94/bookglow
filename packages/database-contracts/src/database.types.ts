@@ -2230,6 +2230,14 @@ export type Database = {
         Args: { p_member_id: string; p_role: string }
         Returns: undefined
       }
+      client_membership_expiry_on: {
+        Args: { p_created_at?: string; p_last_renewed_at?: string }
+        Returns: string
+      }
+      client_membership_is_active: {
+        Args: { p_created_at?: string; p_last_renewed_at?: string }
+        Returns: boolean
+      }
       complete_merchant_onboarding: { Args: { payload: Json }; Returns: Json }
       complete_pos_sale: {
         Args: { p_appointment_id?: string; p_transaction: Json }

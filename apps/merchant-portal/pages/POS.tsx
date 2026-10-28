@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -6,6 +5,9 @@ import { Service, Product, Package, Client, Transaction, TransactionType, CartIt
 import { Icons } from '../constants';
 import ReceiptTemplate, { type ReceiptTemplateData } from '../components/ReceiptTemplate';
 import { clientService, getCurrentOutletID } from '../services/databaseService';
+import { formatMembershipDate, resolveMembershipValidity } from '../utils/membershipExpiry';
+import { Alert, Button } from '../components/ui';
+import { RenewMembershipModal } from '../components/members';
 import {
   POSCartItem,
   POSCartSheet,
@@ -46,6 +48,14 @@ interface POSProps {
   outletSettings: OutletSettings;
   /** Outlet phone and address the receipt falls back to when not overridden. */
   outletContact?: OutletContact;
+  operatorName?: string;
+  onRenewMember?: (
+    clientId: string,
+    amount: number,
+    paymentMethod: string,
+    operatorName: string,
+    renewalDateYmd?: string,
+  ) => Promise<{ lastRenewedAt: string; lastRenewalAmount: number }>;
 }
 
 const POS: React.FC<POSProps> = ({ 
@@ -60,7 +70,9 @@ const POS: React.FC<POSProps> = ({
   onClearActiveAppointment,
   paymentMethods,
   outletSettings,
-  outletContact
+  outletContact,
+  operatorName,
+  onRenewMember,
 }) => {
   const location = useLocation();
   const printedReceiptIdentity = resolveReceiptIdentity({
@@ -92,6 +104,8 @@ const POS: React.FC<POSProps> = ({
 
   // Apply selectedMember from Quick POS or voucher redemption (Member Details → /pos with state)
   const [isVoucherRedemptionMode, setIsVoucherRedemptionMode] = useState(false);
+  const [showRenewModal, setShowRenewModal] = useState(false);
+  const [renewBusy, setRenewBusy] = useState(false);
   // Optional override for sale date/time (default is currentTime when not set)
   const [useCustomDateTime, setUseCustomDateTime] = useState(false);
   const [customDate, setCustomDate] = useState<string>('');
@@ -253,6 +267,18 @@ const POS: React.FC<POSProps> = ({
     return clients.find((c) => c.id === selectedClient) || null;
   }, [clients, selectedClient, selectedClientCache]);
 
+  const membership = useMemo(
+    () =>
+      selectedClientData
+        ? resolveMembershipValidity({
+            lastRenewedAt: selectedClientData.lastRenewedAt,
+            createdAt: selectedClientData.createdAt,
+          })
+        : null,
+    [selectedClientData],
+  );
+  const canRedeemLoyalty = Boolean(membership?.canRedeemPoints);
+
   /** Points already reserved by other redeemed lines (excludes `excludeLineId`). */
   const pointsUsedByOtherRedemptions = (excludeLineId: string) =>
     cart.reduce((sum, item) => {
@@ -267,6 +293,7 @@ const POS: React.FC<POSProps> = ({
     if (item.type !== 'service') return false;
     if (!item.redeemPointsEnabled || !item.redeemPoints) return false;
     if (!selectedClientData) return false;
+    if (!canRedeemLoyalty) return false;
     if (item.redeemedWithPoints) return true;
     const balance = selectedClientData.points ?? 0;
     const needed = item.redeemPoints * item.quantity;
@@ -280,14 +307,14 @@ const POS: React.FC<POSProps> = ({
       let changed = false;
       const next = prev.map((item) => {
         if (!item.redeemedWithPoints) return item;
-        if (!selectedClientData) {
+        if (!selectedClientData || !canRedeemLoyalty) {
           changed = true;
           return { ...item, redeemedWithPoints: false };
         }
         return item;
       });
 
-      if (!selectedClientData) {
+      if (!selectedClientData || !canRedeemLoyalty) {
         return changed ? next : prev;
       }
 
@@ -305,7 +332,7 @@ const POS: React.FC<POSProps> = ({
       });
       return changed ? validated : prev;
     });
-  }, [selectedClientData, cart]);
+  }, [selectedClientData, canRedeemLoyalty, cart]);
 
   // Server-side customer typeahead (debounced) — does not download the full member table.
   const [customerSuggestions, setCustomerSuggestions] = useState<Client[]>([]);
@@ -420,6 +447,10 @@ const POS: React.FC<POSProps> = ({
       alert('Select a member to redeem services with points.');
       return;
     }
+    if (!canRedeemLoyalty) {
+      alert("This customer's membership has expired. Loyalty points cannot be redeemed until the membership is renewed.");
+      return;
+    }
     const target = cart.find((item) =>
       (item.cartItemId != null ? item.cartItemId === lineId : item.id === lineId)
     );
@@ -526,6 +557,10 @@ const POS: React.FC<POSProps> = ({
       alert('Select a member before redeeming services with points.');
       return;
     }
+    if (hasRedemptions && !canRedeemLoyalty) {
+      alert("This customer's membership has expired. Loyalty points cannot be redeemed until the membership is renewed.");
+      return;
+    }
     const unassignedServices = cart.filter(item => item.type === 'service' && !item.staffId);
     if (unassignedServices.length > 0) {
       alert("Please assign a staff member to all individual services before checkout.");
@@ -607,12 +642,11 @@ const POS: React.FC<POSProps> = ({
       onClearActiveAppointment?.();
 
       if (hasRedemptions && selectedClientData && pointsToRedeem > 0) {
-        try {
-          const { pointTransactionService } = await import('../services/pointTransactionService');
-          await pointTransactionService.add(selectedClientData.id, 'Redeem', pointsToRedeem);
-        } catch (err) {
-          console.error('Failed to record point redemption from POS:', err);
-        }
+        setSelectedClientCache((current) =>
+          current && current.id === selectedClientData.id
+            ? { ...current, points: Math.max(0, (current.points ?? 0) - pointsToRedeem) }
+            : current,
+        );
       }
       const customerName = selectedClientData?.name ?? 'Guest';
       const paymentLabel = selectedPaymentMethod.startsWith('Member Credit') ? 'Member Credit' : selectedPaymentMethod;
@@ -875,6 +909,35 @@ const POS: React.FC<POSProps> = ({
                 ? { name: selectedClientData.name, phone: selectedClientData.phone }
                 : null
             }
+            membershipNotice={
+              selectedClientData && membership?.status === 'expired' ? (
+                <Alert
+                  tone="danger"
+                  title="Membership Expired"
+                  action={
+                    onRenewMember ? (
+                      <Button type="button" size="sm" onClick={() => setShowRenewModal(true)}>
+                        Renew Membership
+                      </Button>
+                    ) : null
+                  }
+                >
+                  <p>
+                    This customer&apos;s membership has expired. Loyalty points cannot be redeemed until the
+                    membership is renewed.
+                  </p>
+                  <p className="mt-2 font-semibold">
+                    Available Points: {(selectedClientData.points ?? 0).toLocaleString()}
+                  </p>
+                  <p className="font-semibold">Membership Status: Expired</p>
+                </Alert>
+              ) : selectedClientData && membership?.status === 'expiring_soon' ? (
+                <Alert tone="warning" title="Membership Expiring Soon">
+                  Membership expires {formatMembershipDate(membership.expiryYmd)}. Renew to keep loyalty
+                  redemption available.
+                </Alert>
+              ) : null
+            }
           >
             <div className="relative" ref={customerDropdownRef}>
               <svg
@@ -1119,6 +1182,43 @@ const POS: React.FC<POSProps> = ({
       />
 
       {lastSaleData && <ReceiptTemplate data={lastSaleData} />}
+
+      {onRenewMember && selectedClientData ? (
+        <RenewMembershipModal
+          open={showRenewModal}
+          memberName={selectedClientData.name}
+          lastRenewedAt={selectedClientData.lastRenewedAt}
+          paymentMethods={paymentMethods}
+          busy={renewBusy}
+          onClose={() => {
+            if (!renewBusy) setShowRenewModal(false);
+          }}
+          onConfirm={async (amount, paymentMethod, renewalDate) => {
+            setRenewBusy(true);
+            try {
+              const result = await onRenewMember(
+                selectedClientData.id,
+                amount,
+                paymentMethod,
+                operatorName || 'Staff',
+                renewalDate,
+              );
+              setSelectedClientCache((current) =>
+                current && current.id === selectedClientData.id
+                  ? {
+                      ...current,
+                      lastRenewedAt: result.lastRenewedAt,
+                      lastRenewalAmount: result.lastRenewalAmount,
+                    }
+                  : current,
+              );
+              setShowRenewModal(false);
+            } finally {
+              setRenewBusy(false);
+            }
+          }}
+        />
+      ) : null}
     </div>
   );
 };

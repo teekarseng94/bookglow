@@ -1012,6 +1012,7 @@ export const useFirestoreData = (
         let earnedPoints = 0;
         if (transactionWithOutlet.items && transactionWithOutlet.items.length > 0) {
           earnedPoints = transactionWithOutlet.items.reduce((sum, item) => {
+            if (item.redeemedWithPoints) return sum;
             const itemPoints = item.points !== undefined ? item.points : Math.floor(item.price);
             return sum + (itemPoints * item.quantity);
           }, 0);

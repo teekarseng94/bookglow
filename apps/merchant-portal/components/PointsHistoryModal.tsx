@@ -20,6 +20,7 @@ interface PointsHistoryModalProps {
   clientId: string;
   outletID: string;
   currentBalance: number;
+  canRedeemPoints?: boolean;
   onClose: () => void;
   onBalanceUpdate: (newBalance: number) => void;
 }
@@ -34,6 +35,7 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
   clientId,
   outletID,
   currentBalance,
+  canRedeemPoints = true,
   onClose,
   onBalanceUpdate
 }) => {
@@ -124,7 +126,11 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
       setError('Please enter a valid positive number');
       return;
     }
-    
+    if (!canRedeemPoints) {
+      setError('Membership expired. Loyalty point redemption is disabled until the membership is renewed.');
+      return;
+    }
+
     setProcessing(true);
     setError(null);
     try {
@@ -258,13 +264,15 @@ const PointsHistoryModal: React.FC<PointsHistoryModalProps> = ({
                 </button>
                 <button
                   type="button"
+                  disabled={!canRedeemPoints}
                   onClick={() => {
+                    if (!canRedeemPoints) return;
                     setShowActionMenu(false);
                     setShowRedeemModal(true);
                   }}
-                  className="w-full text-left px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-soft)]"
+                  className="w-full text-left px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-soft)] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Redeem
+                  Redeem{canRedeemPoints ? '' : ' (membership expired)'}
                 </button>
               </div>
             )}

@@ -158,8 +158,18 @@ export const RenewMembershipModal: React.FC<RenewMembershipModalProps> = ({
           />
         </Field>
         <Field id="renewal-amount" label="Renewal Amount (RM)" required error={error || undefined}>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-[var(--text-muted)] pointer-events-none">
+          <div
+            className={cx(
+              'flex h-11 items-stretch rounded-ui-sm border bg-[var(--bg-surface)]',
+              error ? 'border-[var(--danger)]' : 'border-[var(--line-strong)]',
+              'focus-within:shadow-ui-focus-strong focus-within:border-[var(--brand)]',
+              locked && 'opacity-50 bg-[var(--bg-soft)]',
+            )}
+          >
+            <span
+              className="flex items-center pl-3 pr-2 text-sm font-semibold text-[var(--text-muted)] select-none"
+              aria-hidden
+            >
               RM
             </span>
             <input
@@ -168,8 +178,10 @@ export const RenewMembershipModal: React.FC<RenewMembershipModalProps> = ({
               inputMode="decimal"
               autoComplete="off"
               disabled={locked}
-              placeholder="20.00"
-              className={cx(fieldControlClassName, 'h-11 pl-11')}
+              placeholder="100.00"
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? 'renewal-amount-error' : undefined}
+              className="min-w-0 flex-1 h-full bg-transparent pr-3 text-app-body text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)] disabled:cursor-not-allowed"
               value={amountRaw}
               onChange={(e) => {
                 setAmountRaw(e.target.value);

@@ -1,5 +1,8 @@
 import React from 'react';
 import { cx } from '../ui/cx';
+import { Alert, Button, StatusBadge } from '../ui';
+import type { MembershipStatus } from '../../utils/membershipExpiry';
+import { membershipStatusLabel } from '../../utils/membershipExpiry';
 
 export interface MemberSummaryProps {
   name: string;
@@ -9,6 +12,9 @@ export interface MemberSummaryProps {
   lastRenewedLabel?: string;
   /** Optional amount under last renewed (e.g. RM20.00). */
   lastRenewalAmountLabel?: string;
+  membershipStatus?: MembershipStatus;
+  expiryLabel?: string;
+  onRenewMembership?: () => void;
   avatarInitial?: string;
   actions?: React.ReactNode;
   className?: string;
@@ -21,57 +27,95 @@ export const MemberSummary: React.FC<MemberSummaryProps> = ({
   joinDateLabel,
   lastRenewedLabel,
   lastRenewalAmountLabel,
+  membershipStatus,
+  expiryLabel,
+  onRenewMembership,
   avatarInitial,
   actions,
   className,
 }) => (
-  <div
-    className={cx(
-      'm-member-summary bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs flex items-center',
-      'p-3 sm:p-6 gap-3 sm:gap-4',
-      className,
-    )}
-  >
-    <div className="m-member-summary__avatar rounded-full bg-[var(--brand-soft)] text-[var(--brand-deep)] flex items-center justify-center font-bold border-2 border-white shadow-sm shrink-0 h-10 w-10 text-sm sm:h-16 sm:w-16 sm:text-2xl">
-      {avatarInitial || (name || '?').charAt(0)}
+  <div className={cx('space-y-3', className)}>
+    <div
+      className={cx(
+        'm-member-summary bg-[var(--bg-surface)] rounded-ui-md border border-[var(--line)] shadow-ui-xs flex items-center',
+        'p-3 sm:p-6 gap-3 sm:gap-4',
+      )}
+    >
+      <div className="m-member-summary__avatar rounded-full bg-[var(--brand-soft)] text-[var(--brand-deep)] flex items-center justify-center font-bold border-2 border-white shadow-sm shrink-0 h-10 w-10 text-sm sm:h-16 sm:w-16 sm:text-2xl">
+        {avatarInitial || (name || '?').charAt(0)}
+      </div>
+      <div className="flex-1 min-w-0">
+        <h3 className="m-member-summary__name text-[var(--text-primary)] truncate text-[15px] sm:text-lg font-semibold sm:font-bold">
+          {name}
+        </h3>
+        <p className="m-member-summary__meta text-[var(--text-secondary)] truncate text-[13px] sm:text-sm">
+          {phone || '—'}
+          {joinDateLabel ? <span className="sm:hidden">{` · Joined ${joinDateLabel}`}</span> : null}
+          {lastRenewedLabel ? <span className="sm:hidden">{` · Renewed ${lastRenewedLabel}`}</span> : null}
+          {lastRenewalAmountLabel ? <span className="sm:hidden">{` · ${lastRenewalAmountLabel}`}</span> : null}
+        </p>
+      </div>
+      <div className="text-right shrink-0 hidden sm:flex sm:flex-col sm:items-end sm:gap-2">
+        {joinDateLabel ? (
+          <div>
+            <span className="m-caption text-xs font-medium text-[var(--text-muted)] uppercase tracking-wide">
+              Join Date
+            </span>
+            <p className="m-member-summary__meta text-sm font-semibold text-[var(--text-primary)]">
+              {joinDateLabel}
+            </p>
+          </div>
+        ) : null}
+        {lastRenewedLabel ? (
+          <div>
+            <span className="m-caption text-xs font-medium text-[var(--text-muted)] uppercase tracking-wide">
+              Last Renewed
+            </span>
+            <p className="m-member-summary__meta text-sm font-semibold text-[var(--text-primary)]">
+              {lastRenewedLabel}
+            </p>
+            {lastRenewalAmountLabel ? (
+              <p className="text-xs font-medium text-[var(--brand)] mt-0.5">{lastRenewalAmountLabel}</p>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+      {actions}
     </div>
-    <div className="flex-1 min-w-0">
-      <h3 className="m-member-summary__name text-[var(--text-primary)] truncate text-[15px] sm:text-lg font-semibold sm:font-bold">
-        {name}
-      </h3>
-      <p className="m-member-summary__meta text-[var(--text-secondary)] truncate text-[13px] sm:text-sm">
-        {phone || '—'}
-        {joinDateLabel ? <span className="sm:hidden">{` · Joined ${joinDateLabel}`}</span> : null}
-        {lastRenewedLabel ? <span className="sm:hidden">{` · Renewed ${lastRenewedLabel}`}</span> : null}
-        {lastRenewalAmountLabel ? <span className="sm:hidden">{` · ${lastRenewalAmountLabel}`}</span> : null}
-      </p>
-    </div>
-    <div className="text-right shrink-0 hidden sm:flex sm:flex-col sm:items-end sm:gap-2">
-      {joinDateLabel ? (
-        <div>
-          <span className="m-caption text-xs font-medium text-[var(--text-muted)] uppercase tracking-wide">
-            Join Date
-          </span>
-          <p className="m-member-summary__meta text-sm font-semibold text-[var(--text-primary)]">
-            {joinDateLabel}
-          </p>
-        </div>
-      ) : null}
-      {lastRenewedLabel ? (
-        <div>
-          <span className="m-caption text-xs font-medium text-[var(--text-muted)] uppercase tracking-wide">
-            Last Renewed
-          </span>
-          <p className="m-member-summary__meta text-sm font-semibold text-[var(--text-primary)]">
-            {lastRenewedLabel}
-          </p>
-          {lastRenewalAmountLabel ? (
-            <p className="text-xs font-medium text-[var(--brand)] mt-0.5">{lastRenewalAmountLabel}</p>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
-    {actions}
+    {membershipStatus ? (
+      <div className="flex flex-wrap items-center gap-2">
+        <StatusBadge
+          tone={
+            membershipStatus === 'expired'
+              ? 'danger'
+              : membershipStatus === 'expiring_soon'
+                ? 'warning'
+                : 'success'
+          }
+        >
+          {membershipStatusLabel(membershipStatus)}
+        </StatusBadge>
+        {membershipStatus !== 'expired' && expiryLabel ? (
+          <p className="text-sm text-[var(--text-secondary)]">Expires {expiryLabel}</p>
+        ) : null}
+      </div>
+    ) : null}
+    {membershipStatus === 'expired' ? (
+      <Alert
+        tone="danger"
+        title="Membership Expired – Loyalty Point Redemption Disabled"
+        action={
+          onRenewMembership ? (
+            <Button type="button" size="sm" onClick={onRenewMembership}>
+              Renew Membership
+            </Button>
+          ) : null
+        }
+      >
+        This member can still make paid purchases. Existing loyalty points are preserved until membership is
+        renewed.
+      </Alert>
+    ) : null}
   </div>
 );
 

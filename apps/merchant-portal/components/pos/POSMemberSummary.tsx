@@ -9,6 +9,7 @@ export interface POSMemberSummaryProps {
   onNewCustomer?: () => void;
   /** Optional selected-customer card (name/phone) — presentation only. */
   selectedCustomer?: { name: string; phone?: string } | null;
+  membershipNotice?: React.ReactNode;
 }
 
 /** Member / customer context — selecting a customer must not clear cart (parent owns cart). */
@@ -19,6 +20,7 @@ export const POSMemberSummary: React.FC<POSMemberSummaryProps> = ({
   className,
   onNewCustomer,
   selectedCustomer,
+  membershipNotice,
 }) => (
   <div className={cx('space-y-1.5 posd:space-y-2', className)}>
     {quickPOSMemberName ? (
@@ -48,6 +50,7 @@ export const POSMemberSummary: React.FC<POSMemberSummaryProps> = ({
       ) : null}
     </div>
     {children}
+    {membershipNotice}
     {selectedCustomer ? (
       <div className="hidden items-center gap-2.5 rounded-ui-md border border-[var(--line)] bg-[var(--bg-soft)] px-2.5 py-2 post:flex">
         <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--brand-soft)] text-sm font-bold text-[var(--brand)]">

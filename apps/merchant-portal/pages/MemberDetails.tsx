@@ -20,6 +20,7 @@ import {
 } from '../components/members';
 import Toast from '../components/Toast';
 import { Button, ConfirmationDialog, ModalLoadingFallback } from '../components/ui';
+import { formatMembershipDate, resolveMembershipValidity } from '../utils/membershipExpiry';
 
 // Lazy load modals to avoid circular dependency
 const PointsHistoryModal = lazy(() => import('../components/PointsHistoryModal'));
@@ -262,6 +263,14 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
     setCreditBalance(credit);
     setCurrentOutstandingBalance(outstanding);
   }, [points, credit, outstanding]);
+
+  const membership = useMemo(() => {
+    if (!client) return null;
+    return resolveMembershipValidity({
+      lastRenewedAt: client.lastRenewedAt,
+      createdAt: client.createdAt,
+    });
+  }, [client]);
 
   const formatJoinDate = (createdAt: string) => {
     try {
@@ -844,6 +853,16 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
             : undefined
         }
         avatarInitial={client.name.charAt(0)}
+        membershipStatus={membership?.status}
+        expiryLabel={formatMembershipDate(membership?.expiryYmd)}
+        onRenewMembership={
+          onRenewMember
+            ? () => {
+                setShowOverflowMenu(false);
+                setShowRenewModal(true);
+              }
+            : undefined
+        }
       />
 
       {/* 2–5. Credits / Points / Vouchers / Outstanding — kept separate */}
@@ -1043,6 +1062,7 @@ const MemberDetails: React.FC<MemberDetailsProps> = ({
             clientId={client.id}
             outletID={client.outletID}
             currentBalance={currentPointsBalance}
+            canRedeemPoints={Boolean(membership?.canRedeemPoints)}
             onClose={() => setShowPointsModal(false)}
             onBalanceUpdate={setCurrentPointsBalance}
           />
